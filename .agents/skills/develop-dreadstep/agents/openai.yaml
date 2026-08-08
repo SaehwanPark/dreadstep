@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop Dreadstep"
+  short_description: "Spec-first, typed Dreadstep development"
+  default_prompt: "Use $develop-dreadstep to implement a Dreadstep change through specification, tests, functional domain design, verification, and documentation."

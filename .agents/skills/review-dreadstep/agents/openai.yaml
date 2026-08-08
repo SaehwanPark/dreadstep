@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Dreadstep"
+  short_description: "Review Dreadstep changes and evidence"
+  default_prompt: "Use $review-dreadstep to review a Dreadstep change for domain correctness, architecture, tests, and documentation."
