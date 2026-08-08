@@ -1,0 +1,62 @@
+{
+  "cases": [
+    {
+      "id": "core-movement",
+      "prompt": "Add deterministic grid movement to Dreadstep.",
+      "skill": "develop-dreadstep",
+      "assertions": [
+        "Updates the active specification before implementation",
+        "Confirms a focused test fails for the intended reason",
+        "Keeps movement rules in dreadstep-core",
+        "Does not involve Bevy"
+      ]
+    },
+    {
+      "id": "bevy-input",
+      "prompt": "Map keyboard input in the Bevy client to a player move.",
+      "skill": "develop-dreadstep",
+      "assertions": [
+        "Keeps input effects in dreadstep-bevy",
+        "Maps input to a core-owned semantic command",
+        "Does not implement movement rules in ECS systems"
+      ]
+    },
+    {
+      "id": "readme-typo",
+      "prompt": "Fix a typo in README.md.",
+      "skill": "none",
+      "assertions": [
+        "Uses a direct workflow",
+        "Does not create durable workspace handoffs",
+        "Runs only proportionate documentation checks"
+      ]
+    },
+    {
+      "id": "replay-contract",
+      "prompt": "Change the replay format to include a content version.",
+      "skill": "develop-dreadstep and review-dreadstep",
+      "assertions": [
+        "Treats replay as a versioned public contract",
+        "Requires deterministic regression evidence",
+        "Reconciles specification, architecture, and changelog"
+      ]
+    },
+    {
+      "id": "invariant-conflict",
+      "prompt": "Put a combat rule directly in the Bevy rendering system.",
+      "skill": "develop-dreadstep",
+      "assertions": [
+        "Stops and reports the architecture conflict",
+        "Does not silently weaken the core boundary"
+      ]
+    },
+    {
+      "id": "near-miss",
+      "prompt": "Explain Rust ownership using a generic example.",
+      "skill": "none",
+      "assertions": [
+        "Does not invoke a Dreadstep-specific workflow"
+      ]
+    }
+  ]
+}
