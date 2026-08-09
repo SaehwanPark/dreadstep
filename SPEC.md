@@ -1257,6 +1257,47 @@ Out of scope:
 - Camera entities/transforms, viewport policy, marker styling, rendering, windowing,
   visibility/fog rules, transport, input rebinding, and new gameplay rules.
 
+### Milestone 3 slice: deterministic headless ground-item scene projection
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Extend the disposable Bevy scene mirror with complete core-owned ground-item records. The
+`PresentationSnapshot` exposes stable row-major ground stacks, and `sync_scene` projects each
+opaque item as a typed `SceneGroundItem` keyed by globally unique item identity. Core remains
+authoritative for item ownership, stack order, and digest state; this slice only mirrors data for
+future presentation systems.
+
+Acceptance:
+
+- `PresentationSnapshot::ground_items()` exposes complete immutable ground stacks, including
+  position, `ItemId`, and `ItemDefinitionId`, in core-provided deterministic order.
+- `SceneGroundItem` carries typed item identity, definition reference, position, and zero-based stack
+  order without mutable core storage, gameplay effects, or presentation policy.
+- `sync_scene` creates, updates, and deduplicates item entities deterministically by `ItemId`,
+  preserves entity identity for unchanged ground items, and removes items absent from later
+  snapshots (including picked-up items).
+- Existing keyed tile and actor mirrors remain complete and unchanged by item projection; scene
+  synchronization never mutates runtime state, replay evidence, or core world truth.
+- The projection remains headless and independent of rendering, camera, HUD, transport, desktop
+  platform features, persistence, and new gameplay rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test scene_sync --all-features --locked` passes all seven
+  ordered projection, identity-update, duplicate-cleanup, stale-removal, and mirror-preservation
+  tests.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked`, focused Clippy, Cargo docs,
+  `git diff --check`, and `scripts/verify.sh` pass.
+- Exactly one semantic code reviewer reports PASS on implementation revision `4f24029`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
+
+Out of scope:
+
+- Player pickup/drop commands, item effects, equipment, capacity, identification, rendering,
+  sprites, camera policy, HUD, visibility, persistence, transport, and new gameplay rules.
+
 ## Future
 
 ### Milestone 4 slice: deterministic content item-definition catalog

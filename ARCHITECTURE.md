@@ -141,8 +141,8 @@ item instances, ownership, digests, and snapshots, and gameplay semantics remain
 
 The tester item-drop extension keeps ground-item records in core, keyed by stable map position with
 deterministic stack order. Protocol projects those records as read-only snapshot values and MCP
-delegates the mutation; neither boundary adds pickup, effects, equipment, capacity, player commands,
-or replay/history entries.
+delegates the mutation; neither boundary adds a player-facing pickup command, effects, equipment,
+capacity, or replay/history entries.
 
 The tester item-pickup extension moves an item from the actor's current core-owned ground stack back
 into that actor's ordered inventory. Protocol/MCP only convert the typed ground-miss error and
@@ -207,6 +207,13 @@ The scene-focus-marker slice adds a marker-only `SceneFocus` component to the ex
 `SceneActor` entity after that focus projection. It reuses stable actor identity without copying
 position or gameplay state; unknown actors clear stale markers only when an authoritative runtime
 snapshot exists, while missing resources leave the disposable scene unchanged.
+
+The ground-item scene-projection slice extends the same disposable snapshot boundary with
+core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
+`SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and
+stack index; `sync_scene` keys those entities by globally unique `ItemId` and removes stale picked-up
+items. Bevy does not own item data, effects, or pickup/drop rules, and this projection adds no
+rendering or camera policy.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

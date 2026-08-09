@@ -14,8 +14,8 @@ use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world:
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_content::{ContentError, starter_floor};
 use dreadstep_core::{
-  ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, Position,
-  ReplayTrace, StateDigest, Tile, WorldState,
+  ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, GroundItemStack,
+  Item, ItemDefinitionId, ItemId, Position, ReplayTrace, StateDigest, Tile, WorldState,
 };
 
 /// A supported keyboard intent before it is addressed to one core actor.
@@ -186,17 +186,62 @@ impl SceneActor {
   }
 }
 
+/// A disposable ECS mirror of one opaque item projected on the ground.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneGroundItem {
+  id: ItemId,
+  definition: ItemDefinitionId,
+  position: Position,
+  stack_index: usize,
+}
+
+impl SceneGroundItem {
+  fn from_core(position: Position, stack_index: usize, item: Item) -> Self {
+    Self {
+      id: item.id(),
+      definition: item.definition(),
+      position,
+      stack_index,
+    }
+  }
+
+  /// Returns the globally unique item identity.
+  #[must_use]
+  pub const fn id(self) -> ItemId {
+    self.id
+  }
+
+  /// Returns the opaque content reference carried by this item instance.
+  #[must_use]
+  pub const fn definition(self) -> ItemDefinitionId {
+    self.definition
+  }
+
+  /// Returns the map position where this item is projected.
+  #[must_use]
+  pub const fn position(self) -> Position {
+    self.position
+  }
+
+  /// Returns this item's zero-based insertion-order index within its ground stack.
+  #[must_use]
+  pub const fn stack_index(self) -> usize {
+    self.stack_index
+  }
+}
+
 /// A marker for the keyed scene entity representing the selected actor.
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SceneFocus;
 
-/// A deterministic read-only projection consumed by future map and actor renderers.
+/// A deterministic read-only projection consumed by future map, actor, and ground-item renderers.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PresentationSnapshot {
   width: u32,
   height: u32,
   tiles: Vec<Tile>,
   actors: Vec<Actor>,
+  ground_items: Vec<GroundItemStack>,
   current_time: ActionTime,
   next_actor: Option<ActorId>,
   digest: StateDigest,
@@ -209,6 +254,7 @@ impl PresentationSnapshot {
       height: world.map().height(),
       tiles: world.map().tiles().to_vec(),
       actors: world.actors().cloned().collect(),
+      ground_items: world.ground_items().to_vec(),
       current_time: world.current_time(),
       next_actor: world.next_actor(),
       digest: world.digest(),
@@ -237,6 +283,12 @@ impl PresentationSnapshot {
   #[must_use]
   pub fn actors(&self) -> &[Actor] {
     &self.actors
+  }
+
+  /// Returns immutable ground-item stacks in core-provided row-major and insertion order.
+  #[must_use]
+  pub fn ground_items(&self) -> &[GroundItemStack] {
+    &self.ground_items
   }
 
   /// Returns the current core action time.
@@ -597,9 +649,10 @@ fn scene_position(index: usize, width: usize) -> Option<dreadstep_core::Position
 
 /// Synchronizes a complete core projection into disposable Bevy scene entities.
 ///
-/// Tile entities are keyed by position and actor entities by [`ActorId`]. Existing entities keep
-/// their Bevy identity when their key remains in the snapshot; stale entities are despawned before
-/// new keys are spawned. The ECS world is only a presentation mirror and cannot change core state.
+/// Tile entities are keyed by position, actor entities by [`ActorId`], and ground-item entities by
+/// globally unique [`ItemId`]. Existing entities keep their Bevy identity when their key remains in
+/// the snapshot; stale entities are despawned before new keys are spawned. The ECS world is only a
+/// presentation mirror and cannot change core state.
 pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
   let mut existing_tiles: BTreeMap<_, Vec<_>> = {
     let mut query = scene.query::<(Entity, &SceneTile)>();
@@ -690,6 +743,53 @@ pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
       scene.entity_mut(*entity).insert(scene_actor);
     } else {
       scene.spawn(scene_actor);
+    }
+  }
+
+  sync_ground_items(scene, snapshot);
+}
+
+fn sync_ground_items(scene: &mut World, snapshot: &PresentationSnapshot) {
+  let mut existing_ground_items: BTreeMap<_, Vec<_>> = {
+    let mut query = scene.query::<(Entity, &SceneGroundItem)>();
+    query
+      .iter(scene)
+      .fold(BTreeMap::new(), |mut entities, (entity, item)| {
+        entities.entry(item.id()).or_default().push(entity);
+        entities
+      })
+  };
+  for entities in existing_ground_items.values_mut() {
+    entities.sort_unstable();
+  }
+  let expected_ground_items: BTreeSet<_> = snapshot
+    .ground_items()
+    .iter()
+    .flat_map(|stack| stack.items().iter())
+    .map(|item| item.id())
+    .collect();
+  for (item_id, entities) in &existing_ground_items {
+    if expected_ground_items.contains(item_id) {
+      for entity in entities.iter().skip(1) {
+        let _ = scene.despawn(*entity);
+      }
+    } else {
+      for entity in entities {
+        let _ = scene.despawn(*entity);
+      }
+    }
+  }
+  for stack in snapshot.ground_items() {
+    for (stack_index, item) in stack.items().iter().enumerate() {
+      let scene_item = SceneGroundItem::from_core(stack.position(), stack_index, *item);
+      if let Some(entity) = existing_ground_items
+        .get(&item.id())
+        .and_then(|entities| entities.first())
+      {
+        scene.entity_mut(*entity).insert(scene_item);
+      } else {
+        scene.spawn(scene_item);
+      }
     }
   }
 }
