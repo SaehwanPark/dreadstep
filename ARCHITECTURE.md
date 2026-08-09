@@ -107,6 +107,9 @@ Tester savepoints are explicit in-memory `SessionSnapshot` values containing the
 core world, and core replay trace. `restore` replaces that owned state, so branching and rollback
 remain deterministic without exposing arbitrary mutation or adding storage effects.
 
+The tester `inspect_world` name maps to the same protocol `WorldSnapshot` projection as player
+`observe`; it is a read-only alias and does not create separate world storage or hidden rules.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

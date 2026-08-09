@@ -121,6 +121,12 @@ impl Session {
     WorldSnapshot::from_world(&self.world)
   }
 
+  /// Returns the complete protocol world snapshot for the named tester operation.
+  #[must_use]
+  pub fn inspect_world(&self) -> WorldSnapshot {
+    self.observe()
+  }
+
   /// Returns one protocol actor snapshot, or no value for an unknown identity.
   #[must_use]
   pub fn inspect(&self, actor: ProtocolActorId) -> Option<ActorSnapshot> {

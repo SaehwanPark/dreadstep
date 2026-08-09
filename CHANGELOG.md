@@ -35,6 +35,7 @@ All notable contributor- and user-visible project changes are recorded here.
 - Named `get_history` access to the existing protocol-owned accepted-request history projection.
 - In-memory tester `snapshot`/`restore` savepoints that preserve world and replay state without
   persistence or transport effects.
+- Named tester `inspect_world` access to the existing complete protocol world snapshot.
 
 ### Changed
 
