@@ -59,8 +59,8 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified headless ECS Camera2d attachment
   - The presentation boundary attaches Bevy's typed `Camera2d` marker and required default
     orthographic camera components to the retained disposable camera projection entity while
-    leaving runtime/PresentationCamera authority, window creation, camera transform/viewport policy,
-    render plugins, visibility, production assets/audio, and media deferred.
+    retaining runtime/PresentationCamera authority and leaving window creation, camera
+    transform/viewport policy, render plugins, visibility, production assets/audio, and media deferred.
 - Still deferred
   - Windowing, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
     camera transform/viewport policy,
