@@ -2192,7 +2192,7 @@ can move into `Past`:
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
 - Milestone 4 — Tactical Combat: richer player verbs, item use, and systemic combat interactions
-  beyond the active single-slot equipment contract and verified tester item operations.
+  beyond the verified single-slot equipment contract and verified tester item operations.
 - Milestone 5 — The Living Dungeon: procedural floors, enemy archetypes, environmental state,
   and floor progression.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build
