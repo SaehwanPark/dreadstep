@@ -5,10 +5,18 @@ use bevy::ecs::entity::Entity;
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_bevy::{
   PresentationCamera, PresentationFocus, PresentationInput, PresentationPlugin,
-  PresentationRuntime, PresentationState, PresentationViewport, SceneViewport,
+  PresentationRuntime, PresentationState, PresentationViewport, SceneActor, SceneGroundItem,
+  SceneInventoryItem, SceneTile, SceneViewport,
 };
-use dreadstep_content::starter_floor;
-use dreadstep_core::{ActorId, Position};
+use std::collections::BTreeMap;
+
+use dreadstep_content::{starter_floor, starter_item_floor};
+use dreadstep_core::{ActorId, ItemId, Position};
+
+type TileProjection = BTreeMap<(i32, i32), (Entity, SceneTile)>;
+type ActorProjection = BTreeMap<ActorId, (Entity, SceneActor)>;
+type GroundProjection = BTreeMap<ItemId, (Entity, SceneGroundItem)>;
+type InventoryProjection = BTreeMap<ItemId, (Entity, SceneInventoryItem)>;
 
 fn viewport_app(actor: ActorId, width: u32, height: u32) -> App {
   let mut app = App::new();
@@ -43,6 +51,64 @@ fn edge_viewport_app(width: u32, height: u32) -> App {
   app.insert_resource(ButtonInput::<KeyCode>::default());
   app.add_plugins(PresentationPlugin);
   app
+}
+
+fn item_viewport_app(actor: ActorId, width: u32, height: u32) -> App {
+  let mut world = starter_item_floor().expect("item content should validate");
+  world
+    .drop_item(ActorId::new(1), ItemId::new(101))
+    .expect("starter item should be owned");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(actor));
+  app.insert_resource(PresentationFocus::new(actor));
+  app.insert_resource(PresentationCamera::new(actor));
+  app.insert_resource(
+    PresentationViewport::new(width, height).expect("viewport dimensions should be non-zero"),
+  );
+  app.insert_resource(ButtonInput::<KeyCode>::default());
+  app.add_plugins(PresentationPlugin);
+  app
+}
+
+fn complete_scene_projection(
+  app: &mut App,
+) -> (
+  TileProjection,
+  ActorProjection,
+  GroundProjection,
+  InventoryProjection,
+) {
+  let world = app.world_mut();
+  let tiles = {
+    let mut query = world.query::<(Entity, &SceneTile)>();
+    query
+      .iter(world)
+      .map(|(entity, tile)| ((tile.position().x(), tile.position().y()), (entity, *tile)))
+      .collect()
+  };
+  let actors = {
+    let mut query = world.query::<(Entity, &SceneActor)>();
+    query
+      .iter(world)
+      .map(|(entity, actor)| (actor.id(), (entity, *actor)))
+      .collect()
+  };
+  let ground = {
+    let mut query = world.query::<(Entity, &SceneGroundItem)>();
+    query
+      .iter(world)
+      .map(|(entity, item)| (item.id(), (entity, *item)))
+      .collect()
+  };
+  let inventory = {
+    let mut query = world.query::<(Entity, &SceneInventoryItem)>();
+    query
+      .iter(world)
+      .map(|(entity, item)| (item.id(), (entity, *item)))
+      .collect()
+  };
+  (tiles, actors, ground, inventory)
 }
 
 fn viewport_entities(app: &mut App) -> Vec<(Entity, SceneViewport)> {
@@ -129,15 +195,25 @@ fn oversized_viewport_shrinks_to_the_complete_map() {
 
 #[test]
 fn changing_controlled_actor_updates_viewport_center() {
-  let mut app = viewport_app(ActorId::new(1), 3, 3);
+  let mut app = item_viewport_app(ActorId::new(1), 3, 3);
   app.update();
   let before = viewport_entities(&mut app)[0].0;
+  let before_snapshot = app.world().resource::<PresentationRuntime>().snapshot();
+  let before_digest = app
+    .world()
+    .resource::<PresentationRuntime>()
+    .replay_digest();
+  let before_scene = complete_scene_projection(&mut app);
   app.insert_resource(PresentationInput::new(ActorId::new(2)));
 
   app.update();
 
   assert_viewport(&mut app, Some(Position::new(4, 0)), 3, 3);
   assert_eq!(viewport_entities(&mut app)[0].0, before);
+  let runtime = app.world().resource::<PresentationRuntime>();
+  assert_eq!(runtime.snapshot(), before_snapshot);
+  assert_eq!(runtime.replay_digest(), before_digest);
+  assert_eq!(complete_scene_projection(&mut app), before_scene);
 }
 
 #[test]
@@ -178,6 +254,39 @@ fn duplicate_viewports_are_deduplicated_deterministically() {
 }
 
 #[test]
+fn recycled_lower_entity_index_does_not_replace_the_retained_viewport() {
+  let mut app = viewport_app(ActorId::new(1), 3, 3);
+  app.update();
+  let stable = viewport_entities(&mut app)[0].0;
+  let tile_to_recycle = {
+    let world = app.world_mut();
+    let mut query = world.query::<(Entity, &SceneTile)>();
+    query
+      .iter(world)
+      .map(|(entity, _)| entity)
+      .find(|entity| *entity != stable)
+      .expect("starter scene should have a tile to recycle")
+  };
+  app.world_mut().despawn(tile_to_recycle);
+  let duplicate_component = viewport_entities(&mut app)[0].1;
+  let recycled_entity = Entity::from_index_and_generation(
+    tile_to_recycle.index(),
+    tile_to_recycle.generation().after_versions(1),
+  );
+  let duplicate = app
+    .world_mut()
+    .spawn_at(recycled_entity, duplicate_component)
+    .expect("despawned index should accept its next generation")
+    .id();
+  assert_ne!(stable, duplicate);
+  assert!(duplicate.index() < stable.index());
+
+  app.update();
+
+  assert_eq!(viewport_entities(&mut app)[0].0, stable);
+}
+
+#[test]
 fn missing_viewport_resource_preserves_existing_projection() {
   let mut app = viewport_app(ActorId::new(1), 3, 3);
   app.update();
@@ -202,14 +311,35 @@ fn missing_camera_resource_preserves_existing_projection() {
 }
 
 #[test]
-fn missing_runtime_or_input_is_a_safe_noop() {
+fn missing_runtime_preserves_viewport_projection() {
   let mut app = viewport_app(ActorId::new(1), 3, 3);
   app.update();
+  let before_resource = *app.world().resource::<PresentationViewport>();
   let before = viewport_entities(&mut app);
   app.world_mut().remove_resource::<PresentationRuntime>();
+
+  app.update();
+
+  assert_eq!(
+    *app.world().resource::<PresentationViewport>(),
+    before_resource
+  );
+  assert_eq!(viewport_entities(&mut app), before);
+}
+
+#[test]
+fn missing_input_preserves_viewport_projection() {
+  let mut app = viewport_app(ActorId::new(1), 3, 3);
+  app.update();
+  let before_resource = *app.world().resource::<PresentationViewport>();
+  let before = viewport_entities(&mut app);
   app.world_mut().remove_resource::<PresentationInput>();
 
   app.update();
 
+  assert_eq!(
+    *app.world().resource::<PresentationViewport>(),
+    before_resource
+  );
   assert_eq!(viewport_entities(&mut app), before);
 }
