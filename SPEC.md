@@ -662,14 +662,49 @@ Out of scope:
 - item, teleport, map mutation after creation, persistence, wire serialization, MCP
   transport/runtime, interactive input, and replay playback.
 
+### Milestone 2 slice: opaque tester item ownership
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Define the smallest canonical item contract needed for tester injection without inventing gameplay
+effects. Core owns globally unique `ItemId` values, opaque `ItemDefinitionId` content references,
+and an ordered item list on each actor. `WorldState::give_item` validates the target actor and
+global item identity; `dreadstep-mcp::Session::give_item` performs typed conversion only. Item
+ownership appears in deterministic digests and actor snapshots, while successful tester injection
+does not enter player history or replay evidence.
+
+Acceptance:
+
+- A valid typed item can be given to any existing actor record and appears in that actor's stable
+  inventory projection and world digest.
+- Unknown actors and globally duplicate item identities return typed world errors atomically.
+- Item order is insertion order and remains deterministic across equivalent worlds and snapshots.
+- The slice defines no item effect, equipment slot, pickup/drop command, identification rule,
+  content catalog, transfer operation, or inventory capacity; those remain future contracts.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-protocol -p dreadstep-mcp --all-targets
+  --all-features --locked` passes.
+- Focused Clippy for the core, protocol, and MCP crates passes with `-D warnings`.
+- `scripts/verify.sh` passes before handoff.
+- `git diff --check` passes, and the single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- item effects, equipment, pickup/drop/transfer, identification, content catalogs, inventory
+  capacity, teleport, persistence, wire serialization, MCP transport/runtime, interactive input,
+  and replay playback.
+
 ## Future
 
-### Deferred tester capability: item injection
+### Deferred item gameplay semantics
 
-The proposal lists `give_item` as a future tester tool, but the repository does not yet define a
-canonical item identity, inventory ownership model, content schema, capacity rule, or item effect
-semantics. Keep item injection out of the tester surface until those core contracts are specified;
-adding an adapter-only item token would create a second source of game truth.
+The opaque ownership slice intentionally does not define item effects, equipment, identification,
+capacity, transfer, or content catalogs. These contracts must be specified in core before adding
+gameplay-facing item commands or richer tester operations.
 
 ### Milestone 1: Rules kernel
 

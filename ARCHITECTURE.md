@@ -124,6 +124,11 @@ its tiles and actor specs into `GridMap` and `Actor` values, then delegates all 
 validation to `WorldState::new` before replacing the session. Failed construction is atomic;
 successful replacement preserves the seed and starts a fresh in-memory replay trace.
 
+Opaque tester item ownership crosses the boundary as typed `ItemId` and `ItemDefinitionId` values.
+Core owns global identity uniqueness, ordered actor inventories, digest inclusion, and snapshot
+projection; MCP only converts the request to `WorldState::give_item`. Effects, equipment, capacity,
+transfer, and content catalogs remain outside this slice so no adapter invents item truth.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

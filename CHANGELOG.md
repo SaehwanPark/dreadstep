@@ -41,6 +41,8 @@ All notable contributor- and user-visible project changes are recorded here.
   scheduler-safe reanimation, with typed protocol error projection.
 - Typed in-memory tester scenario replacement backed by core map and world validation, with
   atomic failure and a fresh replay trace for the preserved seed.
+- Opaque typed tester item ownership with deterministic actor inventory snapshots and duplicate
+  identity validation; gameplay effects and inventory capacity remain deferred.
 
 ### Changed
 
