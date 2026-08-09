@@ -2301,12 +2301,11 @@ Out of scope:
 - Texture handles, asset loading, render plugins, transforms, windowing, audio playback, committed
   binaries, gameplay rules, persistence, transport, and dependencies.
 
-## Present
-
 ### Milestone 3 slice: deterministic placeholder render-node bootstrap
 
-- Status: active
+- Status: verified
 - Started: 2026-08-10
+- Completed: 2026-08-10
 
 Reconcile stable ECS placeholder nodes from the verified typed render-command plan. This is the
 first renderer-facing node boundary: node entities retain source mirror identity, typed key, layer,
@@ -2326,13 +2325,25 @@ Acceptance:
   loading, OS window, render plugin, transform, audio playback, animation, gameplay rule,
   persistence, transport, dependency, or committed media binary is introduced.
 
-Verification target:
+Verification:
 
-- Focused render-bootstrap tests prove ordered placeholder nodes, stable source/layer identity across
-  dead-role refresh, stale cleanup, independent authority/resource guards, and inventory-unplaced
-  metadata.
-- All Bevy targets, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
-  `scripts/verify.sh` pass before the single-reviewer handoff.
+- Focused `cargo test -p dreadstep-bevy --test render_bootstrap --locked` passes all six tests
+  covering ordered placeholder nodes, complete command metadata, stable source/layer identity,
+  stale inventory cleanup with despawn, co-located source mirrors, and independent authority/resource
+  guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic reviewer reports PASS on final evidence revision `ab9b576` (initial
+  implementation `0915b70`); Linux, Apple Silicon macOS, and Windows CI are green. PR #67 merged
+  as `595529f`; this docs-only closeout is reviewed separately.
+
+Out of scope:
+
+- Production Sprite components, texture handles, asset loading, render plugins, OS windows,
+  transforms, audio playback, animation, gameplay rules, persistence, transport, dependencies, and
+  committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 
