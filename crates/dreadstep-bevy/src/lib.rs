@@ -2203,10 +2203,10 @@ impl PresentationRuntime {
 ///
 /// Runtime-backed scene projections are a safe no-op until [`PresentationRuntime`] is inserted by
 /// the application, so app construction can install plugins before selecting or restoring a run.
-/// Typed configuration projections, including [`PresentationWindow`] to [`SceneWindow`], remain
-/// independently authoritative and synchronize whenever their resources are present. Keyboard
-/// dispatch is also optional: it runs only when the app provides [`PresentationInput`] and
-/// `ButtonInput<KeyCode>` resources.
+/// Typed configuration projections, including [`PresentationWindow`] to [`SceneWindow`],
+/// synchronize independently whenever their authoritative configuration resources are present;
+/// the disposable scene entities remain mirrors. Keyboard dispatch is also optional: it runs only
+/// when the app provides [`PresentationInput`] and `ButtonInput<KeyCode>` resources.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct PresentationPlugin;
 
