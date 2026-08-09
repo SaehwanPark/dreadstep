@@ -2585,9 +2585,9 @@ explicit core contract.
 
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
-Bevy Sprite API and ECS Sprite attachment boundaries. The remaining renderer work in the proposal
-still defines these future product milestones; each needs its own bounded acceptance slice before it
-can move into `Past`:
+Bevy Sprite API, ECS Sprite attachment, and typed Sprite-transform projection boundaries. The
+remaining renderer work in the proposal still defines these future product milestones; each needs
+its own bounded acceptance slice before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
