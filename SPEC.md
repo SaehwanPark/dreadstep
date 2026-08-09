@@ -2746,12 +2746,11 @@ Out of scope:
   texture or production asset loading, audio playback, animation, gameplay rules, persistence,
   transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: headless ECS Window configuration attachment
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Enable only Bevy's `bevy_window` API feature and mirror the validated `PresentationWindow` request
 onto one retained disposable `SceneWindow` projection entity carrying Bevy's `Window` component.
@@ -2776,12 +2775,22 @@ Verification target:
 - Focused `cargo test -p dreadstep-bevy --test window_attachment --locked` proves request mapping,
   default policy, the large-scale `u32`→`f32` adapter boundary, refresh/identity, duplicate cleanup
   including stale-entity despawn, missing-request preservation, and authority.
+- Focused `window_attachment` passes 5/5; all Bevy targets, warning-denied all-target/all-feature
+  Clippy, warning-denied workspace Rustdoc, formatting, repository checks, `git diff --check`, and
+  `scripts/verify.sh` pass locally. Anchored media checks keep local binaries ignored while tracked
+  concept art and the root screenshot exception remain visible.
+- Exactly one semantic reviewer reports PASS on final reviewed evidence revision `a5df7f8`
+  (implementation `0ce63ab`, bounded correction `7095e2d`, final authority correction `a5df7f8`);
+  Linux, Apple Silicon macOS, and Windows CI are green on PR #78 (run `31340803500`). The
+  docs-only closeout is reviewed separately.
 
 Out of scope:
 
 - OS window creation, winit/default-platform integration, render plugins/backends, camera policy,
   transforms, visibility/fog, asset/audio loading or playback, animation, gameplay, persistence,
   transport, and committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 
@@ -2798,9 +2807,10 @@ explicit core contract.
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
 Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, ECS Sprite-transform
-attachment, deterministic ECS Sprite-depth boundaries, centered ECS Sprite-transform and headless
-ECS Camera2d boundaries. The remaining renderer work in the proposal still defines these future
-product milestones; each needs its own bounded acceptance slice before it can move into `Past`:
+attachment, deterministic ECS Sprite-depth boundaries, centered ECS Sprite-transform, headless
+ECS Camera2d, and headless ECS Window-configuration boundaries. The remaining renderer work in the
+proposal still defines these future product milestones; each needs its own bounded acceptance slice
+before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
