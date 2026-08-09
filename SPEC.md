@@ -1298,8 +1298,6 @@ Out of scope:
 - Player pickup/drop commands, item effects, equipment, capacity, identification, rendering,
   sprites, camera policy, HUD, visibility, persistence, transport, and new gameplay rules.
 
-## Future
-
 ### Milestone 3 slice: deterministic headless inventory-item scene projection
 
 - Status: active
@@ -1337,6 +1335,8 @@ Out of scope:
 
 - Player inventory commands, item effects, equipment, capacity, identification, rendering, sprites,
   camera policy, HUD widgets, visibility, persistence, transport, and new gameplay rules.
+
+## Future
 
 ### Milestone 4 slice: deterministic content item-definition catalog
 

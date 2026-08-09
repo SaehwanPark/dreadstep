@@ -166,6 +166,47 @@ fn keyed_inventory_items(
     .collect()
 }
 
+fn inventory_data(scene: &mut World) -> BTreeMap<ItemId, (ActorId, ItemDefinitionId, usize)> {
+  keyed_inventory_items(scene)
+    .into_iter()
+    .map(|(item_id, (_, owner, definition, index))| (item_id, (owner, definition, index)))
+    .collect()
+}
+
+fn initial_inventory_data() -> BTreeMap<ItemId, (ActorId, ItemDefinitionId, usize)> {
+  BTreeMap::from([
+    (
+      ItemId::new(4),
+      (ActorId::new(1), ItemDefinitionId::new(104), 0),
+    ),
+    (
+      ItemId::new(5),
+      (ActorId::new(1), ItemDefinitionId::new(105), 1),
+    ),
+    (
+      ItemId::new(6),
+      (ActorId::new(2), ItemDefinitionId::new(106), 0),
+    ),
+  ])
+}
+
+fn transferred_inventory_data() -> BTreeMap<ItemId, (ActorId, ItemDefinitionId, usize)> {
+  BTreeMap::from([
+    (
+      ItemId::new(4),
+      (ActorId::new(2), ItemDefinitionId::new(104), 1),
+    ),
+    (
+      ItemId::new(5),
+      (ActorId::new(1), ItemDefinitionId::new(105), 0),
+    ),
+    (
+      ItemId::new(6),
+      (ActorId::new(2), ItemDefinitionId::new(106), 0),
+    ),
+  ])
+}
+
 #[test]
 fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
   let mut state = PresentationState::start_run(7).expect("content should validate");
@@ -311,61 +352,14 @@ fn sync_projects_complete_ground_items_and_preserves_item_identity() {
 #[test]
 fn sync_projects_complete_inventory_items_and_updates_owner_and_order() {
   let full = PresentationState::new(7, inventory_world()).snapshot();
-  let expected_inventories = vec![
-    (
-      ActorId::new(1),
-      vec![
-        (ItemId::new(4), ItemDefinitionId::new(104)),
-        (ItemId::new(5), ItemDefinitionId::new(105)),
-      ],
-    ),
-    (
-      ActorId::new(2),
-      vec![(ItemId::new(6), ItemDefinitionId::new(106))],
-    ),
-  ];
-  let actual_inventories: Vec<_> = full
-    .actors()
-    .iter()
-    .filter_map(|actor| {
-      let items: Vec<_> = actor
-        .inventory()
-        .iter()
-        .map(|item| (item.id(), item.definition()))
-        .collect();
-      (!items.is_empty()).then_some((actor.id(), items))
-    })
-    .collect();
-  assert_eq!(actual_inventories, expected_inventories);
-
   let mut scene = World::new();
   sync_scene(&mut scene, &full);
   let before_tiles = keyed_tiles(&mut scene);
   let before_actors = keyed_actors(&mut scene);
   let before_ground = keyed_ground_items(&mut scene);
   let before_inventory = keyed_inventory_items(&mut scene);
-  let expected_projection = BTreeMap::from([
-    (
-      ItemId::new(4),
-      (ActorId::new(1), ItemDefinitionId::new(104), 0),
-    ),
-    (
-      ItemId::new(5),
-      (ActorId::new(1), ItemDefinitionId::new(105), 1),
-    ),
-    (
-      ItemId::new(6),
-      (ActorId::new(2), ItemDefinitionId::new(106), 0),
-    ),
-  ]);
-  let actual_projection: BTreeMap<_, _> = before_inventory
-    .iter()
-    .map(|(item_id, (_, owner, definition, index))| (*item_id, (*owner, *definition, *index)))
-    .collect();
-  assert_eq!(actual_projection, expected_projection);
+  assert_eq!(inventory_data(&mut scene), initial_inventory_data());
 
-  let item_five_entity = before_inventory[&ItemId::new(5)].0;
-  let item_four_entity = before_inventory[&ItemId::new(4)].0;
   let mut updated_world = inventory_world();
   updated_world
     .transfer_item(ActorId::new(1), ActorId::new(2), ItemId::new(4))
@@ -374,24 +368,10 @@ fn sync_projects_complete_inventory_items_and_updates_owner_and_order() {
   sync_scene(&mut scene, &updated);
 
   let updated_inventory = keyed_inventory_items(&mut scene);
-  assert_eq!(updated_inventory[&ItemId::new(5)].0, item_five_entity);
-  assert_eq!(
-    (
-      updated_inventory[&ItemId::new(5)].1,
-      updated_inventory[&ItemId::new(5)].2,
-      updated_inventory[&ItemId::new(5)].3,
-    ),
-    (ActorId::new(1), ItemDefinitionId::new(105), 0)
-  );
-  assert_eq!(updated_inventory[&ItemId::new(4)].0, item_four_entity);
-  assert_eq!(
-    (
-      updated_inventory[&ItemId::new(4)].1,
-      updated_inventory[&ItemId::new(4)].2,
-      updated_inventory[&ItemId::new(4)].3,
-    ),
-    (ActorId::new(2), ItemDefinitionId::new(104), 1)
-  );
+  assert_eq!(inventory_data(&mut scene), transferred_inventory_data());
+  for item_id in [ItemId::new(4), ItemId::new(5), ItemId::new(6)] {
+    assert_eq!(updated_inventory[&item_id].0, before_inventory[&item_id].0);
+  }
   assert_eq!(keyed_tiles(&mut scene), before_tiles);
   assert_eq!(keyed_actors(&mut scene), before_actors);
   assert_eq!(keyed_ground_items(&mut scene), before_ground);
@@ -399,8 +379,9 @@ fn sync_projects_complete_inventory_items_and_updates_owner_and_order() {
   let reduced = PresentationState::new(7, ground_world()).snapshot();
   sync_scene(&mut scene, &reduced);
   assert_eq!(scene.query::<&SceneInventoryItem>().iter(&scene).count(), 0);
-  assert!(scene.get_entity(item_four_entity).is_err());
-  assert!(scene.get_entity(item_five_entity).is_err());
+  for (entity, _, _, _) in before_inventory.values() {
+    assert!(scene.get_entity(*entity).is_err());
+  }
   assert_eq!(keyed_tiles(&mut scene), before_tiles);
   assert_eq!(keyed_actors(&mut scene), before_actors);
   assert_eq!(keyed_ground_items(&mut scene), before_ground);
