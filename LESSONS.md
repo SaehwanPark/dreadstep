@@ -68,3 +68,16 @@ Update an existing lesson instead of adding a duplicate.
   consume all supported just-pressed keys for that frame before delegating to core.
 - Prevention: Treat input collection as unordered observation; define ordering at the adapter
   boundary and test simultaneous keys plus next-update consumption headlessly.
+
+## Clear stale adapter feedback on rejection
+
+- Context: Future HUD and message systems need the latest accepted event/snapshot without reading ECS
+  mirrors or duplicating core state.
+- Symptom: Leaving the previous output pending after a rejected command can make consumers display a
+  successful event as if it belonged to the rejected action.
+- Cause: Adapter feedback is temporal evidence, while core rejection is intentionally atomic and
+  produces no new `PresentationOutput`.
+- Resolution: Clear the runtime's optional output before every command; publish only accepted output
+  and expose explicit one-shot consumption through `take_output`.
+- Prevention: Keep feedback owned by the adapter, tie it to accepted command results only, and test
+  startup emptiness, exact accepted evidence, one-shot reads, and rejection clearing.

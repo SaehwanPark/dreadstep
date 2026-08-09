@@ -323,6 +323,7 @@ impl PresentationState {
 #[derive(Debug, Eq, PartialEq, Resource)]
 pub struct PresentationRuntime {
   state: PresentationState,
+  output: Option<PresentationOutput>,
 }
 
 impl PresentationRuntime {
@@ -334,13 +335,17 @@ impl PresentationRuntime {
   pub fn start_run(seed: u64) -> Result<Self, ContentError> {
     Ok(Self {
       state: PresentationState::start_run(seed)?,
+      output: None,
     })
   }
 
   /// Wraps an already validated presentation state as an app resource.
   #[must_use]
   pub fn new(state: PresentationState) -> Self {
-    Self { state }
+    Self {
+      state,
+      output: None,
+    }
   }
 
   /// Returns the explicit seed preserved by the runtime.
@@ -361,14 +366,29 @@ impl PresentationRuntime {
     self.state.replay_digest()
   }
 
+  /// Returns the latest accepted command output without consuming it.
+  #[must_use]
+  pub const fn output(&self) -> Option<&PresentationOutput> {
+    self.output.as_ref()
+  }
+
+  /// Takes the latest accepted command output, if one is pending.
+  pub fn take_output(&mut self) -> Option<PresentationOutput> {
+    self.output.take()
+  }
+
   /// Delegates one command to the wrapped presentation state and core simulation.
   ///
   /// # Errors
   ///
   /// Returns the core [`CommandError`] when the command is rejected. Rejected commands do not
-  /// mutate the runtime or replay trace.
+  /// mutate the core world or replay trace, and clear any stale output so consumers never observe
+  /// an earlier command as feedback for a rejected one.
   pub fn execute(&mut self, command: Command) -> Result<PresentationOutput, CommandError> {
-    self.state.execute(command)
+    self.output = None;
+    let output = self.state.execute(command)?;
+    self.output = Some(output.clone());
+    Ok(output)
   }
 }
 

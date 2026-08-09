@@ -69,6 +69,8 @@ All notable contributor- and user-visible project changes are recorded here.
   core-backed snapshots into the scene after each app update without desktop engine features.
 - Deterministic headless keyboard dispatch with explicit controlled-actor selection, fixed key
   priority, one-command-per-update consumption, and same-update scene projection.
+- A one-shot `PresentationRuntime` feedback buffer for accepted typed event/snapshot evidence, with
+  stale-output clearing on rejected commands and no new authoritative state.
 
 ### Changed
 
