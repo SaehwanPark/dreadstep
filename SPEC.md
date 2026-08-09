@@ -664,6 +664,13 @@ Out of scope:
 
 ## Future
 
+### Deferred tester capability: item injection
+
+The proposal lists `give_item` as a future tester tool, but the repository does not yet define a
+canonical item identity, inventory ownership model, content schema, capacity rule, or item effect
+semantics. Keep item injection out of the tester surface until those core contracts are specified;
+adding an adapter-only item token would create a second source of game truth.
+
 ### Milestone 1: Rules kernel
 
 Implement the deterministic headless simulation described in the proposal: typed world
