@@ -26,7 +26,8 @@ and keyboard-to-core command translation. The completed Milestone 2 MCP observat
 history, replay, and tester operations remain available. Windowing, rendering assets, animation,
 HUD, audio, fog of war, multiple floors, and gameplay-facing item effects remain deferred. The
 typed headless `SceneFocus` marker reuses the existing keyed actor projection; camera transforms
-and marker visuals remain deferred.
+and marker visuals remain deferred. The deterministic content-owned opaque item-definition catalog
+is now verified; item gameplay semantics remain deferred.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

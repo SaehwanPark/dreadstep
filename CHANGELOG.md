@@ -75,6 +75,8 @@ All notable contributor- and user-visible project changes are recorded here.
   future camera systems without adding viewport, visibility, or rendering policy.
 - A typed headless `SceneFocus` marker that reuses the stable keyed actor entity for future camera
   or selection systems without copying actor state or adding marker visuals.
+- A deterministic content-owned catalog of opaque item-definition identities with duplicate
+  validation, while item gameplay semantics remain deferred.
 
 ### Changed
 

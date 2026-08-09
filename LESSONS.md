@@ -100,3 +100,17 @@ Update an existing lesson instead of adding a duplicate.
   extending focus into ECS, attach only a marker to the already keyed actor entity, guard input,
   focus, and runtime independently, clear stale markers only with an authoritative snapshot, and
   remove old markers before inserting the new target.
+
+## Keep opaque item identity separate from content membership
+
+- Context: Tester item ownership now has typed opaque `ItemDefinitionId` references, while future
+  authored content needs deterministic known-definition membership.
+- Symptom: Letting adapters or `WorldState` invent catalog entries would duplicate content truth or
+  silently turn an authoring list into gameplay validation.
+- Cause: Core owns item instances, ownership, digests, and snapshots; content owns authored
+  definition membership, and the two lifecycles do not have the same authority or timing.
+- Resolution: Keep an ordered `ItemCatalogDefinition` and validated immutable `ItemCatalog` in
+  `dreadstep-content`; reject duplicate IDs there and expose only read-only membership. Do not
+  inject the catalog into `WorldState` or add effects, equipment, or player commands.
+- Prevention: Treat catalogs as authoring data, use typed opaque IDs and deterministic declaration
+  order, and require a later core contract before adding gameplay semantics or richer operations.
