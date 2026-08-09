@@ -36,7 +36,7 @@ remain core/tester-only. Authored starter-floor item placements are verified: op
 opaque instances delegate identity and inventory validation to core, while the default starter
 floor remains item-free. The verified content slice also binds placements to an explicit
 item-definition catalog before core world construction; catalog data remains authoring-only. A
-separate deterministic starter-item scenario is now active as a reusable non-default content
+separate deterministic starter-item scenario is verified as a reusable non-default content
 fixture; it does not add item gameplay semantics.
 
 The long-term design and roadmap are in

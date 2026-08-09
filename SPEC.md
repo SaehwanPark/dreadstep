@@ -1340,14 +1340,14 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic authored starter-item scenario
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
-Add a reusable, non-default starter-floor scenario that exercises the verified catalog-bound
-placement path. `starter_item_floor_definition()` binds the existing starter item catalog and
-declares a small deterministic set of opaque item instances in actor inventory order;
-`starter_item_floor()` builds that definition into a core world. The existing `starter_floor()`
-scenario remains item-free and unchanged.
+The reusable, non-default starter-floor scenario is complete. `starter_item_floor_definition()`
+binds the existing starter item catalog and declares a small deterministic set of opaque item
+instances in actor inventory order; `starter_item_floor()` builds that definition into a core world.
+The existing `starter_floor()` scenario remains item-free and unchanged.
 
 Acceptance:
 
@@ -1361,14 +1361,17 @@ Acceptance:
 - The helper remains content-owned and independent of Bevy, MCP, transport, persistence,
   serialization, rendering, and player/tester item commands.
 
-Verification target:
+Verification:
 
 - Focused content tests assert complete item data, interleaved declaration order, repeatability,
-  item-free ground state, and preservation of the default item-free scenario.
-- `cargo test -p dreadstep-content --test starter_items --all-features --locked`, all content
-  targets, focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass.
-- Exactly one semantic code reviewer reports PASS on the implementation revision, and Linux,
-  Apple Silicon macOS, and Windows CI are green for that revision.
+  item-free ground state, exact canonical map/actor/scheduler reuse, and preservation of the
+  default item-free scenario.
+- `cargo test -p dreadstep-content --test starter_items --all-features --locked` passes all five
+  focused tests; `cargo test -p dreadstep-content --all-targets --all-features --locked` passes
+  all ten content tests. Focused Clippy with `-D warnings`, content Cargo docs, formatting,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `e9f5810`, and
+  Linux, Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
