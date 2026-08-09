@@ -19,63 +19,32 @@ not need to care about the testing architecture to enjoy it.
 
 Dreadstep is continuing Milestone 3: the human presentation boundary.
 
-- Verified simulation and agent foundations: deterministic core rules, replay evidence, headless
-  CLI, protocol/MCP observation and actions, tester operations, and stdio tools.
-- Verified headless Bevy bridge: shared authored floors, runtime/app projection, keyboard dispatch,
-  feedback evidence, focus, scene focus, camera, viewport, tile/actor, ground-item, and
-  inventory-item projections, typed `PresentationHud` actor status, and ordered typed
-  `PresentationMessages` for every current core event, plus typed `PresentationAudioCues`
-  placeholders preserving event order without loading assets or enabling playback, plus typed
-  `SceneSpriteRole` metadata classifying terrain, living actors, dead records, and item mirrors
-  without textures, assets, or rendering plugins.
-- Verified animation boundary: typed `PresentationAnimationCues` preserves movement and combat
-  event order without timers, interpolation, textures, or rendering plugins.
-- Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
-  placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
-  startup. The default `start_run` remains item-free.
-- Verified deterministic single-slot equipment: scheduled typed equip/unequip commands, ordered
-  replacement events, digest/replay/snapshot evidence, tester guards against moving equipped items,
-  protocol/MCP projections, and a typed Bevy `SceneActor` field. Item effects, modifiers, capacity,
-  and additional slots remain deferred.
-- Verified deterministic single-item consumption: scheduled `UseItem` removes one owned,
-  unequipped instance, advances one standard action, and emits typed core/protocol/MCP/Bevy
-  evidence with atomic ownership/equipment guards; effects, stat changes, capacity, and richer
-  item semantics remain outside this preparation slice.
-- Verified window boundary: validated typed logical dimensions and integer pixel scale for a future
-  desktop client without creating an OS window or enabling desktop features.
-- Verified scene placement boundary: caller-selected logical tile extents project checked pixel
-  origins onto terrain, actor, and ground-item mirrors while inventory items remain unplaced; the
-  native sample evidence supports a 32×32 working size and no rendering is enabled.
-- Verified asset evaluation: local candidates, provenance, and the local-only media policy are
-  recorded in [`asset-evaluation.md`](docs/presentation/asset-evaluation.md). The Kenney CC0 pack
-  is a reusable fallback and UI audio is only a fallback; dungeon combat/movement/item audio remains
-  open.
-- Verified tile-size evidence: exact 24×24/32×32 nearest-neighbor samples and the provisional 32×32
-  working-size decision are recorded in [`tile-samples.md`](docs/presentation/tile-samples.md).
-- Verified render-boundary projection: ordered typed `PresentationRenderProjection` entries preserve
-  complete terrain, actor, ground-item, and inventory mirrors, deterministic retained entities,
-  per-kind 32×32 placement, and inventory-unplaced semantics without render plugins, textures,
-  asset loading, or playback.
-- Verified typed sprite-key projection: `SceneSpriteKey` and `PresentationSpriteProjection` map
-  complete render entries to stable terrain/actor/item selectors while retaining entities, roles, and
-  placement metadata; texture loading, render plugins, transforms, and media remain deferred.
-- Verified deterministic render-command plan: `PresentationRenderCommandPlan` derives typed layer,
-  source-order, and optional pixel-placement metadata from sprite entries for a future renderer;
-  texture loading, render plugins, transforms, windows, and media remain deferred.
-- Verified placeholder render-node bootstrap: `PresentationRenderNodeProjection` reconciles stable
-  ECS nodes from typed commands with deterministic placeholder families; actual Sprite components,
-  render plugins, windows, texture loading, animation, audio, and media remain deferred.
-- Verified local-only asset manifest: `PresentationAssetManifest` validates one anchored reference
-  per placeholder family and `PresentationRenderAssetProjection` joins those references to stable
-  node metadata without loading files or creating asset handles; pixel-art/audio binaries remain
-  ignored local files with provenance kept in tracked documents.
-- Verified local-only audio cue manifest: `PresentationAudioAssetManifest` binds all eight typed cue
-  families to validated `audio/` references and `PresentationAudioAssetProjection` preserves cue
-  payload/order without loading files, creating handles, enabling playback, or adding an audio
-  backend.
-- Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
-  message presentation, audio assets/playback, fog of war, multiple floors, and richer gameplay
-  item semantics such as effects, modifiers, capacity, and additional slots.
+- Verified foundations
+  - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
+    actions, tester operations, and stdio tools.
+  - Opaque item ownership, catalog binding, authored starter placements, deterministic starter-item
+    content, tester transfer/drop/pickup, and Bevy item-run startup; default `start_run` remains
+    item-free.
+  - Scheduled single-slot equipment and single-item consumption contracts with digest/replay/
+    snapshot evidence, protocol/MCP projections, atomic tester/player guards, and typed Bevy scene
+    and cue projections; effects, modifiers, capacity, and richer item semantics remain deferred.
+- Verified headless Bevy boundary
+  - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,
+    focus, scene focus, camera, viewport, tile/actor/ground/inventory mirrors, typed HUD status,
+    ordered messages, audio cues, animation cues, and sprite-role metadata.
+  - Caller-selected checked pixel placement, native 24×24/32×32 evidence with a provisional 32×32
+    working size, and complete ordered render/sprite-key/command/node projections.
+  - Local-only pixel-art and audio manifests preserve typed placeholder/cue metadata without file
+    loading, asset handles, playback, or render plugins; media binaries remain ignored.
+- Verified Sprite API boundary
+  - `PresentationBevySpriteProjection` derives deterministic solid-color `Sprite` values with
+    optional 32×32 sizing from stable placeholder nodes while preserving inventory-unplaced and
+    authority-guard semantics; no Sprite/render plugin or production image is loaded.
+- Still deferred
+  - Windowing, Sprite/render plugins, production textures/assets, transforms/cameras, animation
+    playback, HUD widgets, event/combat message presentation, audio assets/playback, fog of war,
+    multiple floors, and richer gameplay item semantics such as effects, modifiers, capacity, and
+    additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

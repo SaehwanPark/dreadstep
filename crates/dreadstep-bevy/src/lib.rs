@@ -10,6 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::app::{App, Plugin, Update};
+use bevy::color::Color;
 use bevy::ecs::{
   component::Component,
   entity::Entity,
@@ -18,6 +19,8 @@ use bevy::ecs::{
   world::World,
 };
 use bevy::input::{ButtonInput, keyboard::KeyCode};
+use bevy::math::Vec2;
+use bevy::sprite::Sprite;
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
@@ -300,6 +303,15 @@ impl PresentationTileSize {
       x: x.checked_mul(self.width)?,
       y: y.checked_mul(self.height)?,
     })
+  }
+
+  fn sprite_size(self) -> Vec2 {
+    // Bevy's Sprite API stores custom dimensions as f32; the selected presentation tile sizes
+    // are small logical pixel extents (24×24/32×32), so this adapter conversion is intentional.
+    #[allow(clippy::cast_precision_loss)]
+    {
+      Vec2::new(self.width as f32, self.height as f32)
+    }
   }
 }
 
@@ -1411,6 +1423,67 @@ impl PresentationRenderNodeProjection {
   }
 }
 
+/// One placeholder [`Sprite`] value joined to a stable render-node entry.
+///
+/// The Sprite uses a deterministic solid color and an unset/default image handle. It is a
+/// headless API value for a later renderer; no Sprite plugin, texture loading, or transform is
+/// installed by this projection.
+#[derive(Clone, Debug)]
+pub struct SceneBevySpriteEntry {
+  node: SceneRenderNodeEntry,
+  sprite: Sprite,
+}
+
+impl SceneBevySpriteEntry {
+  /// Returns the stable render-node metadata retained by this Sprite value.
+  #[must_use]
+  pub const fn node(&self) -> SceneRenderNodeEntry {
+    self.node
+  }
+
+  /// Returns the deterministic placeholder Sprite value.
+  #[must_use]
+  pub const fn sprite(&self) -> &Sprite {
+    &self.sprite
+  }
+}
+
+impl PartialEq for SceneBevySpriteEntry {
+  fn eq(&self, other: &Self) -> bool {
+    self.node == other.node
+      && self.sprite.image == other.sprite.image
+      && self.sprite.texture_atlas == other.sprite.texture_atlas
+      && self.sprite.color == other.sprite.color
+      && self.sprite.flip_x == other.sprite.flip_x
+      && self.sprite.flip_y == other.sprite.flip_y
+      && self.sprite.custom_size == other.sprite.custom_size
+      && self.sprite.rect == other.sprite.rect
+      && self.sprite.image_mode == other.sprite.image_mode
+  }
+}
+
+/// An ordered, read-only projection of Bevy Sprite API values for a future renderer.
+#[derive(Clone, Debug, Default, PartialEq, Resource)]
+pub struct PresentationBevySpriteProjection {
+  entries: Vec<SceneBevySpriteEntry>,
+}
+
+impl PresentationBevySpriteProjection {
+  /// Creates an empty headless Sprite projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Returns Sprite values in the deterministic render-node order.
+  #[must_use]
+  pub fn entries(&self) -> &[SceneBevySpriteEntry] {
+    &self.entries
+  }
+}
+
 /// One render-node entry joined with its validated local-only asset reference.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SceneRenderAssetEntry {
@@ -2057,6 +2130,7 @@ fn update_presentation(world: &mut World) {
   sync_sprite_projection(world);
   sync_render_command_plan(world);
   sync_render_nodes(world);
+  sync_bevy_sprite_projection(world);
   sync_render_asset_projection(world);
   sync_focus(world);
   sync_scene_focus(world);
@@ -2300,6 +2374,52 @@ fn sync_render_nodes(world: &mut World) {
   world
     .resource_mut::<PresentationRenderNodeProjection>()
     .entries = entries;
+}
+
+fn sync_bevy_sprite_projection(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world
+      .get_resource::<PresentationRenderNodeProjection>()
+      .is_none()
+    || world
+      .get_resource::<PresentationBevySpriteProjection>()
+      .is_none()
+  {
+    return;
+  }
+  let tile_size = world.get_resource::<PresentationTileSize>().copied();
+  let entries = world
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .iter()
+    .copied()
+    .map(|node| SceneBevySpriteEntry {
+      sprite: placeholder_sprite(node.node().placeholder(), tile_size),
+      node,
+    })
+    .collect::<Vec<_>>();
+  world
+    .resource_mut::<PresentationBevySpriteProjection>()
+    .entries = entries;
+}
+
+fn placeholder_sprite(
+  placeholder: SceneRenderPlaceholder,
+  tile_size: Option<PresentationTileSize>,
+) -> Sprite {
+  let color = match placeholder {
+    SceneRenderPlaceholder::Terrain => Color::srgb(0.18, 0.18, 0.18),
+    SceneRenderPlaceholder::Player => Color::srgb(0.1, 0.8, 0.3),
+    SceneRenderPlaceholder::Enemy => Color::srgb(0.8, 0.2, 0.2),
+    SceneRenderPlaceholder::DeadActor => Color::srgb(0.35, 0.35, 0.35),
+    SceneRenderPlaceholder::GroundItem => Color::srgb(0.8, 0.65, 0.15),
+    SceneRenderPlaceholder::InventoryItem => Color::srgb(0.2, 0.5, 0.9),
+  };
+  Sprite {
+    color,
+    custom_size: tile_size.map(PresentationTileSize::sprite_size),
+    ..Default::default()
+  }
 }
 
 fn sync_render_asset_projection(world: &mut World) {
