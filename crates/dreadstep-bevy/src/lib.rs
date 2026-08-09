@@ -413,6 +413,106 @@ impl PresentationAudioCues {
   }
 }
 
+/// A typed animation signal derived from one core semantic event.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PresentationAnimationCue {
+  /// An actor entered a new map position.
+  Moved {
+    /// The actor that moved.
+    actor: ActorId,
+    /// The position before movement.
+    from: Position,
+    /// The position after movement.
+    to: Position,
+  },
+  /// An actor attempted movement but remained in place.
+  MovementBlocked {
+    /// The actor that attempted movement.
+    actor: ActorId,
+    /// The position before the attempt.
+    from: Position,
+    /// The requested destination.
+    to: Position,
+    /// Why the destination could not be entered.
+    reason: BlockReason,
+  },
+  /// An actor spent a standard action without moving.
+  Waited {
+    /// The actor that waited.
+    actor: ActorId,
+    /// The action time at which the wait began.
+    at: ActionTime,
+  },
+  /// A melee attack reduced a target's hit points.
+  Attacked {
+    /// The actor that attacked.
+    attacker: ActorId,
+    /// The actor that was hit.
+    target: ActorId,
+    /// The fixed damage applied.
+    damage: Damage,
+    /// The target's hit points after damage.
+    remaining_hit_points: HitPoints,
+  },
+  /// An actor reached zero hit points.
+  Died {
+    /// The actor that died.
+    actor: ActorId,
+  },
+}
+
+impl PresentationAnimationCue {
+  fn from_event(event: Event) -> Self {
+    match event {
+      Event::Moved { actor, from, to } => Self::Moved { actor, from, to },
+      Event::MovementBlocked {
+        actor,
+        from,
+        to,
+        reason,
+      } => Self::MovementBlocked {
+        actor,
+        from,
+        to,
+        reason,
+      },
+      Event::Waited { actor, at } => Self::Waited { actor, at },
+      Event::Attacked {
+        attacker,
+        target,
+        damage,
+        remaining_hit_points,
+      } => Self::Attacked {
+        attacker,
+        target,
+        damage,
+        remaining_hit_points,
+      },
+      Event::Died { actor } => Self::Died { actor },
+    }
+  }
+}
+
+/// A disposable ordered buffer of typed animation signals from the latest runtime output.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationAnimationCues {
+  cues: Vec<PresentationAnimationCue>,
+}
+
+impl PresentationAnimationCues {
+  /// Creates an empty animation-cue projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self { cues: Vec::new() }
+  }
+
+  /// Returns cues in the core event order of the latest runtime output.
+  #[must_use]
+  pub fn cues(&self) -> &[PresentationAnimationCue] {
+    &self.cues
+  }
+}
+
 /// A typed role for an existing scene mirror, consumed by a future sprite renderer.
 #[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SceneSpriteRole {
@@ -991,6 +1091,7 @@ fn update_presentation(world: &mut World) {
   sync_hud(world);
   sync_messages(world);
   sync_audio_cues(world);
+  sync_animation_cues(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -1361,6 +1462,28 @@ fn sync_audio_cues(world: &mut World) {
     return;
   };
   let Some(mut cues) = world.get_resource_mut::<PresentationAudioCues>() else {
+    return;
+  };
+  cues.cues = projected;
+}
+
+fn sync_animation_cues(world: &mut World) {
+  let Some(projected) = world.get_resource::<PresentationRuntime>().map(|runtime| {
+    runtime
+      .output()
+      .map(|output| {
+        output
+          .events()
+          .iter()
+          .copied()
+          .map(PresentationAnimationCue::from_event)
+          .collect()
+      })
+      .unwrap_or_default()
+  }) else {
+    return;
+  };
+  let Some(mut cues) = world.get_resource_mut::<PresentationAnimationCues>() else {
     return;
   };
   cues.cues = projected;
