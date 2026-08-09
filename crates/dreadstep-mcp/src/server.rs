@@ -1,4 +1,4 @@
-//! Minimal local stdio MCP server for versioned player observation.
+//! Minimal local stdio MCP server for versioned observation and typed player actions.
 
 use std::{
   error::Error,
@@ -14,14 +14,21 @@ use rmcp::{
 use schemars::JsonSchema;
 use serde::Deserialize;
 
-use crate::{Session, SessionError};
-use dreadstep_protocol::WorldSnapshot;
+use crate::{Session, SessionError, SessionOutput};
+use dreadstep_protocol::{CommandRequest, WorldSnapshot};
 
 /// Parameters for the `start_run` MCP tool.
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct StartRunParams {
   /// Explicit deterministic session seed.
   pub seed: u64,
+}
+
+/// Parameters for the `act` MCP tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ActParams {
+  /// One explicitly tagged protocol player command.
+  pub request: CommandRequest,
 }
 
 /// Minimal MCP server exposing the existing in-memory session over local stdio.
@@ -91,6 +98,22 @@ impl DreadstepMcpServer {
   )]
   pub async fn observe(&self) -> Result<Json<WorldSnapshot>, McpError> {
     Ok(Json(self.lock_session()?.observe()))
+  }
+
+  /// Executes one typed player action and returns semantic evidence.
+  #[tool(
+    name = "act",
+    description = "Execute one typed player action and return event and snapshot evidence."
+  )]
+  pub async fn act(
+    &self,
+    Parameters(params): Parameters<ActParams>,
+  ) -> Result<Json<SessionOutput>, McpError> {
+    self
+      .lock_session()?
+      .act(params.request)
+      .map(Json)
+      .map_err(|error| McpError::invalid_params(error.to_string(), None))
   }
 }
 

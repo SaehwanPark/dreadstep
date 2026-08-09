@@ -771,6 +771,42 @@ Out of scope:
 - player `act`, legal-actions transport, tester mutations over MCP, replay persistence, transport
   alternatives, hidden information, interactive input, map editing, and gameplay item semantics.
 
+### Milestone 2 slice: typed MCP player actions
+
+- Status: verified
+- Started: 2026-08-08
+- Completed: 2026-08-08
+
+Extend the minimal stdio server with one typed player `act` tool. Protocol command requests and
+semantic events gain explicit JSON/JSON Schema projections, and the server returns structured
+`SessionOutput` evidence containing the session seed, event order, and post-action snapshot. Core
+continues to validate scheduling, targets, movement, combat, and errors; accepted actions enter the
+existing session history/replay trace, while rejected actions become structured MCP invalid-params
+errors and do not mutate state.
+
+Acceptance:
+
+- A stdio MCP client can call `act` with an object containing a typed move/wait/attack/chase request
+  and receive stable structured seed, event, and snapshot evidence.
+- Command requests use explicit tagged JSON variants and protocol-owned typed IDs/directions; event
+  values preserve semantic variant data and deterministic order.
+- Core command errors cross the process boundary as MCP invalid-params errors; rejected actions leave
+  world, history, and replay evidence unchanged.
+- The server exposes only `start_run`, `observe`, and `act`; legal-action discovery and tester
+  mutations remain outside this wire slice.
+
+Verification:
+
+- Focused protocol JSON/schema, MCP tool, and subprocess tests pass.
+- Accepted and rejected action behavior is covered at the in-memory and stdio boundaries.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- The single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- legal-actions transport, tester mutations over MCP, replay persistence, alternate transports,
+  hidden information, interactive input, map editing, and gameplay item semantics.
+
 ## Future
 
 ### Deferred item gameplay semantics
