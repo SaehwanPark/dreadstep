@@ -53,10 +53,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - The presentation boundary attaches checked `(pixel_x, pixel_y, 0)` logical-pixel translations
     to retained map-node `Transform` components while keeping inventory unplaced; centering, anchors,
     depth, cameras, visibility, rendering, and production media remain deferred.
-- Active deterministic ECS Sprite depth
-  - The next boundary derives terrain/ground/actor z-layer values from the existing typed render
-    layer while preserving checked x/y placement and inventory default state; centering, anchors,
-    cameras, visibility, rendering, and production media remain deferred.
+- Verified deterministic ECS Sprite depth
+  - The presentation boundary derives terrain/ground/actor z-layer values from the existing typed
+    render layer while preserving checked x/y placement and inventory default state; centering,
+    anchors, cameras, visibility, rendering, and production media remain deferred.
 - Still deferred
   - Windowing, Sprite/render plugins, production textures/assets, centering/anchor policy and
     cameras, animation playback, HUD widgets, event/combat message presentation, audio assets/

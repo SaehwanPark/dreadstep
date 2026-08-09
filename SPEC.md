@@ -2615,12 +2615,11 @@ Out of scope:
   texture or production asset loading, audio playback, animation, gameplay rules, persistence,
   transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: deterministic ECS Sprite depth
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Extend the verified ECS Sprite-transform attachment with a deterministic z-layer policy derived from
 the existing typed render layers. Terrain is lowest, ground items are above terrain, actors are above
@@ -2651,12 +2650,17 @@ Verification:
   8/8) and cover source/order/identity, independent guards, and authority preservation; all Bevy
   targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`, and
   `scripts/verify.sh` pass locally. Remote PR review and CI remain the handoff gate.
+- Exactly one semantic reviewer reports PASS revision 1 at `425420d` (implementation `f83ce34`,
+  bounded wording/evidence correction `425420d`); Linux, Apple Silicon macOS, and Windows CI are
+  green on PR #75 (run `31336800525`). This docs-only closeout is reviewed separately.
 
 Out of scope:
 
 - Centering/anchor policy, cameras, visibility/fog, windows, render plugins/backends, texture or
   production asset loading, audio playback, animation, gameplay rules, persistence, transport, and
   committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 
@@ -2672,8 +2676,9 @@ explicit core contract.
 
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
-Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, and ECS Sprite-transform
-attachment boundaries. The remaining renderer work in the proposal still defines these future
+Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, ECS Sprite-transform
+attachment, and deterministic ECS Sprite-depth boundaries. The remaining renderer work in the
+proposal still defines these future
 product milestones; each needs
 its own bounded acceptance slice before it can move into `Past`:
 

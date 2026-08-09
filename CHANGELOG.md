@@ -135,7 +135,7 @@ All notable contributor- and user-visible project changes are recorded here.
 - A verified ECS Sprite-transform attachment boundary applies checked logical-pixel `(x, y, 0)`
   translations to retained map-node `Transform` components while leaving inventory unplaced and
   deferring centering, depth, cameras, visibility, rendering, playback, and production media.
-- An active ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values from
+- A verified ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values from
   typed render layer while preserving checked x/y placement, inventory default state, and all
   centering, camera, visibility, rendering, playback, and production-media deferrals.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
