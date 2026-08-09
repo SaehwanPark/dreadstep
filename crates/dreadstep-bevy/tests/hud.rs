@@ -6,9 +6,10 @@ use bevy::app::App;
 use bevy::ecs::entity::Entity;
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_bevy::{
-  PresentationHud, PresentationInput, PresentationPlugin, PresentationRuntime, SceneActor,
-  SceneGroundItem, SceneInventoryItem, SceneTile,
+  PresentationHud, PresentationInput, PresentationPlugin, PresentationRuntime, PresentationState,
+  SceneActor, SceneGroundItem, SceneInventoryItem, SceneTile,
 };
+use dreadstep_content::starter_item_floor;
 use dreadstep_core::{ActorId, ActorKind, ItemId, Position};
 
 type TileProjection = BTreeMap<(i32, i32), (Entity, SceneTile)>;
@@ -17,8 +18,12 @@ type GroundProjection = BTreeMap<ItemId, (Entity, SceneGroundItem)>;
 type InventoryProjection = BTreeMap<ItemId, (Entity, SceneInventoryItem)>;
 
 fn hud_app(actor: ActorId) -> App {
+  let mut world = starter_item_floor().expect("item content should validate");
+  world
+    .drop_item(ActorId::new(1), ItemId::new(101))
+    .expect("starter item should be owned");
   let mut app = App::new();
-  app.insert_resource(PresentationRuntime::start_item_run(7).expect("content should validate"));
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
   app.insert_resource(PresentationInput::new(actor));
   app.insert_resource(PresentationHud::new(actor));
   app.insert_resource(ButtonInput::<KeyCode>::default());
