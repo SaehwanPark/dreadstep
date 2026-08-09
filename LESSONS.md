@@ -55,3 +55,16 @@ Update an existing lesson instead of adding a duplicate.
   call `sync_scene` with the snapshot. Keep command submission explicit on `PresentationRuntime`.
 - Prevention: Treat app systems as orchestration around core projections; snapshot authoritative
   resources before ECS mutation and never make scene components a second command/state store.
+
+## Never derive input order from a button set
+
+- Context: The headless app shell accepts Bevy `ButtonInput<KeyCode>` while preserving replayable
+  command order.
+- Symptom: Iterating pressed keys directly can choose different commands because the input resource
+  stores keys in a hash set; simultaneous user input then becomes platform/process dependent.
+- Cause: Hash-set iteration order is intentionally unspecified and cannot serve as gameplay or replay
+  ordering evidence.
+- Resolution: Scan a documented fixed key-priority array, issue at most one command per update, and
+  consume all supported just-pressed keys for that frame before delegating to core.
+- Prevention: Treat input collection as unordered observation; define ordering at the adapter
+  boundary and test simultaneous keys plus next-update consumption headlessly.

@@ -171,7 +171,9 @@ The headless application-shell slice adds `PresentationRuntime` as the sole Bevy
 snapshot before calling `sync_scene`. This keeps the core-backed resource borrow separate from ECS
 mutation while making startup and post-command projection automatic for a Bevy `App`. The plugin
 still enables no window, rendering, audio, or desktop platform features; command submission remains
-an explicit runtime API and never originates from scene components.
+an explicit runtime API and never originates from scene components. Its keyboard-dispatch extension
+uses an explicit `PresentationInput` actor and fixed key priority, consumes one frame's supported
+just-pressed keys deterministically, delegates through core, and projects before the update ends.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

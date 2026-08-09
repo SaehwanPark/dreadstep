@@ -1101,6 +1101,45 @@ Out of scope:
 - Bevy window/render plugins, sprites, textures, camera, animation, HUD, audio, fog of war, input
   systems, persistence, transport, ECS-issued commands, and new gameplay rules.
 
+### Milestone 3 slice: deterministic headless keyboard dispatch
+
+- Status: active
+- Started: 2026-08-09
+
+Add the first interactive input effect without adding a desktop client. `PresentationInput` names
+the controlled actor, and the existing headless `PresentationPlugin` will read optional Bevy
+`ButtonInput<KeyCode>` state, choose at most one supported just-pressed key from a fixed priority
+order, delegate its `KeyboardIntent` through `PresentationRuntime`, and synchronize the scene after
+that command. Core remains authoritative for scheduling, legality, and all state changes.
+
+Acceptance:
+
+- `PresentationInput` exposes one typed controlled [`dreadstep_core::ActorId`] and no mutable core
+  storage; missing input/control/runtime resources are safe no-ops.
+- Arrow, WASD, and wait aliases map through the existing `KeyboardIntent` conversion. A fixed
+  documented priority (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`, `KeyW`, `KeyS`, `KeyA`,
+  `KeyD`, `Enter`, `Space`) chooses one simultaneous key per update, consumes all supported
+  just-pressed keys for that update, and never depends on hash-set iteration order.
+- The plugin delegates accepted and rejected commands through `PresentationRuntime` before scene
+  synchronization; accepted movement appears in the same app update's scene projection, while
+  rejected commands leave runtime and complete keyed scene projections unchanged.
+- The dispatch remains headless and independent of windowing, event readers, mouse/gamepad input,
+  filesystem, wall-clock time, host randomness, transport, and new gameplay rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --all-targets --all-features --locked` covers controlled
+  actor ownership, key priority/consumption, accepted projection, rejected atomicity, and absent
+  resources.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Windowing/event readers, mouse/gamepad/text input, rebinding persistence, rendering, audio,
+  transport, ECS-issued commands, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics

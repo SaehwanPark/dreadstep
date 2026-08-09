@@ -11,7 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world::World};
-use bevy::input::keyboard::KeyCode;
+use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_content::{ContentError, starter_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, ReplayTrace,
@@ -48,6 +48,26 @@ impl KeyboardIntent {
       Self::Move(direction) => Command::Move { actor, direction },
       Self::Wait => Command::Wait { actor },
     }
+  }
+}
+
+/// Selects the core actor addressed by keyboard intents.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationInput {
+  actor: ActorId,
+}
+
+impl PresentationInput {
+  /// Creates keyboard control for one explicit actor identity.
+  #[must_use]
+  pub const fn new(actor: ActorId) -> Self {
+    Self { actor }
+  }
+
+  /// Returns the actor addressed by keyboard intents.
+  #[must_use]
+  pub const fn actor(self) -> ActorId {
+    self.actor
   }
 }
 
@@ -356,14 +376,70 @@ impl PresentationRuntime {
 ///
 /// The plugin expects [`PresentationRuntime`] to be inserted by the application. Until a runtime
 /// is present, its update system is a safe no-op so app construction can install plugins before
-/// selecting or restoring a run.
+/// selecting or restoring a run. Keyboard dispatch is also optional: it runs only when the app
+/// provides [`PresentationInput`] and `ButtonInput<KeyCode>` resources.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct PresentationPlugin;
 
 impl Plugin for PresentationPlugin {
   fn build(&self, app: &mut App) {
-    app.add_systems(Update, sync_runtime_scene);
+    app.add_systems(Update, update_presentation);
   }
+}
+
+const KEY_PRIORITY: [KeyCode; 10] = [
+  KeyCode::ArrowUp,
+  KeyCode::ArrowDown,
+  KeyCode::ArrowLeft,
+  KeyCode::ArrowRight,
+  KeyCode::KeyW,
+  KeyCode::KeyS,
+  KeyCode::KeyA,
+  KeyCode::KeyD,
+  KeyCode::Enter,
+  KeyCode::Space,
+];
+
+fn update_presentation(world: &mut World) {
+  dispatch_keyboard_input(world);
+  sync_runtime_scene(world);
+}
+
+fn dispatch_keyboard_input(world: &mut World) {
+  let Some(actor) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    return;
+  };
+  let Some(key) = world
+    .get_resource::<ButtonInput<KeyCode>>()
+    .and_then(|input| {
+      KEY_PRIORITY
+        .iter()
+        .copied()
+        .find(|key| input.just_pressed(*key))
+    })
+  else {
+    return;
+  };
+  let Some(intent) = KeyboardIntent::from_key(key) else {
+    return;
+  };
+  if world.get_resource::<PresentationRuntime>().is_none() {
+    return;
+  }
+  {
+    let Some(mut input) = world.get_resource_mut::<ButtonInput<KeyCode>>() else {
+      return;
+    };
+    for supported_key in KEY_PRIORITY {
+      input.clear_just_pressed(supported_key);
+    }
+  }
+  let _ = world
+    .resource_mut::<PresentationRuntime>()
+    .execute(intent.command(actor));
 }
 
 fn sync_runtime_scene(world: &mut World) {
