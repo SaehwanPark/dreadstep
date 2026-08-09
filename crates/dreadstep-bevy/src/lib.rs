@@ -82,6 +82,7 @@ pub struct SceneActor {
   kind: dreadstep_core::ActorKind,
   position: dreadstep_core::Position,
   hit_points: dreadstep_core::HitPoints,
+  ready_at: dreadstep_core::ActionTime,
   alive: bool,
 }
 
@@ -92,6 +93,7 @@ impl SceneActor {
       kind: actor.kind(),
       position: actor.position(),
       hit_points: actor.hit_points(),
+      ready_at: actor.ready_at(),
       alive: actor.is_alive(),
     }
   }
@@ -118,6 +120,12 @@ impl SceneActor {
   #[must_use]
   pub const fn hit_points(self) -> dreadstep_core::HitPoints {
     self.hit_points
+  }
+
+  /// Returns the projected core scheduler readiness time.
+  #[must_use]
+  pub const fn ready_at(self) -> dreadstep_core::ActionTime {
+    self.ready_at
   }
 
   /// Returns whether the projected actor is living.
@@ -306,13 +314,21 @@ fn scene_position(index: usize, width: usize) -> Option<dreadstep_core::Position
 /// their Bevy identity when their key remains in the snapshot; stale entities are despawned before
 /// new keys are spawned. The ECS world is only a presentation mirror and cannot change core state.
 pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
-  let existing_tiles: BTreeMap<_, _> = {
+  let mut existing_tiles: BTreeMap<_, Vec<_>> = {
     let mut query = scene.query::<(Entity, &SceneTile)>();
     query
       .iter(scene)
-      .map(|(entity, tile)| (tile_key(tile.position()), entity))
-      .collect()
+      .fold(BTreeMap::new(), |mut entities, (entity, tile)| {
+        entities
+          .entry(tile_key(tile.position()))
+          .or_default()
+          .push(entity);
+        entities
+      })
   };
+  for entities in existing_tiles.values_mut() {
+    entities.sort_unstable();
+  }
   let Ok(width) = usize::try_from(snapshot.width()) else {
     return;
   };
@@ -326,18 +342,26 @@ pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
     return;
   };
   let expected_tiles: BTreeSet<_> = positions.iter().copied().map(tile_key).collect();
-  for (_key, entity) in existing_tiles
-    .iter()
-    .filter(|(key, _)| !expected_tiles.contains(key))
-  {
-    let _ = scene.despawn(*entity);
+  for (key, entities) in &existing_tiles {
+    if expected_tiles.contains(key) {
+      for entity in entities.iter().skip(1) {
+        let _ = scene.despawn(*entity);
+      }
+    } else {
+      for entity in entities {
+        let _ = scene.despawn(*entity);
+      }
+    }
   }
   for (position, terrain) in positions
     .iter()
     .copied()
     .zip(snapshot.tiles().iter().copied())
   {
-    if let Some(entity) = existing_tiles.get(&tile_key(position)) {
+    if let Some(entity) = existing_tiles
+      .get(&tile_key(position))
+      .and_then(|entities| entities.first())
+    {
       scene
         .entity_mut(*entity)
         .insert(SceneTile::new(position, terrain));
@@ -346,23 +370,36 @@ pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
     }
   }
 
-  let existing_actors: BTreeMap<_, _> = {
+  let mut existing_actors: BTreeMap<_, Vec<_>> = {
     let mut query = scene.query::<(Entity, &SceneActor)>();
     query
       .iter(scene)
-      .map(|(entity, actor)| (actor.id(), entity))
-      .collect()
+      .fold(BTreeMap::new(), |mut entities, (entity, actor)| {
+        entities.entry(actor.id()).or_default().push(entity);
+        entities
+      })
   };
+  for entities in existing_actors.values_mut() {
+    entities.sort_unstable();
+  }
   let expected_actors: BTreeSet<_> = snapshot.actors().iter().map(Actor::id).collect();
-  for (_actor_id, entity) in existing_actors
-    .iter()
-    .filter(|(actor_id, _)| !expected_actors.contains(actor_id))
-  {
-    let _ = scene.despawn(*entity);
+  for (actor_id, entities) in &existing_actors {
+    if expected_actors.contains(actor_id) {
+      for entity in entities.iter().skip(1) {
+        let _ = scene.despawn(*entity);
+      }
+    } else {
+      for entity in entities {
+        let _ = scene.despawn(*entity);
+      }
+    }
   }
   for actor in snapshot.actors() {
     let scene_actor = SceneActor::from_core(actor);
-    if let Some(entity) = existing_actors.get(&actor.id()) {
+    if let Some(entity) = existing_actors
+      .get(&actor.id())
+      .and_then(|entities| entities.first())
+    {
       scene.entity_mut(*entity).insert(scene_actor);
     } else {
       scene.spawn(scene_actor);

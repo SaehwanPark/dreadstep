@@ -1039,7 +1039,8 @@ truth; scene components are disposable mirrors for later rendering systems.
 Acceptance:
 
 - `SceneTile` and `SceneActor` expose typed, immutable presentation data for terrain, actor
-  identity/kind, position, life, and hit points without exposing mutable core storage.
+  identity/kind, position, life, hit points, and scheduler readiness without exposing mutable core
+  storage.
 - `sync_scene` creates one entity per projected map tile and actor, preserves entity identity for
   unchanged keys, updates changed actor data after an accepted core command, and removes entities
   absent from a later snapshot.

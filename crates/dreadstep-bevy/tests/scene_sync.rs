@@ -4,7 +4,7 @@ use bevy::ecs::world::World;
 use dreadstep_bevy::{PresentationState, SceneActor, SceneTile, sync_scene};
 use dreadstep_content::starter_floor;
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, Tile, WorldState,
+  ActionTime, Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, Tile, WorldState,
 };
 
 fn combat_state() -> PresentationState {
@@ -45,6 +45,12 @@ fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
     .find(|(_, actor)| actor.id() == ActorId::new(1))
     .map(|(entity, _)| entity)
     .expect("player scene entity should exist");
+  let tile_entity = scene
+    .query::<(bevy::ecs::entity::Entity, &SceneTile)>()
+    .iter(&scene)
+    .find(|(_, tile)| tile.position() == Position::new(0, 0))
+    .map(|(entity, _)| entity)
+    .expect("origin tile scene entity should exist");
 
   sync_scene(&mut scene, &initial);
   let repeated_entity = scene
@@ -53,7 +59,14 @@ fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
     .find(|(_, actor)| actor.id() == ActorId::new(1))
     .map(|(entity, _)| entity)
     .expect("player scene entity should remain");
+  let repeated_tile = scene
+    .query::<(bevy::ecs::entity::Entity, &SceneTile)>()
+    .iter(&scene)
+    .find(|(_, tile)| tile.position() == Position::new(0, 0))
+    .map(|(entity, _)| entity)
+    .expect("origin tile scene entity should remain");
   assert_eq!(repeated_entity, player_entity);
+  assert_eq!(repeated_tile, tile_entity);
 
   let output = state
     .execute(Command::Move {
@@ -69,6 +82,35 @@ fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
     .expect("updated player scene entity should exist");
   assert_eq!(player.0, player_entity);
   assert_eq!(player.1.position(), Position::new(2, 1));
+  assert_eq!(player.1.ready_at(), ActionTime::new(1));
+}
+
+#[test]
+fn sync_deduplicates_public_mirror_entities_by_stable_key() {
+  let snapshot = PresentationState::start_run(7)
+    .expect("content should validate")
+    .snapshot();
+  let mut scene = World::new();
+  sync_scene(&mut scene, &snapshot);
+  let tile = *scene
+    .query::<&SceneTile>()
+    .iter(&scene)
+    .next()
+    .expect("tile should exist");
+  let actor = *scene
+    .query::<&SceneActor>()
+    .iter(&scene)
+    .next()
+    .expect("actor should exist");
+  scene.spawn(tile);
+  scene.spawn(actor);
+  assert_eq!(scene.query::<&SceneTile>().iter(&scene).count(), 36);
+  assert_eq!(scene.query::<&SceneActor>().iter(&scene).count(), 5);
+
+  sync_scene(&mut scene, &snapshot);
+
+  assert_eq!(scene.query::<&SceneTile>().iter(&scene).count(), 35);
+  assert_eq!(scene.query::<&SceneActor>().iter(&scene).count(), 4);
 }
 
 #[test]
