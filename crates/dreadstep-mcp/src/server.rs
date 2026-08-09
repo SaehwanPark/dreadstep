@@ -1,5 +1,5 @@
-//! Minimal local stdio MCP server for versioned observation, legal-action discovery, and typed
-//! player actions.
+//! Minimal local stdio MCP server for versioned observation, actor inspection, legal-action
+//! discovery, and typed player actions.
 
 use std::{
   error::Error,
@@ -16,13 +16,20 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{Session, SessionError, SessionOutput};
-use dreadstep_protocol::{CommandRequest, WorldSnapshot};
+use dreadstep_protocol::{ActorId, ActorSnapshot, CommandRequest, WorldSnapshot};
 
 /// Parameters for the `start_run` MCP tool.
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct StartRunParams {
   /// Explicit deterministic session seed.
   pub seed: u64,
+}
+
+/// Parameters for the `inspect` MCP tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct InspectParams {
+  /// Stable actor identity to inspect.
+  pub actor: ActorId,
 }
 
 /// Parameters for the `act` MCP tool.
@@ -99,6 +106,18 @@ impl DreadstepMcpServer {
   )]
   pub async fn observe(&self) -> Result<Json<WorldSnapshot>, McpError> {
     Ok(Json(self.lock_session()?.observe()))
+  }
+
+  /// Returns one visible actor snapshot, or no value for an unknown identity.
+  #[tool(
+    name = "inspect",
+    description = "Inspect one visible actor by typed identity, or return null when absent."
+  )]
+  pub async fn inspect(
+    &self,
+    Parameters(params): Parameters<InspectParams>,
+  ) -> Result<Json<Option<ActorSnapshot>>, McpError> {
+    Ok(Json(self.lock_session()?.inspect(params.actor)))
   }
 
   /// Returns the deterministic typed commands currently accepted by the core scheduler.

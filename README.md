@@ -13,8 +13,8 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is continuing Milestone 2: the agent interface. The active slice adds read-only legal-action
-discovery to the local MCP stdio server; typed player actions, minimal observation, validated tester
+Dreadstep is continuing Milestone 2: the agent interface. The active slice adds read-only actor
+inspection to the local MCP stdio server; legal-action discovery, typed player actions, minimal observation, validated tester
 teleport through the deterministic core, opaque typed item ownership, typed scenario replacement,
 validated hit-point mutation and actor spawning, read-only `inspect_world`, in-memory tester
 `snapshot`/`restore`

@@ -9,7 +9,7 @@
 
 pub mod server;
 
-pub use server::{ActParams, DreadstepMcpServer, StartRunParams};
+pub use server::{ActParams, DreadstepMcpServer, InspectParams, StartRunParams};
 
 use std::{error::Error, fmt};
 
