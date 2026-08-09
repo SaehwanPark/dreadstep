@@ -5,7 +5,9 @@ use dreadstep_core::{
   Item as CoreItem, ItemDefinitionId as CoreItemDefinitionId, ItemId as CoreItemId,
   Position as CorePosition, Tile as CoreTile, WorldState as CoreWorldState,
 };
-use dreadstep_protocol::{ActionTime, ActorId, CommandRequest, Direction, Event, WorldSnapshot};
+use dreadstep_protocol::{
+  ActionTime, ActorId, CommandRequest, Direction, Event, ReplayEvidence, StateDigest, WorldSnapshot,
+};
 
 fn snapshot() -> WorldSnapshot {
   let mut world = CoreWorldState::new(
@@ -91,4 +93,41 @@ fn command_and_event_json_use_explicit_tagged_variants() {
   let event_schema =
     serde_json::to_value(schemars::schema_for!(Event)).expect("event schema should serialize");
   assert!(event_schema["oneOf"].is_array());
+}
+
+#[test]
+fn replay_evidence_json_is_structured_and_schema_versioned() {
+  let evidence = ReplayEvidence::new(
+    7,
+    vec![CommandRequest::Wait {
+      actor: ActorId::new(1),
+    }],
+    StateDigest::new(11),
+  );
+  let value = serde_json::to_value(&evidence).expect("replay evidence should serialize");
+  assert_eq!(
+    value,
+    serde_json::json!({
+      "seed": 7,
+      "commands": [{"wait": {"actor": 1}}],
+      "digest": 11
+    })
+  );
+  let schema = serde_json::to_value(schemars::schema_for!(ReplayEvidence))
+    .expect("replay schema should serialize");
+  assert_eq!(schema["type"], "object");
+  assert!(schema["properties"]["seed"].is_object());
+  assert!(schema["properties"]["commands"].is_object());
+  assert!(schema["properties"]["digest"].is_object());
+  let equivalent = ReplayEvidence::new(
+    7,
+    vec![CommandRequest::Wait {
+      actor: ActorId::new(1),
+    }],
+    StateDigest::new(11),
+  );
+  assert_eq!(
+    serde_json::to_string(&evidence).expect("evidence should serialize"),
+    serde_json::to_string(&equivalent).expect("equivalent evidence should serialize")
+  );
 }

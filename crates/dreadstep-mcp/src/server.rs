@@ -16,7 +16,7 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{Session, SessionError, SessionOutput};
-use dreadstep_protocol::{ActorId, ActorSnapshot, CommandRequest, WorldSnapshot};
+use dreadstep_protocol::{ActorId, ActorSnapshot, CommandRequest, ReplayEvidence, WorldSnapshot};
 
 /// Parameters for the `start_run` MCP tool.
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -136,6 +136,15 @@ impl DreadstepMcpServer {
   )]
   pub async fn get_history(&self) -> Result<Json<Vec<CommandRequest>>, McpError> {
     Ok(Json(self.lock_session()?.get_history()))
+  }
+
+  /// Returns seed, accepted request, and deterministic digest evidence without mutating the session.
+  #[tool(
+    name = "get_replay",
+    description = "Return deterministic seed, accepted requests, and replay digest evidence."
+  )]
+  pub async fn get_replay(&self) -> Result<Json<ReplayEvidence>, McpError> {
+    Ok(Json(self.lock_session()?.get_replay()))
   }
 
   /// Executes one typed player action and returns semantic evidence.

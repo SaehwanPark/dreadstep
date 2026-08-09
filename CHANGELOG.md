@@ -55,6 +55,8 @@ All notable contributor- and user-visible project changes are recorded here.
   no world, history, or replay mutation.
 - Read-only MCP `get_history` accepted-request evidence over stdio with deterministic ordering,
   rejection omission, and no world, history, or replay mutation.
+- Read-only MCP `get_replay` replay evidence over stdio with typed seed, accepted requests,
+  deterministic digest, explicit JSON/JSON Schema, and no persistence or playback semantics.
 
 ### Changed
 
