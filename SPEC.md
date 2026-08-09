@@ -519,6 +519,37 @@ Out of scope:
 - MCP transport/runtime registration, persistent replay files, wire serialization, scenario
   authoring, spawn/item/HP mutators, interactive input, and replay playback.
 
+### Milestone 2 slice: tester world inspection accessor
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Align the tester surface with the proposal's `inspect_world` operation name. The new
+`Session::inspect_world` method returns the same complete protocol `WorldSnapshot` as the player
+`observe` projection, without mutating the session or introducing separate world storage. This
+slice names the boundary only; no additional hidden state, visibility policy, or tester mutation
+is added.
+
+Acceptance:
+
+- `inspect_world` returns the current complete protocol snapshot for a new or advanced session.
+- Equivalent sessions return equal `inspect_world` snapshots, and the accessor does not change
+  history, replay digest, or future action results.
+- The existing `observe` accessor remains behaviorally identical for player callers.
+- The tester accessor remains in-memory and read-only, with no transport, filesystem, serialization,
+  or arbitrary state mutation.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-mcp --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, hidden-information rules, scenario or actor mutators,
+  persistent replay, wire serialization, interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel
