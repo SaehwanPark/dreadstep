@@ -2127,14 +2127,13 @@ Out of scope:
   asset handles/loading, audio playback, animation timers/interpolation, visibility policy,
   persistence, transport, and gameplay rules.
 
-## Present
-
 ### Milestone 4 preparation slice: deterministic single-slot item equipment
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
-Define the first gameplay-facing item semantic without defining item effects: a scheduled living
+The first gameplay-facing item semantic is now verified without item effects: a scheduled living
 actor may equip one owned opaque item instance or unequip its current reference. Equipment remains
 an optional `ItemId` pointing into the actor's ordered inventory, so core owns one item store and
 content catalogs remain authoring-only.
@@ -2153,19 +2152,32 @@ Acceptance:
 - No item effects, stat modifiers, consumables, capacity, additional slots, rendering, assets,
   windowing, audio, persistence, transport, or dependencies are introduced.
 
-Verification target:
+Verification:
 
-- Focused core equipment tests prove accepted/rejected command behavior, replacement ordering,
-  scheduler/replay/digest transitions, tester mutation guards, and atomicity; protocol/MCP tests
-  prove round-trip and JSON/session evidence; Bevy scene tests prove complete retained actor data.
-- All workspace targets, Clippy, docs, repository checks, and `scripts/verify.sh` must pass, with
-  one semantic reviewer and fresh Linux/macOS/Windows CI before moving the slice into Past.
+- Focused core equipment tests pass 5/5, protocol JSON tests pass 5/5, MCP equipment tests pass
+  3/3, and Bevy equipment projection tests pass 2/2. The tests isolate equipped identity in both
+  state and replay digests, prove tester atomicity, round-trip every equipment command/event, and
+  retain actor/inventory entities across replacement and unequip cues.
+- All workspace targets, all-target Clippy with `-D warnings`, warning-denied workspace docs,
+  repository checks, `git diff --check`, and `scripts/verify.sh` pass.
+- Exactly one semantic reviewer reports PASS on final implementation/evidence revision `7bc400a`
+  (implementation `2a7d814`, bounded CI-golden correction `27dcae5`); this docs-only closeout is
+  reviewed separately, and Linux, Apple Silicon macOS, and Windows CI are green.
+- The ignored equipment evidence records the initial red compile target, the observed Linux digest
+  golden correction, focused counts, full verification, and reviewer/CI gate.
+
+Out of scope:
+
+- Item effects, stat modifiers, consumables, capacity, additional slots, rendering, assets,
+  windowing, audio playback, persistence, transport, and dependencies.
+
+## Present
 
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
 identification, capacity, or gameplay-facing item commands beyond the single-slot equipment
-preparation slice above. Tester-only transfer, drop, and pickup are verified separately in their
+contract completed above. Tester-only transfer, drop, and pickup are verified separately in their
 completed slices above; richer player operations still require an explicit core contract.
 
 ## Future

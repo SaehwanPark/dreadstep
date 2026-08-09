@@ -299,7 +299,7 @@ reference, and insertion order; `sync_scene` updates retained item entities afte
 owner/order changes and removes stale records. Bevy does not own inventory or item gameplay rules,
 and no HUD or rendering policy is introduced.
 
-The active deterministic single-slot equipment slice extends the same core authority with an optional
+The verified deterministic single-slot equipment slice extends the same core authority with an optional
 `Actor::equipped_item` identity that must point into that actor's ordered inventory. `Equip` and
 `Unequip` are scheduled player commands; replacement emits `ItemUnequipped` before
 `ItemEquipped`, accepted commands advance time and replay evidence, and rejected commands preserve
