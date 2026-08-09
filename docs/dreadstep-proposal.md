@@ -1877,11 +1877,11 @@ Establish the Diablo-derived equipment loop.
 
 ### Repository status note
 
-The current implementation roadmap has verified a deterministic preparation boundary: one
-scheduled actor may equip or unequip one owned opaque item reference, with ordered replacement
-events and replay/snapshot projections. The full equipment loop below remains future work; effects,
-weapon and armor rules, consumables, affixes, rarity, generation, and inventory UX are not implied
-by that preparation slice.
+The current implementation roadmap is validating a deterministic preparation boundary: one scheduled
+actor may equip or unequip one owned opaque item reference, with ordered replacement events and
+replay/snapshot projections. The full equipment loop below remains future work; effects, weapon and
+armor rules, consumables, affixes, rarity, generation, and inventory UX are not implied by that
+preparation slice.
 
 ### Implement
 

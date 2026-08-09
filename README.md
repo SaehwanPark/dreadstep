@@ -33,10 +33,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.
-- Verified deterministic single-slot equipment: scheduled typed equip/unequip commands, ordered
+- Active deterministic single-slot equipment slice: scheduled typed equip/unequip commands, ordered
   replacement events, digest/replay/snapshot evidence, tester guards against moving equipped items,
-  protocol/MCP projections, and a typed Bevy `SceneActor` field. Item effects, modifiers, capacity,
-  and additional slots remain deferred.
+  protocol/MCP projections, and a typed Bevy `SceneActor` field are implemented and under one
+  reviewer/CI gate. Item effects, modifiers, capacity, and additional slots remain deferred.
 - Verified window boundary: validated typed logical dimensions and integer pixel scale for a future
   desktop client without creating an OS window or enabling desktop features.
 - Verified scene placement boundary: caller-selected logical tile extents project checked pixel

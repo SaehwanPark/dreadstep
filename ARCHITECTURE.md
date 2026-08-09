@@ -129,7 +129,7 @@ successful replacement preserves the seed and starts a fresh in-memory replay tr
 
 Opaque tester item ownership crosses the boundary as typed `ItemId` and `ItemDefinitionId` values.
 Core owns global identity uniqueness, ordered actor inventories, digest inclusion, and snapshot
-projection; MCP only converts the request to `WorldState::give_item`. The verified equipment
+projection; MCP only converts the request to `WorldState::give_item`. The equipment
 extension adds one optional core-owned `ItemId` reference per actor, scheduled equip/unequip
 commands, ordered replacement events, and typed protocol/MCP projections; it does not create a
 second item store or apply effects. Capacity and richer item semantics remain deferred. The tester
@@ -299,7 +299,7 @@ reference, and insertion order; `sync_scene` updates retained item entities afte
 owner/order changes and removes stale records. Bevy does not own inventory or item gameplay rules,
 and no HUD or rendering policy is introduced.
 
-The deterministic single-slot equipment slice extends the same core authority with an optional
+The active deterministic single-slot equipment slice extends the same core authority with an optional
 `Actor::equipped_item` identity that must point into that actor's ordered inventory. `Equip` and
 `Unequip` are scheduled player commands; replacement emits `ItemUnequipped` before
 `ItemEquipped`, accepted commands advance time and replay evidence, and rejected commands preserve
