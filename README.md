@@ -55,7 +55,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     depth, cameras, visibility, rendering, and production media remain deferred.
 - Active deterministic ECS Sprite depth
   - The next boundary derives terrain/ground/actor z-layer values from the existing typed render
-    order while preserving checked x/y placement and inventory default state; centering, anchors,
+    layer while preserving checked x/y placement and inventory default state; centering, anchors,
     cameras, visibility, rendering, and production media remain deferred.
 - Still deferred
   - Windowing, Sprite/render plugins, production textures/assets, centering/anchor policy and

@@ -2631,9 +2631,11 @@ Acceptance:
 - Retained terrain, ground-item, living/dead-actor, and inventory nodes receive deterministic
   `Transform.translation.z` values `0.0`, `1.0`, `2.0`, and `0.0` respectively; checked x/y
   translations, source order, typed keys, and node Entities remain unchanged.
-- Accepted refreshes preserve node identity and update depth only when the typed layer changes;
-  stale nodes despawn and retained nodes keep complete transforms. Co-located source mirrors remain
-  distinct and ordered by layer/source order.
+- Retained refreshes preserve node identity and depth while the typed layer stays stable; dead-role
+  refresh remains in the Actor layer at depth `2.0`. A typed layer change follows existing
+  source-and-layer reconciliation, replacing the node as needed. Stale nodes despawn and retained
+  nodes keep complete transforms. Co-located source mirrors remain distinct and ordered by layer and
+  source order.
 - Missing runtime, node/projection resources, and node entities are independent safe no-ops that
   preserve existing ECS components. Runtime snapshots, replay history, digests, and scene authority
   remain unchanged.
@@ -2644,10 +2646,10 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test sprite_transform_depth --locked` passes 5/5 and proves
-  complete per-layer depth values, x/y preservation, source/order/identity retention,
-  stale/dead/co-located refreshes, independent guards, and component preservation.
-- Existing transform attachment/projection suites remain green (9/9 and 8/8); all Bevy targets,
-  warning-denied Clippy/docs, formatting, repository checks, `git diff --check`, and
+  complete per-layer depth values, x/y preservation, stable-layer/dead refresh, stale cleanup, and
+  co-located layer depth. Existing transform attachment/projection suites remain green (9/9 and
+  8/8) and cover source/order/identity, independent guards, and authority preservation; all Bevy
+  targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`, and
   `scripts/verify.sh` pass locally. Remote PR review and CI remain the handoff gate.
 
 Out of scope:

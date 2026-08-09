@@ -136,7 +136,7 @@ All notable contributor- and user-visible project changes are recorded here.
   translations to retained map-node `Transform` components while leaving inventory unplaced and
   deferring centering, depth, cameras, visibility, rendering, playback, and production media.
 - An active ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values from
-  typed render order while preserving checked x/y placement, inventory default state, and all
+  typed render layer while preserving checked x/y placement, inventory default state, and all
   centering, camera, visibility, rendering, playback, and production-media deferrals.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
