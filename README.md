@@ -13,10 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is implementing Milestone 1: the rules kernel. The active slice adds a minimal
-deterministic `dreadstep-headless` CLI over the core-owned replay traces and stable state
-digests; there is still no graphical client, MCP server, interactive input, or authored
-scenario system.
+Dreadstep is beginning Milestone 2: the agent interface. The active slice adds a versioned,
+read-only `dreadstep-protocol` snapshot over core state; the deterministic headless CLI remains
+available, but there is still no MCP transport, graphical client, interactive input, or
+authored scenario system.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

@@ -71,6 +71,10 @@ The headless CLI must not duplicate movement, combat, chase, scheduling, or dige
 fixed scenario is test data at the adapter boundary; every outcome still comes from
 `dreadstep-core::WorldState::execute`.
 
+The first Milestone 2 protocol slice is a read-only `WorldSnapshot` projection. It may expose
+stable actor data and core digest evidence, but it must not decide legal actions or mutate the
+world; MCP transport and session effects remain later adapter work.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

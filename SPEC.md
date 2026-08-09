@@ -222,6 +222,40 @@ Out of scope:
 - Interactive input, authored scenario files, serialized replay output, CLI subcommands,
   terminal rendering, and production content configuration.
 
+### Milestone 2 slice: versioned agent observation
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Establish the first agent-facing protocol projection without adding a transport runtime. The
+core exposes deterministic actor iteration, and `dreadstep-protocol` converts a
+`WorldState` into a versioned snapshot containing the current time, next scheduled actor,
+stable digest, and complete actor state. The projection preserves dead actor records for
+inspection while making no gameplay decisions.
+
+Acceptance:
+
+- `WorldState` exposes actors in stable `ActorId` order without exposing mutable storage.
+- `dreadstep-protocol` exposes a versioned `WorldSnapshot` and typed `ActorSnapshot` values for
+  actor identity, kind, life, position, hit points, and ready time.
+- Snapshot conversion includes the core `StateDigest`, current action time, and next actor; two
+  equivalent worlds produce equal snapshots and meaningful state changes alter the snapshot.
+- Conversion is a pure boundary projection and does not add rules, I/O, serialization
+  dependencies, MCP runtime dependencies, or Bevy dependencies.
+- Focused protocol tests cover stable ordering, equivalent snapshots, and dead-actor
+  inspection after a core transition.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-protocol --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, sessions, `start_run`, `legal_actions`, `act`, tester
+  tools, wire serialization, and authored scenarios.
+
 ## Future
 
 ### Milestone 1: Rules kernel

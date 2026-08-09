@@ -19,6 +19,8 @@ All notable contributor- and user-visible project changes are recorded here.
 - Core-owned replay traces and stable state digests for deterministic regression evidence.
 - A deterministic `dreadstep-headless` developer CLI that translates command tokens into the
   core simulation and prints replay seed, events, and final state digest evidence.
+- A versioned `dreadstep-protocol` world snapshot projection for deterministic agent
+  observation, without adding an MCP transport runtime.
 
 ### Changed
 
