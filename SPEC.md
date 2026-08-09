@@ -2539,9 +2539,11 @@ Acceptance:
   preserving source Entity, typed key, layer, order, and node identity; map-backed terrain, actors,
   and ground items receive a translation from their checked pixel origin, while inventory items stay
   unplaced with no translation.
-- Missing tile-size configuration yields no translations without inventing placement; accepted
-  refreshes retain node identity and update translations, including dead-actor refresh and stale
-  inventory removal. Co-located source mirrors retain distinct entries and values.
+- A fresh app without tile-size configuration starts with no translations; later removal of
+  `PresentationTileSize` preserves previously checked node translations, matching the established
+  render-projection retention rule. Accepted refreshes retain node identity and update translations,
+  including accepted movement, dead-actor refresh, and stale inventory removal. Co-located source
+  mirrors retain distinct entries and values.
 - Missing runtime, node source, transform projection, and missing node entity are safe no-ops that
   preserve existing projection values. Runtime snapshots, replay history, digests, and scene
   authority remain unchanged.
@@ -2551,9 +2553,10 @@ Acceptance:
 
 Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test sprite_transform_projection --locked` passes 6/6 and
-  proves complete keyed translations, inventory exclusion, unsized/missing configuration, stable refresh/dead/stale/
-  co-located identity, independent guards, and runtime snapshot/replay preservation.
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_projection --locked` passes 8/8 and
+  proves complete keyed translations, inventory exclusion, fresh/retained tile-size behavior,
+  accepted movement, stable refresh/dead/stale/co-located identity, independent guards, absence of
+  ECS component attachment, and runtime snapshot/replay preservation.
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
   and `scripts/verify.sh` pass; anchored media checks keep local binaries ignored while tracked
   concept art and root screenshot exceptions remain visible.

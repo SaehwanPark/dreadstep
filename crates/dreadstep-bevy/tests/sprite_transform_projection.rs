@@ -1,6 +1,9 @@
 //! Contract tests for the headless Sprite-transform projection.
 
 use bevy::app::App;
+use bevy::camera::visibility::Visibility;
+use bevy::sprite::Sprite;
+use bevy::transform::components::Transform;
 use dreadstep_bevy::{
   PresentationBevySpriteProjection, PresentationBevySpriteTransformProjection, PresentationPlugin,
   PresentationRenderCommandPlan, PresentationRenderNodeProjection, PresentationRenderProjection,
@@ -12,7 +15,7 @@ use dreadstep_core::{
   Tile, WorldState,
 };
 
-fn node_app(tile_size: Option<PresentationTileSize>) -> App {
+fn node_app(tile_size: Option<PresentationTileSize>, with_sprite_projection: bool) -> App {
   let map = GridMap::from_tiles(
     4,
     1,
@@ -63,7 +66,9 @@ fn node_app(tile_size: Option<PresentationTileSize>) -> App {
   app.insert_resource(PresentationSpriteProjection::new());
   app.insert_resource(PresentationRenderCommandPlan::new());
   app.insert_resource(PresentationRenderNodeProjection::new());
-  app.insert_resource(PresentationBevySpriteProjection::new());
+  if with_sprite_projection {
+    app.insert_resource(PresentationBevySpriteProjection::new());
+  }
   app.insert_resource(PresentationBevySpriteTransformProjection::new());
   app.add_plugins(PresentationPlugin);
   app.update();
@@ -71,9 +76,17 @@ fn node_app(tile_size: Option<PresentationTileSize>) -> App {
 }
 
 fn sized_app() -> App {
-  node_app(Some(
-    PresentationTileSize::new(32, 32).expect("tile size should validate"),
-  ))
+  node_app(
+    Some(PresentationTileSize::new(32, 32).expect("tile size should validate")),
+    true,
+  )
+}
+
+fn transform_only_app() -> App {
+  node_app(
+    Some(PresentationTileSize::new(32, 32).expect("tile size should validate")),
+    false,
+  )
 }
 
 fn translation(entry: dreadstep_bevy::SceneBevySpriteTransformEntry) -> Option<(u32, u32)> {
@@ -190,6 +203,25 @@ fn refreshes_dead_and_stale_translations_without_replacing_nodes() {
   assert_eq!(translation(*dead), Some((32, 0)));
 
   let mut stale_app = sized_app();
+  let before_stale = stale_app
+    .world()
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .to_vec();
+  let stale_entry = before_stale
+    .iter()
+    .find(|entry| {
+      entry.node().node().key() == SceneSpriteKey::InventoryItem(ItemDefinitionId::new(102))
+    })
+    .copied()
+    .expect("inventory transform entry should exist");
+  let retained_stale = before_stale
+    .iter()
+    .filter(|entry| {
+      entry.node().node().key() != SceneSpriteKey::InventoryItem(ItemDefinitionId::new(102))
+    })
+    .copied()
+    .collect::<Vec<_>>();
   stale_app
     .world_mut()
     .resource_mut::<PresentationRuntime>()
@@ -199,14 +231,18 @@ fn refreshes_dead_and_stale_translations_without_replacing_nodes() {
     })
     .expect("inventory item should be consumable");
   stale_app.update();
-  assert!(
-    !stale_app
+  assert_eq!(
+    stale_app
       .world()
       .resource::<PresentationBevySpriteTransformProjection>()
-      .entries()
-      .iter()
-      .any(|entry| entry.node().node().key()
-        == SceneSpriteKey::InventoryItem(ItemDefinitionId::new(102)))
+      .entries(),
+    retained_stale.as_slice()
+  );
+  assert!(
+    stale_app
+      .world()
+      .get_entity(stale_entry.node().node_entity())
+      .is_err()
   );
 }
 
@@ -259,7 +295,7 @@ fn colocated_nodes_keep_distinct_translations() {
 
 #[test]
 fn missing_tile_size_leaves_translations_unset() {
-  let app = node_app(None);
+  let app = node_app(None, true);
   assert!(
     app
       .world()
@@ -268,6 +304,103 @@ fn missing_tile_size_leaves_translations_unset() {
       .iter()
       .all(|entry| entry.translation().is_none())
   );
+
+  let mut removed_later = sized_app();
+  let before = removed_later
+    .world()
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .to_vec();
+  removed_later
+    .world_mut()
+    .remove_resource::<PresentationTileSize>();
+  removed_later.update();
+  assert_eq!(
+    removed_later
+      .world()
+      .resource::<PresentationBevySpriteTransformProjection>()
+      .entries(),
+    before.as_slice()
+  );
+}
+
+#[test]
+fn accepted_movement_refreshes_the_same_node_translation() {
+  let mut app = sized_app();
+  let actor_source = app
+    .world()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .find_map(|entry| match entry {
+      SceneRenderEntry::Actor { entity, actor, .. } if actor.id() == ActorId::new(3) => {
+        Some(*entity)
+      }
+      _ => None,
+    })
+    .expect("moving actor mirror should exist");
+  let before = app
+    .world()
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .iter()
+    .find(|entry| {
+      entry.node().node().source_entity() == actor_source
+        && entry.node().node().key() == SceneSpriteKey::Enemy
+    })
+    .copied()
+    .expect("moving actor transform entry should exist");
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("adjacent attack should succeed");
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Move {
+      actor: ActorId::new(3),
+      direction: dreadstep_core::Direction::West,
+    })
+    .expect("enemy move into the dead actor tile should succeed");
+  app.update();
+  let after = app
+    .world()
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .iter()
+    .find(|entry| {
+      entry.node().node().source_entity() == actor_source
+        && entry.node().node().key() == SceneSpriteKey::Enemy
+    })
+    .copied()
+    .expect("moving actor transform entry should remain");
+  assert_eq!(after.node().node_entity(), before.node().node_entity());
+  assert_eq!(translation(after), Some((32, 0)));
+}
+
+#[test]
+fn transform_projection_does_not_attach_ecs_components() {
+  let app = transform_only_app();
+  let entries = app
+    .world()
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .to_vec();
+  assert!(!entries.is_empty());
+  for entry in entries {
+    let entity = app
+      .world()
+      .get_entity(entry.node().node_entity())
+      .expect("node entity should exist");
+    assert!(entity.get::<Sprite>().is_none());
+    assert!(entity.get::<Transform>().is_none());
+    assert!(entity.get::<Visibility>().is_none());
+  }
 }
 
 #[test]
