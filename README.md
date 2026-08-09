@@ -33,7 +33,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.
-- Active window boundary: validated typed logical dimensions and integer pixel scale for a future
+- Verified window boundary: validated typed logical dimensions and integer pixel scale for a future
   desktop client without creating an OS window or enabling desktop features.
 - Next presentation work: rendered scene metadata and window/rendering boundaries before widgets or
   text policy.
