@@ -141,71 +141,28 @@ fn manifest_requires_exact_audio_families_and_rejects_non_audio_paths() {
   let valid = manifest("one");
   assert_eq!(valid.bindings().len(), 8);
   assert!(PresentationAudioAssetManifest::new(vec![]).is_none());
-  assert!(
-    PresentationAudioAssetManifest::new(vec![
-      (
-        PresentationAudioCueKind::Moved,
-        reference("art/not-audio.png")
-      ),
-      (
-        PresentationAudioCueKind::MovementBlocked,
-        reference("audio/blocked.ogg")
-      ),
-      (
-        PresentationAudioCueKind::Waited,
-        reference("audio/wait.ogg")
-      ),
-      (
-        PresentationAudioCueKind::Attacked,
-        reference("audio/attack.ogg")
-      ),
-      (PresentationAudioCueKind::Died, reference("audio/death.ogg")),
-      (
-        PresentationAudioCueKind::ItemEquipped,
-        reference("audio/equip.ogg")
-      ),
-      (
-        PresentationAudioCueKind::ItemUnequipped,
-        reference("audio/unequip.ogg")
-      ),
-      (
-        PresentationAudioCueKind::ItemConsumed,
-        reference("audio/consume.ogg")
-      ),
-    ])
-    .is_none()
+  let mut crate_local_audio = valid.bindings().to_vec();
+  crate_local_audio[0] = (
+    PresentationAudioCueKind::Moved,
+    reference("crates/dreadstep-bevy/audio/move.ogg"),
   );
-  assert!(
-    PresentationAudioAssetManifest::new(vec![
-      (PresentationAudioCueKind::Moved, reference("audio/move.ogg")),
-      (
-        PresentationAudioCueKind::Moved,
-        reference("audio/move-duplicate.ogg")
-      ),
-      (
-        PresentationAudioCueKind::Waited,
-        reference("audio/wait.ogg")
-      ),
-      (
-        PresentationAudioCueKind::Attacked,
-        reference("audio/attack.ogg")
-      ),
-      (PresentationAudioCueKind::Died, reference("audio/death.ogg")),
-      (
-        PresentationAudioCueKind::ItemEquipped,
-        reference("audio/equip.ogg")
-      ),
-      (
-        PresentationAudioCueKind::ItemUnequipped,
-        reference("audio/unequip.ogg")
-      ),
-      (
-        PresentationAudioCueKind::ItemConsumed,
-        reference("audio/consume.ogg")
-      ),
-    ])
-    .is_none()
-  );
+  assert!(PresentationAudioAssetManifest::new(crate_local_audio).is_some());
+  for path in [
+    "assets/not-audio.wav",
+    "art/not-audio.png",
+    "crates/dreadstep-bevy/assets/not-audio.wav",
+    "crates/dreadstep-bevy/art/not-audio.png",
+  ] {
+    let mut bindings = valid.bindings().to_vec();
+    bindings[0] = (PresentationAudioCueKind::Moved, reference(path));
+    assert!(
+      PresentationAudioAssetManifest::new(bindings).is_none(),
+      "{path} should not be accepted as an audio reference"
+    );
+  }
+  let mut duplicate = valid.bindings().to_vec();
+  duplicate[1].0 = PresentationAudioCueKind::Moved;
+  assert!(PresentationAudioAssetManifest::new(duplicate).is_none());
 }
 
 #[test]
