@@ -59,7 +59,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified typed sprite-key projection: `SceneSpriteKey` and `PresentationSpriteProjection` map
   complete render entries to stable terrain/actor/item selectors while retaining entities, roles, and
   placement metadata; texture loading, render plugins, transforms, and media remain deferred.
-- Active deterministic render-command plan: `PresentationRenderCommandPlan` derives typed layer,
+- Verified deterministic render-command plan: `PresentationRenderCommandPlan` derives typed layer,
   source-order, and optional pixel-placement metadata from sprite entries for a future renderer;
   texture loading, render plugins, transforms, windows, and media remain deferred.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat

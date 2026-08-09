@@ -293,7 +293,7 @@ projection preserves retained entities and placement metadata without loading as
 another source of simulation truth. Actual texture loading, render plugins, transforms, and media
 remain deferred.
 
-The active render-command-plan slice derives `PresentationRenderCommandPlan` from the verified
+The verified render-command-plan slice derives `PresentationRenderCommandPlan` from the verified
 sprite projection. Each `SceneRenderCommand` retains its complete typed entry, ECS identity, sprite
 key, optional placement, deterministic layer, and source order. This is a read-only draw plan for a
 future renderer; it does not load assets, create transforms or windows, enable render plugins, or

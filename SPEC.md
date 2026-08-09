@@ -2256,12 +2256,11 @@ Out of scope:
 - Texture handles, asset loading, render plugins, transforms, windowing, audio playback, committed
   binaries, gameplay rules, persistence, transport, and dependencies.
 
-## Present
-
 ### Milestone 3 slice: deterministic render-command plan
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Derive an ordered, read-only draw-command plan from the verified sprite projection. Each command
 retains the complete typed entry, stable ECS identity, sprite key, optional map placement, and a
@@ -2274,7 +2273,8 @@ Acceptance:
   `PresentationSpriteProjection`; commands preserve complete render values and stable keyed entity
   identity.
 - `SceneRenderLayer` classifies terrain, ground items, actors, and inventory metadata with explicit
-  deterministic ordering, while source order remains observable for stable same-layer handling.
+  deterministic ordering, while original source order remains available for stable same-layer
+  handling.
 - Map-backed commands preserve checked `ScenePixelPosition` values and inventory commands remain
   unplaced; accepted updates refresh dead roles and stale entries without mutating runtime, replay,
   or core state.
@@ -2283,12 +2283,25 @@ Acceptance:
 - The slice adds no texture handles, asset loading, render plugins, transforms, windowing, audio
   playback, committed binaries, gameplay rules, persistence, transport, or dependencies.
 
-Verification target:
+Verification:
 
-- Focused render-command-plan tests prove complete-entry retention, layer/order mapping, exact map
-  placement and inventory exclusion, retained dead-actor identity, and authority/resource guards.
-- All Bevy targets, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
-  `scripts/verify.sh` pass before the single-reviewer handoff.
+- Focused `cargo test -p dreadstep-bevy --test render_command_plan --locked` passes all four tests
+  covering complete-entry retention, layer/source-order mapping, exact map placement and inventory
+  exclusion, retained dead-actor identity with stale-key removal, and independent authority/resource
+  guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic reviewer reports PASS on final reviewed evidence/docs revision `4840b5d`
+  (initial implementation `8ff0b00`, behavior correction `a650755`); Linux, Apple Silicon macOS,
+  and Windows CI are green. PR #65 merged as `7ca9a24`; this docs-only closeout is reviewed
+  separately.
+
+Out of scope:
+
+- Texture handles, asset loading, render plugins, transforms, windowing, audio playback, committed
+  binaries, gameplay rules, persistence, transport, and dependencies.
+
+## Present
 
 ### Deferred item gameplay semantics
 
