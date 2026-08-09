@@ -2689,8 +2689,9 @@ Acceptance:
 Verification target:
 
 - Focused `cargo test -p dreadstep-bevy --test sprite_transform_centering --locked` proves
-  rectangular/odd centering, origin preservation, refresh/stale/co-location, runtime/resource
-  guards, and authority; the existing 9/9 component suite retains the missing-node-entity guard.
+  rectangular/odd centering, origin preservation, fresh/later tile-size behavior, refresh/co-location,
+  runtime/source/destination guards, and authority; the existing 9/9 component suite proves stale
+  removal and retains the missing-node-entity guard.
 
 Out of scope:
 
