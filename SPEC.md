@@ -1143,8 +1143,9 @@ Out of scope:
 
 ### Milestone 3 slice: deterministic presentation feedback buffer
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Expose accepted presentation output as an adapter-owned, one-shot feedback buffer for future HUD
 and combat-message systems. `PresentationRuntime` will retain the latest `PresentationOutput` from
