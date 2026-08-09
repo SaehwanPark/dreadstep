@@ -1776,6 +1776,10 @@ Current exploratory gate (2026-08-09):
   production media remain deferred.
 - The verified ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values
   from typed render layer while preserving centered x/y placement and inventory default state.
+- A verified headless ECS Camera2d attachment boundary adds only Bevy's typed camera marker/default
+  orthographic components to the retained disposable camera projection entity; runtime/
+  `PresentationCamera` remain authoritative, while window creation, camera transform/viewport policy,
+  render plugins, visibility, playback, and production media remain deferred.
 
 ### Content
 

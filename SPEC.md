@@ -2705,6 +2705,47 @@ Out of scope:
   or production asset loading, audio playback, animation, gameplay rules, persistence, transport,
   and committed media binaries.
 
+### Milestone 3 slice: headless ECS Camera2d attachment
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Attach Bevy's typed `Camera2d` marker to the already retained disposable `SceneCamera` projection
+entity. `PresentationCamera` and the runtime remain the source of camera-center truth; this slice
+adds only Bevy's required camera components at their defaults.
+
+Acceptance:
+
+- Startup, accepted movement, and controlled-actor changes retain one SceneCamera entity and attach
+  one `Camera2d` marker with Bevy's required default camera components; no custom transform,
+  viewport, or visibility policy is added.
+- Duplicate/recycled camera cleanup preserves the retained identity and Camera2d; unknown actors
+  remove stale camera entities without mutating runtime snapshot/replay digest.
+- Missing runtime, input, or camera resources are independent safe no-ops. SceneCamera creation,
+  deduplication, and unknown-actor cleanup remain the existing synchronization behavior. No window,
+  render plugin/backend, texture/asset loading, audio, animation, gameplay, persistence, transport,
+  or committed media behavior is introduced.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test camera_attachment --locked` passes 6/6 and proves
+  startup/defaults including orthographic projection and no viewport, refresh/identity, duplicate
+  and recycled lower-index cleanup, unknown clearing, guards, and runtime/replay authority.
+- All Bevy targets, warning-denied all-target/all-feature Clippy, warning-denied workspace Rustdoc,
+  formatting, repository checks, `git diff --check`, and `scripts/verify.sh` pass locally; anchored
+  media checks keep local binaries ignored while tracked concept art and root screenshot exceptions
+  remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `f9db7d6` (implementation `5cd838d`,
+  bounded contract/evidence correction `f9db7d6`); Linux, Apple Silicon macOS, and Windows CI are
+  green on PR #77 (run `31339276321`). This docs-only closeout is reviewed separately.
+
+Out of scope:
+
+- Window creation, render plugins/backends, camera transform/viewport/visibility policy, fog of war,
+  texture or production asset loading, audio playback, animation, gameplay rules, persistence,
+  transport, and committed media binaries.
+
 ## Present
 
 ### Deferred item gameplay semantics
@@ -2722,9 +2763,9 @@ explicit core contract.
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
 Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, ECS Sprite-transform
-attachment, deterministic ECS Sprite-depth boundaries, and the centered ECS Sprite-transform
-boundary. The remaining renderer work in the proposal still defines these future product milestones;
-each needs its own bounded acceptance slice before it can move into `Past`:
+attachment, deterministic ECS Sprite-depth boundaries, centered ECS Sprite-transform and headless
+ECS Camera2d boundaries. The remaining renderer work in the proposal still defines these future
+product milestones; each needs its own bounded acceptance slice before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
