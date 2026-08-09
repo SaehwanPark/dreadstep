@@ -519,7 +519,8 @@ impl StableHasher {
   }
 }
 
-/// An actor with a stable identity, kind, position, hit points, inventory, and next ready time.
+/// An actor with a stable identity, kind, position, hit points, inventory, optional equipment,
+/// and next ready time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Actor {
   id: ActorId,
@@ -527,6 +528,7 @@ pub struct Actor {
   position: Position,
   hit_points: HitPoints,
   inventory: Vec<Item>,
+  equipped: Option<ItemId>,
   ready_at: ActionTime,
 }
 
@@ -551,6 +553,7 @@ impl Actor {
       position,
       hit_points,
       inventory: Vec::new(),
+      equipped: None,
       ready_at: ActionTime::new(0),
     }
   }
@@ -583,6 +586,12 @@ impl Actor {
   #[must_use]
   pub fn inventory(&self) -> &[Item] {
     &self.inventory
+  }
+
+  /// Returns the optional equipped item identity, which always points into this inventory.
+  #[must_use]
+  pub const fn equipped_item(&self) -> Option<ItemId> {
+    self.equipped
   }
 
   /// Returns whether this actor can be scheduled, targeted, or moved around.
@@ -627,6 +636,18 @@ pub enum Command {
     /// The living actor being pursued.
     target: ActorId,
   },
+  /// Equip one item already owned by the actor, replacing any previous equipment.
+  Equip {
+    /// The actor issuing the command.
+    actor: ActorId,
+    /// The owned item instance to equip.
+    item: ItemId,
+  },
+  /// Unequip the actor's current item reference.
+  Unequip {
+    /// The actor issuing the command.
+    actor: ActorId,
+  },
 }
 
 impl Command {
@@ -635,7 +656,9 @@ impl Command {
       Self::Move { actor, .. }
       | Self::Wait { actor }
       | Self::Attack { actor, .. }
-      | Self::Chase { actor, .. } => actor,
+      | Self::Chase { actor, .. }
+      | Self::Equip { actor, .. }
+      | Self::Unequip { actor } => actor,
     }
   }
 }
@@ -681,7 +704,7 @@ impl ReplayTrace {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-REPLAY-V1");
+    hasher.write_bytes(b"DREADSTEP-REPLAY-V2");
     hasher.write_u64(self.seed);
     hasher.write_u64(u64::try_from(self.commands.len()).unwrap_or(u64::MAX));
     for command in &self.commands {
@@ -711,6 +734,15 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u8(4);
       hasher.write_u32(actor.value());
       hasher.write_u32(target.value());
+    }
+    Command::Equip { actor, item } => {
+      hasher.write_u8(5);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(item.value());
+    }
+    Command::Unequip { actor } => {
+      hasher.write_u8(6);
+      hasher.write_u32(actor.value());
     }
   }
 }
@@ -779,6 +811,20 @@ pub enum Event {
     /// The actor that died.
     actor: ActorId,
   },
+  /// An actor equipped an owned item, optionally after another item was unequipped.
+  ItemEquipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item now equipped.
+    item: ItemId,
+  },
+  /// An actor removed its equipped item reference.
+  ItemUnequipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item that was unequipped.
+    item: ItemId,
+  },
 }
 
 /// Errors produced while constructing or explicitly mutating a world state.
@@ -793,6 +839,13 @@ pub enum WorldError {
     /// The actor whose inventory was searched.
     actor: ActorId,
     /// The item identity that was not found.
+    item: ItemId,
+  },
+  /// An equipped item cannot be moved by a tester inventory mutation.
+  ItemEquipped {
+    /// The actor whose equipment references the item.
+    actor: ActorId,
+    /// The equipped item identity.
     item: ItemId,
   },
   /// An actor has no matching item in the ground stack at its current position.
@@ -867,6 +920,12 @@ impl fmt::Display for WorldError {
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
         "actor {} does not own item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemEquipped { actor, item } => write!(
+        formatter,
+        "actor {} cannot move equipped item {}",
         actor.value(),
         item.value()
       ),
@@ -977,6 +1036,22 @@ pub enum CommandError {
     /// The actor outside melee range.
     target: ActorId,
   },
+  /// The actor does not own the item requested for equipment.
+  ItemNotOwned {
+    /// The actor whose inventory was searched.
+    actor: ActorId,
+    /// The item identity that was not found.
+    item: ItemId,
+  },
+  /// The requested item is already equipped.
+  ItemAlreadyEquipped {
+    /// The actor whose equipment was queried.
+    actor: ActorId,
+    /// The already equipped item identity.
+    item: ItemId,
+  },
+  /// The actor has no equipped item to remove.
+  NothingEquipped(ActorId),
 }
 
 impl fmt::Display for CommandError {
@@ -1021,6 +1096,21 @@ impl fmt::Display for CommandError {
         attacker.value(),
         target.value()
       ),
+      Self::ItemNotOwned { actor, item } => write!(
+        formatter,
+        "actor {} does not own item {} for equipment",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemAlreadyEquipped { actor, item } => write!(
+        formatter,
+        "actor {} already equips item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::NothingEquipped(actor) => {
+        write!(formatter, "actor {} has no equipped item", actor.value())
+      }
     }
   }
 }
@@ -1214,9 +1304,10 @@ impl WorldState {
   ///
   /// # Errors
   ///
-  /// Returns [`WorldError::UnknownActor`] when the actor identity is absent or
-  /// [`WorldError::ItemNotOwned`] when the actor does not own the requested item. Rejected drops
-  /// leave the world unchanged.
+  /// Returns [`WorldError::UnknownActor`] when the actor identity is absent,
+  /// [`WorldError::ItemNotOwned`] when the actor does not own the requested item, or
+  /// [`WorldError::ItemEquipped`] when moving the requested item would invalidate the equipment
+  /// reference. Rejected drops leave the world unchanged.
   pub fn drop_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<(), WorldError> {
     if !self.actors.contains_key(&actor_id) {
       return Err(WorldError::UnknownActor(actor_id));
@@ -1231,6 +1322,12 @@ impl WorldState {
         item: item_id,
       });
     };
+    if self.actors.get(&actor_id).and_then(Actor::equipped_item) == Some(item_id) {
+      return Err(WorldError::ItemEquipped {
+        actor: actor_id,
+        item: item_id,
+      });
+    }
     let position = self
       .actors
       .get(&actor_id)
@@ -1322,9 +1419,10 @@ impl WorldState {
   ///
   /// # Errors
   ///
-  /// Returns [`WorldError::UnknownActor`] when either actor identity is absent or
-  /// [`WorldError::ItemNotOwned`] when the source does not own the requested item. Rejected
-  /// transfers leave the world unchanged.
+  /// Returns [`WorldError::UnknownActor`] when either actor identity is absent,
+  /// [`WorldError::ItemNotOwned`] when the source does not own the requested item, or
+  /// [`WorldError::ItemEquipped`] when moving the requested item would invalidate the equipment
+  /// reference. Rejected transfers leave the world unchanged.
   pub fn transfer_item(
     &mut self,
     source_actor: ActorId,
@@ -1347,6 +1445,17 @@ impl WorldState {
         item: item_id,
       });
     };
+    if self
+      .actors
+      .get(&source_actor)
+      .and_then(Actor::equipped_item)
+      == Some(item_id)
+    {
+      return Err(WorldError::ItemEquipped {
+        actor: source_actor,
+        item: item_id,
+      });
+    }
     if source_actor == target_actor {
       return Ok(());
     }
@@ -1503,12 +1612,13 @@ impl WorldState {
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
   /// identity, kind, life, position, hit points, ready time, ordered inventory item identities and
-  /// definition references, and ordered ground-item stacks. It is deterministic regression
-  /// evidence, not a cryptographic integrity check or serialized state format.
+  /// definition references, optional equipped item identity, and ordered ground-item stacks. It is
+  /// deterministic regression evidence, not a cryptographic integrity check or serialized state
+  /// format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V1");
+    hasher.write_bytes(b"DREADSTEP-STATE-V2");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in &self.map.tiles {
@@ -1533,6 +1643,13 @@ impl WorldState {
       for item in actor.inventory() {
         hasher.write_u32(item.id().value());
         hasher.write_u32(item.definition().value());
+      }
+      match actor.equipped_item() {
+        Some(item) => {
+          hasher.write_u8(1);
+          hasher.write_u32(item.value());
+        }
+        None => hasher.write_u8(0),
       }
     }
     if !self.ground_items.is_empty() {
@@ -1564,9 +1681,10 @@ impl WorldState {
   /// Returns commands currently available to the scheduled living actor.
   ///
   /// Cardinal movement and waiting are always listed because blocked movement still produces an
-  /// accepted semantic action. Player attacks are limited to adjacent living targets; enemy
-  /// chase requests include every distinct living target. Results follow the fixed direction
-  /// order and then stable actor identity order.
+  /// accepted semantic action. Owned items that are not already equipped are listed before the
+  /// optional unequip action. Player attacks are limited to adjacent living targets; enemy chase
+  /// requests include every distinct living target. Results follow the fixed direction, equipment,
+  /// and then stable actor identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
     let Some(actor_id) = self.next_actor() else {
@@ -1598,6 +1716,17 @@ impl WorldState {
       },
       Command::Wait { actor: actor_id },
     ];
+    for item in actor.inventory() {
+      if actor.equipped_item() != Some(item.id()) {
+        commands.push(Command::Equip {
+          actor: actor_id,
+          item: item.id(),
+        });
+      }
+    }
+    if actor.equipped_item().is_some() {
+      commands.push(Command::Unequip { actor: actor_id });
+    }
     for target in self
       .actors
       .values()
@@ -1626,8 +1755,8 @@ impl WorldState {
   ///
   /// Returns [`CommandError::UnknownActor`] for an unknown identity,
   /// [`CommandError::ActorDead`] for a dead command actor,
-  /// [`CommandError::ActorNotScheduled`] when a different actor must act first, a target
-  /// error for an invalid attack, or [`CommandError::ScheduleOverflow`] if the integer
+  /// [`CommandError::ActorNotScheduled`] when a different actor must act first, an equipment or
+  /// target error for invalid requests, or [`CommandError::ScheduleOverflow`] if the integer
   /// timeline cannot advance.
   pub fn execute(&mut self, command: Command) -> Result<ActionResult, CommandError> {
     let actor_id = command.actor();
@@ -1661,6 +1790,8 @@ impl WorldState {
         let direction = self.chase_direction(actor_id, target)?;
         vec![self.move_actor(actor_id, direction)?]
       }
+      Command::Equip { item, .. } => self.equip_item(actor_id, item)?,
+      Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
     };
     self
       .actors
@@ -1684,6 +1815,61 @@ impl WorldState {
       .values()
       .find(|actor| actor.is_alive() && actor.position() == position)
       .map(Actor::id)
+  }
+
+  fn equip_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<Vec<Event>, CommandError> {
+    let actor = self
+      .actors
+      .get(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    if !actor.inventory().iter().any(|item| item.id() == item_id) {
+      return Err(CommandError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      });
+    }
+    if actor.equipped_item() == Some(item_id) {
+      return Err(CommandError::ItemAlreadyEquipped {
+        actor: actor_id,
+        item: item_id,
+      });
+    }
+    let previous = actor.equipped_item();
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .equipped = Some(item_id);
+    let mut events = Vec::with_capacity(2);
+    if let Some(previous) = previous {
+      events.push(Event::ItemUnequipped {
+        actor: actor_id,
+        item: previous,
+      });
+    }
+    events.push(Event::ItemEquipped {
+      actor: actor_id,
+      item: item_id,
+    });
+    Ok(events)
+  }
+
+  fn unequip_item(&mut self, actor_id: ActorId) -> Result<Event, CommandError> {
+    let item = self
+      .actors
+      .get(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .equipped_item()
+      .ok_or(CommandError::NothingEquipped(actor_id))?;
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .equipped = None;
+    Ok(Event::ItemUnequipped {
+      actor: actor_id,
+      item,
+    })
   }
 
   fn is_adjacent(first: Position, second: Position) -> bool {

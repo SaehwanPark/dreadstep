@@ -1,7 +1,9 @@
 //! Contract tests for protocol-owned agent action requests.
 
-use dreadstep_core::{ActorId as CoreActorId, Command, Direction as CoreDirection};
-use dreadstep_protocol::{ActorId, CommandRequest, Direction};
+use dreadstep_core::{
+  ActorId as CoreActorId, Command, Direction as CoreDirection, ItemId as CoreItemId,
+};
+use dreadstep_protocol::{ActorId, CommandRequest, Direction, ItemId};
 
 #[test]
 fn every_request_variant_round_trips_through_core() {
@@ -32,6 +34,13 @@ fn every_request_variant_round_trips_through_core() {
     CommandRequest::Chase {
       actor: ActorId::new(2),
       target: ActorId::new(1),
+    },
+    CommandRequest::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(9),
+    },
+    CommandRequest::Unequip {
+      actor: ActorId::new(1),
     },
   ];
 
@@ -70,6 +79,13 @@ fn every_core_command_round_trips_through_protocol() {
     Command::Chase {
       actor: CoreActorId::new(2),
       target: CoreActorId::new(1),
+    },
+    Command::Equip {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(9),
+    },
+    Command::Unequip {
+      actor: CoreActorId::new(1),
     },
   ];
 
