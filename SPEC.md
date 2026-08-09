@@ -288,6 +288,41 @@ Out of scope:
   tools, wire serialization, authored scenarios, and command validation beyond representation
   conversion.
 
+### Milestone 2 slice: in-memory MCP player session
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the first usable player-facing MCP boundary without depending on an MCP transport runtime.
+`dreadstep-mcp` owns an explicit in-memory session with a seed and fixed developer scenario;
+`start_run` constructs it, `observe` returns the versioned protocol snapshot, and `act` maps a
+protocol request into one core command and returns protocol event evidence plus the new snapshot.
+Core remains authoritative for scheduling, legality, and all state transitions.
+
+Acceptance:
+
+- `dreadstep-mcp` exposes deterministic `Session::start_run`, `observe`, and `act` operations
+  with no `rmcp`, filesystem, wall-clock, or Bevy dependency.
+- Session output includes the supplied seed, typed protocol events, and a fresh `WorldSnapshot`
+  after each accepted action.
+- Core command rejection is returned as a structured session error with no partial output or
+  state mutation; accepted actions delegate entirely to `WorldState::execute`.
+- Protocol owns event representations for movement, blocking, waiting, attack, and death,
+  including typed actor, position, damage, hit-point, and block-reason values.
+- Focused MCP tests cover start/observe, an accepted action, protocol event mapping, and a
+  rejected unscheduled actor command.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-mcp --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, legal-action enumeration, tester tools, session restore,
+  wire serialization, authored scenarios, and interactive input.
+
 ## Future
 
 ### Milestone 1: Rules kernel

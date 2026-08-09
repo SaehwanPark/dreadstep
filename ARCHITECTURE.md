@@ -79,6 +79,10 @@ The protocol action envelope is likewise only a typed conversion boundary: it ca
 external request values into canonical core commands and back, but command validation and
 execution remain owned by `dreadstep-core::WorldState`.
 
+The first MCP player slice is an in-memory session over those protocol values. It owns session
+seed/scenario setup and response shaping only; it must not register a transport, enumerate
+legal actions, or duplicate core transition rules.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

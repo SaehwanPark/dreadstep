@@ -23,6 +23,8 @@ All notable contributor- and user-visible project changes are recorded here.
   observation, without adding an MCP transport runtime.
 - A versioned protocol action envelope that maps typed agent requests to and from core commands
   without executing them.
+- A pure in-memory MCP player session for deterministic start, observe, and act flows without a
+  transport runtime.
 
 ### Changed
 
