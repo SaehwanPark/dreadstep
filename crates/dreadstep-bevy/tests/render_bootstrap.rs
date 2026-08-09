@@ -4,8 +4,8 @@ use bevy::app::App;
 use dreadstep_bevy::{
   PresentationPlugin, PresentationRenderCommandPlan, PresentationRenderNodeProjection,
   PresentationRenderProjection, PresentationRuntime, PresentationSpriteProjection,
-  PresentationState, PresentationTileSize, SceneRenderLayer, SceneRenderPlaceholder,
-  SceneSpriteKey,
+  PresentationState, PresentationTileSize, SceneRenderEntry, SceneRenderLayer,
+  SceneRenderPlaceholder, SceneSpriteKey,
 };
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position,
@@ -68,7 +68,21 @@ fn bootstrap_projects_placeholder_nodes_in_command_order() {
     .resource::<PresentationRenderNodeProjection>()
     .entries()
     .to_vec();
+  let commands = app
+    .world_mut()
+    .resource::<PresentationRenderCommandPlan>()
+    .commands()
+    .to_vec();
   assert_eq!(entries.len(), 8);
+  assert_eq!(entries.len(), commands.len());
+  for (entry, command) in entries.iter().zip(commands.iter()) {
+    let node = entry.node();
+    assert_eq!(node.source_entity(), command.sprite_entry().entity());
+    assert_eq!(node.key(), command.sprite_entry().key());
+    assert_eq!(node.layer(), command.layer());
+    assert_eq!(node.order(), command.order());
+    assert_eq!(node.pixel_position(), command.pixel_position());
+  }
   assert_eq!(
     entries
       .iter()
@@ -114,6 +128,105 @@ fn bootstrap_projects_placeholder_nodes_in_command_order() {
       .pixel_position(),
     None
   );
+}
+
+#[test]
+fn bootstrap_removes_stale_inventory_node_and_retains_other_nodes() {
+  let mut app = bootstrap_app();
+  let before = app
+    .world_mut()
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .to_vec();
+  let inventory = before
+    .iter()
+    .find(|entry| matches!(entry.node().key(), SceneSpriteKey::InventoryItem(_)))
+    .copied()
+    .expect("inventory node should exist");
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(2),
+    })
+    .expect("inventory item should be consumable");
+  app.update();
+  let after = app
+    .world_mut()
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .to_vec();
+  assert!(
+    !after
+      .iter()
+      .any(|entry| matches!(entry.node().key(), SceneSpriteKey::InventoryItem(_)))
+  );
+  assert!(app.world().get_entity(inventory.node_entity()).is_err());
+  for retained in before
+    .iter()
+    .filter(|entry| entry.node_entity() != inventory.node_entity())
+  {
+    let matching = after
+      .iter()
+      .find(|entry| {
+        entry.node().source_entity() == retained.node().source_entity()
+          && entry.node().layer() == retained.node().layer()
+      })
+      .expect("non-stale node should remain");
+    assert_eq!(matching.node_entity(), retained.node_entity());
+  }
+}
+
+#[test]
+fn bootstrap_co_located_source_mirrors_get_distinct_nodes() {
+  let mut app = bootstrap_app();
+  let (tile_entity, tile) = app
+    .world_mut()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .find_map(|entry| match entry {
+      SceneRenderEntry::Terrain { entity, tile, .. } => Some((*entity, *tile)),
+      _ => None,
+    })
+    .expect("terrain entry should exist");
+  let actor_entity = app
+    .world_mut()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .find_map(|entry| match entry {
+      SceneRenderEntry::Actor { entity, actor, .. } if actor.id() == ActorId::new(1) => {
+        Some(*entity)
+      }
+      _ => None,
+    })
+    .expect("player entry should exist");
+  assert_ne!(tile_entity, actor_entity);
+  app.world_mut().despawn(tile_entity);
+  app.world_mut().entity_mut(actor_entity).insert(tile);
+  app.update();
+  let co_located = app
+    .world_mut()
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .iter()
+    .filter(|entry| entry.node().source_entity() == actor_entity)
+    .copied()
+    .collect::<Vec<_>>();
+  assert_eq!(co_located.len(), 2);
+  assert!(
+    co_located
+      .iter()
+      .any(|entry| entry.node().layer() == SceneRenderLayer::Terrain)
+  );
+  assert!(
+    co_located
+      .iter()
+      .any(|entry| entry.node().layer() == SceneRenderLayer::Actor)
+  );
+  assert_ne!(co_located[0].node_entity(), co_located[1].node_entity());
 }
 
 #[test]
