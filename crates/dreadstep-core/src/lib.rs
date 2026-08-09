@@ -673,9 +673,11 @@ pub enum Event {
   },
 }
 
-/// Errors produced while constructing a world state.
+/// Errors produced while constructing or explicitly mutating a world state.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum WorldError {
+  /// A tester mutation addresses no actor in the world.
+  UnknownActor(ActorId),
   /// Two actors use the same stable identity.
   DuplicateActorId(ActorId),
   /// An actor starts outside the map.
@@ -711,6 +713,7 @@ pub enum WorldError {
 impl fmt::Display for WorldError {
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
+      Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
       Self::DuplicateActorId(actor) => {
         write!(formatter, "actor id {} is duplicated", actor.value())
       }
@@ -972,6 +975,59 @@ impl WorldState {
     let mut actor = actor;
     actor.ready_at = self.current_time;
     self.actors.insert(actor_id, actor);
+    Ok(())
+  }
+
+  /// Sets one existing actor's hit points for an explicit tester operation.
+  ///
+  /// Setting zero leaves the dead actor record inspectable while existing scheduling and
+  /// occupancy queries exclude it. Reviving a dead actor anchors its readiness at the current
+  /// action time so the mutation cannot rewind the deterministic timeline. Removing a living
+  /// actor may advance the current time to the next surviving actor's readiness, but never moves
+  /// it backward; other actor fields remain unchanged.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`WorldError::UnknownActor`] when no actor has the requested identity or
+  /// [`WorldError::OverlappingActors`] when reviving would overlap a living actor.
+  pub fn set_hit_points(
+    &mut self,
+    actor_id: ActorId,
+    hit_points: HitPoints,
+  ) -> Result<(), WorldError> {
+    let current_time = self.current_time;
+    let Some(existing) = self.actors.get(&actor_id) else {
+      return Err(WorldError::UnknownActor(actor_id));
+    };
+    let was_alive = existing.is_alive();
+    if !was_alive && hit_points.is_alive() {
+      let position = existing.position();
+      if let Some(first) = self
+        .actors
+        .values()
+        .find(|actor| actor.is_alive() && actor.position() == position)
+      {
+        return Err(WorldError::OverlappingActors {
+          first: first.id(),
+          second: actor_id,
+          position,
+        });
+      }
+    }
+    let actor = self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(WorldError::UnknownActor(actor_id))?;
+    actor.hit_points = hit_points;
+    if !was_alive && hit_points.is_alive() {
+      actor.ready_at = current_time;
+    } else if was_alive
+      && !hit_points.is_alive()
+      && let Some(next_actor) = self.next_actor()
+      && let Some(next_ready_at) = self.actors.get(&next_actor).map(Actor::ready_at)
+    {
+      self.current_time = next_ready_at;
+    }
     Ok(())
   }
 

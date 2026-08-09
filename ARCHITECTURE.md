@@ -114,6 +114,11 @@ Tester spawning crosses the boundary as a typed request to core `WorldState::spa
 identity, map, living occupancy, and hit points; MCP only converts protocol values and projects
 typed world errors, preserving atomic failure and one source of game truth.
 
+Tester hit-point mutation crosses the boundary as a typed request to core
+`WorldState::set_hit_points`. Core owns dead-record retention, living occupancy, and scheduler-safe
+reanimation at the current action time; MCP only converts the request and projects an unknown-actor
+world error. Tester mutations remain outside accepted player history and replay evidence.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

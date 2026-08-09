@@ -273,6 +273,8 @@ impl ReplayEvidence {
 /// A protocol-owned world validation error returned by tester mutation operations.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorldError {
+  /// A tester mutation addresses no actor in the world.
+  UnknownActor(ActorId),
   /// The requested actor identity already exists.
   DuplicateActorId(ActorId),
   /// The requested actor position is outside the map.
@@ -308,6 +310,7 @@ pub enum WorldError {
 impl From<CoreWorldError> for WorldError {
   fn from(error: CoreWorldError) -> Self {
     match error {
+      CoreWorldError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
       CoreWorldError::DuplicateActorId(actor) => {
         Self::DuplicateActorId(ActorId::new(actor.value()))
       }
@@ -338,6 +341,7 @@ impl From<CoreWorldError> for WorldError {
 impl fmt::Display for WorldError {
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
+      Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
       Self::DuplicateActorId(actor) => {
         write!(formatter, "actor id {} is duplicated", actor.value())
       }

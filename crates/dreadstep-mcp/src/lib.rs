@@ -171,6 +171,27 @@ impl Session {
       .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
+  /// Sets one existing actor's hit points through the tester operation boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core cannot find the requested actor or
+  /// rejects a revival due to living occupancy. The mutation does not record a player command or
+  /// alter replay evidence.
+  pub fn set_hp(
+    &mut self,
+    actor: ProtocolActorId,
+    hit_points: ProtocolHitPoints,
+  ) -> Result<(), SessionError> {
+    self
+      .world
+      .set_hit_points(
+        ActorId::new(actor.value()),
+        HitPoints::new(hit_points.value()),
+      )
+      .map_err(|error| SessionError::WorldRejected(error.into()))
+  }
+
   /// Returns protocol requests currently accepted by the core scheduler and rules.
   #[must_use]
   pub fn legal_actions(&self) -> Vec<CommandRequest> {
