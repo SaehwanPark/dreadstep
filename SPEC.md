@@ -2661,12 +2661,11 @@ Out of scope:
   production asset loading, audio playback, animation, gameplay rules, persistence, transport, and
   committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: centered ECS Sprite transforms
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Choose the first explicit transform placement policy by centering map-backed Sprite nodes inside
 their caller-selected tile rectangles. The checked integer `ScenePixelPosition` remains the source
@@ -2686,18 +2685,27 @@ Acceptance:
   preserve existing components and authority. No camera, visibility, window, render plugin/backend,
   asset/audio, animation, gameplay, persistence, transport, or committed media behavior is added.
 
-Verification target:
+Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test sprite_transform_centering --locked` proves
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_centering --locked` passes 7/7 and proves
   rectangular/odd centering, origin preservation, fresh/later tile-size behavior, refresh/co-location,
   runtime/source/destination guards, and authority; the existing 9/9 component suite proves stale
   removal and retains the missing-node-entity guard.
+- Existing depth and projection suites pass 5/5 and 8/8 with centered coordinates; all Bevy targets,
+  warning-denied all-target/all-feature Clippy, warning-denied Bevy Rustdoc, formatting, repository
+  checks, `git diff --check`, and `scripts/verify.sh` pass locally. Media checks keep local binaries
+  ignored while concept art and root screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `2d5efa1` (implementation `8c1917c`,
+  bounded SPEC evidence correction `2d5efa1`); Linux, Apple Silicon macOS, and Windows CI are green
+  on PR #76 (run `31338000761`). This docs-only closeout is reviewed separately.
 
 Out of scope:
 
 - Anchor policy beyond centering, cameras, visibility/fog, windows, render plugins/backends, texture
   or production asset loading, audio playback, animation, gameplay rules, persistence, transport,
   and committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 
@@ -2714,9 +2722,9 @@ explicit core contract.
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
 Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, ECS Sprite-transform
-attachment, and deterministic ECS Sprite-depth boundaries. The remaining renderer work in the
-proposal still defines these future product milestones; each needs
-its own bounded acceptance slice before it can move into `Past`:
+attachment, deterministic ECS Sprite-depth boundaries, and the centered ECS Sprite-transform
+boundary. The remaining renderer work in the proposal still defines these future product milestones;
+each needs its own bounded acceptance slice before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.

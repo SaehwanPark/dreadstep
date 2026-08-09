@@ -322,20 +322,16 @@ starts unplaced while later removal preserves previously checked translations. T
 attach or mutate ECS Transform/Visibility/Sprite components; camera, window, renderer, and production
 media remain deferred.
 
-The verified ECS Sprite-transform attachment consumes that projection and writes only
-logical-pixel `Transform` translations `(pixel_x, pixel_y, 0)` onto retained map-backed node
-entities. Inventory nodes remain unplaced/default. Centering, anchors, depth, cameras, visibility,
-render plugins, windows, and production media remain separate deferred boundaries.
+The verified ECS Sprite-transform attachment consumes that projection and writes only deterministic
+centered logical-pixel `Transform` translations `(pixel_x + tile_width/2, pixel_y + tile_height/2,
+layer_depth)` onto retained map-backed node entities. Inventory nodes remain unplaced/default; anchor
+variants, cameras, visibility, render plugins, windows, and production media remain separate deferred
+boundaries.
 
 The verified ECS Sprite-depth boundary extends those transforms with deterministic layer depth:
 terrain `0.0`, ground items `1.0`, actors `2.0`, and inventory default/unplaced `0.0`. It preserves
-the existing checked x/y values, source/order/identity semantics, and authority guards without adding
-centering, cameras, visibility, render plugins, windows, or production media.
-
-The active centered ECS Sprite-transform boundary adds only the placement offset from the caller's
-tile size: map-backed nodes use checked origin plus half-width/half-height, while inventory remains
-default/unplaced. Anchor variants, cameras, visibility, render plugins, windows, and production media
-remain deferred.
+the existing centered x/y values, source/order/identity semantics, and authority guards without adding
+anchor variants, cameras, visibility, render plugins, windows, or production media.
 
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
