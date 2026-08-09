@@ -874,6 +874,40 @@ Out of scope:
 - tester mutations over MCP, replay persistence, alternate transports, hidden information,
   interactive input, map editing, and gameplay item semantics.
 
+### Milestone 2 slice: MCP accepted history
+
+- Status: verified
+- Started: 2026-08-08
+- Completed: 2026-08-08
+
+Expose the existing named `Session::get_history` projection through the local stdio MCP server as a
+read-only `get_history` tool. It takes no arguments and returns accepted typed protocol requests in
+execution order. Core replay recording remains authoritative; MCP only serializes the existing
+adapter-owned view and does not expose `ReplayTrace` internals.
+
+Acceptance:
+
+- A stdio MCP client can call `get_history` without arguments and receive an array of accepted
+  tagged move/wait/attack/chase requests in execution order.
+- The tool has explicit object input and array output schemas using protocol-owned request values.
+- A new run returns empty history; accepted actions appear exactly once, rejected actions do not,
+  and history calls do not mutate world, history, or replay evidence.
+- The process exposes exactly `start_run`, `observe`, `legal_actions`, `inspect`, `act`, and
+  `get_history`; tester mutations and other broader tools remain outside this slice.
+
+Verification:
+
+- Focused MCP tool-schema and ordered subprocess tests pass.
+- Direct session and stdio tests cover empty, accepted, rejected, ordered, deterministic, and
+  read-only history behavior.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- The single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- replay evidence transport, tester mutations over MCP, replay persistence, alternate transports,
+  hidden information, interactive input, map editing, and gameplay item semantics.
+
 ## Future
 
 ### Deferred item gameplay semantics

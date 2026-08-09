@@ -11,6 +11,10 @@ use rmcp::handler::server::wrapper::Parameters;
 use serde_json::{Value, json};
 
 #[tokio::test]
+#[expect(
+  clippy::too_many_lines,
+  reason = "the in-memory contract intentionally shows the ordered tool assertions"
+)]
 async fn in_memory_tools_return_structured_versioned_outputs() {
   let server = DreadstepMcpServer::new(7).expect("fixed scenario should be valid");
   let observe = server.observe().await.expect("observe should succeed");
@@ -40,6 +44,14 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
     before_legal_actions.0,
     server.observe().await.expect("observe should succeed").0
   );
+  assert!(
+    server
+      .get_history()
+      .await
+      .expect("get_history should succeed")
+      .0
+      .is_empty()
+  );
   let inspected = server
     .inspect(Parameters(InspectParams {
       actor: ActorId::new(1),
@@ -67,6 +79,16 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
     .expect("act should succeed");
   assert_eq!(acted.0.seed(), 11);
   assert_eq!(acted.0.events().len(), 1);
+  assert_eq!(
+    server
+      .get_history()
+      .await
+      .expect("get_history should succeed")
+      .0,
+    vec![CommandRequest::Wait {
+      actor: ActorId::new(1),
+    }]
+  );
   assert!(
     server
       .act(Parameters(ActParams {
@@ -77,6 +99,15 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
       .await
       .is_err()
   );
+  assert_eq!(
+    server
+      .get_history()
+      .await
+      .expect("get_history should succeed")
+      .0
+      .len(),
+    1
+  );
   assert_eq!(DreadstepMcpServer::observe_tool_attr().name, "observe");
   assert_eq!(DreadstepMcpServer::start_run_tool_attr().name, "start_run");
   assert_eq!(
@@ -85,6 +116,10 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
   );
   assert_eq!(DreadstepMcpServer::inspect_tool_attr().name, "inspect");
   assert_eq!(DreadstepMcpServer::act_tool_attr().name, "act");
+  assert_eq!(
+    DreadstepMcpServer::get_history_tool_attr().name,
+    "get_history"
+  );
 }
 
 fn round_trip(request: &Value, input: &mut impl Write, output: &mut impl BufRead) -> Value {
@@ -179,10 +214,20 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     &mut input,
     &mut output,
   );
-  let observed = round_trip(
+  let history_before = round_trip(
     &json!({
       "jsonrpc": "2.0",
       "id": 7,
+      "method": "tools/call",
+      "params": {"name": "get_history", "arguments": {}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let observed = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 8,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -192,16 +237,6 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let acted = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 8,
-      "method": "tools/call",
-      "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
-    }),
-    &mut input,
-    &mut output,
-  );
-  let rejected = round_trip(
-    &json!({
-      "jsonrpc": "2.0",
       "id": 9,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
@@ -209,10 +244,40 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     &mut input,
     &mut output,
   );
-  let after_rejection = round_trip(
+  let history_after_act = round_trip(
     &json!({
       "jsonrpc": "2.0",
       "id": 10,
+      "method": "tools/call",
+      "params": {"name": "get_history", "arguments": {}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let rejected = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 11,
+      "method": "tools/call",
+      "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let history_after_rejection = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 12,
+      "method": "tools/call",
+      "params": {"name": "get_history", "arguments": {}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let after_rejection = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 13,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -238,8 +303,23 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   tools.sort_unstable();
   assert_eq!(
     tools,
-    ["act", "inspect", "legal_actions", "observe", "start_run"]
+    [
+      "act",
+      "get_history",
+      "inspect",
+      "legal_actions",
+      "observe",
+      "start_run"
+    ]
   );
+  let get_history_tool = tools_list["result"]["tools"]
+    .as_array()
+    .expect("tools/list should return tools")
+    .iter()
+    .find(|tool| tool["name"] == "get_history")
+    .expect("get_history tool should be present");
+  assert_eq!(get_history_tool["inputSchema"]["type"], "object");
+  assert_eq!(get_history_tool["outputSchema"]["type"], "array");
   let inspect_tool = tools_list["result"]["tools"]
     .as_array()
     .expect("tools/list should return tools")
@@ -270,8 +350,11 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let inspected_actor = &inspected["result"]["structuredContent"];
   let absent_actor = &absent["result"]["structuredContent"];
   let legal_actions_output = &legal["result"]["structuredContent"];
+  let history_before_output = &history_before["result"]["structuredContent"];
   let observed_snapshot = &observed["result"]["structuredContent"];
   let acted_output = &acted["result"]["structuredContent"];
+  let history_after_act_output = &history_after_act["result"]["structuredContent"];
+  let history_after_rejection_output = &history_after_rejection["result"]["structuredContent"];
   let after_rejection_snapshot = &after_rejection["result"]["structuredContent"];
   assert_eq!(started_snapshot["protocol_version"], 1);
   assert_eq!(started_snapshot, observed_snapshot);
@@ -293,6 +376,14 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     legal_actions_output[5],
     json!({"attack": {"actor": 1, "target": 2}})
   );
+  assert!(
+    history_before_output
+      .as_array()
+      .expect("history should be an array")
+      .is_empty()
+  );
+  assert_eq!(history_after_act_output, &json!([{"wait": {"actor": 1}}]));
+  assert_eq!(history_after_rejection_output, history_after_act_output);
   assert_eq!(acted_output["seed"], 17);
   assert_eq!(acted_output["events"][0]["waited"]["actor"], 1);
   assert_eq!(&acted_output["snapshot"], after_rejection_snapshot);

@@ -51,6 +51,30 @@ fn accepted_actions_record_once_but_rejected_actions_do_not() {
 }
 
 #[test]
+fn get_history_is_read_only_before_and_after_an_accepted_action() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  let initial_snapshot = session.observe();
+  let initial_history = session.history();
+  let initial_replay = session.get_replay();
+  assert!(session.get_history().is_empty());
+  assert_eq!(session.observe(), initial_snapshot);
+  assert_eq!(session.history(), initial_history);
+  assert_eq!(session.get_replay(), initial_replay);
+
+  let request = CommandRequest::Wait {
+    actor: ActorId::new(1),
+  };
+  session.act(request).expect("wait should be accepted");
+  let accepted_snapshot = session.observe();
+  let accepted_history = session.history();
+  let accepted_replay = session.get_replay();
+  assert_eq!(session.get_history(), vec![request]);
+  assert_eq!(session.observe(), accepted_snapshot);
+  assert_eq!(session.history(), accepted_history);
+  assert_eq!(session.get_replay(), accepted_replay);
+}
+
+#[test]
 fn equivalent_accepted_sequences_have_equal_history_and_replay_digest() {
   let requests = [
     CommandRequest::Attack {
