@@ -10,6 +10,8 @@ All notable contributor- and user-visible project changes are recorded here.
 - A repo-local Dreadstep development and review harness.
 - Reproducible Rust, formatting, lint, documentation, and CI configuration.
 - Operational specification, architecture, contribution, ADR, and lessons documentation.
+- The first Milestone 1 rules-kernel slice: typed grid state, actors, movement and blocking
+  events, and deterministic integer action scheduling.
 
 ### Changed
 

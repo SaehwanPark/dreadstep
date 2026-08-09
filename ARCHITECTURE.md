@@ -9,8 +9,9 @@ Dreadstep is organized as a functional domain kernel surrounded by explicit adap
 kernel decides game outcomes; adapters translate external input into semantic commands and
 translate semantic events into presentation, files, telemetry, or transport responses.
 
-Milestone 0 contains package boundaries and documentation only. It does not expose a
-gameplay API or runnable application.
+Milestone 1 now exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
+actors, movement commands, semantic movement/blocking events, and an integer ready-time
+scheduler. The API is still headless and does not provide a runnable application.
 
 ## Package Ownership
 
@@ -49,6 +50,15 @@ semantic events -> adapter -> output, presentation, telemetry, or protocol respo
 State, configuration, seeded randomness, and time inputs should be explicit. Prefer pure
 transformations and returned outcomes; allow tightly scoped mutation when it is clearer or
 materially more efficient in Rust.
+
+## Current kernel slice
+
+`dreadstep-core` owns the canonical `WorldState`. `GridMap` limits dimensions to the signed
+`Position` coordinate domain and treats out-of-bounds and wall tiles as terrain blockers;
+actor occupancy is checked separately so events can distinguish terrain from another actor.
+`WorldState::execute` accepts only the actor at the minimum `ActionTime`, orders ties by
+`ActorId`, and advances the acting actor by the fixed action cost. No wall-clock time or
+process-global randomness participates in these transitions.
 
 ## Constraints
 

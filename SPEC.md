@@ -48,8 +48,39 @@ Out of scope:
 
 ## Present
 
-No milestone is active. Select and specify a bounded Milestone 1 slice before implementing
-gameplay behavior.
+### Milestone 1 slice: deterministic grid movement and scheduling
+
+- Status: active
+- Started: 2026-08-08
+
+The rules kernel begins with a typed rectangular grid, actor identity and position, terrain
+and actor blocking, and an integer action scheduler. A command addressed to the scheduled
+actor either moves it to an unoccupied floor tile or reports why the move was blocked; both
+outcomes consume the same deterministic movement action cost. The scheduler orders actors by
+ready time and then actor identity, so the same initial state and command sequence produce the
+same events and state.
+
+Acceptance:
+
+- `dreadstep-core` exposes typed map, actor, position, command, event, and scheduling values.
+- Invalid map dimensions (including dimensions outside the signed position range), tile
+  data, duplicate actor identities, overlapping actors, and out-of-bounds or blocking
+  movement are rejected with structured errors or events.
+- A scheduled actor can move or wait; each action advances its ready time by the fixed
+  movement cost and the next scheduled actor is observable.
+- Unit tests cover successful movement, terrain blocking, actor blocking, deterministic
+  scheduler ordering, and command rejection for an unscheduled actor.
+- Core remains independent of Bevy, MCP, filesystem, wall-clock time, and host randomness.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core` passes with the slice tests.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- HP changes, melee combat, death, enemy chase behavior, seeded randomness, replay schemas,
+  and the developer CLI; each is a later Milestone 1 slice with its own acceptance evidence.
 
 ## Future
 
