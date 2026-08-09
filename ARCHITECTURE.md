@@ -322,6 +322,11 @@ starts unplaced while later removal preserves previously checked translations. T
 attach or mutate ECS Transform/Visibility/Sprite components; camera, window, renderer, and production
 media remain deferred.
 
+The active ECS Sprite-transform attachment consumes that verified projection and writes only
+logical-pixel `Transform` translations `(pixel_x, pixel_y, 0)` onto retained map-backed node
+entities. Inventory nodes remain unplaced/default. Centering, anchors, depth, cameras, visibility,
+render plugins, windows, and production media remain separate deferred boundaries.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does

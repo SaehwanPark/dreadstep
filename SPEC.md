@@ -2571,6 +2571,47 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: ECS Sprite-transform attachment
+
+- Status: active
+- Started: 2026-08-09
+
+Attach the verified checked Sprite-transform projection to retained render-node ECS entities as
+logical-pixel `Transform` translations. This slice chooses only the explicit map-space origin
+mapping `(pixel_x, pixel_y, 0)`; inventory remains unplaced/default and centering, anchors, depth,
+cameras, and visibility remain separate decisions.
+
+Acceptance:
+
+- Each retained map-backed render node with a checked `ScenePixelPosition` receives or refreshes
+  `Transform::from_xyz(pixel_x as f32, pixel_y as f32, 0.0)` on the same node Entity. Inventory
+  nodes receive no invented translation and retain their default/unplaced transform state.
+- Fresh absence of `PresentationTileSize` leaves map nodes unplaced; later removal preserves the
+  previously checked transform translations, matching the retained projection rule. Accepted
+  movement and dead/stale/co-located refreshes preserve node identity and update only the expected
+  transforms.
+- Missing runtime, node projection, transform projection, or node entity are independent safe
+  no-ops that preserve existing ECS components. Runtime snapshots, replay history, digests, and
+  scene authority remain unchanged.
+- No centering/anchor or z-layer policy, camera, visibility, window, render plugin/backend,
+  texture/asset loading, audio, animation, gameplay, persistence, transport, or committed media
+  behavior is introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_components --locked` passes 8/8 and
+  proves exact map translations, inventory exclusion, fresh/retained tile-size behavior, accepted
+  movement, dead/stale/co-located identity, independent guards, and runtime/replay preservation.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally; media checks keep local binaries ignored while concept art
+  and root screenshot exceptions remain visible. Remote PR review and CI remain the handoff gate.
+
+Out of scope:
+
+- Centering/anchor or z-layer policy, cameras, visibility/fog, windows, render plugins/backends,
+  texture or production asset loading, audio playback, animation, gameplay rules, persistence,
+  transport, and committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

@@ -1770,6 +1770,9 @@ Current exploratory gate (2026-08-09):
   origins without attaching ECS transforms; inventory remains unplaced, fresh missing tile size
   starts unplaced while later removal preserves checked translations, and cameras, windows,
   rendering, playback, and production media remain deferred.
+- The active ECS Sprite-transform attachment boundary applies those checked translations as
+  logical-pixel `(x, y, 0)` values on retained map-node transforms while leaving inventory unplaced;
+  centering, depth, cameras, visibility, rendering, playback, and production media remain deferred.
 
 ### Content
 
