@@ -2207,9 +2207,10 @@ Verification target:
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-identification, capacity, or gameplay-facing item commands beyond the single-slot equipment
-contract completed above. Tester-only transfer, drop, and pickup are verified separately in their
-completed slices above; richer player operations still require an explicit core contract.
+identification, capacity, or richer gameplay-facing item commands beyond the completed equipment
+contract and active single-item consumption preparation above. Tester-only transfer, drop, and
+pickup are verified separately in their completed slices above; effects and richer player
+operations still require an explicit core contract.
 
 ## Future
 
