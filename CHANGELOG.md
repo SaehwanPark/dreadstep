@@ -90,6 +90,8 @@ All notable contributor- and user-visible project changes are recorded here.
   preserving order and stale-rejection clearing without assets, playback, or an audio backend.
 - Typed `SceneSpriteRole` metadata alongside headless scene mirrors for terrain, living actors, dead
   records, and item entities, without textures, assets, or rendering plugins.
+- A typed `PresentationAnimationCues` placeholder projection for movement and combat event order,
+  with stale-rejection clearing and no timers, interpolation, assets, or rendering backend.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
