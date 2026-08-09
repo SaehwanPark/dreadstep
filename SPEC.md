@@ -1365,8 +1365,9 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test camera --all-features --locked` covers startup,
-  movement, actor changes, unknown actors, duplicate cleanup, and absent-resource no-ops; all eight
-  focused tests pass.
+  movement, actor changes, unknown actors, duplicate cleanup, and absent-resource no-ops; all nine
+  focused tests pass, including complete tile/actor/ground/inventory atomicity and recycled-index
+  cleanup.
 - All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
   and `scripts/verify.sh` pass locally.
 - Exactly one semantic code reviewer reports PASS on the final revision, and the normal CI matrix

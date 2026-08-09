@@ -328,6 +328,11 @@ impl SceneCamera {
   }
 }
 
+#[derive(Default, Resource)]
+struct SceneCameraState {
+  entity: Option<Entity>,
+}
+
 /// A deterministic read-only projection consumed by future map, actor, ground-item, and inventory
 /// renderers.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -795,6 +800,7 @@ fn sync_scene_camera(world: &mut World) {
     for entity in stale_entities {
       let _ = world.despawn(entity);
     }
+    world.insert_resource(SceneCameraState::default());
     return;
   };
   let mut query = world.query::<(Entity, &SceneCamera)>();
@@ -802,16 +808,28 @@ fn sync_scene_camera(world: &mut World) {
     .iter(world)
     .map(|(entity, _)| entity)
     .collect::<Vec<_>>();
-  // Entity's full ordering includes generation; the allocation index is the stable key for
-  // retaining the original camera anchor when duplicate disposable mirrors are cleaned up.
-  existing.sort_unstable_by_key(|entity| entity.index());
-  if let Some(entity) = existing.first().copied() {
+  existing.sort_unstable();
+  let retained = world
+    .get_resource::<SceneCameraState>()
+    .and_then(|state| state.entity)
+    .filter(|entity| existing.contains(entity))
+    .or_else(|| existing.first().copied());
+  if let Some(entity) = retained {
     world.entity_mut(entity).insert(SceneCamera::new(center));
-    for stale in existing.into_iter().skip(1) {
+    for stale in existing
+      .into_iter()
+      .filter(|candidate| *candidate != entity)
+    {
       let _ = world.despawn(stale);
     }
+    world.insert_resource(SceneCameraState {
+      entity: Some(entity),
+    });
   } else {
-    world.spawn(SceneCamera::new(center));
+    let entity = world.spawn(SceneCamera::new(center)).id();
+    world.insert_resource(SceneCameraState {
+      entity: Some(entity),
+    });
   }
 }
 

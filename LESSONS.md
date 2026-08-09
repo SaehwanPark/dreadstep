@@ -43,6 +43,11 @@ Update an existing lesson instead of adding a duplicate.
 - Prevention: Treat scene components as disposable projections, choose explicit stable keys for
   updates/removal, and test repeated synchronization plus stale and dead-record cases headlessly.
 
+Bevy entity allocation indexes are recyclable and their numeric representation is not a durable
+identity. When a singleton projection must retain its existing ECS entity across duplicate cleanup,
+keep the retained `Entity` in adapter-owned state, use full `Entity` ordering only to choose among
+untracked duplicates, and test a lower-index recycle explicitly.
+
 ## Snapshot a resource before exclusive ECS projection
 
 - Context: The Bevy application shell must read the authoritative runtime and mutate the ECS world
