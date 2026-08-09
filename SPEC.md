@@ -1778,6 +1778,46 @@ Out of scope:
 - HUD widgets, text/localization, health-bar styling, inventory panels, event/combat messages,
   sprites, animations, audio, windowing, rendering, persistence, transport, and gameplay rules.
 
+### Milestone 3 slice: deterministic headless event-message evidence
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Project core semantic events into a typed `PresentationMessages` resource for future HUD and combat
+message systems. The adapter preserves event order and typed payloads without formatting strings,
+choosing localization, or adding another source of gameplay truth.
+
+Acceptance:
+
+- `PresentationMessage` covers every current core event (`Moved`, `MovementBlocked`, `Waited`,
+  `Attacked`, and `Died`) with typed actor, position, block-reason, damage, and hit-point data.
+- `PresentationMessages` mirrors the latest runtime output in deterministic event order and clears
+  stale messages when a rejected command produces no output; it remains read-only evidence and
+  cannot issue commands or mutate core state.
+- Accepted movement, blocked movement, waiting, attack, and death outputs map to the expected
+  typed message sequence in the same app update after keyboard or direct runtime dispatch.
+- Missing runtime or message resources are safe no-ops that preserve existing message evidence;
+  no output remains an empty message list.
+- The projection remains headless and presentation-only: no strings, localization, text layout,
+  widgets, sprites, animation, audio, persistence, transport, or gameplay rules are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test messages --all-features --locked` covers every core
+  event mapping, stale-output clearing, and absent-resource preservation; all eight focused tests
+  pass.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `51424ae`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- Text/localization, text layout, widgets, sprites, animation, audio, windowing, rendering,
+  persistence, transport, and gameplay rules.
+
 ## Present
 
 ### Deferred item gameplay semantics
