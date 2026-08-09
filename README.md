@@ -13,10 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is implementing Milestone 1: the rules kernel. The active slice adds deterministic
-enemy chase behavior to the typed health, melee, death, grid, blocking, and integer scheduling
-API in `dreadstep-core`; there is still no playable graphical client, MCP server, or developer
-CLI.
+Dreadstep is implementing Milestone 1: the rules kernel. The active slice adds core-owned
+replay traces and stable state digests to the deterministic health, melee, death, grid,
+blocking, scheduling, and enemy-chase API in `dreadstep-core`; there is still no playable
+graphical client, MCP server, or replay CLI.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
