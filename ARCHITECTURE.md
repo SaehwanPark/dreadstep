@@ -220,6 +220,12 @@ The scene-focus-marker slice adds a marker-only `SceneFocus` component to the ex
 position or gameplay state; unknown actors clear stale markers only when an authoritative runtime
 snapshot exists, while missing resources leave the disposable scene unchanged.
 
+The headless camera-anchor slice adds an optional `PresentationCamera` resource and one keyed
+`SceneCamera` projection. The adapter mirrors only the selected actor's latest core position,
+retains the existing camera entity across updates, and removes duplicate or unknown anchors
+deterministically. It remains a center-point projection: windowing, transforms, viewport sizing,
+clamping, interpolation, visibility, and fog policy belong to later presentation work.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and

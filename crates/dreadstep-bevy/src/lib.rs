@@ -101,6 +101,36 @@ impl PresentationFocus {
   }
 }
 
+/// A disposable camera-anchor projection for future viewport systems.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationCamera {
+  actor: ActorId,
+  center: Option<Position>,
+}
+
+impl PresentationCamera {
+  /// Creates a camera anchor for one controlled actor before a runtime projection exists.
+  #[must_use]
+  pub const fn new(actor: ActorId) -> Self {
+    Self {
+      actor,
+      center: None,
+    }
+  }
+
+  /// Returns the actor whose position supplies this camera anchor.
+  #[must_use]
+  pub const fn actor(self) -> ActorId {
+    self.actor
+  }
+
+  /// Returns the latest authoritative center, or `None` for an unknown actor.
+  #[must_use]
+  pub const fn center(self) -> Option<Position> {
+    self.center
+  }
+}
+
 /// A disposable ECS mirror of one projected map tile.
 #[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SceneTile {
@@ -277,6 +307,31 @@ impl SceneInventoryItem {
 /// A marker for the keyed scene entity representing the selected actor.
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SceneFocus;
+
+/// A disposable ECS mirror of the projected camera center.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneCamera {
+  center: Position,
+}
+
+impl SceneCamera {
+  /// Creates a disposable camera projection for a known core center.
+  #[must_use]
+  pub const fn new(center: Position) -> Self {
+    Self { center }
+  }
+
+  /// Returns the authoritative map position represented by this camera anchor.
+  #[must_use]
+  pub const fn center(self) -> Position {
+    self.center
+  }
+}
+
+#[derive(Default, Resource)]
+struct SceneCameraState {
+  entity: Option<Entity>,
+}
 
 /// A deterministic read-only projection consumed by future map, actor, ground-item, and inventory
 /// renderers.
@@ -577,6 +632,8 @@ fn update_presentation(world: &mut World) {
   sync_runtime_scene(world);
   sync_focus(world);
   sync_scene_focus(world);
+  sync_camera(world);
+  sync_scene_camera(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -696,6 +753,83 @@ fn sync_scene_focus(world: &mut World) {
   }
   if let Some(entity) = target_entity {
     world.entity_mut(entity).insert(SceneFocus);
+  }
+}
+
+fn sync_camera(world: &mut World) {
+  let Some(actor) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    return;
+  };
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
+  let center = snapshot
+    .actors()
+    .iter()
+    .find(|record| record.id() == actor)
+    .map(Actor::position);
+  let Some(mut camera) = world.get_resource_mut::<PresentationCamera>() else {
+    return;
+  };
+  camera.actor = actor;
+  camera.center = center;
+}
+
+fn sync_scene_camera(world: &mut World) {
+  if world.get_resource::<PresentationInput>().is_none()
+    || world.get_resource::<PresentationRuntime>().is_none()
+  {
+    return;
+  }
+  let Some(camera) = world.get_resource::<PresentationCamera>() else {
+    return;
+  };
+  let center = camera.center();
+  let Some(center) = center else {
+    let mut query = world.query::<(Entity, &SceneCamera)>();
+    let stale_entities = query
+      .iter(world)
+      .map(|(entity, _)| entity)
+      .collect::<Vec<_>>();
+    for entity in stale_entities {
+      let _ = world.despawn(entity);
+    }
+    world.insert_resource(SceneCameraState::default());
+    return;
+  };
+  let mut query = world.query::<(Entity, &SceneCamera)>();
+  let mut existing = query
+    .iter(world)
+    .map(|(entity, _)| entity)
+    .collect::<Vec<_>>();
+  existing.sort_unstable();
+  let retained = world
+    .get_resource::<SceneCameraState>()
+    .and_then(|state| state.entity)
+    .filter(|entity| existing.contains(entity))
+    .or_else(|| existing.first().copied());
+  if let Some(entity) = retained {
+    world.entity_mut(entity).insert(SceneCamera::new(center));
+    for stale in existing
+      .into_iter()
+      .filter(|candidate| *candidate != entity)
+    {
+      let _ = world.despawn(stale);
+    }
+    world.insert_resource(SceneCameraState {
+      entity: Some(entity),
+    });
+  } else {
+    let entity = world.spawn(SceneCamera::new(center)).id();
+    world.insert_resource(SceneCameraState {
+      entity: Some(entity),
+    });
   }
 }
 
