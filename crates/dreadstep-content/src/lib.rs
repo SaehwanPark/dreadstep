@@ -9,7 +9,7 @@
 use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HitPoints, ItemDefinitionId, MapError, Position, Tile,
+  Actor, ActorId, ActorKind, GridMap, HitPoints, Item, ItemDefinitionId, MapError, Position, Tile,
   WorldError, WorldState,
 };
 
@@ -114,6 +114,33 @@ impl ItemCatalog {
   }
 }
 
+/// One opaque item instance authored into a starter-floor actor inventory.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct StarterItemPlacement {
+  actor: ActorId,
+  item: Item,
+}
+
+impl StarterItemPlacement {
+  /// Creates an authored placement for one actor and complete opaque item instance.
+  #[must_use]
+  pub const fn new(actor: ActorId, item: Item) -> Self {
+    Self { actor, item }
+  }
+
+  /// Returns the actor that receives this item during floor construction.
+  #[must_use]
+  pub const fn actor(self) -> ActorId {
+    self.actor
+  }
+
+  /// Returns the complete opaque item instance to insert.
+  #[must_use]
+  pub const fn item(self) -> Item {
+    self.item
+  }
+}
+
 /// Typed authored input for one rectangular starter floor.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StarterFloorDefinition {
@@ -121,6 +148,7 @@ pub struct StarterFloorDefinition {
   height: u32,
   tiles: Vec<Tile>,
   actors: Vec<Actor>,
+  items: Vec<StarterItemPlacement>,
 }
 
 impl StarterFloorDefinition {
@@ -132,7 +160,18 @@ impl StarterFloorDefinition {
       height,
       tiles,
       actors,
+      items: Vec::new(),
     }
+  }
+
+  /// Adds ordered opaque item placements to this authored floor.
+  ///
+  /// Declaration order is preserved within each target actor's inventory. Core validates actor
+  /// identities and global item identity when [`Self::build`] delegates the placements.
+  #[must_use]
+  pub fn with_items(mut self, items: Vec<StarterItemPlacement>) -> Self {
+    self.items = items;
+    self
   }
 
   /// Converts this authored input into the validated core world.
@@ -143,7 +182,11 @@ impl StarterFloorDefinition {
   /// or actor records violate core validation rules.
   pub fn build(&self) -> Result<WorldState, ContentError> {
     let map = GridMap::from_tiles(self.width, self.height, self.tiles.clone())?;
-    Ok(WorldState::new(map, self.actors.clone())?)
+    let mut world = WorldState::new(map, self.actors.clone())?;
+    for placement in &self.items {
+      world.give_item(placement.actor(), placement.item())?;
+    }
+    Ok(world)
   }
 }
 
