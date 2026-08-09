@@ -261,6 +261,23 @@ impl Session {
       .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
+  /// Picks one opaque item from an actor's current position through the tester boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core rejects the actor or ground ownership. The
+  /// mutation does not record a player command or alter replay evidence.
+  pub fn pickup_item(
+    &mut self,
+    actor: ProtocolActorId,
+    item: ProtocolItemId,
+  ) -> Result<(), SessionError> {
+    self
+      .world
+      .pickup_item(ActorId::new(actor.value()), ItemId::new(item.value()))
+      .map_err(|error| SessionError::WorldRejected(error.into()))
+  }
+
   /// Teleports one existing actor through the tester boundary.
   ///
   /// # Errors

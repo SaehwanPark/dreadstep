@@ -795,6 +795,13 @@ pub enum WorldError {
     /// The item identity that was not found.
     item: ItemId,
   },
+  /// An actor has no matching item in the ground stack at its current position.
+  ItemNotOnGround {
+    /// The actor whose current ground stack was searched.
+    actor: ActorId,
+    /// The item identity that was not found.
+    item: ItemId,
+  },
   /// A tester teleport destination is outside the map.
   TeleportOutOfBounds {
     /// The actor being teleported.
@@ -860,6 +867,12 @@ impl fmt::Display for WorldError {
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
         "actor {} does not own item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotOnGround { actor, item } => write!(
+        formatter,
+        "actor {} has no item {} on the ground at its position",
         actor.value(),
         item.value()
       ),
@@ -1241,6 +1254,62 @@ impl WorldState {
         .ground_items
         .insert(index, GroundItemStack::new(position, item)),
     }
+    Ok(())
+  }
+
+  /// Picks one opaque item from an actor's current ground stack for an explicit tester operation.
+  ///
+  /// The item is removed while preserving the remaining stack order, and appended unchanged to
+  /// the actor's ordered inventory. Empty ground stacks are removed. Dead actor records remain
+  /// valid sources because their retained positions remain part of the inspectable world state.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`WorldError::UnknownActor`] when the actor identity is absent or
+  /// [`WorldError::ItemNotOnGround`] when the actor's current stack does not contain the item.
+  /// Rejected pickups leave the world unchanged.
+  pub fn pickup_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<(), WorldError> {
+    if !self.actors.contains_key(&actor_id) {
+      return Err(WorldError::UnknownActor(actor_id));
+    }
+    let position = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(WorldError::UnknownActor(actor_id))?;
+    let position_key = (position.y(), position.x());
+    let Ok(stack_index) = self
+      .ground_items
+      .binary_search_by_key(&position_key, |stack| {
+        (stack.position().y(), stack.position().x())
+      })
+    else {
+      return Err(WorldError::ItemNotOnGround {
+        actor: actor_id,
+        item: item_id,
+      });
+    };
+    let Some(item_index) = self.ground_items[stack_index]
+      .items()
+      .iter()
+      .position(|item| item.id() == item_id)
+    else {
+      return Err(WorldError::ItemNotOnGround {
+        actor: actor_id,
+        item: item_id,
+      });
+    };
+
+    let mut actor = self
+      .actors
+      .remove(&actor_id)
+      .ok_or(WorldError::UnknownActor(actor_id))?;
+    let item = self.ground_items[stack_index].items.remove(item_index);
+    if self.ground_items[stack_index].items.is_empty() {
+      self.ground_items.remove(stack_index);
+    }
+    actor.inventory.push(item);
+    self.actors.insert(actor_id, actor);
     Ok(())
   }
 

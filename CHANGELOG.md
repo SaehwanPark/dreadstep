@@ -81,6 +81,8 @@ All notable contributor- and user-visible project changes are recorded here.
   effects, equipment, and player commands remain deferred.
 - A deterministic tester-only item drop with core-owned row-major ground-item stacks and complete
   protocol/MCP snapshot projection; pickup and item gameplay semantics remain deferred.
+- A deterministic tester-only item pickup that removes from ordered ground stacks, appends to actor
+  inventories, and projects typed ground-miss errors without player replay/history effects.
 
 ### Changed
 
