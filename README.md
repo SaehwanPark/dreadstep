@@ -1,5 +1,9 @@
 # Dreadstep
 
+![Concept Art](./dreadstep-concept-art.png)
+
+_Concept art only—not a screenshot of the current game. It illustrates an aspirational direction and is subject to change._
+
 > Every step is a decision.
 
 Dreadstep is a fast, gothic tactical roguelike about deliberate movement, dangerous dungeon

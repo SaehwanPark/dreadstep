@@ -6,6 +6,8 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Aspirational concept art reference and a documented pixel-art/audio asset sourcing and
+  licensing workflow.
 - A six-package Rust workspace with explicit domain and adapter boundaries.
 - A repo-local Dreadstep development and review harness.
 - Reproducible Rust, formatting, lint, documentation, and CI configuration.

@@ -756,7 +756,18 @@ Later MCP agents can test higher-order questions that graph validation cannot an
 
 # 15. Visual Direction
 
+![Aspirational Dreadstep concept art](../dreadstep-concept-art.png)
+
+> **Concept-art note:** This image is an aspirational visual reference, not a screenshot of
+> the current game, an implemented feature set, or a final asset direction. It is subject to
+> change.
+
 Presentation should reference the readability of JHC rather than imitate it directly.
+
+The reference suggests the intended combination of top-down 2D pixel presentation, a dark
+gothic atmosphere, strong silhouettes, tactical readability, and a clear information hierarchy.
+The depicted characters, mechanics, statistics, HUD layout, map details, and content are
+non-binding and must not be treated as requirements.
 
 Recommended characteristics:
 
@@ -1699,6 +1710,25 @@ Turn the existing simulation into a human-playable Bevy application.
 
 Human and MCP commands must pass through the same simulation API.
 
+### Asset sourcing workflow
+
+Before committing to a production presentation, evaluate both original/generated assets and
+free, legally reusable assets for each pixel-art and audio family:
+
+1. Define the required asset families and technical constraints.
+2. Prototype representative original/generated candidates and free reusable candidates.
+3. Evaluate visual or audio fit, tactical clarity, editability, animation or cue coverage,
+   integration effort, and license obligations.
+4. Select original, reused, or mixed sourcing per asset family and record the decision.
+5. Normalize selected assets for tile scale, palette, UI readability, audio levels, formats,
+   and naming.
+6. Preserve source, creator, license, attribution, and modification records when each asset
+   enters the repository.
+
+OpenGameArt.org and similar catalogs are discovery sources, not blanket licenses. Inspect each
+asset's terms individually; prefer CC0 or CC BY 4.0, and require explicit project approval for
+other terms before integration.
+
 ### Content
 
 Approximately:
@@ -1896,6 +1926,9 @@ This is the most important pre-alpha milestone.
 - victory;
 - save-and-quit;
 - replay export.
+
+Placeholders introduced in Milestone 3 must be replaced or deliberately refined into a coherent
+production-quality pixel-art and audio direction before this milestone exits.
 
 ### Intended run
 
@@ -2177,7 +2210,8 @@ Start with basic UX discipline early, then formalize during alpha.
 
 ## Licensing
 
-Track every imported asset from the moment it enters the repository.
+Track every imported or generated asset from the moment it enters the repository. Record its
+source, creator, license, attribution, and any modifications so licensing never becomes implicit.
 
 ## Cross-platform health
 
