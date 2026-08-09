@@ -169,12 +169,48 @@ fn scene_projection_map(app: &mut App) -> BTreeMap<RenderKey, SceneRenderEntry> 
   expected
 }
 
+fn expected_32_pixel(position: Position) -> (u32, u32) {
+  (
+    u32::try_from(position.x()).expect("fixture positions should be non-negative") * 32,
+    u32::try_from(position.y()).expect("fixture positions should be non-negative") * 32,
+  )
+}
+
 #[test]
 fn projection_contains_complete_typed_scene_and_inventory_exclusion() {
   let mut app = app_with_projection();
   let entries = entries(&mut app);
   assert_eq!(entries.len(), 10);
   assert_eq!(projection_map(&entries), scene_projection_map(&mut app));
+  for entry in &entries {
+    match entry {
+      SceneRenderEntry::Terrain {
+        tile,
+        pixel_position,
+        ..
+      } => assert_eq!(
+        pixel_position.map(|pixel| (pixel.x(), pixel.y())),
+        Some(expected_32_pixel(tile.position()))
+      ),
+      SceneRenderEntry::Actor {
+        actor,
+        pixel_position,
+        ..
+      } => assert_eq!(
+        pixel_position.map(|pixel| (pixel.x(), pixel.y())),
+        Some(expected_32_pixel(actor.position()))
+      ),
+      SceneRenderEntry::GroundItem {
+        item,
+        pixel_position,
+        ..
+      } => assert_eq!(
+        pixel_position.map(|pixel| (pixel.x(), pixel.y())),
+        Some(expected_32_pixel(item.position()))
+      ),
+      SceneRenderEntry::InventoryItem { .. } => {}
+    }
+  }
 
   let inventory = entries
     .iter()
