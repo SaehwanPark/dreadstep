@@ -2522,12 +2522,11 @@ Out of scope:
   transform placement, cameras, visibility/fog, OS windows/platform features, audio playback,
   animation, gameplay rules, persistence, transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: typed headless Sprite-transform projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Derive a read-only renderer boundary that joins each retained render node to a deterministic map-space
 translation from its checked `ScenePixelPosition`. This slice prepares transform values for a later
@@ -2560,12 +2559,17 @@ Verification:
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
   and `scripts/verify.sh` pass; anchored media checks keep local binaries ignored while tracked
   concept art and root screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `9a02fb1` (implementation `0e2a110`,
+  bounded test/evidence correction `9a02fb1`); Linux, Apple Silicon macOS, and Windows CI are green
+  on PR #73 (run `31334753390`). This docs-only closeout is reviewed separately.
 
 Out of scope:
 
 - ECS transform attachment, centering/anchor or z-layer policy, camera/visibility/window behavior,
   render plugins/backends, texture or production asset loading, audio playback, animation, gameplay
   rules, persistence, transport, and committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 

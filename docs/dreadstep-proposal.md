@@ -1766,8 +1766,9 @@ Current exploratory gate (2026-08-09):
   node entities,
   keeping Bevy's required components at defaults and preserving stable identity; render plugins,
   transform placement, texture loading, playback, and production media remain deferred.
-- The active Sprite-transform boundary derives ordered map-space translations from checked pixel
-  origins without attaching ECS transforms; inventory remains unplaced and cameras, windows,
+- The verified Sprite-transform boundary derives ordered map-space translations from checked pixel
+  origins without attaching ECS transforms; inventory remains unplaced, fresh missing tile size
+  starts unplaced while later removal preserves checked translations, and cameras, windows,
   rendering, playback, and production media remain deferred.
 
 ### Content
