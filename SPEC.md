@@ -1300,14 +1300,15 @@ Out of scope:
 
 ### Milestone 3 slice: deterministic headless inventory-item scene projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Extend the disposable Bevy scene mirror with complete core-owned actor inventory records. A typed
-`SceneInventoryItem` will carry each item's global identity, owner actor, opaque definition reference,
-and insertion order; `sync_scene` will update those entities deterministically from the immutable
-actor projections. Core remains authoritative for ownership and order, and this slice adds no item
-gameplay or UI policy.
+`SceneInventoryItem` carries each item's global identity, owner actor, opaque definition reference,
+and insertion order; `sync_scene` updates those entities deterministically from the immutable actor
+projections. Core remains authoritative for ownership and order, and this slice adds no item gameplay
+or UI policy.
 
 Acceptance:
 
@@ -1321,15 +1322,14 @@ Acceptance:
 - The projection remains headless and independent of rendering, camera, HUD, transport, desktop
   platform features, persistence, and new gameplay rules.
 
-Verification target:
+Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test scene_sync --all-features --locked` covers empty
-  inventories, complete item data, owner/order updates, stable identities, duplicate cleanup, stale
-  removal, and complete tile/actor/ground preservation.
+- Focused `cargo test -p dreadstep-bevy --test scene_sync --all-features --locked` passes all nine
+  inventory, transfer, duplicate-cleanup, stale-removal, and complete-mirror tests.
 - `cargo test -p dreadstep-bevy --all-targets --all-features --locked`, focused Clippy, Cargo docs,
-  `git diff --check`, and `scripts/verify.sh` pass before handoff.
-- Exactly one semantic code reviewer reports PASS and Linux, Apple Silicon macOS, and Windows CI
-  are green for the reviewed implementation revision before docs closeout.
+  `git diff --check`, and `scripts/verify.sh` pass.
+- Exactly one semantic code reviewer reports PASS on implementation revision `c1057c7`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
