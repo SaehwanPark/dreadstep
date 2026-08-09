@@ -232,7 +232,7 @@ centers it on the camera anchor with integer arithmetic, and mirrors only the ef
 dimensions. Oversized requests use the complete map; unknown or missing authority leaves the
 disposable viewport unchanged or clears it deterministically without adding visibility policy.
 
-The active headless HUD-status slice adds an optional `PresentationHud` resource keyed by the
+The verified headless HUD-status slice adds an optional `PresentationHud` resource keyed by the
 controlled actor. It mirrors only typed actor kind, position, hit points, and scheduler readiness;
 unknown actors clear those optional values and missing resources preserve existing status. This is
 future-HUD data, not text, layout, widget, rendering, audio, or gameplay policy.

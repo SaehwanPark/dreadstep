@@ -1736,12 +1736,11 @@ Out of scope:
 - Player pickup commands, item effects, equipment, consumables, affixes, rarity, identification,
   capacity, stdio/MCP transport registration, persistence, serialization, and UI.
 
-## Present
-
 ### Milestone 3 slice: deterministic headless HUD status projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Project the selected actor's authoritative status into a typed `PresentationHud` resource for a
 future HUD without introducing text, layout, rendering, or UI policy. The resource keeps the
@@ -1767,16 +1766,18 @@ Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test hud --all-features --locked` covers startup,
   movement, selection-only changes, unknown actors, and absent-resource preservation with complete
-  scene atomicity.
+  non-empty scene atomicity; all seven focused tests pass.
 - All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
   and `scripts/verify.sh` pass locally.
-- Exactly one semantic code reviewer reports PASS on the final revision, and the normal CI matrix
-  remains green.
+- Exactly one semantic code reviewer reports PASS on final revision `3431d20`, and Linux, Apple
+  Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
 - HUD widgets, text/localization, health-bar styling, inventory panels, event/combat messages,
   sprites, animations, audio, windowing, rendering, persistence, transport, and gameplay rules.
+
+## Present
 
 ### Deferred item gameplay semantics
 
