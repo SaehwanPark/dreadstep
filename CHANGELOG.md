@@ -94,6 +94,9 @@ All notable contributor- and user-visible project changes are recorded here.
   with stale-rejection clearing and no timers, interpolation, assets, or rendering backend.
 - A validated typed `PresentationWindow` request for logical dimensions, integer pixel scale, and
   checked physical dimensions without creating an OS window or enabling desktop features.
+- Caller-selected `PresentationTileSize` and checked `ScenePixelPosition` metadata for terrain,
+  actors, and ground items; tile-size experiments, transforms, assets, and rendering remain
+  deferred.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

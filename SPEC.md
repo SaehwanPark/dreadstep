@@ -1983,6 +1983,38 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: deterministic scene pixel placement
+
+- Status: active
+- Started: 2026-08-09
+
+Define a typed, headless placement boundary between core map coordinates and a future renderer.
+`PresentationTileSize` accepts a caller-selected logical tile extent without choosing between the
+proposal's 24×24 and 32×32 candidates. When present, the Bevy presentation plugin projects checked
+logical-pixel origins through `ScenePixelPosition` on existing terrain, actor, and ground-item
+mirrors. The projection remains disposable metadata and never becomes a second source of scene or
+simulation truth.
+
+Acceptance:
+
+- `PresentationTileSize::new` rejects zero width or height and exposes validated dimensions.
+- Coordinate conversion rejects negative positions and checked multiplication overflow; valid
+  positions map deterministically to logical-pixel origins.
+- Terrain, actor, and ground-item mirrors receive refreshed `ScenePixelPosition` values after
+  synchronization, and retained keyed actor entities keep their identity after accepted movement.
+- Missing tile-size configuration leaves the existing headless scene unchanged and adds no pixel
+  metadata; inventory items remain unplaced because they have no map coordinate.
+- Missing runtime authority preserves existing pixel metadata without deriving a new scene state.
+- The boundary adds no Bevy `Transform`, textures, asset handles, window/render plugins, audio,
+  timers, interpolation, visibility policy, persistence, transport, or gameplay rules.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test tile_layout --all-features --locked` covers valid,
+  invalid, overflow, terrain/actor/ground, retained-entity, and absent-resource behavior.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
+  `git diff --check`, and `scripts/verify.sh` must pass before handoff.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

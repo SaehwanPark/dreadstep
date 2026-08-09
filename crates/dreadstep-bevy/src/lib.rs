@@ -10,7 +10,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::app::{App, Plugin, Update};
-use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world::World};
+use bevy::ecs::{
+  component::Component,
+  entity::Entity,
+  query::{Or, With},
+  resource::Resource,
+  world::World,
+};
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
@@ -249,6 +255,51 @@ impl PresentationWindow {
   #[must_use]
   pub const fn physical_height(self) -> u32 {
     self.physical_height
+  }
+}
+
+/// A caller-selected logical tile extent for the future renderer.
+///
+/// The proposal keeps 24×24 and 32×32 as asset-experiment candidates, so this resource does not
+/// choose a project-wide default. It only validates the dimensions supplied by a presentation
+/// client and provides checked conversion from map coordinates to logical pixel coordinates.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationTileSize {
+  width: u32,
+  height: u32,
+}
+
+impl PresentationTileSize {
+  /// Creates a non-empty logical tile extent.
+  #[must_use]
+  pub const fn new(width: u32, height: u32) -> Option<Self> {
+    if width == 0 || height == 0 {
+      return None;
+    }
+    Some(Self { width, height })
+  }
+
+  /// Returns the logical tile width.
+  #[must_use]
+  pub const fn width(self) -> u32 {
+    self.width
+  }
+
+  /// Returns the logical tile height.
+  #[must_use]
+  pub const fn height(self) -> u32 {
+    self.height
+  }
+
+  /// Converts an in-map coordinate into a checked logical-pixel origin.
+  #[must_use]
+  pub fn pixel_position(self, position: Position) -> Option<ScenePixelPosition> {
+    let x = u32::try_from(position.x()).ok()?;
+    let y = u32::try_from(position.y()).ok()?;
+    Some(ScenePixelPosition {
+      x: x.checked_mul(self.width)?,
+      y: y.checked_mul(self.height)?,
+    })
   }
 }
 
@@ -602,6 +653,30 @@ impl SceneSpriteRole {
       ActorKind::Player => Self::Player,
       ActorKind::Enemy => Self::Enemy,
     }
+  }
+}
+
+/// A disposable logical-pixel origin for a map-backed scene mirror.
+///
+/// This is placement metadata only. It is not a Bevy transform and does not imply a window,
+/// camera, texture, asset handle, or rendering plugin.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ScenePixelPosition {
+  x: u32,
+  y: u32,
+}
+
+impl ScenePixelPosition {
+  /// Returns the logical horizontal pixel origin.
+  #[must_use]
+  pub const fn x(self) -> u32 {
+    self.x
+  }
+
+  /// Returns the logical vertical pixel origin.
+  #[must_use]
+  pub const fn y(self) -> u32 {
+    self.y
   }
 }
 
@@ -1145,6 +1220,7 @@ const KEY_PRIORITY: [KeyCode; 10] = [
 fn update_presentation(world: &mut World) {
   dispatch_keyboard_input(world);
   sync_runtime_scene(world);
+  sync_scene_pixel_positions(world);
   sync_focus(world);
   sync_scene_focus(world);
   sync_camera(world);
@@ -1202,6 +1278,44 @@ fn sync_runtime_scene(world: &mut World) {
     return;
   };
   sync_scene(world, &snapshot);
+}
+
+fn sync_scene_pixel_positions(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none() {
+    return;
+  }
+  let Some(tile_size) = world.get_resource::<PresentationTileSize>().copied() else {
+    return;
+  };
+  let placements = {
+    let mut query = world.query_filtered::<(
+      Entity,
+      Option<&SceneTile>,
+      Option<&SceneActor>,
+      Option<&SceneGroundItem>,
+    ), Or<(With<SceneTile>, With<SceneActor>, With<SceneGroundItem>)>>();
+    query
+      .iter(world)
+      .map(|(entity, tile, actor, ground_item)| {
+        let position = tile
+          .map(|tile| tile.position())
+          .or_else(|| actor.map(|actor| actor.position()))
+          .or_else(|| ground_item.map(|item| item.position()));
+        (
+          entity,
+          position.and_then(|position| tile_size.pixel_position(position)),
+        )
+      })
+      .collect::<Vec<_>>()
+  };
+  for (entity, pixel_position) in placements {
+    let mut entity = world.entity_mut(entity);
+    if let Some(pixel_position) = pixel_position {
+      entity.insert(pixel_position);
+    } else {
+      entity.remove::<ScenePixelPosition>();
+    }
+  }
 }
 
 fn sync_focus(world: &mut World) {
