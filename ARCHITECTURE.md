@@ -247,7 +247,7 @@ same latest events to ordered typed cue values. It is a headless contract for a 
 it loads no assets, enables no audio backend, performs no playback, and preserves the adapter's
 authority and stale-output rules.
 
-The active sprite-role slice adds a `SceneSpriteRole` component alongside each existing keyed scene
+The verified sprite-role slice adds a `SceneSpriteRole` component alongside each existing keyed scene
 mirror. It classifies terrain, living player/enemy actors, retained dead records, and item mirrors;
 the existing typed scene components remain authoritative projections, while textures, transforms,
 asset selection, and rendering stay outside this headless boundary.

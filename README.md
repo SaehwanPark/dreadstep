@@ -25,9 +25,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   feedback evidence, focus, scene focus, camera, viewport, tile/actor, ground-item, and
   inventory-item projections, typed `PresentationHud` actor status, and ordered typed
   `PresentationMessages` for every current core event, plus typed `PresentationAudioCues`
-  placeholders preserving event order without loading assets or enabling playback.
-- Active sprite boundary: typed `SceneSpriteRole` metadata classifies terrain, living actors, dead
-  records, and item mirrors without textures, assets, or rendering plugins.
+  placeholders preserving event order without loading assets or enabling playback, plus typed
+  `SceneSpriteRole` metadata classifying terrain, living actors, dead records, and item mirrors
+  without textures, assets, or rendering plugins.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.

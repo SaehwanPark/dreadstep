@@ -1859,19 +1859,11 @@ Out of scope:
 - Audio assets, asset handles, playback, audio backends, text/localization, text layout, widgets,
   sprites, animation, windowing, rendering, persistence, transport, and gameplay rules.
 
-## Present
-
-### Deferred item gameplay semantics
-
-The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
-and pickup are verified separately in their completed slices above; richer player operations still
-require an explicit core contract.
-
 ### Milestone 3 slice: deterministic headless sprite-role metadata
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Attach a typed `SceneSpriteRole` to each existing headless Bevy scene mirror so a future renderer
 can classify terrain, living actors, retained dead records, and item entities without inspecting
@@ -1896,10 +1888,27 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test sprite_roles --all-features --locked` covers every
-  role variant, item mirrors, stable identity, stale cleanup, and actor role refresh.
+  role variant, item mirrors, stable identity, stale cleanup, and actor role refresh; all five
+  focused tests pass.
 - All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
   `git diff --check`, and `scripts/verify.sh` pass locally.
-- Exactly one semantic code reviewer reviews the implementation and docs closeout before merge.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `4fad448`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- Text/localization, textures, asset handles, materials, transforms, window/render plugins,
+  animation, audio, persistence, transport, and gameplay rules.
+
+## Present
+
+### Deferred item gameplay semantics
+
+The opaque ownership slice and content catalog foundation intentionally do not define item effects,
+equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
+and pickup are verified separately in their completed slices above; richer player operations still
+require an explicit core contract.
 
 ## Future
 
