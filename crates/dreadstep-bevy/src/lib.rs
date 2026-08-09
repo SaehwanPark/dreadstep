@@ -1009,7 +1009,8 @@ pub struct PresentationAssetReference {
 }
 
 impl PresentationAssetReference {
-  /// Creates a non-empty relative repository path without traversal or platform prefixes.
+  /// Creates a non-empty path rooted in an ignored local-media directory, without traversal or
+  /// platform prefixes.
   #[must_use]
   pub fn new(path: impl Into<String>) -> Option<Self> {
     let path = path.into();
@@ -1022,6 +1023,10 @@ impl PresentationAssetReference {
         .split('/')
         .any(|segment| segment.is_empty() || segment == ".." || segment == ".")
       || path.split_once(':').is_some()
+      || (!path.starts_with("assets/")
+        && !path.starts_with("art/")
+        && !path.starts_with("audio/")
+        && !is_crate_local_media_path(&path))
     {
       return None;
     }
@@ -1066,14 +1071,34 @@ impl PresentationAssetManifest {
   }
 
   /// Returns the local-only reference for one placeholder family.
+  ///
+  /// # Panics
+  ///
+  /// Panics only if the private complete-manifest invariant has been violated. Every manifest
+  /// constructed through [`Self::new`] contains all six families, so valid callers cannot trigger
+  /// this panic.
   #[must_use]
-  pub fn reference(&self, family: SceneRenderPlaceholder) -> Option<&PresentationAssetReference> {
+  pub fn reference(&self, family: SceneRenderPlaceholder) -> &PresentationAssetReference {
     self
       .bindings
       .iter()
       .find(|(candidate, _)| *candidate == family)
       .map(|(_, reference)| reference)
+      .expect("validated asset manifests contain every placeholder family")
   }
+}
+
+fn is_crate_local_media_path(path: &str) -> bool {
+  let Some(crate_relative) = path.strip_prefix("crates/") else {
+    return false;
+  };
+  let mut segments = crate_relative.split('/');
+  let crate_name = segments.next();
+  let media_directory = segments.next();
+  let asset_path = segments.next();
+  crate_name.is_some()
+    && matches!(media_directory, Some("assets" | "art" | "audio"))
+    && asset_path.is_some()
 }
 
 impl SceneRenderPlaceholder {
@@ -1210,7 +1235,7 @@ impl PresentationRenderNodeProjection {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SceneRenderAssetEntry {
   node: SceneRenderNodeEntry,
-  reference: Option<PresentationAssetReference>,
+  reference: PresentationAssetReference,
 }
 
 impl SceneRenderAssetEntry {
@@ -1220,10 +1245,10 @@ impl SceneRenderAssetEntry {
     self.node
   }
 
-  /// Returns the local-only reference, if the manifest maps this family.
+  /// Returns the validated local-only reference for this node's placeholder family.
   #[must_use]
-  pub fn reference(&self) -> Option<&PresentationAssetReference> {
-    self.reference.as_ref()
+  pub fn reference(&self) -> &PresentationAssetReference {
+    &self.reference
   }
 }
 
@@ -2113,7 +2138,7 @@ fn sync_render_asset_projection(world: &mut World) {
   let entries = nodes
     .into_iter()
     .map(|node| SceneRenderAssetEntry {
-      reference: manifest.reference(node.node().placeholder()).cloned(),
+      reference: manifest.reference(node.node().placeholder()).clone(),
       node,
     })
     .collect::<Vec<_>>();

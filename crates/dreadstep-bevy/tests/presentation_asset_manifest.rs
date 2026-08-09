@@ -8,8 +8,8 @@ use dreadstep_bevy::{
   PresentationSpriteProjection, PresentationState, PresentationTileSize, SceneRenderPlaceholder,
 };
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position, Tile,
-  WorldState,
+  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position,
+  Tile, WorldState,
 };
 
 fn reference(path: &str) -> PresentationAssetReference {
@@ -121,15 +121,13 @@ fn asset_projection_joins_every_node_without_loading_files() {
       SceneRenderPlaceholder::InventoryItem => "inventory",
     };
     let expected = format!("art/{family}-one.png");
-    assert_eq!(
-      asset
-        .reference()
-        .expect("manifest entry should exist")
-        .path(),
-      expected
-    );
+    assert_eq!(asset.reference().path(), expected);
   }
-  assert!(assets.iter().all(|entry| entry.reference().is_some()));
+  assert!(
+    assets
+      .iter()
+      .all(|entry| !entry.reference().path().is_empty())
+  );
 }
 
 #[test]
@@ -139,15 +137,35 @@ fn asset_reference_validation_rejects_unsafe_paths_and_manifest_shape() {
     "/absolute.png",
     "../parent.png",
     "art/../parent.png",
+    ".",
+    "art/./asset.png",
+    "art//asset.png",
+    "art/asset\0.png",
     "C:/asset.png",
     "art\\asset.png",
+    "README.md",
+    "screenshots/example.png",
+    "docs/presentation/asset.png",
+    "crates/dreadstep-bevy/src/asset.png",
   ] {
     assert!(
       PresentationAssetReference::new(path).is_none(),
       "{path} should be rejected"
     );
   }
-  assert!(PresentationAssetReference::new("art/valid.png").is_some());
+  for path in [
+    "assets/valid.wav",
+    "art/valid.png",
+    "audio/valid.ogg",
+    "crates/dreadstep-bevy/assets/valid.wav",
+    "crates/dreadstep-bevy/art/valid.png",
+    "crates/dreadstep-bevy/audio/valid.ogg",
+  ] {
+    assert!(
+      PresentationAssetReference::new(path).is_some(),
+      "{path} should validate"
+    );
+  }
   let one = reference("art/one.png");
   assert!(
     PresentationAssetManifest::new(vec![(SceneRenderPlaceholder::Terrain, one.clone())]).is_none()
@@ -173,6 +191,11 @@ fn manifest_refresh_preserves_nodes_and_updates_references() {
     .resource::<PresentationRenderAssetProjection>()
     .entries()
     .to_vec();
+  let before_snapshot = app.world().resource::<PresentationRuntime>().snapshot();
+  let before_digest = app
+    .world()
+    .resource::<PresentationRuntime>()
+    .replay_digest();
   app.world_mut().insert_resource(manifest("two"));
   app.update();
   let after = app
@@ -182,16 +205,63 @@ fn manifest_refresh_preserves_nodes_and_updates_references() {
     .to_vec();
   assert_eq!(before.len(), after.len());
   for (old, new) in before.iter().zip(after.iter()) {
-    assert_eq!(old.node().node_entity(), new.node().node_entity());
+    assert_eq!(old.node(), new.node());
     assert_ne!(old.reference(), new.reference());
-    assert!(
-      new
-        .reference()
-        .expect("updated reference")
-        .path()
-        .ends_with("-two.png")
-    );
+    assert!(new.reference().path().ends_with("-two.png"));
   }
+  let runtime = app.world().resource::<PresentationRuntime>();
+  assert_eq!(runtime.snapshot(), before_snapshot);
+  assert_eq!(runtime.replay_digest(), before_digest);
+}
+
+#[test]
+fn dead_actor_refresh_updates_family_and_retains_node_identity() {
+  let mut app = asset_app();
+  let before = app
+    .world_mut()
+    .resource::<PresentationRenderAssetProjection>()
+    .entries()
+    .to_vec();
+  let enemy = before
+    .iter()
+    .find(|entry| entry.node().node().placeholder() == SceneRenderPlaceholder::Enemy)
+    .expect("enemy asset entry should exist")
+    .clone();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("adjacent attack should succeed");
+  app.update();
+  let after = app
+    .world_mut()
+    .resource::<PresentationRenderAssetProjection>()
+    .entries()
+    .to_vec();
+  let dead = after
+    .iter()
+    .find(|entry| entry.node().node().placeholder() == SceneRenderPlaceholder::DeadActor)
+    .expect("dead asset entry should exist");
+  assert_eq!(dead.node().node_entity(), enemy.node().node_entity());
+  assert_eq!(
+    dead.node().node().source_entity(),
+    enemy.node().node().source_entity()
+  );
+  assert_eq!(dead.node().node().layer(), enemy.node().node().layer());
+  assert_eq!(dead.node().node().order(), enemy.node().node().order());
+  assert_eq!(
+    dead.node().node().pixel_position(),
+    enemy.node().node().pixel_position()
+  );
+  assert_eq!(dead.reference().path(), "art/dead-one.png");
+  assert!(
+    !after
+      .iter()
+      .any(|entry| { entry.node().node().placeholder() == SceneRenderPlaceholder::Enemy })
+  );
 }
 
 #[test]

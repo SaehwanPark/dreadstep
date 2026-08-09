@@ -2358,8 +2358,9 @@ licensing records remain outside ignored media directories.
 
 Acceptance:
 
-- `PresentationAssetReference` accepts non-empty relative paths and rejects traversal, empty
-  segments, absolute paths, platform prefixes, backslashes, and NUL bytes without filesystem I/O.
+- `PresentationAssetReference` accepts non-empty paths rooted in the repository's root or
+  crate-local `assets/`, `art/`, or `audio/` directories and rejects traversal, empty segments,
+  absolute paths, platform prefixes, backslashes, and NUL bytes without filesystem I/O.
 - `PresentationAssetManifest` requires exactly one reference for each terrain, player, enemy,
   dead-actor, ground-item, and inventory-item placeholder family.
 - `PresentationRenderAssetProjection` joins every ordered `SceneRenderNodeEntry` to its typed
@@ -2372,8 +2373,8 @@ Acceptance:
 Verification target:
 
 - Focused `cargo test -p dreadstep-bevy --test presentation_asset_manifest --locked` passes all
-  four tests covering complete joins, path/manifest validation, identity-preserving refresh, and
-  independent missing-resource guards.
+  five tests covering complete joins, path/manifest validation, identity-preserving refresh,
+  living-to-dead family replacement, and independent missing-resource guards.
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
   and `scripts/verify.sh` pass locally; anchored media ignore checks keep local binaries ignored
   while the tracked concept-art and future screenshot exceptions remain visible.
