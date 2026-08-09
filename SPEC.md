@@ -1769,8 +1769,9 @@ Verification:
   non-empty scene atomicity; all seven focused tests pass.
 - All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
   and `scripts/verify.sh` pass locally.
-- Exactly one semantic code reviewer reports PASS on final revision `3431d20`, and Linux, Apple
-  Silicon macOS, and Windows CI are green for that revision.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `3431d20`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
 
 Out of scope:
 
@@ -1783,8 +1784,8 @@ Out of scope:
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
 equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
-and pickup are specified separately below; richer player operations still require an explicit core
-contract.
+and pickup are verified separately in their completed slices above; richer player operations still
+require an explicit core contract.
 
 ## Future
 
