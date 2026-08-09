@@ -1340,8 +1340,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic catalog-bound starter item placements
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Bind authored starter-floor item placements to an explicit content-owned
 `ItemCatalogDefinition`. `StarterFloorDefinition` will validate the catalog and every placement's
@@ -1363,11 +1364,13 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-content --test starter_items --all-features --locked` covers
-  catalog-bound success/order, duplicate catalog IDs, unknown definitions, and default stability.
-- `cargo test -p dreadstep-content --all-targets --all-features --locked`, focused Clippy, Cargo
-  docs, `git diff --check`, and `scripts/verify.sh` pass before handoff.
-- Exactly one semantic code reviewer must review the content/catalog boundary, and Linux, Apple
-  Silicon macOS, and Windows CI must be green for the reviewed revision before closeout.
+  catalog-bound success/order, catalog-order independence, duplicate catalog IDs, unknown
+  definitions, and default stability; all four focused tests pass.
+- `cargo test -p dreadstep-content --all-targets --all-features --locked` passes all nine content
+  tests. Focused Clippy with `-D warnings`, content Cargo docs, `git diff --check`, and the full
+  `scripts/verify.sh` suite pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `1bec9fa`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
