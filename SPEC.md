@@ -1272,8 +1272,8 @@ Acceptance:
 
 - `PresentationSnapshot::ground_items()` exposes complete immutable ground stacks, including
   position, `ItemId`, and `ItemDefinitionId`, in core-provided deterministic order.
-- `SceneGroundItem` carries typed item identity, definition reference, and position without mutable
-  core storage, gameplay effects, or presentation policy.
+- `SceneGroundItem` carries typed item identity, definition reference, position, and zero-based stack
+  order without mutable core storage, gameplay effects, or presentation policy.
 - `sync_scene` creates, updates, and deduplicates item entities deterministically by `ItemId`,
   preserves entity identity for unchanged ground items, and removes items absent from later
   snapshots (including picked-up items).

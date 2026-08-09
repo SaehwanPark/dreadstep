@@ -85,6 +85,42 @@ fn ground_world() -> WorldState {
   world
 }
 
+fn keyed_tiles(scene: &mut World) -> BTreeMap<(i32, i32), (bevy::ecs::entity::Entity, SceneTile)> {
+  scene
+    .query::<(bevy::ecs::entity::Entity, &SceneTile)>()
+    .iter(scene)
+    .map(|(entity, tile)| ((tile.position().x(), tile.position().y()), (entity, *tile)))
+    .collect()
+}
+
+fn keyed_actors(scene: &mut World) -> BTreeMap<ActorId, (bevy::ecs::entity::Entity, SceneActor)> {
+  scene
+    .query::<(bevy::ecs::entity::Entity, &SceneActor)>()
+    .iter(scene)
+    .map(|(entity, actor)| (actor.id(), (entity, *actor)))
+    .collect()
+}
+
+fn keyed_ground_items(
+  scene: &mut World,
+) -> BTreeMap<ItemId, (bevy::ecs::entity::Entity, Position, ItemDefinitionId, usize)> {
+  scene
+    .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
+    .iter(scene)
+    .map(|(entity, item)| {
+      (
+        item.id(),
+        (
+          entity,
+          item.position(),
+          item.definition(),
+          item.stack_index(),
+        ),
+      )
+    })
+    .collect()
+}
+
 #[test]
 fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
   let mut state = PresentationState::start_run(7).expect("content should validate");
@@ -145,47 +181,85 @@ fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
 #[test]
 fn sync_projects_complete_ground_items_and_preserves_item_identity() {
   let snapshot = PresentationState::new(7, ground_world()).snapshot();
-  assert_eq!(snapshot.ground_items().len(), 2);
-  assert_eq!(snapshot.ground_items()[0].position(), Position::new(0, 0));
-  assert_eq!(snapshot.ground_items()[0].items()[0].id(), ItemId::new(1));
-  assert_eq!(
-    snapshot.ground_items()[0].items()[0].definition(),
-    ItemDefinitionId::new(101)
-  );
-  assert_eq!(snapshot.ground_items()[0].items()[1].id(), ItemId::new(2));
-  assert_eq!(snapshot.ground_items()[1].position(), Position::new(2, 1));
+  let expected_stacks = vec![
+    (
+      Position::new(0, 0),
+      vec![
+        (ItemId::new(1), ItemDefinitionId::new(101)),
+        (ItemId::new(2), ItemDefinitionId::new(102)),
+      ],
+    ),
+    (
+      Position::new(2, 1),
+      vec![(ItemId::new(3), ItemDefinitionId::new(103))],
+    ),
+  ];
+  let actual_stacks: Vec<_> = snapshot
+    .ground_items()
+    .iter()
+    .map(|stack| {
+      (
+        stack.position(),
+        stack
+          .items()
+          .iter()
+          .map(|item| (item.id(), item.definition()))
+          .collect::<Vec<_>>(),
+      )
+    })
+    .collect();
+  assert_eq!(actual_stacks, expected_stacks);
 
   let mut scene = World::new();
   sync_scene(&mut scene, &snapshot);
 
-  let first_entities: BTreeMap<_, _> = scene
-    .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
-    .iter(&scene)
-    .map(|(entity, item)| (item.id(), (entity, *item)))
+  let first_items = keyed_ground_items(&mut scene);
+  let expected_items = BTreeMap::from([
+    (
+      ItemId::new(1),
+      (Position::new(0, 0), ItemDefinitionId::new(101), 0),
+    ),
+    (
+      ItemId::new(2),
+      (Position::new(0, 0), ItemDefinitionId::new(102), 1),
+    ),
+    (
+      ItemId::new(3),
+      (Position::new(2, 1), ItemDefinitionId::new(103), 0),
+    ),
+  ]);
+  let actual_items: BTreeMap<_, _> = first_items
+    .iter()
+    .map(|(item_id, (_, position, definition, stack_index))| {
+      (*item_id, (*position, *definition, *stack_index))
+    })
     .collect();
-  assert_eq!(first_entities.len(), 3);
-  assert_eq!(
-    first_entities[&ItemId::new(1)].1.position(),
-    Position::new(0, 0)
-  );
-  assert_eq!(
-    first_entities[&ItemId::new(2)].1.definition(),
-    ItemDefinitionId::new(102)
-  );
-  assert_eq!(
-    first_entities[&ItemId::new(3)].1.position(),
-    Position::new(2, 1)
-  );
+  assert_eq!(actual_items, expected_items);
 
-  sync_scene(&mut scene, &snapshot);
-  let repeated_entities: BTreeMap<_, _> = scene
-    .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
-    .iter(&scene)
-    .map(|(entity, item)| (item.id(), entity))
-    .collect();
-  for (item_id, (entity, _)) in first_entities {
-    assert_eq!(repeated_entities[&item_id], entity);
-  }
+  let item_two_entity = first_items[&ItemId::new(2)].0;
+  let mut updated_world = ground_world();
+  updated_world
+    .pickup_item(ActorId::new(1), ItemId::new(2))
+    .expect("second item should be picked up");
+  updated_world
+    .teleport(ActorId::new(1), Position::new(1, 1))
+    .expect("actor should teleport on a floor tile");
+  updated_world
+    .drop_item(ActorId::new(1), ItemId::new(2))
+    .expect("second item should be dropped at the new position");
+  let updated = PresentationState::new(7, updated_world).snapshot();
+  sync_scene(&mut scene, &updated);
+
+  let updated_items = keyed_ground_items(&mut scene);
+  assert_eq!(updated_items[&ItemId::new(2)].0, item_two_entity);
+  assert_eq!(
+    (
+      updated_items[&ItemId::new(2)].1,
+      updated_items[&ItemId::new(2)].2,
+      updated_items[&ItemId::new(2)].3,
+    ),
+    (Position::new(1, 1), ItemDefinitionId::new(102), 0)
+  );
 }
 
 #[test]
@@ -207,14 +281,15 @@ fn sync_deduplicates_public_mirror_entities_by_stable_key() {
     .expect("actor should exist");
   let ground_snapshot = PresentationState::new(7, ground_world()).snapshot();
   sync_scene(&mut scene, &ground_snapshot);
-  let ground_item = *scene
-    .query::<&SceneGroundItem>()
+  let (original_item_entity, ground_item) = scene
+    .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
     .iter(&scene)
-    .next()
-    .expect("ground item should exist");
+    .find(|(_, item)| item.id() == ItemId::new(1))
+    .map(|(entity, item)| (entity, *item))
+    .expect("first ground item should exist");
   scene.spawn(tile);
   scene.spawn(actor);
-  scene.spawn(ground_item);
+  let duplicate_item_entity = scene.spawn(ground_item).id();
   assert_eq!(scene.query::<&SceneTile>().iter(&scene).count(), 7);
   assert_eq!(scene.query::<&SceneActor>().iter(&scene).count(), 3);
   assert_eq!(scene.query::<&SceneGroundItem>().iter(&scene).count(), 4);
@@ -224,6 +299,20 @@ fn sync_deduplicates_public_mirror_entities_by_stable_key() {
   assert_eq!(scene.query::<&SceneTile>().iter(&scene).count(), 6);
   assert_eq!(scene.query::<&SceneActor>().iter(&scene).count(), 2);
   assert_eq!(scene.query::<&SceneGroundItem>().iter(&scene).count(), 3);
+  let ground_items = keyed_ground_items(&mut scene);
+  assert_ne!(original_item_entity, duplicate_item_entity);
+  let expected_survivor = std::cmp::min(original_item_entity, duplicate_item_entity);
+  let expected_stale = std::cmp::max(original_item_entity, duplicate_item_entity);
+  assert_eq!(ground_items[&ItemId::new(1)].0, expected_survivor);
+  assert!(scene.get_entity(expected_stale).is_err());
+  assert_eq!(
+    (
+      ground_items[&ItemId::new(1)].1,
+      ground_items[&ItemId::new(1)].2,
+      ground_items[&ItemId::new(1)].3,
+    ),
+    (Position::new(0, 0), ItemDefinitionId::new(101), 0)
+  );
 }
 
 #[test]
@@ -267,12 +356,15 @@ fn sync_removes_picked_up_items_while_preserving_other_scene_mirrors() {
   let full = PresentationState::new(7, ground_world()).snapshot();
   let mut reduced_world = ground_world();
   reduced_world
-    .pickup_item(ActorId::new(1), ItemId::new(2))
-    .expect("second item should be picked up");
+    .pickup_item(ActorId::new(1), ItemId::new(1))
+    .expect("first item should be picked up");
   let reduced = PresentationState::new(7, reduced_world).snapshot();
 
   let mut scene = World::new();
   sync_scene(&mut scene, &full);
+  let before_tiles = keyed_tiles(&mut scene);
+  let before_actors = keyed_actors(&mut scene);
+  let before_ground_items = keyed_ground_items(&mut scene);
   let item_one_entity = scene
     .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
     .iter(&scene)
@@ -285,6 +377,12 @@ fn sync_removes_picked_up_items_while_preserving_other_scene_mirrors() {
     .find(|(_, item)| item.id() == ItemId::new(3))
     .map(|(entity, _)| entity)
     .expect("third ground item should exist");
+  let item_two_entity = scene
+    .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
+    .iter(&scene)
+    .find(|(_, item)| item.id() == ItemId::new(2))
+    .map(|(entity, _)| entity)
+    .expect("second ground item should exist");
   let player_entity = scene
     .query::<(bevy::ecs::entity::Entity, &SceneActor)>()
     .iter(&scene)
@@ -297,19 +395,19 @@ fn sync_removes_picked_up_items_while_preserving_other_scene_mirrors() {
   assert_eq!(scene.query::<&SceneTile>().iter(&scene).count(), 6);
   assert_eq!(scene.query::<&SceneActor>().iter(&scene).count(), 2);
   assert_eq!(scene.query::<&SceneGroundItem>().iter(&scene).count(), 2);
+  assert_eq!(keyed_tiles(&mut scene), before_tiles);
+  assert_eq!(keyed_actors(&mut scene), before_actors);
   assert!(
     scene
       .query::<&SceneGroundItem>()
       .iter(&scene)
-      .all(|item| item.id() != ItemId::new(2))
+      .all(|item| item.id() != ItemId::new(1))
   );
-  assert_eq!(
+  assert!(scene.get_entity(item_one_entity).is_err());
+  assert!(
     scene
-      .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
-      .iter(&scene)
-      .find(|(_, item)| item.id() == ItemId::new(1))
-      .map(|(entity, _)| entity),
-    Some(item_one_entity)
+      .get_entity(before_ground_items[&ItemId::new(1)].0)
+      .is_err()
   );
   assert_eq!(
     scene
@@ -318,6 +416,24 @@ fn sync_removes_picked_up_items_while_preserving_other_scene_mirrors() {
       .find(|(_, item)| item.id() == ItemId::new(3))
       .map(|(entity, _)| entity),
     Some(item_three_entity)
+  );
+  let after_ground_items = keyed_ground_items(&mut scene);
+  assert_eq!(after_ground_items[&ItemId::new(2)].0, item_two_entity);
+  assert_eq!(
+    (
+      after_ground_items[&ItemId::new(2)].1,
+      after_ground_items[&ItemId::new(2)].2,
+      after_ground_items[&ItemId::new(2)].3,
+    ),
+    (Position::new(0, 0), ItemDefinitionId::new(102), 0)
+  );
+  assert_eq!(
+    scene
+      .query::<(bevy::ecs::entity::Entity, &SceneGroundItem)>()
+      .iter(&scene)
+      .find(|(_, item)| item.id() == ItemId::new(2))
+      .map(|(entity, item)| (entity, item.stack_index())),
+    Some((item_two_entity, 0))
   );
   assert_eq!(
     scene

@@ -192,14 +192,16 @@ pub struct SceneGroundItem {
   id: ItemId,
   definition: ItemDefinitionId,
   position: Position,
+  stack_index: usize,
 }
 
 impl SceneGroundItem {
-  fn from_core(position: Position, item: Item) -> Self {
+  fn from_core(position: Position, stack_index: usize, item: Item) -> Self {
     Self {
       id: item.id(),
       definition: item.definition(),
       position,
+      stack_index,
     }
   }
 
@@ -220,13 +222,19 @@ impl SceneGroundItem {
   pub const fn position(self) -> Position {
     self.position
   }
+
+  /// Returns this item's zero-based insertion-order index within its ground stack.
+  #[must_use]
+  pub const fn stack_index(self) -> usize {
+    self.stack_index
+  }
 }
 
 /// A marker for the keyed scene entity representing the selected actor.
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SceneFocus;
 
-/// A deterministic read-only projection consumed by future map and actor renderers.
+/// A deterministic read-only projection consumed by future map, actor, and ground-item renderers.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PresentationSnapshot {
   width: u32,
@@ -772,8 +780,8 @@ fn sync_ground_items(scene: &mut World, snapshot: &PresentationSnapshot) {
     }
   }
   for stack in snapshot.ground_items() {
-    for item in stack.items() {
-      let scene_item = SceneGroundItem::from_core(stack.position(), *item);
+    for (stack_index, item) in stack.items().iter().enumerate() {
+      let scene_item = SceneGroundItem::from_core(stack.position(), stack_index, *item);
       if let Some(entity) = existing_ground_items
         .get(&item.id())
         .and_then(|entities| entities.first())
