@@ -1344,6 +1344,43 @@ Out of scope:
 - Item effects, equipment, consumables, affixes, rarity, identification, capacity, pickup/drop/use,
   player commands, stdio/MCP transport registration, persistence, and UI.
 
+### Milestone 4 slice: deterministic tester item drop
+
+- Status: active
+- Started: 2026-08-09
+
+Add an in-memory tester mutation that drops one owned opaque item instance at its actor's current
+map position. Core owns the ground-item records and deterministic stack ordering; protocol and MCP
+project the new read-only ground-item snapshot and expose only the tester mutation. This slice does
+not define pickup, item effects, equipment, capacity, or a player command.
+
+Acceptance:
+
+- A successful drop removes the unchanged item from the actor inventory while preserving the
+  relative order of remaining items, appends it to the ordered ground stack at the actor's current
+  position, and changes the deterministic world digest.
+- Ground stacks are keyed by stable map position and projected in row-major position order; item
+  order within each stack is insertion order. Dead actor records remain valid drop sources at their
+  retained position.
+- Unknown actors and source items not owned return typed errors before mutation. Duplicate item
+  identity checks for `give_item` include ground items, so the global instance invariant remains
+  atomic and explicit.
+- Protocol exposes ground-item snapshots without inventing rules, and MCP delegates the tester
+  drop without recording player history or replay evidence. Core remains authoritative.
+
+Verification target:
+
+- Focused core drop tests cover ordered stacks, source-order preservation, dead sources, typed
+  rejection/atomicity, and digest changes; protocol snapshot tests cover row-major projection and
+  complete item data; MCP tests cover accepted/rejected history and replay invariants.
+- Focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass; exactly one
+  semantic code reviewer reports pass; Linux, Apple Silicon macOS, and Windows CI are green.
+
+Out of scope:
+
+- Pickup, item effects, equipment, consumables, affixes, rarity, identification, capacity,
+  player commands, stdio/MCP transport registration, persistence, serialization, and UI.
+
 ### Milestone 1: Rules kernel
 
 Implement the deterministic headless simulation described in the proposal: typed world
