@@ -108,6 +108,9 @@ All notable contributor- and user-visible project changes are recorded here.
   entries, retaining terrain/actor/item selectors, ECS identity, roles, and placement metadata
   without loading assets, enabling rendering, or committing media binaries; actual rendering and
   media remain deferred.
+- An active `PresentationRenderCommandPlan` boundary that derives deterministic terrain, ground,
+  actor, and inventory draw layers plus source order and optional placement from sprite entries,
+  without loading assets or enabling render plugins.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

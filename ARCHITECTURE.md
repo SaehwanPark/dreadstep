@@ -293,6 +293,12 @@ projection preserves retained entities and placement metadata without loading as
 another source of simulation truth. Actual texture loading, render plugins, transforms, and media
 remain deferred.
 
+The active render-command-plan slice derives `PresentationRenderCommandPlan` from the verified
+sprite projection. Each `SceneRenderCommand` retains its complete typed entry, ECS identity, sprite
+key, optional placement, deterministic layer, and source order. This is a read-only draw plan for a
+future renderer; it does not load assets, create transforms or windows, enable render plugins, or
+become simulation authority.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and

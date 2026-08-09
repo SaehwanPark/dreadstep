@@ -2258,6 +2258,38 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: deterministic render-command plan
+
+- Status: active
+- Started: 2026-08-09
+
+Derive an ordered, read-only draw-command plan from the verified sprite projection. Each command
+retains the complete typed entry, stable ECS identity, sprite key, optional map placement, and a
+deterministic layer/order value that a later renderer can consume without becoming simulation
+authority.
+
+Acceptance:
+
+- `PresentationRenderCommandPlan` exposes a read-only ordered slice of commands derived from
+  `PresentationSpriteProjection`; commands preserve complete render values and stable keyed entity
+  identity.
+- `SceneRenderLayer` classifies terrain, ground items, actors, and inventory metadata with explicit
+  deterministic ordering, while source order remains observable for stable same-layer handling.
+- Map-backed commands preserve checked `ScenePixelPosition` values and inventory commands remain
+  unplaced; accepted updates refresh dead roles and stale entries without mutating runtime, replay,
+  or core state.
+- Missing runtime authority preserves the prior plan, and missing source or destination resources
+  are safe no-ops.
+- The slice adds no texture handles, asset loading, render plugins, transforms, windowing, audio
+  playback, committed binaries, gameplay rules, persistence, transport, or dependencies.
+
+Verification target:
+
+- Focused render-command-plan tests prove complete-entry retention, layer/order mapping, exact map
+  placement and inventory exclusion, retained dead-actor identity, and authority/resource guards.
+- All Bevy targets, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
+  `scripts/verify.sh` pass before the single-reviewer handoff.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
