@@ -186,6 +186,10 @@ impl SceneActor {
   }
 }
 
+/// A marker for the keyed scene entity representing the selected actor.
+#[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SceneFocus;
+
 /// A deterministic read-only projection consumed by future map and actor renderers.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PresentationSnapshot {
@@ -454,6 +458,7 @@ fn update_presentation(world: &mut World) {
   dispatch_keyboard_input(world);
   sync_runtime_scene(world);
   sync_focus(world);
+  sync_scene_focus(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -526,6 +531,54 @@ fn sync_focus(world: &mut World) {
   };
   focus.actor = actor;
   focus.position = position;
+}
+
+fn sync_scene_focus(world: &mut World) {
+  let Some(actor) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    return;
+  };
+  if world.get_resource::<PresentationFocus>().is_none() {
+    return;
+  }
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
+  let actor_is_known = snapshot.actors().iter().any(|record| record.id() == actor);
+  let (marked_entities, target_entity) = {
+    let mut query = world.query::<(Entity, Option<&SceneActor>, Option<&SceneFocus>)>();
+    query.iter(world).fold(
+      (Vec::new(), None),
+      |(mut marked_entities, target_entity), (entity, scene_actor, marker)| {
+        if marker.is_some() {
+          marked_entities.push(entity);
+        }
+        let target_entity = target_entity.or_else(|| {
+          actor_is_known
+            .then(|| {
+              scene_actor
+                .filter(|record| record.id() == actor)
+                .map(|_| entity)
+            })
+            .flatten()
+        });
+        (marked_entities, target_entity)
+      },
+    )
+  };
+  for entity in marked_entities {
+    if Some(entity) != target_entity {
+      world.entity_mut(entity).remove::<SceneFocus>();
+    }
+  }
+  if let Some(entity) = target_entity {
+    world.entity_mut(entity).insert(SceneFocus);
+  }
 }
 
 fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {

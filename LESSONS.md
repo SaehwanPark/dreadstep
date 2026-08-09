@@ -96,4 +96,7 @@ Update an existing lesson instead of adding a duplicate.
   and test actor changes plus unknown-resource behavior headlessly. Guard missing runtime separately
   from an unknown actor: without an authoritative snapshot, preserve the last focus projection;
   with a present snapshot, map only the unknown identity to `None`. For atomicity evidence, compare
-  replay digest and complete keyed tile/actor projections rather than entity counts alone.
+  replay digest and complete keyed tile/actor projections rather than entity counts alone. When
+  extending focus into ECS, attach only a marker to the already keyed actor entity, guard input,
+  focus, and runtime independently, clear stale markers only with an authoritative snapshot, and
+  remove old markers before inserting the new target.
