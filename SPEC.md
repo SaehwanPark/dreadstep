@@ -2216,12 +2216,11 @@ Out of scope:
 - Item effects, stat modifiers, capacity, identification, additional slots, rendering, assets,
   windowing, audio playback, persistence, transport, and dependencies.
 
-## Present
-
 ### Milestone 3 slice: typed sprite-key projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Extend the verified headless render boundary with a closed typed content selector for each complete
 render entry. Terrain keys retain the typed tile, actor keys distinguish living player/enemy and
@@ -2240,13 +2239,24 @@ Acceptance:
 - The slice adds no texture handles, asset loading, render plugins, transforms, windowing, audio
   playback, committed binaries, gameplay rules, persistence, transport, or dependencies.
 
-Verification target:
+Verification:
 
-- Focused sprite-key tests prove exhaustive ordered keys, complete render-entry retention, dead-role
-  refresh with retained entity identity, missing-runtime preservation, inventory-unplaced metadata,
-  and no-op resource guards.
-- All Bevy targets, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
-  `scripts/verify.sh` pass before the single-reviewer handoff.
+- Focused `cargo test -p dreadstep-bevy --test sprite_keys --locked` passes all four tests covering
+  exhaustive ordered keys, complete render-entry retention, authoritative actor-key derivation at
+  the public entry boundary, dead-role refresh with retained entity identity, missing-runtime and
+  upstream-resource preservation, inventory-unplaced metadata, and no-op destination guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic reviewer reports PASS on final implementation/evidence revision `2ccfa5b`
+  (initial implementation `c997025`); Linux, Apple Silicon macOS, and Windows CI are green. The
+  docs-only closeout is reviewed separately.
+
+Out of scope:
+
+- Texture handles, asset loading, render plugins, transforms, windowing, audio playback, committed
+  binaries, gameplay rules, persistence, transport, and dependencies.
+
+## Present
 
 ### Deferred item gameplay semantics
 
