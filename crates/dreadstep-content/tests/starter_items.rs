@@ -9,10 +9,10 @@ use dreadstep_core::{ActorId, Item, ItemDefinitionId, ItemId};
 fn authored_items_preserve_actor_order_and_complete_data() {
   let definition = starter_floor_definition()
     .with_item_catalog(ItemCatalogDefinition::new(vec![
-      ItemDefinitionId::new(8),
-      ItemDefinitionId::new(7),
-      ItemDefinitionId::new(9),
       ItemDefinitionId::new(6),
+      ItemDefinitionId::new(9),
+      ItemDefinitionId::new(7),
+      ItemDefinitionId::new(8),
     ]))
     .with_items(vec![
       StarterItemPlacement::new(
@@ -55,6 +55,20 @@ fn authored_items_preserve_actor_order_and_complete_data() {
       .build()
       .expect("repeated authored items should validate")
       .digest()
+  );
+  let reordered_catalog = definition
+    .clone()
+    .with_item_catalog(ItemCatalogDefinition::new(vec![
+      ItemDefinitionId::new(8),
+      ItemDefinitionId::new(7),
+      ItemDefinitionId::new(9),
+      ItemDefinitionId::new(6),
+    ]));
+  assert_eq!(
+    world,
+    reordered_catalog
+      .build()
+      .expect("catalog order should not affect the core world")
   );
 }
 
@@ -112,15 +126,16 @@ fn invalid_item_placements_are_typed_and_atomic() {
 
 #[test]
 fn catalog_rejects_duplicate_and_unknown_definitions_before_world_build() {
-  let duplicate_catalog = starter_floor_definition()
-    .with_item_catalog(ItemCatalogDefinition::new(vec![
-      ItemDefinitionId::new(7),
-      ItemDefinitionId::new(7),
-    ]))
-    .with_items(vec![StarterItemPlacement::new(
-      ActorId::new(1),
-      Item::new(ItemId::new(41), ItemDefinitionId::new(7)),
-    )]);
+  let duplicate_catalog =
+    dreadstep_content::StarterFloorDefinition::new(0, 0, Vec::new(), Vec::new())
+      .with_item_catalog(ItemCatalogDefinition::new(vec![
+        ItemDefinitionId::new(7),
+        ItemDefinitionId::new(7),
+      ]))
+      .with_items(vec![StarterItemPlacement::new(
+        ActorId::new(1),
+        Item::new(ItemId::new(41), ItemDefinitionId::new(7)),
+      )]);
   assert_eq!(
     duplicate_catalog.build(),
     Err(ContentError::DuplicateItemDefinitionId(

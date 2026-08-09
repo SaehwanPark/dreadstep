@@ -185,8 +185,10 @@ impl StarterFloorDefinition {
 
   /// Adds ordered opaque item placements to this authored floor.
   ///
-  /// Declaration order is preserved within each target actor's inventory. Core validates actor
-  /// identities and global item identity when [`Self::build`] delegates the placements.
+  /// Declaration order is preserved within each target actor's inventory. Every placement
+  /// definition must be present in the catalog bound by [`Self::with_item_catalog`]; the default
+  /// empty catalog therefore accepts no item placements. Core validates actor identities and
+  /// global item identity when [`Self::build`] delegates valid placements.
   #[must_use]
   pub fn with_items(mut self, items: Vec<StarterItemPlacement>) -> Self {
     self.items = items;
