@@ -454,12 +454,22 @@ pub enum Command {
     /// The adjacent actor being targeted.
     target: ActorId,
   },
+  /// Move an enemy one deterministic step toward a living target.
+  Chase {
+    /// The enemy issuing the chase command.
+    actor: ActorId,
+    /// The living actor being pursued.
+    target: ActorId,
+  },
 }
 
 impl Command {
   const fn actor(self) -> ActorId {
     match self {
-      Self::Move { actor, .. } | Self::Wait { actor } | Self::Attack { actor, .. } => actor,
+      Self::Move { actor, .. }
+      | Self::Wait { actor }
+      | Self::Attack { actor, .. }
+      | Self::Chase { actor, .. } => actor,
     }
   }
 }
@@ -623,6 +633,10 @@ pub enum CommandError {
   TargetDead(ActorId),
   /// An actor cannot target itself with a melee attack.
   CannotAttackSelf(ActorId),
+  /// A chase command must be issued by an enemy actor.
+  ChaseRequiresEnemy(ActorId),
+  /// An enemy cannot chase itself.
+  CannotChaseSelf(ActorId),
   /// The attack target is not adjacent to the attacker.
   AttackOutOfRange {
     /// The actor issuing the attack.
@@ -657,6 +671,16 @@ impl fmt::Display for CommandError {
       Self::TargetDead(target) => write!(formatter, "attack target {} is dead", target.value()),
       Self::CannotAttackSelf(actor) => {
         write!(formatter, "actor {} cannot attack itself", actor.value())
+      }
+      Self::ChaseRequiresEnemy(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue an enemy chase",
+          actor.value()
+        )
+      }
+      Self::CannotChaseSelf(actor) => {
+        write!(formatter, "actor {} cannot chase itself", actor.value())
       }
       Self::AttackOutOfRange { attacker, target } => write!(
         formatter,
@@ -820,45 +844,16 @@ impl WorldState {
       .checked_add(ActionCost::STANDARD)
       .ok_or(CommandError::ScheduleOverflow(actor_id))?;
     let events = match command {
-      Command::Move { direction, .. } => {
-        let from = self
-          .actors
-          .get(&actor_id)
-          .map(Actor::position)
-          .ok_or(CommandError::UnknownActor(actor_id))?;
-        let to = from.translated(direction);
-        if !self.map.is_walkable(to) {
-          vec![Event::MovementBlocked {
-            actor: actor_id,
-            from,
-            to,
-            reason: BlockReason::Terrain,
-          }]
-        } else if let Some(blocker) = self.actor_at(to) {
-          vec![Event::MovementBlocked {
-            actor: actor_id,
-            from,
-            to,
-            reason: BlockReason::Actor(blocker),
-          }]
-        } else {
-          self
-            .actors
-            .get_mut(&actor_id)
-            .ok_or(CommandError::UnknownActor(actor_id))?
-            .position = to;
-          vec![Event::Moved {
-            actor: actor_id,
-            from,
-            to,
-          }]
-        }
-      }
+      Command::Move { direction, .. } => vec![self.move_actor(actor_id, direction)?],
       Command::Wait { .. } => vec![Event::Waited {
         actor: actor_id,
         at: self.current_time,
       }],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
+      Command::Chase { target, .. } => {
+        let direction = self.chase_direction(actor_id, target)?;
+        vec![self.move_actor(actor_id, direction)?]
+      }
     };
     self
       .actors
@@ -882,6 +877,72 @@ impl WorldState {
       .values()
       .find(|actor| actor.is_alive() && actor.position() == position)
       .map(Actor::id)
+  }
+
+  fn move_actor(&mut self, actor_id: ActorId, direction: Direction) -> Result<Event, CommandError> {
+    let from = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let to = from.translated(direction);
+    if !self.map.is_walkable(to) {
+      Ok(Event::MovementBlocked {
+        actor: actor_id,
+        from,
+        to,
+        reason: BlockReason::Terrain,
+      })
+    } else if let Some(blocker) = self.actor_at(to) {
+      Ok(Event::MovementBlocked {
+        actor: actor_id,
+        from,
+        to,
+        reason: BlockReason::Actor(blocker),
+      })
+    } else {
+      self
+        .actors
+        .get_mut(&actor_id)
+        .ok_or(CommandError::UnknownActor(actor_id))?
+        .position = to;
+      Ok(Event::Moved {
+        actor: actor_id,
+        from,
+        to,
+      })
+    }
+  }
+
+  fn chase_direction(&self, actor: ActorId, target: ActorId) -> Result<Direction, CommandError> {
+    let chaser = self
+      .actors
+      .get(&actor)
+      .ok_or(CommandError::UnknownActor(actor))?;
+    if chaser.kind() != ActorKind::Enemy {
+      return Err(CommandError::ChaseRequiresEnemy(actor));
+    }
+    if actor == target {
+      return Err(CommandError::CannotChaseSelf(actor));
+    }
+    let target_actor = self
+      .actors
+      .get(&target)
+      .ok_or(CommandError::UnknownTarget(target))?;
+    if !target_actor.is_alive() {
+      return Err(CommandError::TargetDead(target));
+    }
+    let from = chaser.position();
+    let to = target_actor.position();
+    if from.x() < to.x() {
+      Ok(Direction::East)
+    } else if from.x() > to.x() {
+      Ok(Direction::West)
+    } else if from.y() < to.y() {
+      Ok(Direction::South)
+    } else {
+      Ok(Direction::North)
+    }
   }
 
   fn attack(&mut self, attacker: ActorId, target: ActorId) -> Result<Vec<Event>, CommandError> {
@@ -1279,6 +1340,252 @@ mod tests {
       Err(WorldError::ActorDeadAtStart {
         actor: ActorId::new(1),
       })
+    );
+  }
+
+  #[test]
+  fn enemy_chase_uses_horizontal_priority_for_diagonal_targets() {
+    let mut world = WorldState::new(
+      floor_map(4, 4),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Player, Position::new(2, 2)),
+      ],
+    )
+    .unwrap();
+
+    let result = world
+      .execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+
+    assert_eq!(
+      result.events(),
+      &[Event::Moved {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(1, 0),
+      }]
+    );
+    assert_eq!(
+      world.actor(ActorId::new(1)).unwrap().ready_at(),
+      ActionTime::new(1)
+    );
+  }
+
+  #[test]
+  fn enemy_chase_uses_vertical_direction_when_columns_align() {
+    let mut world = WorldState::new(
+      floor_map(1, 3),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Player, Position::new(0, 2)),
+      ],
+    )
+    .unwrap();
+
+    let result = world
+      .execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+
+    assert_eq!(
+      result.events(),
+      &[Event::Moved {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(0, 1),
+      }]
+    );
+  }
+
+  #[test]
+  fn enemy_chase_reuses_terrain_and_actor_blocking() {
+    let map = GridMap::from_tiles(3, 1, vec![Tile::Floor, Tile::Wall, Tile::Floor]).unwrap();
+    let mut terrain_world = WorldState::new(
+      map,
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Player, Position::new(2, 0)),
+      ],
+    )
+    .unwrap();
+    let terrain_result = terrain_world
+      .execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+    assert_eq!(
+      terrain_result.events(),
+      &[Event::MovementBlocked {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(1, 0),
+        reason: BlockReason::Terrain,
+      }]
+    );
+    assert_eq!(
+      terrain_world.actor(ActorId::new(1)).unwrap().ready_at(),
+      ActionTime::new(1)
+    );
+
+    let mut actor_world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Player, Position::new(1, 0)),
+      ],
+    )
+    .unwrap();
+    let actor_result = actor_world
+      .execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+    assert_eq!(
+      actor_result.events(),
+      &[Event::MovementBlocked {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(1, 0),
+        reason: BlockReason::Actor(ActorId::new(2)),
+      }]
+    );
+  }
+
+  #[test]
+  fn rejects_player_self_unknown_and_dead_chase_targets() {
+    let mut player_world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(1, 0)),
+      ],
+    )
+    .unwrap();
+    assert_eq!(
+      player_world.execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }),
+      Err(CommandError::ChaseRequiresEnemy(ActorId::new(1)))
+    );
+
+    let mut self_world = WorldState::new(
+      floor_map(1, 1),
+      vec![Actor::new(
+        ActorId::new(1),
+        ActorKind::Enemy,
+        Position::new(0, 0),
+      )],
+    )
+    .unwrap();
+    assert_eq!(
+      self_world.execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(1),
+      }),
+      Err(CommandError::CannotChaseSelf(ActorId::new(1)))
+    );
+
+    assert_eq!(
+      self_world.execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(99),
+      }),
+      Err(CommandError::UnknownTarget(ActorId::new(99)))
+    );
+
+    let mut dead_world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Enemy,
+          Position::new(0, 0),
+          HitPoints::new(10),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Player,
+          Position::new(1, 0),
+          HitPoints::new(1),
+        ),
+      ],
+    )
+    .unwrap();
+    dead_world
+      .execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+    assert_eq!(
+      dead_world.execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }),
+      Err(CommandError::TargetDead(ActorId::new(2)))
+    );
+  }
+
+  #[test]
+  fn enemy_chase_can_enter_a_dead_non_target_tile() {
+    let mut world = WorldState::new(
+      floor_map(3, 1),
+      vec![
+        Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Enemy,
+          Position::new(0, 0),
+          HitPoints::new(10),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Player,
+          Position::new(1, 0),
+          HitPoints::new(1),
+        ),
+        Actor::new(ActorId::new(3), ActorKind::Player, Position::new(2, 0)),
+      ],
+    )
+    .unwrap();
+
+    world
+      .execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+    world
+      .execute(Command::Wait {
+        actor: ActorId::new(3),
+      })
+      .unwrap();
+    let result = world
+      .execute(Command::Chase {
+        actor: ActorId::new(1),
+        target: ActorId::new(3),
+      })
+      .unwrap();
+
+    assert_eq!(
+      result.events(),
+      &[Event::Moved {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(1, 0),
+      }]
+    );
+    assert_eq!(
+      world.actor(ActorId::new(1)).unwrap().ready_at(),
+      ActionTime::new(2)
     );
   }
 
