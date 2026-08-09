@@ -5,9 +5,12 @@ use std::collections::BTreeMap;
 use bevy::app::App;
 use bevy::ecs::entity::Entity;
 use bevy::input::{ButtonInput, keyboard::KeyCode};
-use dreadstep_bevy::{PresentationInput, PresentationPlugin, PresentationRuntime, SceneActor};
+use dreadstep_bevy::{
+  PresentationInput, PresentationPlugin, PresentationRuntime, SceneActor, SceneTile,
+};
 use dreadstep_core::{ActorId, Position};
 
+type TileProjection = BTreeMap<(i32, i32), (Entity, SceneTile)>;
 type ActorProjection = BTreeMap<ActorId, (Entity, SceneActor)>;
 
 fn input_app(actor: ActorId) -> App {
@@ -26,6 +29,25 @@ fn actor_projection(app: &mut App) -> ActorProjection {
     .iter(world)
     .map(|(entity, actor)| (actor.id(), (entity, *actor)))
     .collect()
+}
+
+fn scene_projection(app: &mut App) -> (TileProjection, ActorProjection) {
+  let world = app.world_mut();
+  let tiles = {
+    let mut query = world.query::<(Entity, &SceneTile)>();
+    query
+      .iter(world)
+      .map(|(entity, tile)| ((tile.position().x(), tile.position().y()), (entity, *tile)))
+      .collect()
+  };
+  let actors = {
+    let mut query = world.query::<(Entity, &SceneActor)>();
+    query
+      .iter(world)
+      .map(|(entity, actor)| (actor.id(), (entity, *actor)))
+      .collect()
+  };
+  (tiles, actors)
 }
 
 #[test]
@@ -165,6 +187,50 @@ fn missing_control_resource_is_a_safe_noop() {
 }
 
 #[test]
+fn missing_button_input_resource_is_a_safe_noop() {
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::start_run(7).expect("content should validate"));
+  app.insert_resource(PresentationInput::new(ActorId::new(1)));
+  app.add_plugins(PresentationPlugin);
+  app.update();
+  let before = app.world().resource::<PresentationRuntime>().snapshot();
+  let before_scene = scene_projection(&mut app);
+
+  app.update();
+
+  assert_eq!(
+    app.world().resource::<PresentationRuntime>().snapshot(),
+    before
+  );
+  assert_eq!(scene_projection(&mut app), before_scene);
+}
+
+#[test]
+fn missing_runtime_resource_is_a_safe_noop_with_input_control_present() {
+  let mut app = App::new();
+  app.insert_resource(PresentationInput::new(ActorId::new(1)));
+  app.insert_resource(ButtonInput::<KeyCode>::default());
+  app.add_plugins(PresentationPlugin);
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<ButtonInput<KeyCode>>()
+    .press(KeyCode::ArrowRight);
+
+  app.update();
+
+  assert!(
+    app
+      .world()
+      .resource::<ButtonInput<KeyCode>>()
+      .just_pressed(KeyCode::ArrowRight)
+  );
+  let world = app.world_mut();
+  assert_eq!(world.query::<&SceneTile>().iter(world).count(), 0);
+  assert_eq!(world.query::<&SceneActor>().iter(world).count(), 0);
+}
+
+#[test]
 fn rejected_key_consumes_input_without_mutating_runtime_or_scene() {
   let mut app = input_app(ActorId::new(99));
   app.update();
@@ -173,7 +239,7 @@ fn rejected_key_consumes_input_without_mutating_runtime_or_scene() {
     .world()
     .resource::<PresentationRuntime>()
     .replay_digest();
-  let before_scene = actor_projection(&mut app);
+  let before_scene = scene_projection(&mut app);
 
   app
     .world_mut()
@@ -184,7 +250,7 @@ fn rejected_key_consumes_input_without_mutating_runtime_or_scene() {
   let runtime = app.world().resource::<PresentationRuntime>();
   assert_eq!(runtime.snapshot(), before);
   assert_eq!(runtime.replay_digest(), before_digest);
-  assert_eq!(actor_projection(&mut app), before_scene);
+  assert_eq!(scene_projection(&mut app), before_scene);
   assert!(
     !app
       .world()
