@@ -31,7 +31,46 @@ fn starter_floor_has_stable_shape_and_digest() {
       Position::new(5, 3),
     ]
   );
-  assert_eq!(world.map().tile_at(Position::new(0, 0)), Some(Tile::Wall));
+  assert_eq!(
+    world.map().tiles(),
+    &[
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Floor,
+      Tile::Wall,
+      Tile::Floor,
+      Tile::Wall,
+      Tile::Floor,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Floor,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+      Tile::Wall,
+    ]
+  );
   assert_eq!(
     world.digest(),
     starter_floor().expect("same content").digest()
