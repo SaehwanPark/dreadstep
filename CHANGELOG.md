@@ -71,6 +71,8 @@ All notable contributor- and user-visible project changes are recorded here.
   priority, one-command-per-update consumption, and same-update scene projection.
 - A one-shot `PresentationRuntime` feedback buffer for accepted typed event/snapshot evidence, with
   stale-output clearing on rejected commands and no new authoritative state.
+- A typed headless `PresentationFocus` projection that mirrors the selected actor's position for
+  future camera systems without adding viewport, visibility, or rendering policy.
 
 ### Changed
 
