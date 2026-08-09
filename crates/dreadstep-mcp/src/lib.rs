@@ -14,14 +14,15 @@ use dreadstep_core::{
 use dreadstep_protocol::{
   ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
   CommandRequest, Event, HitPoints as ProtocolHitPoints, Position as ProtocolPosition,
-  ReplayEvidence, StateDigest, WorldError, WorldSnapshot,
+  ReplayEvidence, Scenario, ScenarioError, StateDigest, Tile as ProtocolTile, WorldError,
+  WorldSnapshot,
 };
 
 /// Errors returned by the in-memory MCP player session.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SessionError {
-  /// The fixed developer scenario could not be constructed.
-  Scenario(String),
+  /// A fixed or tester-provided scenario could not be constructed.
+  Scenario(ScenarioError),
   /// Core rejected the requested command.
   CommandRejected(CommandError),
   /// Core rejected a tester world mutation.
@@ -41,7 +42,7 @@ impl fmt::Display for SessionError {
 impl Error for SessionError {
   fn source(&self) -> Option<&(dyn Error + 'static)> {
     match self {
-      Self::Scenario(_) => None,
+      Self::Scenario(error) => Some(error),
       Self::CommandRejected(error) => Some(error),
       Self::WorldRejected(error) => Some(error),
     }
@@ -141,6 +142,50 @@ impl Session {
       .iter()
       .find(|snapshot| snapshot.id() == actor)
       .cloned()
+  }
+
+  /// Replaces the current world with one validated tester scenario.
+  ///
+  /// The explicit session seed is preserved while accepted player history and replay evidence
+  /// reset to an empty trace. Invalid scenarios are rejected before either field is replaced.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::Scenario`] when core rejects the map or initial actor set.
+  pub fn create_scenario(&mut self, scenario: &Scenario) -> Result<(), SessionError> {
+    let tiles = scenario
+      .tiles()
+      .iter()
+      .copied()
+      .map(|tile| match tile {
+        ProtocolTile::Floor => Tile::Floor,
+        ProtocolTile::Wall => Tile::Wall,
+      })
+      .collect();
+    let map = GridMap::from_tiles(scenario.width(), scenario.height(), tiles)
+      .map_err(|error| SessionError::Scenario(error.into()))?;
+    let actors = scenario
+      .actors()
+      .iter()
+      .copied()
+      .map(|actor| {
+        let kind = match actor.kind() {
+          ProtocolActorKind::Player => ActorKind::Player,
+          ProtocolActorKind::Enemy => ActorKind::Enemy,
+        };
+        Actor::with_hit_points(
+          ActorId::new(actor.id().value()),
+          kind,
+          Position::new(actor.position().x(), actor.position().y()),
+          HitPoints::new(actor.hit_points().value()),
+        )
+      })
+      .collect();
+    let world =
+      WorldState::new(map, actors).map_err(|error| SessionError::Scenario(error.into()))?;
+    self.world = world;
+    self.trace = ReplayTrace::new(self.seed);
+    Ok(())
   }
 
   /// Spawns one validated living actor through the tester operation boundary.
@@ -273,8 +318,8 @@ impl Session {
 }
 
 fn fixed_scenario() -> Result<WorldState, SessionError> {
-  let map = GridMap::filled(3, 1, Tile::Floor)
-    .map_err(|error| SessionError::Scenario(error.to_string()))?;
+  let map =
+    GridMap::filled(3, 1, Tile::Floor).map_err(|error| SessionError::Scenario(error.into()))?;
   WorldState::new(
     map,
     vec![
@@ -287,5 +332,5 @@ fn fixed_scenario() -> Result<WorldState, SessionError> {
       ),
     ],
   )
-  .map_err(|error| SessionError::Scenario(error.to_string()))
+  .map_err(|error| SessionError::Scenario(error.into()))
 }

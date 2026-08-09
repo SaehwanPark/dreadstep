@@ -119,6 +119,11 @@ Tester hit-point mutation crosses the boundary as a typed request to core
 reanimation at the current action time; MCP only converts the request and projects an unknown-actor
 world error. Tester mutations remain outside accepted player history and replay evidence.
 
+Tester scenario replacement crosses the boundary as a protocol-owned `Scenario` value. MCP maps
+its tiles and actor specs into `GridMap` and `Actor` values, then delegates all map and world
+validation to `WorldState::new` before replacing the session. Failed construction is atomic;
+successful replacement preserves the seed and starts a fresh in-memory replay trace.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

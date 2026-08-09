@@ -39,6 +39,8 @@ All notable contributor- and user-visible project changes are recorded here.
 - Validated tester actor spawning through core with protocol-owned world error projections.
 - Validated tester hit-point mutation through core, including dead-record retention and
   scheduler-safe reanimation, with typed protocol error projection.
+- Typed in-memory tester scenario replacement backed by core map and world validation, with
+  atomic failure and a fresh replay trace for the preserved seed.
 
 ### Changed
 
