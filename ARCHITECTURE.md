@@ -272,10 +272,11 @@ window/render plugins, audio, timers, interpolation, visibility, persistence, an
 outside this boundary.
 
 The active presentation asset gate is tracked outside the Rust boundary in
-`docs/presentation/asset-evaluation.md`. It records local-only generated and CC0 candidates,
-selects 32×32 as the working prototype scale, and keeps dungeon audio sourcing open after a UI-only
-fallback evaluation. Bevy loads none of these files yet; asset handles, normalization, render
-plugins, audio playback, and production licensing approval remain later integration concerns.
+`docs/presentation/asset-evaluation.md`. It records local-only generated and CC0 candidates but does
+not select a working scale from unconstrained contact sheets; native or explicitly normalized
+samples remain required. Dungeon audio sourcing is open after a UI-only fallback evaluation. Bevy
+loads none of these files yet; asset handles, normalization, render plugins, audio playback, and
+production licensing approval remain later integration concerns.
 
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while

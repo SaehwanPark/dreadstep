@@ -2035,22 +2035,25 @@ Out of scope:
 Evaluate representative original/generated and free reusable candidates before enabling a real
 renderer. Keep all binaries local-only while recording source, creator, license, attribution, and
 modification status in tracked [`docs/presentation/asset-evaluation.md`](docs/presentation/asset-evaluation.md).
-The experiment selects 32×32 as the working logical tile size because it preserves actor/item
-readability and gives Kenney's 16×16 CC0 candidate an exact 2× integer scale; 24×24 remains a valid
-caller configuration but is not the current prototype target. The audio result is intentionally
-open: generated timing/UI and Kenney CC0 UI cues are evaluated, while dungeon combat/movement/item
-cue sourcing remains a later explicit decision.
+The current generated PNGs are unconstrained contact sheets, so no working logical tile size is
+selected yet; 24×24 and 32×32 remain valid caller configurations until native or explicitly
+nearest-neighbor-normalized samples are measured. The audio result is intentionally open: generated
+timing/UI and Kenney CC0 UI cues are evaluated, while dungeon combat/movement/item cue sourcing
+remains a later explicit decision.
 
 Acceptance:
 
-- Representative 24×24 and 32×32 original/generated pixel-art candidates are retained locally and
-  evaluated for tactical clarity, visual fit, editability, coverage, and integration effort.
+- Unconstrained original/generated contact sheets are retained locally as visual-direction evidence;
+  native or explicitly nearest-neighbor-normalized 24×24 and 32×32 samples must be produced and
+  evaluated for tactical clarity, visual fit, editability, coverage, and integration effort before
+  a working size is selected.
 - A free reusable pixel-art candidate and a free reusable audio candidate are retained locally with
   factual source, creator, license, attribution, modification, and SHA-256 records.
 - A generated/original audio cue candidate is evaluated for timing and level, without claiming a
   distribution license or integrating it into Bevy playback.
-- The working tile-size and mixed pixel-art fallback decisions are recorded; unresolved dungeon
-  audio sourcing is explicit rather than silently treated as complete.
+- The tile-size decision remains explicitly open pending native or normalized samples; the mixed
+  pixel-art fallback and unresolved dungeon audio sourcing are recorded rather than silently treated
+  as complete.
 - Root/crate-local `assets/`, `art/`, and `audio/` binaries remain ignored; tracked concept art and
   root `screenshots/` remain visible; no binary is loaded by code or committed.
 

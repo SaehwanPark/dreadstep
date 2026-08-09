@@ -1733,8 +1733,8 @@ Current exploratory gate (2026-08-09):
 
 - [`docs/presentation/asset-evaluation.md`](presentation/asset-evaluation.md) records local-only
   generated candidates, a Kenney Tiny Dungeon CC0 fallback, and Kenney UI Audio CC0 evidence.
-- The working renderer experiment uses 32×32 logical tiles because the evaluated actor/item
-  silhouettes are clearer and 16×16 reusable art scales by an exact integer factor of two.
+- No working renderer tile size is selected yet: the retained generated sheets are unconstrained,
+  and native or explicitly normalized samples are still required before comparing 24×24 and 32×32.
 - This is not a production asset selection: dungeon combat, movement, pickup, detection, and
   environmental audio still require a targeted source or an explicit original-audio decision.
 
