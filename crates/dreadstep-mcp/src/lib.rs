@@ -12,8 +12,9 @@ use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, ReplayTrace, Tile, WorldState,
 };
 use dreadstep_protocol::{
-  ActorId as ProtocolActorId, ActorSnapshot, CommandError, CommandRequest, Event, ReplayEvidence,
-  StateDigest, WorldSnapshot,
+  ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
+  CommandRequest, Event, HitPoints as ProtocolHitPoints, Position as ProtocolPosition,
+  ReplayEvidence, StateDigest, WorldError, WorldSnapshot,
 };
 
 /// Errors returned by the in-memory MCP player session.
@@ -23,6 +24,8 @@ pub enum SessionError {
   Scenario(String),
   /// Core rejected the requested command.
   CommandRejected(CommandError),
+  /// Core rejected a tester world mutation.
+  WorldRejected(WorldError),
 }
 
 impl fmt::Display for SessionError {
@@ -30,6 +33,7 @@ impl fmt::Display for SessionError {
     match self {
       Self::Scenario(error) => write!(formatter, "scenario error: {error}"),
       Self::CommandRejected(error) => write!(formatter, "command rejected: {error}"),
+      Self::WorldRejected(error) => write!(formatter, "world mutation rejected: {error}"),
     }
   }
 }
@@ -39,6 +43,7 @@ impl Error for SessionError {
     match self {
       Self::Scenario(_) => None,
       Self::CommandRejected(error) => Some(error),
+      Self::WorldRejected(error) => Some(error),
     }
   }
 }
@@ -136,6 +141,34 @@ impl Session {
       .iter()
       .find(|snapshot| snapshot.id() == actor)
       .cloned()
+  }
+
+  /// Spawns one validated living actor through the tester operation boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core rejects the requested identity, hit
+  /// points, position, terrain, or living occupancy. Rejected spawns leave the session unchanged.
+  pub fn spawn(
+    &mut self,
+    actor: ProtocolActorId,
+    kind: ProtocolActorKind,
+    position: ProtocolPosition,
+    hit_points: ProtocolHitPoints,
+  ) -> Result<(), SessionError> {
+    let actor_kind = match kind {
+      ProtocolActorKind::Player => ActorKind::Player,
+      ProtocolActorKind::Enemy => ActorKind::Enemy,
+    };
+    self
+      .world
+      .spawn(Actor::with_hit_points(
+        ActorId::new(actor.value()),
+        actor_kind,
+        Position::new(position.x(), position.y()),
+        HitPoints::new(hit_points.value()),
+      ))
+      .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
   /// Returns protocol requests currently accepted by the core scheduler and rules.

@@ -110,6 +110,10 @@ remain deterministic without exposing arbitrary mutation or adding storage effec
 The tester `inspect_world` name maps to the same protocol `WorldSnapshot` projection as player
 `observe`; it is a read-only alias and does not create separate world storage or hidden rules.
 
+Tester spawning crosses the boundary as a typed request to core `WorldState::spawn`. Core validates
+identity, map, living occupancy, and hit points; MCP only converts protocol values and projects
+typed world errors, preserving atomic failure and one source of game truth.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.
