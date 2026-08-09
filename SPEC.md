@@ -1818,6 +1818,47 @@ Out of scope:
 - Text/localization, text layout, widgets, sprites, animation, audio, windowing, rendering,
   persistence, transport, and gameplay rules.
 
+### Milestone 3 slice: deterministic headless audio-cue evidence
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Project current core events into a typed `PresentationAudioCues` resource as a placeholder boundary
+for a future audio player. The adapter preserves event order and typed identities without loading
+assets, playing sounds, formatting text, or adding another source of gameplay truth.
+
+Acceptance:
+
+- `PresentationAudioCue` covers every current core event (`Moved`, `MovementBlocked`, `Waited`,
+  `Attacked`, and `Died`) with typed actor/target and block-reason data where the event carries it.
+- `PresentationAudioCues` mirrors the latest runtime output in deterministic event order and clears
+  stale cues when a rejected command produces no output; it remains read-only evidence and cannot
+  issue commands or mutate core state.
+- Accepted movement, blocked movement, waiting, attack, and death outputs map to the expected cue
+  sequence in the same app update after keyboard or direct runtime dispatch.
+- Missing runtime or cue resources are safe no-ops that preserve existing cue evidence; no output
+  remains an empty cue list.
+- The projection remains headless and placeholder-only: no audio assets, asset handles, playback,
+  audio dependencies, strings, localization, widgets, sprites, animation, persistence, transport,
+  or gameplay rules are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test audio_cues --all-features --locked` covers every core
+  event mapping, deterministic order, stale-output clearing, and absent-resource preservation; all
+  seven focused tests pass.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `81e444a`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- Audio assets, asset handles, playback, audio backends, text/localization, text layout, widgets,
+  sprites, animation, windowing, rendering, persistence, transport, and gameplay rules.
+
 ## Present
 
 ### Deferred item gameplay semantics
