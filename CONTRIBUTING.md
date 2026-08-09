@@ -52,12 +52,13 @@ real structural invariant.
 ## Presentation Assets
 
 Pixel-art and audio binaries are local-only project inputs. Put them in `assets/`, `art/`, or
-`audio/` (including a crate-local directory); `.gitignore` excludes their binary formats so
-contributors can keep and use the files without publishing them to GitHub. Synchronize the
-binaries manually through the project’s external asset service. The tracked concept-art reference
-and future screenshots under `screenshots/` are explicit exceptions. Record each asset’s source,
-creator, license, attribution, and modifications in tracked documentation, and never commit
-credentials.
+`audio/` at the repository root or in a crate-local directory; `.gitignore` excludes everything
+under those media paths so contributors can keep and use any format without publishing it to
+GitHub. Synchronize the binaries manually through the project’s external asset service. Keep source,
+creator, license, attribution, and modification records outside ignored media paths in tracked
+documentation, and never commit credentials. The tracked concept-art reference and future
+screenshots under root `screenshots/` are explicit exceptions because they are outside the ignored
+media paths.
 
 ## Code and Documentation Style
 
