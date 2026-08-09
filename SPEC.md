@@ -550,6 +550,41 @@ Out of scope:
 - MCP transport/runtime registration, hidden-information rules, scenario or actor mutators,
   persistent replay, wire serialization, interactive input, and replay playback.
 
+### Milestone 2 slice: validated tester actor spawning
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add one explicit tester mutation through the functional core. `WorldState::spawn` validates and
+inserts a living actor using the existing map, identity, terrain, and living-occupancy invariants;
+`dreadstep-mcp::Session::spawn` translates protocol values into that core operation and maps
+validation failures to protocol-owned world errors. Failed spawns leave the world and replay state
+unchanged.
+
+Acceptance:
+
+- A valid spawn adds one living actor at a walkable, unoccupied position with the requested typed
+  identity, kind, and hit points; the actor is visible through protocol inspection.
+- Duplicate identities, out-of-bounds positions, blocked tiles, overlapping living actors, and
+  zero-hit-point actors are rejected with typed protocol world errors.
+- Rejected spawns are atomic: world snapshot, history, and replay digest remain unchanged.
+- Core remains authoritative for validation; the MCP adapter performs only typed conversion and
+  error projection, with no transport, filesystem, serialization, or other tester mutators.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-protocol -p dreadstep-mcp --all-targets
+  --all-features --locked` passes.
+- Focused Clippy for the core, protocol, and MCP crates passes with `-D warnings`.
+- `scripts/verify.sh` passes before handoff.
+- `git diff --check` passes, and the single semantic review reports pass at revision 2.
+
+Out of scope:
+
+- set-HP, item, teleport, scenario-authoring, restore changes, MCP transport/runtime, persistent
+  storage, wire serialization, interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel

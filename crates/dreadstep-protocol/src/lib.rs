@@ -11,7 +11,7 @@ use std::fmt;
 use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
   Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
-  Event as CoreEvent, WorldState,
+  Event as CoreEvent, WorldError as CoreWorldError, WorldState,
 };
 
 /// Version of the in-memory agent observation projection.
@@ -269,6 +269,116 @@ impl ReplayEvidence {
     self.digest
   }
 }
+
+/// A protocol-owned world validation error returned by tester mutation operations.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorldError {
+  /// The requested actor identity already exists.
+  DuplicateActorId(ActorId),
+  /// The requested actor position is outside the map.
+  ActorOutOfBounds {
+    /// The actor with the invalid position.
+    actor: ActorId,
+    /// The invalid position.
+    position: Position,
+  },
+  /// The requested actor position is blocked terrain.
+  ActorOnBlockedTile {
+    /// The actor with the invalid position.
+    actor: ActorId,
+    /// The blocked position.
+    position: Position,
+  },
+  /// The requested actor overlaps an existing living actor.
+  OverlappingActors {
+    /// The living actor already at the position.
+    first: ActorId,
+    /// The actor being inserted.
+    second: ActorId,
+    /// The shared position.
+    position: Position,
+  },
+  /// The requested actor has zero hit points.
+  ActorDeadAtStart {
+    /// The actor with invalid hit points.
+    actor: ActorId,
+  },
+}
+
+impl From<CoreWorldError> for WorldError {
+  fn from(error: CoreWorldError) -> Self {
+    match error {
+      CoreWorldError::DuplicateActorId(actor) => {
+        Self::DuplicateActorId(ActorId::new(actor.value()))
+      }
+      CoreWorldError::ActorOutOfBounds { actor, position } => Self::ActorOutOfBounds {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreWorldError::ActorOnBlockedTile { actor, position } => Self::ActorOnBlockedTile {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreWorldError::OverlappingActors {
+        first,
+        second,
+        position,
+      } => Self::OverlappingActors {
+        first: ActorId::new(first.value()),
+        second: ActorId::new(second.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreWorldError::ActorDeadAtStart { actor } => Self::ActorDeadAtStart {
+        actor: ActorId::new(actor.value()),
+      },
+    }
+  }
+}
+
+impl fmt::Display for WorldError {
+  fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::DuplicateActorId(actor) => {
+        write!(formatter, "actor id {} is duplicated", actor.value())
+      }
+      Self::ActorOutOfBounds { actor, position } => write!(
+        formatter,
+        "actor {} starts out of bounds at ({}, {})",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::ActorOnBlockedTile { actor, position } => write!(
+        formatter,
+        "actor {} starts on blocked tile at ({}, {})",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::OverlappingActors {
+        first,
+        second,
+        position,
+      } => write!(
+        formatter,
+        "actors {} and {} overlap at ({}, {})",
+        first.value(),
+        second.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::ActorDeadAtStart { actor } => {
+        write!(
+          formatter,
+          "actor {} starts with zero hit points",
+          actor.value()
+        )
+      }
+    }
+  }
+}
+
+impl std::error::Error for WorldError {}
 
 /// Protocol damage evidence emitted by an accepted attack.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

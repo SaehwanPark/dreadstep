@@ -36,6 +36,7 @@ All notable contributor- and user-visible project changes are recorded here.
 - In-memory tester `snapshot`/`restore` savepoints that preserve world and replay state without
   persistence or transport effects.
 - Named tester `inspect_world` access to the existing complete protocol world snapshot.
+- Validated tester actor spawning through core with protocol-owned world error projections.
 
 ### Changed
 

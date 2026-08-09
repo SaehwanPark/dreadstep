@@ -926,6 +926,55 @@ impl WorldState {
     })
   }
 
+  /// Validates and inserts one living actor for an explicit tester operation.
+  ///
+  /// Dead actor records do not occupy tiles, so a new living actor may use a position retained by
+  /// a dead record. The inserted actor becomes ready at the world's current action time, so a
+  /// tester mutation cannot rewind the deterministic timeline.
+  ///
+  /// # Errors
+  ///
+  /// Returns a [`WorldError`] when the identity, hit points, position, terrain, or living
+  /// occupancy is invalid. A rejected actor is not inserted.
+  pub fn spawn(&mut self, actor: Actor) -> Result<(), WorldError> {
+    let actor_id = actor.id();
+    let position = actor.position();
+    if self.actors.contains_key(&actor_id) {
+      return Err(WorldError::DuplicateActorId(actor_id));
+    }
+    if !actor.is_alive() {
+      return Err(WorldError::ActorDeadAtStart { actor: actor_id });
+    }
+    if !self.map.in_bounds(position) {
+      return Err(WorldError::ActorOutOfBounds {
+        actor: actor_id,
+        position,
+      });
+    }
+    if !self.map.is_walkable(position) {
+      return Err(WorldError::ActorOnBlockedTile {
+        actor: actor_id,
+        position,
+      });
+    }
+    if let Some(first) = self
+      .actors
+      .values()
+      .find(|existing| existing.is_alive() && existing.position() == position)
+    {
+      return Err(WorldError::OverlappingActors {
+        first: first.id(),
+        second: actor_id,
+        position,
+      });
+    }
+
+    let mut actor = actor;
+    actor.ready_at = self.current_time;
+    self.actors.insert(actor_id, actor);
+    Ok(())
+  }
+
   /// Returns the immutable map owned by this world.
   #[must_use]
   pub const fn map(&self) -> &GridMap {
