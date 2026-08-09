@@ -226,6 +226,12 @@ retains the existing camera entity across updates, and removes duplicate or unkn
 deterministically. It remains a center-point projection: windowing, transforms, viewport sizing,
 clamping, interpolation, visibility, and fog policy belong to later presentation work.
 
+The headless viewport slice adds an optional `PresentationViewport` request and one keyed
+`SceneViewport` projection. The adapter clamps the requested tile rectangle to the current map,
+centers it on the camera anchor with integer arithmetic, and mirrors only the effective origin and
+dimensions. Oversized requests use the complete map; unknown or missing authority leaves the
+disposable viewport unchanged or clears it deterministically without adding visibility policy.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and
