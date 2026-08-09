@@ -2097,7 +2097,8 @@ Acceptance:
 - `PresentationRenderProjection` exposes an ordered read-only `SceneRenderEntry` slice containing
   complete keyed terrain, actor, ground-item, and inventory metadata after one app update, with
   `ScenePixelPosition` only on terrain, actors, and ground items because inventory remains unplaced;
-  `SceneSpriteRole` is preserved on all keyed mirrors.
+  each entry receives the role derived for its typed mirror, including independent roles when kinds
+  share one ECS entity.
 - The boundary consumes a caller-selected 32×32 `PresentationTileSize` without mutating core,
   replay/history, or existing headless scene mirrors.
 - Missing runtime, missing configuration, stale keyed entities, and recycled Bevy entity indices
@@ -2106,12 +2107,12 @@ Acceptance:
   animation timers, audio playback, visibility policy, persistence, transport, or gameplay rules.
 - Local media remains ignored and tracked concept-art/screenshot exceptions remain visible.
 
-Verification target:
+Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test render_projection --all-features --locked` proves
   complete entries, identity/authority behavior, 32×32 placement, inventory exclusion, duplicate
-  ordering, and read-only runtime state; all Bevy targets, Clippy, docs, repository checks, and
-  `scripts/verify.sh` must pass.
+  ordering, and read-only runtime state; the focused suite passes 10/10, and all Bevy targets,
+  Clippy, docs, repository checks, and `scripts/verify.sh` pass.
 - Exactly one semantic reviewer reports PASS on final implementation/evidence revision `7cb1647`
   (implementation `c5d29a0`, with bounded corrections in `0ae06a8`, `1beb836`, and `7cb1647`);
   the docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI are
