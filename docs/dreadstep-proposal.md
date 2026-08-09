@@ -1785,7 +1785,7 @@ Current exploratory gate (2026-08-09):
   `f32` scale adapter on Bevy's `WindowResolution`, and defers OS/window plugins,
   winit/default-platform integration, render backends, camera policy, visibility, playback, and
   production media.
-- An active headless ECS camera-transform boundary will attach checked centered logical-pixel
+- A verified headless ECS camera-transform boundary attaches checked centered logical-pixel
   `Transform` values to the retained disposable `SceneCamera` from caller-selected tile extents,
   while deferring viewport policy, OS/window integration, render backends, visibility, playback, and
   production media.

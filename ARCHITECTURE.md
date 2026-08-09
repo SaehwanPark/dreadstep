@@ -345,7 +345,7 @@ feature and mirrors the exact validated integer `PresentationWindow` request ont
 OS windows or enable WindowPlugin/winit/default-platform, render backends, camera policy, visibility,
 or production media.
 
-The active headless ECS camera-transform attachment will derive centered logical-pixel `Transform`
+The verified headless ECS camera-transform attachment derives centered logical-pixel `Transform`
 values for the retained disposable `SceneCamera` from checked map origins and caller-selected tile
 half-extents. `PresentationCamera` and runtime remain authoritative; viewport policy, OS/window
 integration, render backends, visibility, and production media remain deferred.

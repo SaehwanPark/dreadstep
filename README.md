@@ -66,10 +66,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     scale onto a disposable `SceneWindow`, and exposes a deterministic `f32` scale adapter on
     Bevy's `WindowResolution`; OS/window plugins, render backends, camera policy, visibility,
     production assets/audio, and media remain deferred.
-- Active headless ECS camera transform attachment
-  - The next camera boundary will attach checked centered logical-pixel `Transform` values to the
-    retained disposable `SceneCamera` when a tile size is present, while leaving viewport policy,
-    OS/window integration, render backends, visibility, production assets/audio, and media deferred.
+- Verified headless ECS camera transform attachment
+  - The presentation boundary attaches checked centered logical-pixel `Transform` values to the
+    retained disposable `SceneCamera` when a tile size is present; viewport policy, OS/window
+    integration, render backends, visibility, production assets/audio, and media remain deferred.
 - Still deferred
   - OS window creation, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
     camera viewport policy,

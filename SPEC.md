@@ -2790,12 +2790,11 @@ Out of scope:
   transforms, visibility/fog, asset/audio loading or playback, animation, gameplay, persistence,
   transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: headless ECS camera transform attachment
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Attach a checked map-space `Transform` to the retained disposable `SceneCamera` entity when a
 caller-selected `PresentationTileSize` is available. `PresentationCamera` and the runtime remain
@@ -2822,6 +2821,16 @@ Verification target:
 - Focused `cargo test -p dreadstep-bevy --test camera_transform_attachment --locked` proves checked
   rectangular placement, movement/selection refresh, stable identity, fresh/later tile-size behavior,
   stale/unknown cleanup, independent guards, and runtime/replay preservation.
+- Focused `camera_transform_attachment` passes 6/6 and existing `camera_attachment` passes 6/6;
+  all Bevy targets, warning-denied all-target/all-feature Clippy, warning-denied workspace Rustdoc,
+  formatting, repository checks, `git diff --check`, and `scripts/verify.sh` pass locally. Anchored
+  media checks keep local binaries ignored while tracked concept art and the root screenshot
+  exception remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `eceabb4` (implementation `48ea8be`,
+  bounded getter/evidence correction `eceabb4`); Linux, Apple Silicon macOS, and Windows CI are
+  green on PR #79 (run `31341749112`). The docs-only closeout is reviewed separately.
+
+## Present
 
 ### Deferred item gameplay semantics
 
@@ -2839,8 +2848,9 @@ The completed Past slices cover the rules kernel, agent interfaces, and the dete
 headless presentation boundary currently implemented in the repository, including the verified
 Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, ECS Sprite-transform
 attachment, deterministic ECS Sprite-depth boundaries, centered ECS Sprite-transform, headless
-ECS Camera2d, and headless ECS Window-configuration boundaries. The remaining renderer work in the
-proposal still defines these future product milestones; each needs its own bounded acceptance slice
+ECS Camera2d, headless ECS Window-configuration, and checked ECS camera-transform boundaries. The
+remaining renderer work in the proposal still defines these future product milestones; each needs
+its own bounded acceptance slice
 before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD

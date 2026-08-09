@@ -146,9 +146,9 @@ All notable contributor- and user-visible project changes are recorded here.
   and the exact integer scale onto a disposable `SceneWindow`, exposes a deterministic `f32` scale
   adapter on Bevy's `WindowResolution`, and defers OS/window plugins, render backends, camera policy,
   visibility, playback, and media.
-- An active headless ECS camera-transform boundary is being prepared to attach checked centered
-  logical-pixel `Transform` values to the retained disposable `SceneCamera` while deferring viewport
-  policy, OS/window integration, render backends, visibility, playback, and media.
+- A verified headless ECS camera-transform boundary attaches checked centered logical-pixel
+  `Transform` values to the retained disposable `SceneCamera` while deferring viewport policy,
+  OS/window integration, render backends, visibility, playback, and media.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
