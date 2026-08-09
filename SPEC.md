@@ -1181,8 +1181,9 @@ Out of scope:
 
 ### Milestone 3 slice: typed headless presentation focus projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add a small presentation-only projection for future camera systems. `PresentationFocus` will name
 one controlled actor and mirror that actor's latest position from the authoritative runtime after
@@ -1203,11 +1204,14 @@ Acceptance:
 
 Verification:
 
-- Focused `cargo test -p dreadstep-bevy --all-targets --all-features --locked` covers startup,
-  accepted movement, controlled-actor changes, unknown actors, and absent-resource no-ops.
+- Focused `cargo test -p dreadstep-bevy --test focus --all-features --locked` covers startup,
+  accepted movement, controlled-actor changes, unknown actors, and independent absent-resource
+  no-ops; the seven focused tests pass.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked` passes all Bevy targets,
+  and Linux, Apple Silicon macOS, and Windows CI are green for the reviewed revision.
 - Focused Clippy and `scripts/verify.sh` pass before handoff.
 - `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
-  revision.
+  revision (`5671d78`).
 
 Out of scope:
 

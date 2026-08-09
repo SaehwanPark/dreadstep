@@ -93,4 +93,7 @@ Update an existing lesson instead of adding a duplicate.
 - Resolution: Store only the typed controlled actor and optional projected core position; update it
   after authoritative dispatch/scene sync and use `None` for an unknown identity.
 - Prevention: Treat focus as a disposable read-only projection, keep camera math in a later boundary,
-  and test actor changes plus unknown-resource behavior headlessly.
+  and test actor changes plus unknown-resource behavior headlessly. Guard missing runtime separately
+  from an unknown actor: without an authoritative snapshot, preserve the last focus projection;
+  with a present snapshot, map only the unknown identity to `None`. For atomicity evidence, compare
+  replay digest and complete keyed tile/actor projections rather than entity counts alone.
