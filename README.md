@@ -35,7 +35,9 @@ The headless `SceneInventoryItem` projection is verified; inventory ownership an
 remain core/tester-only. Authored starter-floor item placements are verified: optional ordered
 opaque instances delegate identity and inventory validation to core, while the default starter
 floor remains item-free. The verified content slice also binds placements to an explicit
-item-definition catalog before core world construction; catalog data remains authoring-only.
+item-definition catalog before core world construction; catalog data remains authoring-only. A
+separate deterministic starter-item scenario is now active as a reusable non-default content
+fixture; it does not add item gameplay semantics.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

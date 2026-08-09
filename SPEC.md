@@ -1338,6 +1338,44 @@ Out of scope:
 
 ## Future
 
+### Milestone 4 slice: deterministic authored starter-item scenario
+
+- Status: active
+- Started: 2026-08-09
+
+Add a reusable, non-default starter-floor scenario that exercises the verified catalog-bound
+placement path. `starter_item_floor_definition()` binds the existing starter item catalog and
+declares a small deterministic set of opaque item instances in actor inventory order;
+`starter_item_floor()` builds that definition into a core world. The existing `starter_floor()`
+scenario remains item-free and unchanged.
+
+Acceptance:
+
+- The item scenario uses the shared authored map and actors, binds the starter catalog, and
+  preserves complete item identity/definition data plus declaration order within each inventory.
+- `starter_item_floor_definition()` and `starter_item_floor()` are repeatable and produce equal
+  core worlds/digests with empty ground stacks; the default starter scenario remains equal to its
+  item-free definition and has no inventory items.
+- The scenario delegates actor/item identity validation to `StarterFloorDefinition::build` and
+  core; no catalog is stored in `WorldState` and no item effects or gameplay rules are inferred.
+- The helper remains content-owned and independent of Bevy, MCP, transport, persistence,
+  serialization, rendering, and player/tester item commands.
+
+Verification target:
+
+- Focused content tests assert complete item data, interleaved declaration order, repeatability,
+  item-free ground state, and preservation of the default item-free scenario.
+- `cargo test -p dreadstep-content --test starter_items --all-features --locked`, all content
+  targets, focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass.
+- Exactly one semantic code reviewer reports PASS on the implementation revision, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
+
+Out of scope:
+
+- Changing the default starter scenario, item effects, equipment, capacity, identification,
+  player/tester commands, ground placement, protocol/MCP/Bevy APIs, persistence, serialization,
+  rendering, and UI.
+
 ### Milestone 4 slice: deterministic catalog-bound starter item placements
 
 - Status: verified

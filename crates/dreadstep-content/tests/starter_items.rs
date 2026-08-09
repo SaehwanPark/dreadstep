@@ -2,8 +2,39 @@
 
 use dreadstep_content::{
   ContentError, ItemCatalogDefinition, StarterItemPlacement, starter_floor_definition,
+  starter_item_floor, starter_item_floor_definition,
 };
 use dreadstep_core::{ActorId, Item, ItemDefinitionId, ItemId};
+
+#[test]
+fn starter_item_floor_is_complete_and_repeatable() {
+  let from_definition = starter_item_floor_definition()
+    .build()
+    .expect("authored starter item floor should validate");
+  let from_wrapper = starter_item_floor().expect("starter item floor wrapper should validate");
+  let actors: Vec<_> = from_definition.actors().collect();
+
+  assert_eq!(from_wrapper, from_definition);
+  assert_eq!(
+    actors[0].inventory(),
+    &[
+      Item::new(ItemId::new(101), ItemDefinitionId::new(2)),
+      Item::new(ItemId::new(102), ItemDefinitionId::new(3)),
+    ]
+  );
+  assert_eq!(
+    actors[1].inventory(),
+    &[Item::new(ItemId::new(100), ItemDefinitionId::new(1))]
+  );
+  assert!(actors[2..].iter().all(|actor| actor.inventory().is_empty()));
+  assert!(from_definition.ground_items().is_empty());
+  assert_eq!(
+    from_definition.digest(),
+    starter_item_floor()
+      .expect("repeated starter item floor should validate")
+      .digest()
+  );
+}
 
 #[test]
 fn authored_items_preserve_actor_order_and_complete_data() {

@@ -121,7 +121,8 @@ This preserves core-owned actor/ItemId validation and inventory/digest updates w
 the independent definition catalog to runtime item behavior; keep the default starter floor empty
 until a content decision explicitly adds instances. When a floor binds a catalog, validate catalog
 duplicates and placement membership before constructing the map/world, but never store the catalog
-in core state.
+in core state. When a reusable fixture is needed, expose it as a separate explicit content helper
+and test its complete inventory/digest projection; do not silently populate the default scenario.
 
 ## Keep tester item transfer atomic and outside player replay
 
