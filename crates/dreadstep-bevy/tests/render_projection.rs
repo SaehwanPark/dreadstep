@@ -6,15 +6,15 @@ use bevy::app::App;
 use bevy::ecs::entity::Entity;
 use dreadstep_bevy::{
   PresentationPlugin, PresentationRenderProjection, PresentationRuntime, PresentationState,
-  PresentationTileSize, SceneActor, ScenePixelPosition, SceneRenderEntry, SceneSpriteRole,
-  SceneTile,
+  PresentationTileSize, SceneActor, SceneGroundItem, SceneInventoryItem, ScenePixelPosition,
+  SceneRenderEntry, SceneSpriteRole, SceneTile,
 };
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, Direction, GridMap, Item, ItemDefinitionId, ItemId, Position,
   Tile, WorldState,
 };
 
-fn item_state() -> PresentationState {
+fn world_state(with_items: bool) -> WorldState {
   let map = GridMap::from_tiles(
     3,
     2,
@@ -36,22 +36,32 @@ fn item_state() -> PresentationState {
     ],
   )
   .expect("world should validate");
+  if with_items {
+    world
+      .give_item(
+        ActorId::new(1),
+        Item::new(ItemId::new(1), ItemDefinitionId::new(101)),
+      )
+      .expect("ground item should be given");
+    world
+      .drop_item(ActorId::new(1), ItemId::new(1))
+      .expect("ground item should be dropped");
+    world
+      .give_item(
+        ActorId::new(1),
+        Item::new(ItemId::new(2), ItemDefinitionId::new(102)),
+      )
+      .expect("inventory item should be given");
+  }
   world
-    .give_item(
-      ActorId::new(1),
-      Item::new(ItemId::new(1), ItemDefinitionId::new(101)),
-    )
-    .expect("ground item should be given");
-  world
-    .drop_item(ActorId::new(1), ItemId::new(1))
-    .expect("ground item should be dropped");
-  world
-    .give_item(
-      ActorId::new(1),
-      Item::new(ItemId::new(2), ItemDefinitionId::new(102)),
-    )
-    .expect("inventory item should be given");
-  PresentationState::new(7, world)
+}
+
+fn item_state() -> PresentationState {
+  PresentationState::new(7, world_state(true))
+}
+
+fn empty_state() -> PresentationState {
+  PresentationState::new(7, world_state(false))
 }
 
 fn app_with_projection() -> App {
@@ -72,71 +82,109 @@ fn entries(app: &mut App) -> Vec<SceneRenderEntry> {
     .to_vec()
 }
 
+type RenderKey = (u8, i32, i32, u32);
+
+fn projection_map(entries: &[SceneRenderEntry]) -> BTreeMap<RenderKey, SceneRenderEntry> {
+  entries
+    .iter()
+    .copied()
+    .map(|entry| {
+      let key = match entry {
+        SceneRenderEntry::Terrain { tile, .. } => (0, tile.position().x(), tile.position().y(), 0),
+        SceneRenderEntry::Actor { actor, .. } => (1, 0, 0, actor.id().value()),
+        SceneRenderEntry::GroundItem { item, .. } => (2, 0, 0, item.id().value()),
+        SceneRenderEntry::InventoryItem { item, .. } => (3, 0, 0, item.id().value()),
+      };
+      (key, entry)
+    })
+    .collect()
+}
+
+fn scene_projection_map(app: &mut App) -> BTreeMap<RenderKey, SceneRenderEntry> {
+  let world = app.world_mut();
+  let mut expected = BTreeMap::new();
+  {
+    let mut query = world.query::<(Entity, &SceneTile, Option<&ScenePixelPosition>)>();
+    for (entity, tile, pixel_position) in query.iter(world) {
+      expected.insert(
+        (0, tile.position().x(), tile.position().y(), 0),
+        SceneRenderEntry::Terrain {
+          entity,
+          tile: *tile,
+          role: SceneSpriteRole::Terrain,
+          pixel_position: pixel_position.copied(),
+        },
+      );
+    }
+  }
+  {
+    let mut query = world.query::<(Entity, &SceneActor, Option<&ScenePixelPosition>)>();
+    for (entity, actor, pixel_position) in query.iter(world) {
+      let role = if actor.is_alive() {
+        match actor.kind() {
+          ActorKind::Player => SceneSpriteRole::Player,
+          ActorKind::Enemy => SceneSpriteRole::Enemy,
+        }
+      } else {
+        SceneSpriteRole::DeadActor
+      };
+      expected.insert(
+        (1, 0, 0, actor.id().value()),
+        SceneRenderEntry::Actor {
+          entity,
+          actor: *actor,
+          role,
+          pixel_position: pixel_position.copied(),
+        },
+      );
+    }
+  }
+  {
+    let mut query = world.query::<(Entity, &SceneGroundItem, Option<&ScenePixelPosition>)>();
+    for (entity, item, pixel_position) in query.iter(world) {
+      expected.insert(
+        (2, 0, 0, item.id().value()),
+        SceneRenderEntry::GroundItem {
+          entity,
+          item: *item,
+          role: SceneSpriteRole::GroundItem,
+          pixel_position: pixel_position.copied(),
+        },
+      );
+    }
+  }
+  {
+    let mut query = world.query::<(Entity, &SceneInventoryItem)>();
+    for (entity, item) in query.iter(world) {
+      expected.insert(
+        (3, 0, 0, item.id().value()),
+        SceneRenderEntry::InventoryItem {
+          entity,
+          item: *item,
+          role: SceneSpriteRole::InventoryItem,
+        },
+      );
+    }
+  }
+  expected
+}
+
 #[test]
 fn projection_contains_complete_typed_scene_and_inventory_exclusion() {
   let mut app = app_with_projection();
   let entries = entries(&mut app);
   assert_eq!(entries.len(), 10);
-  assert!(matches!(entries[0], SceneRenderEntry::Terrain { .. }));
-  assert!(matches!(entries[6], SceneRenderEntry::Actor { .. }));
-  assert!(matches!(entries[8], SceneRenderEntry::GroundItem { .. }));
-  assert!(matches!(entries[9], SceneRenderEntry::InventoryItem { .. }));
+  assert_eq!(projection_map(&entries), scene_projection_map(&mut app));
 
-  let mut tiles = BTreeMap::new();
-  let mut actors = BTreeMap::new();
-  let mut ground = BTreeMap::new();
-  let mut inventory = BTreeMap::new();
-  for entry in entries {
-    match entry {
-      SceneRenderEntry::Terrain {
-        entity,
-        tile,
-        role,
-        pixel_position,
-      } => {
-        assert_eq!(role, SceneSpriteRole::Terrain);
-        assert!(pixel_position.is_some());
-        tiles.insert((tile.position().x(), tile.position().y()), (entity, tile));
-      }
-      SceneRenderEntry::Actor {
-        entity,
-        actor,
-        role,
-        pixel_position,
-      } => {
-        assert!(pixel_position.is_some());
-        let expected_role = if actor.is_alive() {
-          match actor.kind() {
-            ActorKind::Player => SceneSpriteRole::Player,
-            ActorKind::Enemy => SceneSpriteRole::Enemy,
-          }
-        } else {
-          SceneSpriteRole::DeadActor
-        };
-        assert_eq!(role, expected_role);
-        actors.insert(actor.id(), (entity, actor));
-      }
-      SceneRenderEntry::GroundItem {
-        entity,
-        item,
-        role,
-        pixel_position,
-      } => {
-        assert_eq!(role, SceneSpriteRole::GroundItem);
-        assert!(pixel_position.is_some());
-        ground.insert(item.id(), (entity, item));
-      }
-      SceneRenderEntry::InventoryItem { entity, item, role } => {
-        assert_eq!(role, SceneSpriteRole::InventoryItem);
-        inventory.insert(item.id(), (entity, item));
-      }
-    }
-  }
-  assert_eq!(tiles.len(), 6);
-  assert_eq!(actors.len(), 2);
-  assert_eq!(ground.len(), 1);
-  assert_eq!(inventory.len(), 1);
-  assert_eq!(inventory[&ItemId::new(2)].1.inventory_index(), 0);
+  let inventory = entries
+    .iter()
+    .find_map(|entry| match entry {
+      SceneRenderEntry::InventoryItem { item, .. } => Some(*item),
+      _ => None,
+    })
+    .expect("inventory item should remain represented");
+  assert_eq!(inventory.id(), ItemId::new(2));
+  assert_eq!(inventory.inventory_index(), 0);
 }
 
 #[test]
@@ -224,6 +272,94 @@ fn missing_tile_size_preserves_existing_pixel_projection() {
   app.world_mut().remove_resource::<PresentationTileSize>();
   app.update();
   assert_eq!(entries(&mut app), before);
+}
+
+#[test]
+fn missing_tile_size_starts_with_unplaced_map_entries() {
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(item_state()));
+  app.insert_resource(PresentationRenderProjection::new());
+  app.add_plugins(PresentationPlugin);
+  app.update();
+
+  let entries = entries(&mut app);
+  assert_eq!(entries.len(), 10);
+  for entry in entries {
+    match entry {
+      SceneRenderEntry::Terrain { pixel_position, .. }
+      | SceneRenderEntry::Actor { pixel_position, .. }
+      | SceneRenderEntry::GroundItem { pixel_position, .. } => assert_eq!(pixel_position, None),
+      SceneRenderEntry::InventoryItem { .. } => {}
+    }
+  }
+}
+
+#[test]
+fn stale_scene_keys_are_removed_from_projection() {
+  let mut app = app_with_projection();
+  assert_eq!(entries(&mut app).len(), 10);
+  app
+    .world_mut()
+    .insert_resource(PresentationRuntime::new(empty_state()));
+  app.update();
+
+  let entries = entries(&mut app);
+  assert_eq!(entries.len(), 8);
+  assert!(entries.iter().all(|entry| !matches!(
+    entry,
+    SceneRenderEntry::GroundItem { .. } | SceneRenderEntry::InventoryItem { .. }
+  )));
+  assert_eq!(projection_map(&entries), scene_projection_map(&mut app));
+}
+
+#[test]
+fn co_located_lower_tile_entity_retains_actor_projection() {
+  let mut app = app_with_projection();
+  let (tile, actor, actor_entity) = {
+    let world = app.world_mut();
+    let tile = world
+      .query::<&SceneTile>()
+      .iter(world)
+      .find(|tile| tile.position() == Position::new(0, 0))
+      .copied()
+      .expect("origin tile should exist");
+    let (actor_entity, actor) = world
+      .query::<(Entity, &SceneActor)>()
+      .iter(world)
+      .find(|(_, actor)| actor.id() == ActorId::new(1))
+      .map(|(entity, actor)| (entity, *actor))
+      .expect("player mirror should exist");
+    (tile, actor, actor_entity)
+  };
+  let tile_entity = app.world_mut().spawn(tile).id();
+  app.world_mut().entity_mut(tile_entity).insert(actor);
+  assert!(tile_entity < actor_entity);
+  app.update();
+
+  let projection = projection_map(&entries(&mut app));
+  let tile = projection
+    .get(&(0, 0, 0, 0))
+    .expect("co-located tile should remain represented");
+  let projected_actor = projection
+    .get(&(1, 0, 0, ActorId::new(1).value()))
+    .expect("co-located actor should remain represented");
+  assert!(matches!(
+    tile,
+    SceneRenderEntry::Terrain {
+      entity,
+      role: SceneSpriteRole::Terrain,
+      ..
+    } if *entity == tile_entity
+  ));
+  assert!(matches!(
+    projected_actor,
+    SceneRenderEntry::Actor {
+      entity,
+      actor: projected,
+      role: SceneSpriteRole::Player,
+      ..
+    } if *entity == tile_entity && *projected == actor
+  ));
 }
 
 #[test]

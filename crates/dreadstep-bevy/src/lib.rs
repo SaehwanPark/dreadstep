@@ -654,6 +654,16 @@ impl SceneSpriteRole {
       ActorKind::Enemy => Self::Enemy,
     }
   }
+
+  fn for_scene_actor(actor: SceneActor) -> Self {
+    if !actor.is_alive() {
+      return Self::DeadActor;
+    }
+    match actor.kind() {
+      ActorKind::Player => Self::Player,
+      ActorKind::Enemy => Self::Enemy,
+    }
+  }
 }
 
 /// One deterministic, disposable entry prepared for a future renderer.
@@ -1406,35 +1416,27 @@ fn sync_render_projection(world: &mut World) {
       Option<&SceneActor>,
       Option<&SceneGroundItem>,
       Option<&SceneInventoryItem>,
-      Option<&SceneSpriteRole>,
       Option<&ScenePixelPosition>,
     )>();
     let mut keyed: BTreeMap<_, (Entity, SceneRenderEntry)> = BTreeMap::new();
-    for (entity, tile, actor, ground_item, inventory_item, role, pixel_position) in
-      query.iter(world)
-    {
-      let Some(role) = role.copied() else {
-        continue;
-      };
-      let Some((key, entry)) = render_entry(
+    for (entity, tile, actor, ground_item, inventory_item, pixel_position) in query.iter(world) {
+      for (key, entry) in render_entries(
         entity,
         tile.copied(),
         actor.copied(),
         ground_item.copied(),
         inventory_item.copied(),
-        role,
         pixel_position.copied(),
-      ) else {
-        continue;
-      };
-      match keyed.entry(key) {
-        std::collections::btree_map::Entry::Occupied(mut retained) => {
-          if entity < retained.get().0 {
-            retained.insert((entity, entry));
+      ) {
+        match keyed.entry(key) {
+          std::collections::btree_map::Entry::Occupied(mut retained) => {
+            if entity < retained.get().0 {
+              retained.insert((entity, entry));
+            }
           }
-        }
-        std::collections::btree_map::Entry::Vacant(slot) => {
-          slot.insert((entity, entry));
+          std::collections::btree_map::Entry::Vacant(slot) => {
+            slot.insert((entity, entry));
+          }
         }
       }
     }
@@ -1449,54 +1451,59 @@ fn sync_render_projection(world: &mut World) {
   projection.entries = entries;
 }
 
-fn render_entry(
+fn render_entries(
   entity: Entity,
   tile: Option<SceneTile>,
   actor: Option<SceneActor>,
   ground_item: Option<SceneGroundItem>,
   inventory_item: Option<SceneInventoryItem>,
-  role: SceneSpriteRole,
   pixel_position: Option<ScenePixelPosition>,
-) -> Option<((u8, i32, i32, u32), SceneRenderEntry)> {
+) -> Vec<((u8, i32, i32, u32), SceneRenderEntry)> {
+  let mut entries = Vec::new();
   if let Some(tile) = tile {
-    return Some((
+    entries.push((
       (0, tile.position().x(), tile.position().y(), 0),
       SceneRenderEntry::Terrain {
         entity,
         tile,
-        role,
+        role: SceneSpriteRole::Terrain,
         pixel_position,
       },
     ));
   }
   if let Some(actor) = actor {
-    return Some((
+    entries.push((
       (1, 0, 0, actor.id().value()),
       SceneRenderEntry::Actor {
         entity,
         actor,
-        role,
+        role: SceneSpriteRole::for_scene_actor(actor),
         pixel_position,
       },
     ));
   }
   if let Some(item) = ground_item {
-    return Some((
+    entries.push((
       (2, 0, 0, item.id().value()),
       SceneRenderEntry::GroundItem {
         entity,
         item,
-        role,
+        role: SceneSpriteRole::GroundItem,
         pixel_position,
       },
     ));
   }
-  inventory_item.map(|item| {
-    (
+  if let Some(item) = inventory_item {
+    entries.push((
       (3, 0, 0, item.id().value()),
-      SceneRenderEntry::InventoryItem { entity, item, role },
-    )
-  })
+      SceneRenderEntry::InventoryItem {
+        entity,
+        item,
+        role: SceneSpriteRole::InventoryItem,
+      },
+    ));
+  }
+  entries
 }
 
 fn sync_focus(world: &mut World) {
