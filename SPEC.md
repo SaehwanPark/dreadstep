@@ -1301,8 +1301,8 @@ Out of scope:
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, pickup, or gameplay-facing item commands. Tester-only transfer
-and drop are specified separately below; richer player operations still require an explicit core
+equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
+and pickup are specified separately below; richer player operations still require an explicit core
 contract.
 
 ### Milestone 4 slice: deterministic tester item transfer

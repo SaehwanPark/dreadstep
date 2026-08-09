@@ -144,10 +144,10 @@ deterministic stack order. Protocol projects those records as read-only snapshot
 delegates the mutation; neither boundary adds pickup, effects, equipment, capacity, player commands,
 or replay/history entries.
 
-The active tester item-pickup extension will move an item from the actor's current core-owned ground
-stack back into that actor's ordered inventory. Protocol/MCP only convert the typed ground-miss error
-and project the existing version-2 snapshot; pickup remains outside player commands, replay/history,
-and gameplay effects.
+The tester item-pickup extension moves an item from the actor's current core-owned ground stack back
+into that actor's ordered inventory. Protocol/MCP only convert the typed ground-miss error and
+project the existing version-2 snapshot; pickup remains outside player commands, replay/history, and
+gameplay effects.
 
 Validated tester teleport crosses the boundary as a typed actor identity and destination position.
 Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only

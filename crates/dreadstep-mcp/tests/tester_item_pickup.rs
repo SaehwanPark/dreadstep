@@ -9,6 +9,7 @@ fn pickup_projects_inventory_without_player_replay() {
   session
     .give_item(ActorId::new(1), ItemId::new(1), ItemDefinitionId::new(10))
     .expect("item should be accepted");
+  let expected = session.inspect_world();
   session
     .drop_item(ActorId::new(1), ItemId::new(1))
     .expect("item should drop");
@@ -19,10 +20,7 @@ fn pickup_projects_inventory_without_player_replay() {
     .pickup_item(ActorId::new(1), ItemId::new(1))
     .expect("ground item should be picked up");
 
-  let snapshot = session.inspect_world();
-  assert_eq!(snapshot.actors()[0].inventory().len(), 1);
-  assert_eq!(snapshot.actors()[0].inventory()[0].id(), ItemId::new(1));
-  assert!(snapshot.ground_items().is_empty());
+  assert_eq!(session.inspect_world(), expected);
   assert_eq!(session.get_history(), history);
   assert_eq!(session.get_replay(), replay);
 }
