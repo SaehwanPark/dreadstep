@@ -42,3 +42,16 @@ Update an existing lesson instead of adding a duplicate.
   sets; core snapshots remain authoritative and dead records are intentionally retained.
 - Prevention: Treat scene components as disposable projections, choose explicit stable keys for
   updates/removal, and test repeated synchronization plus stale and dead-record cases headlessly.
+
+## Snapshot a resource before exclusive ECS projection
+
+- Context: The Bevy application shell must read the authoritative runtime and mutate the ECS world
+  in one headless update system.
+- Symptom: Borrowing a runtime resource while passing the same `World` to scene synchronization
+  would violate Rust's aliasing rules and tempt an adapter to duplicate or expose simulation state.
+- Cause: Bevy's exclusive system gives one mutable `World`, so a resource reference cannot remain
+  live while the synchronizer mutates entities in that world.
+- Resolution: Clone the small immutable `PresentationSnapshot` first, end the resource borrow, then
+  call `sync_scene` with the snapshot. Keep command submission explicit on `PresentationRuntime`.
+- Prevention: Treat app systems as orchestration around core projections; snapshot authoritative
+  resources before ECS mutation and never make scene components a second command/state store.

@@ -65,6 +65,8 @@ All notable contributor- and user-visible project changes are recorded here.
   that delegates to it while preserving the explicit replay seed.
 - Headless Bevy scene synchronization for deterministic map-tile and actor ECS mirrors, including
   stable entity identity, stale-entity removal, and retained dead-record presentation.
+- A headless Bevy `PresentationRuntime` resource and `PresentationPlugin` that automatically project
+  core-backed snapshots into the scene after each app update without desktop engine features.
 
 ### Changed
 

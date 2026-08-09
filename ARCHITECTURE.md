@@ -1,6 +1,6 @@
 # Dreadstep Architecture
 
-Last Reviewed: 2026-08-08  
+Last Reviewed: 2026-08-09
 Status: Verified
 
 ## Overview
@@ -165,6 +165,13 @@ and `ActorId`, preserves identity across updates, removes stale or duplicate key
 and mirrors actor position, life, hit points, and scheduler readiness. Dead actor records remain
 represented because core snapshots retain them. ECS data is a render mirror only; it cannot issue
 commands or replace `WorldState` as game truth.
+
+The headless application-shell slice adds `PresentationRuntime` as the sole Bevy resource owning a
+`PresentationState`, and `PresentationPlugin` as an exclusive update system that clones a runtime
+snapshot before calling `sync_scene`. This keeps the core-backed resource borrow separate from ECS
+mutation while making startup and post-command projection automatic for a Bevy `App`. The plugin
+still enables no window, rendering, audio, or desktop platform features; command submission remains
+an explicit runtime API and never originates from scene components.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
