@@ -21,21 +21,37 @@ fn world() -> WorldState {
 fn drop_moves_items_into_ordered_ground_stacks_and_changes_digest() {
   let mut world = world();
   let first = Item::new(ItemId::new(1), ItemDefinitionId::new(10));
-  let second = Item::new(ItemId::new(2), ItemDefinitionId::new(20));
+  let middle = Item::new(ItemId::new(2), ItemDefinitionId::new(20));
+  let last = Item::new(ItemId::new(3), ItemDefinitionId::new(30));
   world
     .give_item(ActorId::new(1), first)
     .expect("first item should be accepted");
   world
-    .give_item(ActorId::new(1), second)
-    .expect("second item should be accepted");
+    .give_item(ActorId::new(1), middle)
+    .expect("middle item should be accepted");
+  world
+    .give_item(ActorId::new(1), last)
+    .expect("last item should be accepted");
   let before = world.digest();
 
   world
-    .drop_item(ActorId::new(1), ItemId::new(1))
-    .expect("owned item should drop");
-  world
     .drop_item(ActorId::new(1), ItemId::new(2))
-    .expect("second item should drop");
+    .expect("middle item should drop");
+  assert_eq!(
+    world
+      .actor(ActorId::new(1))
+      .expect("actor exists")
+      .inventory(),
+    &[first, last]
+  );
+  assert_eq!(world.ground_items()[0].items(), &[middle]);
+
+  world
+    .drop_item(ActorId::new(1), ItemId::new(1))
+    .expect("first item should drop");
+  world
+    .drop_item(ActorId::new(1), ItemId::new(3))
+    .expect("last item should drop");
 
   assert_eq!(
     world
@@ -46,7 +62,7 @@ fn drop_moves_items_into_ordered_ground_stacks_and_changes_digest() {
   );
   assert_eq!(world.ground_items().len(), 1);
   assert_eq!(world.ground_items()[0].position(), Position::new(1, 1));
-  assert_eq!(world.ground_items()[0].items(), &[first, second]);
+  assert_eq!(world.ground_items()[0].items(), &[middle, first, last]);
   assert_ne!(world.digest(), before);
 }
 
@@ -138,8 +154,10 @@ fn drop_rejections_are_typed_and_atomic_and_ground_ids_stay_unique() {
   world
     .drop_item(ActorId::new(1), ItemId::new(1))
     .expect("owned item should drop");
+  let after_drop = world.clone();
   assert_eq!(
     world.give_item(ActorId::new(2), item),
     Err(WorldError::DuplicateItemId(item.id()))
   );
+  assert_eq!(world, after_drop);
 }

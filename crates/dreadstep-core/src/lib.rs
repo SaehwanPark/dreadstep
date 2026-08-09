@@ -62,7 +62,7 @@ impl ItemDefinitionId {
   }
 }
 
-/// One opaque item instance owned by an actor.
+/// One opaque item instance in world state, either in an actor inventory or on the ground.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Item {
   id: ItemId,
@@ -1166,8 +1166,8 @@ impl WorldState {
   /// # Errors
   ///
   /// Returns [`WorldError::UnknownActor`] when the target identity is absent or
-  /// [`WorldError::DuplicateItemId`] when another actor already owns the item identity. A
-  /// rejected item is not inserted.
+  /// [`WorldError::DuplicateItemId`] when any actor inventory or ground stack already owns the
+  /// item identity. A rejected item is not inserted.
   pub fn give_item(&mut self, actor_id: ActorId, item: Item) -> Result<(), WorldError> {
     if !self.actors.contains_key(&actor_id) {
       return Err(WorldError::UnknownActor(actor_id));

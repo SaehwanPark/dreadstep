@@ -231,7 +231,7 @@ impl ItemDefinitionId {
   }
 }
 
-/// A read-only protocol projection of one owned opaque item.
+/// A read-only protocol projection of one world item instance, in an inventory or ground stack.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
 pub struct ItemSnapshot {
   id: ItemId,
