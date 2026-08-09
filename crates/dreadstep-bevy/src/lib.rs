@@ -1821,7 +1821,7 @@ impl SceneCamera {
     Self { center }
   }
 
-  /// Returns the authoritative map position represented by this camera anchor.
+  /// Returns the projected map position copied from the authoritative camera state.
   #[must_use]
   pub const fn center(self) -> Position {
     self.center
@@ -2892,6 +2892,7 @@ fn sync_scene_camera_components(world: &mut World) {
     return;
   }
   let mut query = world.query::<(Entity, &SceneCamera)>();
+  let tile_size = world.get_resource::<PresentationTileSize>().copied();
   let entities = query
     .iter(world)
     .map(|(entity, _)| entity)
@@ -2901,6 +2902,19 @@ fn sync_scene_camera_components(world: &mut World) {
       continue;
     };
     entity.insert(Camera2d);
+    let Some(tile_size) = tile_size else {
+      continue;
+    };
+    let Some(center) = entity.get::<SceneCamera>().map(|camera| camera.center()) else {
+      continue;
+    };
+    let Some(pixel_position) = tile_size.pixel_position(center) else {
+      continue;
+    };
+    entity.insert(camera_transform_from_pixel_position(
+      pixel_position,
+      tile_size,
+    ));
   }
 }
 
@@ -2945,6 +2959,22 @@ fn sync_scene_window_components(world: &mut World) {
 #[allow(clippy::cast_precision_loss)]
 fn window_scale_factor(pixel_scale: u32) -> f32 {
   pixel_scale as f32
+}
+
+fn camera_transform_from_pixel_position(
+  position: ScenePixelPosition,
+  tile_size: PresentationTileSize,
+) -> Transform {
+  // Bevy's Transform API stores f32 values; the checked integer origin remains available in
+  // ScenePixelPosition, and tile half-extents intentionally use the existing presentation adapter.
+  #[allow(clippy::cast_precision_loss)]
+  {
+    Transform::from_xyz(
+      position.x() as f32 + tile_size.width() as f32 / 2.0,
+      position.y() as f32 + tile_size.height() as f32 / 2.0,
+      0.0,
+    )
+  }
 }
 
 fn sync_viewport(world: &mut World) {

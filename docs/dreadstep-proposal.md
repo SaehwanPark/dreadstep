@@ -1778,12 +1778,16 @@ Current exploratory gate (2026-08-09):
   from typed render layer while preserving centered x/y placement and inventory default state.
 - A verified headless ECS Camera2d attachment boundary adds only Bevy's typed camera marker/default
   orthographic components to the retained disposable camera projection entity; runtime/
-  `PresentationCamera` remain authoritative, while window creation, camera transform/viewport policy,
+  `PresentationCamera` remain authoritative, while window creation, camera viewport policy,
   render plugins, visibility, playback, and production media remain deferred.
 - A verified headless ECS Window configuration boundary mirrors the exact validated integer
   logical/physical dimensions and scale onto a disposable `SceneWindow`, exposes a deterministic
   `f32` scale adapter on Bevy's `WindowResolution`, and defers OS/window plugins,
   winit/default-platform integration, render backends, camera policy, visibility, playback, and
+  production media.
+- A verified headless ECS camera-transform boundary attaches checked centered logical-pixel
+  `Transform` values to the retained disposable `SceneCamera` from caller-selected tile extents,
+  while deferring viewport policy, OS/window integration, render backends, visibility, playback, and
   production media.
 
 ### Content

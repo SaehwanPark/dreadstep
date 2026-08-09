@@ -336,7 +336,7 @@ anchor variants, cameras, visibility, render plugins, windows, or production med
 The verified headless ECS Camera2d attachment adds Bevy's typed `Camera2d` marker and required default
 camera components to the retained disposable `SceneCamera` projection entity. `PresentationCamera`
 and runtime remain the source of camera center/origin truth; window creation, camera
-transform/viewport/visibility policy, render plugins, and production media remain deferred.
+viewport/visibility policy, render plugins, and production media remain deferred.
 
 The verified headless ECS Window configuration attachment enables only Bevy's `bevy_window` API
 feature and mirrors the exact validated integer `PresentationWindow` request onto a disposable
@@ -344,6 +344,11 @@ feature and mirrors the exact validated integer `PresentationWindow` request ont
 `f32` scale adapter; `PresentationWindow` remains authoritative and this boundary does not create
 OS windows or enable WindowPlugin/winit/default-platform, render backends, camera policy, visibility,
 or production media.
+
+The verified headless ECS camera-transform attachment derives centered logical-pixel `Transform`
+values for the retained disposable `SceneCamera` from checked map origins and caller-selected tile
+half-extents. `PresentationCamera` and runtime remain authoritative; viewport policy, OS/window
+integration, render backends, visibility, and production media remain deferred.
 
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
