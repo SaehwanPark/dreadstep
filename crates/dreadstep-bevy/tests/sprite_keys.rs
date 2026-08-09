@@ -4,7 +4,7 @@ use bevy::app::App;
 use dreadstep_bevy::{
   PresentationPlugin, PresentationRenderProjection, PresentationRuntime,
   PresentationSpriteProjection, PresentationState, PresentationTileSize, SceneRenderEntry,
-  SceneSpriteKey,
+  SceneSpriteKey, SceneSpriteRole,
 };
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position,
@@ -109,6 +109,34 @@ fn sprite_projection_preserves_ordered_complete_entries_and_typed_keys() {
 }
 
 #[test]
+fn sprite_key_uses_authoritative_actor_value_at_public_entry_boundary() {
+  let mut app = sprite_app();
+  let actor_entry = app
+    .world_mut()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .find(|entry| matches!(entry, SceneRenderEntry::Actor { .. }))
+    .copied()
+    .expect("actor entry should exist");
+  let mismatched = match actor_entry {
+    SceneRenderEntry::Actor {
+      entity,
+      actor,
+      pixel_position,
+      ..
+    } => SceneRenderEntry::Actor {
+      entity,
+      actor,
+      role: SceneSpriteRole::Terrain,
+      pixel_position,
+    },
+    _ => unreachable!(),
+  };
+  assert_eq!(mismatched.sprite_key(), actor_entry.sprite_key());
+}
+
+#[test]
 fn missing_sprite_projection_resource_is_a_safe_noop() {
   let mut app = sprite_app();
   app
@@ -158,6 +186,17 @@ fn sprite_projection_refreshes_roles_and_preserves_identity_without_runtime_muta
     .resource::<PresentationSpriteProjection>()
     .entries()
     .to_vec();
+  app
+    .world_mut()
+    .remove_resource::<PresentationRenderProjection>();
+  app.update();
+  assert_eq!(
+    app
+      .world()
+      .resource::<PresentationSpriteProjection>()
+      .entries(),
+    before.as_slice()
+  );
   app.world_mut().remove_resource::<PresentationRuntime>();
   app.update();
   assert_eq!(

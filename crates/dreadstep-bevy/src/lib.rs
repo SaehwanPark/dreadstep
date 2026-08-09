@@ -815,14 +815,16 @@ impl SceneRenderEntry {
   pub const fn sprite_key(self) -> SceneSpriteKey {
     match self {
       Self::Terrain { tile, .. } => SceneSpriteKey::Terrain(tile.terrain()),
-      Self::Actor { role, .. } => match role {
-        SceneSpriteRole::Player => SceneSpriteKey::Player,
-        SceneSpriteRole::Enemy => SceneSpriteKey::Enemy,
-        SceneSpriteRole::DeadActor => SceneSpriteKey::DeadActor,
-        SceneSpriteRole::Terrain | SceneSpriteRole::GroundItem | SceneSpriteRole::InventoryItem => {
-          unreachable!()
+      Self::Actor { actor, .. } => {
+        if actor.is_alive() {
+          match actor.kind() {
+            ActorKind::Player => SceneSpriteKey::Player,
+            ActorKind::Enemy => SceneSpriteKey::Enemy,
+          }
+        } else {
+          SceneSpriteKey::DeadActor
         }
-      },
+      }
       Self::GroundItem { item, .. } => SceneSpriteKey::GroundItem(item.definition()),
       Self::InventoryItem { item, .. } => SceneSpriteKey::InventoryItem(item.definition()),
     }
