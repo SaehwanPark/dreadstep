@@ -1340,8 +1340,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic authored starter-floor item placements
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add the smallest content-to-core bridge for authored opaque item instances without changing the
 default starter scenario. `StarterFloorDefinition` will accept an ordered list of typed
@@ -1364,12 +1365,13 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-content --test starter_items --all-features --locked` covers
-  ordered valid placements, default-floor stability, unknown actors, and duplicate identities.
-- Existing core item tests plus `cargo test -p dreadstep-content --all-targets --all-features
-  --locked`, focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass before
-  handoff.
-- Exactly one semantic code reviewer must review the cross-boundary implementation, and Linux,
-  Apple Silicon macOS, and Windows CI must be green for the reviewed revision before closeout.
+  interleaved ordered placements, repeatability, both item-free default constructors, unknown
+  actors, and duplicate identities; all three focused tests pass.
+- `cargo test -p dreadstep-content --all-targets --all-features --locked` passes all eight content
+  tests. Focused Clippy with `-D warnings`, content Cargo docs, `git diff --check`, and the full
+  `scripts/verify.sh` suite pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `8b5d4d9`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
