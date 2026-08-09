@@ -18,7 +18,7 @@ use dreadstep_core::{
 pub enum ContentError {
   /// The authored rectangular map is invalid.
   Map(MapError),
-  /// The authored actor set violates a core world invariant.
+  /// Authored world inputs, including actor or item placements, violate a core invariant.
   World(WorldError),
   /// The authored item catalog repeats one opaque definition identity.
   DuplicateItemDefinitionId(ItemDefinitionId),
@@ -179,7 +179,7 @@ impl StarterFloorDefinition {
   /// # Errors
   ///
   /// Returns [`ContentError::Map`] or [`ContentError::World`] when authored dimensions, tiles,
-  /// or actor records violate core validation rules.
+  /// actor records, or item placements violate core validation rules.
   pub fn build(&self) -> Result<WorldState, ContentError> {
     let map = GridMap::from_tiles(self.width, self.height, self.tiles.clone())?;
     let mut world = WorldState::new(map, self.actors.clone())?;
