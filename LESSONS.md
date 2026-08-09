@@ -81,3 +81,19 @@ Update an existing lesson instead of adding a duplicate.
   and expose explicit one-shot consumption through `take_output`.
 - Prevention: Keep feedback owned by the adapter, tie it to accepted command results only, and test
   startup emptiness, exact accepted evidence, one-shot reads, and rejection clearing.
+
+## Keep focus projections separate from camera policy
+
+- Context: A future camera needs the selected actor's latest position before windowing or rendering
+  exists.
+- Symptom: Storing camera transforms or inventing visibility rules in the focus resource would make
+  presentation policy look like simulation state and complicate later clients.
+- Cause: Actor position is core truth, while viewport, smoothing, interpolation, and fog are client
+  decisions with different lifecycles.
+- Resolution: Store only the typed controlled actor and optional projected core position; update it
+  after authoritative dispatch/scene sync and use `None` for an unknown identity.
+- Prevention: Treat focus as a disposable read-only projection, keep camera math in a later boundary,
+  and test actor changes plus unknown-resource behavior headlessly. Guard missing runtime separately
+  from an unknown actor: without an authoritative snapshot, preserve the last focus projection;
+  with a present snapshot, map only the unknown identity to `None`. For atomicity evidence, compare
+  replay digest and complete keyed tile/actor projections rather than entity counts alone.

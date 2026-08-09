@@ -181,6 +181,11 @@ consumers can inspect it without mutation or take it once. Rejected commands cle
 while preserving `WorldState`, replay digest, and disposable scene mirrors, so the buffer remains
 adapter evidence rather than a second simulation store.
 
+The focus-projection slice adds an optional `PresentationFocus` resource keyed by the explicit
+`PresentationInput` actor. After dispatch and scene synchronization, it mirrors that actor's latest
+core position or `None` when unknown. It is a camera-facing projection only: no viewport policy,
+visibility rule, interpolation, or alternate actor record is introduced.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.

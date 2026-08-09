@@ -14,8 +14,8 @@ use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world:
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_content::{ContentError, starter_floor};
 use dreadstep_core::{
-  ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, ReplayTrace,
-  StateDigest, Tile, WorldState,
+  ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, Position,
+  ReplayTrace, StateDigest, Tile, WorldState,
 };
 
 /// A supported keyboard intent before it is addressed to one core actor.
@@ -68,6 +68,36 @@ impl PresentationInput {
   #[must_use]
   pub const fn actor(self) -> ActorId {
     self.actor
+  }
+}
+
+/// A disposable focus projection for future camera and viewport systems.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationFocus {
+  actor: ActorId,
+  position: Option<Position>,
+}
+
+impl PresentationFocus {
+  /// Creates an empty focus projection for one controlled actor.
+  #[must_use]
+  pub const fn new(actor: ActorId) -> Self {
+    Self {
+      actor,
+      position: None,
+    }
+  }
+
+  /// Returns the actor whose position is being projected.
+  #[must_use]
+  pub const fn actor(self) -> ActorId {
+    self.actor
+  }
+
+  /// Returns the latest known core position, or `None` for an unknown actor.
+  #[must_use]
+  pub const fn position(self) -> Option<Position> {
+    self.position
   }
 }
 
@@ -423,6 +453,7 @@ const KEY_PRIORITY: [KeyCode; 10] = [
 fn update_presentation(world: &mut World) {
   dispatch_keyboard_input(world);
   sync_runtime_scene(world);
+  sync_focus(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -470,6 +501,31 @@ fn sync_runtime_scene(world: &mut World) {
     return;
   };
   sync_scene(world, &snapshot);
+}
+
+fn sync_focus(world: &mut World) {
+  let Some(actor) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    return;
+  };
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
+  let position = snapshot
+    .actors()
+    .iter()
+    .find(|record| record.id() == actor)
+    .map(Actor::position);
+  let Some(mut focus) = world.get_resource_mut::<PresentationFocus>() else {
+    return;
+  };
+  focus.actor = actor;
+  focus.position = position;
 }
 
 fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {

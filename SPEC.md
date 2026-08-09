@@ -1179,6 +1179,45 @@ Out of scope:
 - HUD, messages, animations, output persistence, replay-file formats, ECS authority, transport,
   windowing, audio, and new gameplay rules.
 
+### Milestone 3 slice: typed headless presentation focus projection
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add a small presentation-only projection for future camera systems. `PresentationFocus` will name
+one controlled actor and mirror that actor's latest position from the authoritative runtime after
+keyboard dispatch and scene synchronization. Unknown actors produce an explicit `None` position;
+the resource does not decide visibility, camera policy, or gameplay and does not duplicate actor
+records.
+
+Acceptance:
+
+- `PresentationFocus` exposes a typed actor identity and optional position without mutable core/ECS
+  storage; missing runtime, input, or focus resources are safe no-ops.
+- The plugin updates focus after an accepted keyboard command in the same app update, and changing
+  the controlled actor updates both identity and position deterministically.
+- An unknown actor yields `None` without fabricating coordinates or mutating runtime, replay, or
+  complete keyed scene mirrors; dead-record visibility semantics remain core-owned.
+- The projection remains headless and independent of camera entities/transforms, windowing,
+  rendering, viewport math, interpolation, smoothing, visibility/fog, transport, and new rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test focus --all-features --locked` covers startup,
+  accepted movement, controlled-actor changes, unknown actors, and independent absent-resource
+  no-ops; the seven focused tests pass.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked` passes all Bevy targets,
+  and Linux, Apple Silicon macOS, and Windows CI are green for the reviewed revision.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision (`5671d78`).
+
+Out of scope:
+
+- Camera entities/transforms, viewport policy, rendering, windowing, interpolation, smoothing,
+  visibility/fog rules, transport, input rebinding, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics
