@@ -564,6 +564,13 @@ pub enum WorldError {
   UnknownActor(ActorId),
   /// An item identity is already owned by an actor in the world.
   DuplicateItemId(ItemId),
+  /// A tester transfer source does not own the requested item identity.
+  ItemNotOwned {
+    /// The actor whose inventory was searched.
+    actor: ActorId,
+    /// The item identity that was not found.
+    item: ItemId,
+  },
   /// A tester teleport destination is outside the map.
   TeleportOutOfBounds {
     /// The actor being teleported.
@@ -624,6 +631,10 @@ impl From<CoreWorldError> for WorldError {
     match error {
       CoreWorldError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
       CoreWorldError::DuplicateItemId(item) => Self::DuplicateItemId(ItemId::new(item.value())),
+      CoreWorldError::ItemNotOwned { actor, item } => Self::ItemNotOwned {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
       CoreWorldError::TeleportOutOfBounds { actor, position } => Self::TeleportOutOfBounds {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
@@ -675,6 +686,12 @@ impl fmt::Display for WorldError {
       Self::DuplicateItemId(item) => {
         write!(formatter, "item id {} is duplicated", item.value())
       }
+      Self::ItemNotOwned { actor, item } => write!(
+        formatter,
+        "actor {} does not own item {}",
+        actor.value(),
+        item.value()
+      ),
       Self::TeleportOutOfBounds { actor, position } => write!(
         formatter,
         "actor {} cannot teleport out of bounds to ({}, {})",

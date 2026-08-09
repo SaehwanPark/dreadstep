@@ -222,6 +222,28 @@ impl Session {
       .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
+  /// Transfers one opaque item between existing actors through the tester boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core rejects either actor or when the source
+  /// does not own the item. The mutation does not record a player command or alter replay evidence.
+  pub fn transfer_item(
+    &mut self,
+    source_actor: ProtocolActorId,
+    target_actor: ProtocolActorId,
+    item: ProtocolItemId,
+  ) -> Result<(), SessionError> {
+    self
+      .world
+      .transfer_item(
+        ActorId::new(source_actor.value()),
+        ActorId::new(target_actor.value()),
+        ItemId::new(item.value()),
+      )
+      .map_err(|error| SessionError::WorldRejected(error.into()))
+  }
+
   /// Teleports one existing actor through the tester boundary.
   ///
   /// # Errors

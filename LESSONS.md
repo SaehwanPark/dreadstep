@@ -114,3 +114,17 @@ Update an existing lesson instead of adding a duplicate.
   inject the catalog into `WorldState` or add effects, equipment, or player commands.
 - Prevention: Treat catalogs as authoring data, use typed opaque IDs and deterministic declaration
   order, and require a later core contract before adding gameplay semantics or richer operations.
+
+## Keep tester item transfer atomic and outside player replay
+
+- Context: Opaque item ownership now needs a deterministic tester operation to move an existing item
+  between actor records without inventing item effects.
+- Symptom: Mutating source and target inventories in separate unchecked borrows could partially move
+  an item, reorder remaining items, or accidentally record a tester mutation as player history.
+- Cause: Core owns both inventories and replay trace, while protocol/MCP only project a tester effect;
+  dead records are retained actor identities but are not scheduler participants.
+- Resolution: Validate both actor identities and source ownership first, treat same-actor transfer as
+  an idempotent no-op, remove from source preserving relative order, append unchanged data to target,
+  and keep the operation outside `ReplayTrace`; map only the typed core error at adapter boundaries.
+- Prevention: Test digest/order and complete rejection snapshots at core, map every new world error in
+  protocol, and assert MCP history/replay invariants for both accepted and rejected transfers.

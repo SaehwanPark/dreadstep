@@ -760,6 +760,13 @@ pub enum WorldError {
   UnknownActor(ActorId),
   /// An item identity is already owned by an actor in the world.
   DuplicateItemId(ItemId),
+  /// An actor does not own the item requested by a tester transfer.
+  ItemNotOwned {
+    /// The actor whose inventory was searched.
+    actor: ActorId,
+    /// The item identity that was not found.
+    item: ItemId,
+  },
   /// A tester teleport destination is outside the map.
   TeleportOutOfBounds {
     /// The actor being teleported.
@@ -822,6 +829,12 @@ impl fmt::Display for WorldError {
       Self::DuplicateItemId(item) => {
         write!(formatter, "item id {} is duplicated", item.value())
       }
+      Self::ItemNotOwned { actor, item } => write!(
+        formatter,
+        "actor {} does not own item {}",
+        actor.value(),
+        item.value()
+      ),
       Self::TeleportOutOfBounds { actor, position } => write!(
         formatter,
         "actor {} cannot teleport out of bounds to ({}, {})",
@@ -1115,9 +1128,10 @@ impl WorldState {
   /// Gives one opaque item instance to an existing actor for an explicit tester operation.
   ///
   /// Item ownership is recorded in insertion order. The instance identity is global across all
-  /// actor inventories; item effects, transfer, and capacity rules are intentionally outside this
-  /// slice. Dead actor records remain valid ownership targets because the mutation does not alter
-  /// scheduling or occupancy.
+  /// actor inventories; item effects and capacity rules are intentionally outside this slice.
+  /// Explicit tester transfers are handled separately by [`Self::transfer_item`]. Dead actor
+  /// records remain valid ownership targets because the mutation does not alter scheduling or
+  /// occupancy.
   ///
   /// # Errors
   ///
@@ -1142,6 +1156,57 @@ impl WorldState {
       .ok_or(WorldError::UnknownActor(actor_id))?
       .inventory
       .push(item);
+    Ok(())
+  }
+
+  /// Transfers one opaque item between existing actor records for an explicit tester operation.
+  ///
+  /// Cross-actor transfer removes the item from the source while preserving the relative order of
+  /// remaining items, then appends the unchanged item to the target. Same-actor transfer is an
+  /// idempotent no-op after ownership validation. Dead actor records remain valid endpoints because
+  /// this mutation does not affect scheduling or occupancy.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`WorldError::UnknownActor`] when either actor identity is absent or
+  /// [`WorldError::ItemNotOwned`] when the source does not own the requested item. Rejected
+  /// transfers leave the world unchanged.
+  pub fn transfer_item(
+    &mut self,
+    source_actor: ActorId,
+    target_actor: ActorId,
+    item_id: ItemId,
+  ) -> Result<(), WorldError> {
+    if !self.actors.contains_key(&source_actor) {
+      return Err(WorldError::UnknownActor(source_actor));
+    }
+    if !self.actors.contains_key(&target_actor) {
+      return Err(WorldError::UnknownActor(target_actor));
+    }
+    let Some(item_index) = self
+      .actors
+      .get(&source_actor)
+      .and_then(|actor| actor.inventory.iter().position(|item| item.id() == item_id))
+    else {
+      return Err(WorldError::ItemNotOwned {
+        actor: source_actor,
+        item: item_id,
+      });
+    };
+    if source_actor == target_actor {
+      return Ok(());
+    }
+    let Some(mut source) = self.actors.remove(&source_actor) else {
+      return Err(WorldError::UnknownActor(source_actor));
+    };
+    let Some(mut target) = self.actors.remove(&target_actor) else {
+      self.actors.insert(source_actor, source);
+      return Err(WorldError::UnknownActor(target_actor));
+    };
+    let item = source.inventory.remove(item_index);
+    target.inventory.push(item);
+    self.actors.insert(source_actor, source);
+    self.actors.insert(target_actor, target);
     Ok(())
   }
 

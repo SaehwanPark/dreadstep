@@ -77,6 +77,8 @@ All notable contributor- and user-visible project changes are recorded here.
   or selection systems without copying actor state or adding marker visuals.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
+- A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
+  effects, equipment, and player commands remain deferred.
 
 ### Changed
 
