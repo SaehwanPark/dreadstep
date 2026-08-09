@@ -13,9 +13,9 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is at Milestone 0: project charter and development infrastructure. The repository
-contains compiling package boundaries and contributor tooling, but no playable game,
-headless executable, MCP server, or graphical client yet.
+Dreadstep is implementing Milestone 1: the rules kernel. The first active slice provides a
+typed grid, actors, deterministic movement, blocking, and integer action scheduling in
+`dreadstep-core`; there is still no playable graphical client, MCP server, or developer CLI.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
