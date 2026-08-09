@@ -13,9 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is implementing Milestone 1: the rules kernel. The first active slice provides a
-typed grid, actors, deterministic movement, blocking, and integer action scheduling in
-`dreadstep-core`; there is still no playable graphical client, MCP server, or developer CLI.
+Dreadstep is implementing Milestone 1: the rules kernel. The active slice adds typed health,
+fixed basic melee attacks, and death to the existing deterministic grid, blocking, and
+integer scheduling API in `dreadstep-core`; there is still no playable graphical client, MCP
+server, or developer CLI.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
