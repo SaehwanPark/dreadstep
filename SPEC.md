@@ -2081,12 +2081,11 @@ Verification:
 - Local media remains ignored and tracked concept-art/screenshot exceptions remain visible; no
   production asset loading or runtime code is introduced.
 
-## Present
-
 ### Milestone 3 slice: reversible headless-to-renderer spike
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Consume the verified 32×32 placement and sprite-role decisions at a reversible Bevy presentation
 boundary. The spike must make the mapping from keyed `Scene*` mirrors to render-ready metadata
@@ -2113,8 +2112,20 @@ Verification target:
   complete entries, identity/authority behavior, 32×32 placement, inventory exclusion, duplicate
   ordering, and read-only runtime state; all Bevy targets, Clippy, docs, repository checks, and
   `scripts/verify.sh` must pass.
-- Exactly one semantic reviewer, fresh Linux/macOS/Windows CI, and canonical document reconciliation
-  are required before moving this spike into Past.
+- Exactly one semantic reviewer reports PASS on final implementation/evidence revision `7cb1647`
+  (implementation `c5d29a0`, with bounded corrections in `0ae06a8`, `1beb836`, and `7cb1647`);
+  the docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI are
+  green.
+- The ignored render-boundary evidence records the intended red contract failure, focused 10/10,
+  all-target Clippy/docs/repository/full verification, and the reviewer/CI gate.
+
+Out of scope:
+
+- OS windows, platform event loops, desktop backends, rendering plugins, transforms, textures,
+  asset handles/loading, audio playback, animation timers/interpolation, visibility policy,
+  persistence, transport, and gameplay rules.
+
+## Present
 
 ### Deferred item gameplay semantics
 

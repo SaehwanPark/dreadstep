@@ -275,11 +275,13 @@ The verified presentation asset evaluation and native tile-size evidence are tra
 Rust boundary in `docs/presentation/asset-evaluation.md` and `docs/presentation/tile-samples.md`.
 They record local-only generated and CC0 candidates, exact nearest-neighbor 24×24/32×32 samples,
 and a provisional 32×32 working scale; dungeon audio sourcing remains open after a UI-only fallback
-evaluation. The active reversible renderer spike consumes this metadata without loading production
-assets or enabling render plugins. `PresentationRenderProjection` is a read-only ordered resource
-over the existing keyed mirrors: it carries complete typed values and roles, adds pixel positions
-only to map-backed entries, and keeps inventory items unplaced. It does not become another source of
-simulation truth.
+evaluation. The verified reversible renderer boundary consumes this metadata without loading
+production assets or enabling render plugins. `PresentationRenderProjection` is a read-only ordered
+resource over the existing keyed mirrors: it carries complete typed values and per-kind roles,
+derives map-backed pixel positions from each mirror's own typed position when tile-size configuration
+is present, keeps inventory items unplaced, and preserves retained metadata when configuration is
+absent. It does not become another source of simulation truth. Actual windowing, rendering, asset
+loading, and playback remain deferred to later presentation slices.
 
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
