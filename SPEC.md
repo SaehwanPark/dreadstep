@@ -1063,6 +1063,44 @@ Out of scope:
 - Bevy windowing/rendering plugins, sprites, textures, camera, animations, HUD, audio, fog of war,
   ECS-driven commands, map generation, and new gameplay rules.
 
+### Milestone 3 slice: headless Bevy application shell
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Own the headless presentation boundary inside a Bevy `App` without making ECS state authoritative.
+`dreadstep-bevy` will expose a `PresentationRuntime` resource that contains one
+`PresentationState`, plus a `PresentationPlugin` whose update system snapshots that runtime and
+keeps the disposable scene mirrors synchronized. Commands continue to enter through the runtime's
+explicit core delegation API; the plugin itself only projects state.
+
+Acceptance:
+
+- `PresentationRuntime` preserves the explicit seed, exposes read-only snapshots and replay
+  evidence, and delegates accepted or rejected commands to exactly one `PresentationState`.
+- `PresentationPlugin` adds only a headless update system and can start a complete authored scene
+  in a Bevy `App` without windowing, rendering, audio, desktop platform features, wall-clock time,
+  or host randomness.
+- Every app update projects the runtime snapshot through `sync_scene`; unchanged scene identities
+  remain stable and an accepted runtime command becomes visible after the next update.
+- ECS scene components remain disposable mirrors and cannot issue commands or replace core world
+  truth; rejected commands leave runtime and scene projections unchanged.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --all-targets --all-features --locked` covers runtime
+  ownership, plugin startup, update synchronization, accepted-command projection, and rejection
+  atomicity.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Bevy window/render plugins, sprites, textures, camera, animation, HUD, audio, fog of war, input
+  systems, persistence, transport, ECS-issued commands, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics

@@ -9,7 +9,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use bevy::ecs::{component::Component, entity::Entity, world::World};
+use bevy::app::{App, Plugin, Update};
+use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world::World};
 use bevy::input::keyboard::KeyCode;
 use dreadstep_content::{ContentError, starter_floor};
 use dreadstep_core::{
@@ -292,6 +293,87 @@ impl PresentationState {
   pub const fn map(&self) -> &GridMap {
     self.world.map()
   }
+}
+
+/// The Bevy-owned handle for one deterministic presentation run.
+///
+/// The wrapped [`PresentationState`] remains the only source of simulation truth. Bevy systems
+/// may read snapshots or submit explicit core commands through this resource, while ECS scene
+/// components remain disposable projections.
+#[derive(Debug, Eq, PartialEq, Resource)]
+pub struct PresentationRuntime {
+  state: PresentationState,
+}
+
+impl PresentationRuntime {
+  /// Starts a runtime from the shared authored starter floor.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] when the authored floor fails core validation.
+  pub fn start_run(seed: u64) -> Result<Self, ContentError> {
+    Ok(Self {
+      state: PresentationState::start_run(seed)?,
+    })
+  }
+
+  /// Wraps an already validated presentation state as an app resource.
+  #[must_use]
+  pub fn new(state: PresentationState) -> Self {
+    Self { state }
+  }
+
+  /// Returns the explicit seed preserved by the runtime.
+  #[must_use]
+  pub const fn seed(&self) -> u64 {
+    self.state.seed()
+  }
+
+  /// Returns a read-only snapshot of the authoritative core world.
+  #[must_use]
+  pub fn snapshot(&self) -> PresentationSnapshot {
+    self.state.snapshot()
+  }
+
+  /// Returns the deterministic digest of accepted runtime commands.
+  #[must_use]
+  pub fn replay_digest(&self) -> StateDigest {
+    self.state.replay_digest()
+  }
+
+  /// Delegates one command to the wrapped presentation state and core simulation.
+  ///
+  /// # Errors
+  ///
+  /// Returns the core [`CommandError`] when the command is rejected. Rejected commands do not
+  /// mutate the runtime or replay trace.
+  pub fn execute(&mut self, command: Command) -> Result<PresentationOutput, CommandError> {
+    self.state.execute(command)
+  }
+}
+
+/// A headless Bevy plugin that keeps disposable scene mirrors synchronized with runtime state.
+///
+/// The plugin expects [`PresentationRuntime`] to be inserted by the application. Until a runtime
+/// is present, its update system is a safe no-op so app construction can install plugins before
+/// selecting or restoring a run.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct PresentationPlugin;
+
+impl Plugin for PresentationPlugin {
+  fn build(&self, app: &mut App) {
+    app.add_systems(Update, sync_runtime_scene);
+  }
+}
+
+fn sync_runtime_scene(world: &mut World) {
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
+  sync_scene(world, &snapshot);
 }
 
 fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {
