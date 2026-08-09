@@ -7,6 +7,9 @@
 
 #![forbid(unsafe_code)]
 
+use std::collections::{BTreeMap, BTreeSet};
+
+use bevy::ecs::{component::Component, entity::Entity, world::World};
 use bevy::input::keyboard::KeyCode;
 use dreadstep_content::{ContentError, starter_floor};
 use dreadstep_core::{
@@ -44,6 +47,91 @@ impl KeyboardIntent {
       Self::Move(direction) => Command::Move { actor, direction },
       Self::Wait => Command::Wait { actor },
     }
+  }
+}
+
+/// A disposable ECS mirror of one projected map tile.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneTile {
+  position: dreadstep_core::Position,
+  terrain: Tile,
+}
+
+impl SceneTile {
+  fn new(position: dreadstep_core::Position, terrain: Tile) -> Self {
+    Self { position, terrain }
+  }
+
+  /// Returns the core position represented by this scene tile.
+  #[must_use]
+  pub const fn position(self) -> dreadstep_core::Position {
+    self.position
+  }
+
+  /// Returns the projected terrain value.
+  #[must_use]
+  pub const fn terrain(self) -> Tile {
+    self.terrain
+  }
+}
+
+/// A disposable ECS mirror of one projected actor record.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneActor {
+  id: ActorId,
+  kind: dreadstep_core::ActorKind,
+  position: dreadstep_core::Position,
+  hit_points: dreadstep_core::HitPoints,
+  ready_at: dreadstep_core::ActionTime,
+  alive: bool,
+}
+
+impl SceneActor {
+  fn from_core(actor: &Actor) -> Self {
+    Self {
+      id: actor.id(),
+      kind: actor.kind(),
+      position: actor.position(),
+      hit_points: actor.hit_points(),
+      ready_at: actor.ready_at(),
+      alive: actor.is_alive(),
+    }
+  }
+
+  /// Returns the stable actor identity.
+  #[must_use]
+  pub const fn id(self) -> ActorId {
+    self.id
+  }
+
+  /// Returns the actor kind.
+  #[must_use]
+  pub const fn kind(self) -> dreadstep_core::ActorKind {
+    self.kind
+  }
+
+  /// Returns the projected actor position.
+  #[must_use]
+  pub const fn position(self) -> dreadstep_core::Position {
+    self.position
+  }
+
+  /// Returns the projected hit points.
+  #[must_use]
+  pub const fn hit_points(self) -> dreadstep_core::HitPoints {
+    self.hit_points
+  }
+
+  /// Returns the projected core scheduler readiness time.
+  #[must_use]
+  pub const fn ready_at(self) -> dreadstep_core::ActionTime {
+    self.ready_at
+  }
+
+  /// Returns whether the projected actor is living.
+  #[must_use]
+  pub const fn is_alive(self) -> bool {
+    self.alive
   }
 }
 
@@ -203,5 +291,118 @@ impl PresentationState {
   #[must_use]
   pub const fn map(&self) -> &GridMap {
     self.world.map()
+  }
+}
+
+fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {
+  (position.x(), position.y())
+}
+
+fn scene_position(index: usize, width: usize) -> Option<dreadstep_core::Position> {
+  if width == 0 {
+    return None;
+  }
+  Some(dreadstep_core::Position::new(
+    i32::try_from(index % width).ok()?,
+    i32::try_from(index / width).ok()?,
+  ))
+}
+
+/// Synchronizes a complete core projection into disposable Bevy scene entities.
+///
+/// Tile entities are keyed by position and actor entities by [`ActorId`]. Existing entities keep
+/// their Bevy identity when their key remains in the snapshot; stale entities are despawned before
+/// new keys are spawned. The ECS world is only a presentation mirror and cannot change core state.
+pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
+  let mut existing_tiles: BTreeMap<_, Vec<_>> = {
+    let mut query = scene.query::<(Entity, &SceneTile)>();
+    query
+      .iter(scene)
+      .fold(BTreeMap::new(), |mut entities, (entity, tile)| {
+        entities
+          .entry(tile_key(tile.position()))
+          .or_default()
+          .push(entity);
+        entities
+      })
+  };
+  for entities in existing_tiles.values_mut() {
+    entities.sort_unstable();
+  }
+  let Ok(width) = usize::try_from(snapshot.width()) else {
+    return;
+  };
+  let Some(positions) = snapshot
+    .tiles()
+    .iter()
+    .enumerate()
+    .map(|(index, _)| scene_position(index, width))
+    .collect::<Option<Vec<_>>>()
+  else {
+    return;
+  };
+  let expected_tiles: BTreeSet<_> = positions.iter().copied().map(tile_key).collect();
+  for (key, entities) in &existing_tiles {
+    if expected_tiles.contains(key) {
+      for entity in entities.iter().skip(1) {
+        let _ = scene.despawn(*entity);
+      }
+    } else {
+      for entity in entities {
+        let _ = scene.despawn(*entity);
+      }
+    }
+  }
+  for (position, terrain) in positions
+    .iter()
+    .copied()
+    .zip(snapshot.tiles().iter().copied())
+  {
+    if let Some(entity) = existing_tiles
+      .get(&tile_key(position))
+      .and_then(|entities| entities.first())
+    {
+      scene
+        .entity_mut(*entity)
+        .insert(SceneTile::new(position, terrain));
+    } else {
+      scene.spawn(SceneTile::new(position, terrain));
+    }
+  }
+
+  let mut existing_actors: BTreeMap<_, Vec<_>> = {
+    let mut query = scene.query::<(Entity, &SceneActor)>();
+    query
+      .iter(scene)
+      .fold(BTreeMap::new(), |mut entities, (entity, actor)| {
+        entities.entry(actor.id()).or_default().push(entity);
+        entities
+      })
+  };
+  for entities in existing_actors.values_mut() {
+    entities.sort_unstable();
+  }
+  let expected_actors: BTreeSet<_> = snapshot.actors().iter().map(Actor::id).collect();
+  for (actor_id, entities) in &existing_actors {
+    if expected_actors.contains(actor_id) {
+      for entity in entities.iter().skip(1) {
+        let _ = scene.despawn(*entity);
+      }
+    } else {
+      for entity in entities {
+        let _ = scene.despawn(*entity);
+      }
+    }
+  }
+  for actor in snapshot.actors() {
+    let scene_actor = SceneActor::from_core(actor);
+    if let Some(entity) = existing_actors
+      .get(&actor.id())
+      .and_then(|entities| entities.first())
+    {
+      scene.entity_mut(*entity).insert(scene_actor);
+    } else {
+      scene.spawn(scene_actor);
+    }
   }
 }

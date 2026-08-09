@@ -1024,6 +1024,45 @@ Out of scope:
 - Bevy windowing, rendering assets, sprites, animation, camera, HUD, audio, fog of war, multiple
   floors, procedural generation, seeded randomness, item content/effects, and new gameplay rules.
 
+### Milestone 3 slice: headless Bevy scene synchronization
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the first ECS-facing presentation projection without making ECS state authoritative. A
+`dreadstep-bevy` scene synchronizer will materialize map tiles and actor render data as typed Bevy
+components from a complete `PresentationSnapshot`, update existing entities deterministically by
+tile position and actor identity, and remove stale entities. Core state remains the only source of
+truth; scene components are disposable mirrors for later rendering systems.
+
+Acceptance:
+
+- `SceneTile` and `SceneActor` expose typed, immutable presentation data for terrain, actor
+  identity/kind, position, life, hit points, and scheduler readiness without exposing mutable core
+  storage.
+- `sync_scene` creates one entity per projected map tile and actor, preserves entity identity for
+  unchanged keys, updates changed actor data after an accepted core command, and removes entities
+  absent from a later snapshot.
+- Dead actor records remain represented because core snapshots retain them for inspection; scene
+  synchronization adds no visibility, movement, or gameplay rules.
+- Synchronization is deterministic, headless-testable with a Bevy `World`, and independent of MCP,
+  filesystem, wall-clock time, host randomness, windowing, rendering backends, and audio.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --all-targets --all-features --locked` covers initial
+  entity creation, stable entity identity, changed actor projection, stale-entity removal, and
+  dead-record retention.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Bevy windowing/rendering plugins, sprites, textures, camera, animations, HUD, audio, fog of war,
+  ECS-driven commands, map generation, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics

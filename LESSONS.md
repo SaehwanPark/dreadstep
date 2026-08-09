@@ -30,3 +30,15 @@ Update an existing lesson instead of adding a duplicate.
   Wayland, X11, audio, or window backends.
 - Prevention: Add the narrowest Bevy feature required by a presentation slice, inspect
   `cargo tree -e features`, and keep `scripts/check-repository.sh` guarding desktop features.
+
+## Key ECS mirrors by stable domain identity
+
+- Context: The headless Bevy scene bridge mirrors map tiles and actors before rendering exists.
+- Symptom: Rebuilding scene entities by allocation order can move a sprite or leave stale entities
+  when a snapshot changes; hash-map iteration can also make replacement order unstable.
+- Cause: Bevy `Entity` values are presentation handles, not domain identity, and unordered cleanup
+  does not preserve a deterministic allocation sequence.
+- Resolution: Key tile mirrors by `(x, y)` and actor mirrors by core `ActorId` using ordered maps and
+  sets; core snapshots remain authoritative and dead records are intentionally retained.
+- Prevention: Treat scene components as disposable projections, choose explicit stable keys for
+  updates/removal, and test repeated synchronization plus stale and dead-record cases headlessly.
