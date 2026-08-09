@@ -2057,44 +2057,62 @@ Verification:
   binary is tracked; repository checks, `git diff --check`, and full `scripts/verify.sh` pass.
 - Exactly one semantic reviewer reports PASS on final reviewed revision `a3b7cc0` for the initial
   asset-evaluation record; PR #57 merged as `c98b5a9` with Linux, Apple Silicon macOS, and Windows
-  CI green. The native tile-sample evidence is tracked in the active Present slice below.
-
-## Present
+  CI green. Native tile-size evidence is verified separately below.
 
 ### Milestone 3 slice: native tile-size evidence
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Resolve the tile-size decision with exact nearest-neighbor samples from the official 16×16 CC0
 source. Keep the archive and output sheets under ignored `art/`, record source IDs, method,
 dimensions, hashes, and comparison in [`docs/presentation/tile-samples.md`](docs/presentation/tile-samples.md),
-and leave production asset loading deferred.
+and leave production asset loading deferred. Twelve named source tiles produce exact 24×24 and
+32×32 4×3 sheets; the comparison supports 32×32 as the provisional logical working size while
+retaining 24×24 as a valid typed option.
+
+Verification:
+
+- Exact source/archive/output hashes and dimensions, independent pixel/order checks, repository
+  checks, `git diff --check`, and full `scripts/verify.sh` pass.
+- Exactly one semantic reviewer reports PASS on final reviewed implementation/evidence revision
+  `837c91b` (implementation `c0d1cfc`); Linux, Apple Silicon macOS, and Windows CI are green.
+- Local media remains ignored and tracked concept-art/screenshot exceptions remain visible; no
+  production asset loading or runtime code is introduced.
+
+## Present
+
+### Milestone 3 slice: reversible headless-to-renderer spike
+
+- Status: active
+- Started: 2026-08-09
+
+Consume the verified 32×32 placement and sprite-role decisions at a reversible Bevy presentation
+boundary. The spike must make the mapping from keyed `Scene*` mirrors to render-ready metadata
+observable without creating a second source of truth, while keeping all local media ignored and
+avoiding production asset loading until the boundary is proven.
 
 Acceptance:
 
-- Twelve named 16×16 source tiles produce exact 24×24 and 32×32 4×3 sheets with nearest-neighbor
-  interpolation, byte-stable hashes, and an explicit comparison.
-- The evidence supports 32×32 as a provisional logical working size while retaining 24×24 as a
-  valid typed option; no production asset adoption is claimed.
+- A typed render-boundary projection preserves complete keyed terrain, actor, ground-item, and
+  inventory metadata after one app update, with `ScenePixelPosition` only on terrain, actors, and
+  ground items because inventory remains unplaced; `SceneSpriteRole` is preserved on all keyed
+  mirrors.
+- The boundary consumes a caller-selected 32×32 `PresentationTileSize` without mutating core,
+  replay/history, or existing headless scene mirrors.
+- Missing runtime, missing configuration, stale keyed entities, and recycled Bevy entity indices
+  preserve or clear the render-ready projection deterministically according to authority rules.
+- The spike introduces no production texture/asset handles, transforms, window/render plugins,
+  animation timers, audio playback, visibility policy, persistence, transport, or gameplay rules.
 - Local media remains ignored and tracked concept-art/screenshot exceptions remain visible.
 
 Verification target:
 
-- Exact source/archive/output hashes and dimensions, independent pixel/order checks, repository
-  checks, `git diff --check`, and full `scripts/verify.sh` pass.
-- Exactly one semantic reviewer, fresh Linux/macOS/Windows CI, and a docs closeout recording the
-  current reviewed revision are required before moving this slice into Past.
-
-### Milestone 3 slice: reversible headless-to-renderer spike
-
-- Status: planned
-
-After the native tile-size slice closes, consume the provisional 32×32 placement and sprite-role
-decisions at a reversible Bevy presentation boundary. Preserve complete keyed terrain, actor,
-ground-item, and inventory metadata; attach `ScenePixelPosition` only to terrain, actors, and
-ground items because inventory remains unplaced; and preserve `SceneSpriteRole` on all keyed mirrors.
-The spike must not create a second source of truth or load production assets.
+- Focused Bevy tests prove complete render-boundary projection, identity/authority behavior, and
+  32×32 placement; all Bevy targets, Clippy, docs, repository checks, and `scripts/verify.sh` pass.
+- Exactly one semantic reviewer, fresh Linux/macOS/Windows CI, and canonical document reconciliation
+  are required before moving this spike into Past.
 
 ### Deferred item gameplay semantics
 

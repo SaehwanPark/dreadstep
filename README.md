@@ -42,9 +42,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   recorded in [`asset-evaluation.md`](docs/presentation/asset-evaluation.md). The Kenney CC0 pack
   is a reusable fallback and UI audio is only a fallback; dungeon combat/movement/item audio remains
   open.
-- Active tile-size evidence: exact 24×24/32×32 nearest-neighbor samples and the provisional 32×32
-  working-size decision are recorded in [`tile-samples.md`](docs/presentation/tile-samples.md); a
-  reversible headless-to-renderer spike follows after this gate closes.
+- Verified tile-size evidence: exact 24×24/32×32 nearest-neighbor samples and the provisional 32×32
+  working-size decision are recorded in [`tile-samples.md`](docs/presentation/tile-samples.md).
+- Active presentation work: a reversible headless-to-renderer spike consumes the verified 32×32
+  placement and sprite-role boundary before widgets or text policy.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
   message presentation, audio assets/playback, fog of war, multiple floors, and gameplay-facing
   item effects.

@@ -1,7 +1,7 @@
 # Native tile-sample evidence
 
-Status: active technical sample under review. These files remain local-only under ignored `art/`; the
-tracked record preserves the source and reproducible normalization facts without committing binaries.
+Status: verified technical sample. These files remain local-only under ignored `art/`; the tracked
+record preserves the source and reproducible normalization facts without committing binaries.
 
 ## Source
 
