@@ -6,10 +6,111 @@
 
 #![forbid(unsafe_code)]
 
-use dreadstep_core::{Actor as CoreActor, ActorKind as CoreActorKind, WorldState};
+use dreadstep_core::{
+  Actor as CoreActor, ActorKind as CoreActorKind, Command as CoreCommand,
+  Direction as CoreDirection, WorldState,
+};
 
 /// Version of the in-memory agent observation projection.
 pub const PROTOCOL_VERSION: u16 = 1;
+
+/// A cardinal direction in a protocol action request.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Direction {
+  /// One row toward decreasing vertical coordinates.
+  North,
+  /// One row toward increasing vertical coordinates.
+  South,
+  /// One column toward decreasing horizontal coordinates.
+  West,
+  /// One column toward increasing horizontal coordinates.
+  East,
+}
+
+/// A typed agent request that can be converted into one core command.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CommandRequest {
+  /// Move one tile in a cardinal direction.
+  Move {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The requested direction.
+    direction: Direction,
+  },
+  /// Spend one standard action without changing position.
+  Wait {
+    /// The actor issuing the request.
+    actor: ActorId,
+  },
+  /// Attack an adjacent actor.
+  Attack {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The actor being targeted.
+    target: ActorId,
+  },
+  /// Chase a living actor by one deterministic step.
+  Chase {
+    /// The enemy issuing the request.
+    actor: ActorId,
+    /// The actor being pursued.
+    target: ActorId,
+  },
+}
+
+impl From<CommandRequest> for CoreCommand {
+  fn from(request: CommandRequest) -> Self {
+    match request {
+      CommandRequest::Move { actor, direction } => Self::Move {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        direction: match direction {
+          Direction::North => CoreDirection::North,
+          Direction::South => CoreDirection::South,
+          Direction::West => CoreDirection::West,
+          Direction::East => CoreDirection::East,
+        },
+      },
+      CommandRequest::Wait { actor } => Self::Wait {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+      },
+      CommandRequest::Attack { actor, target } => Self::Attack {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        target: dreadstep_core::ActorId::new(target.value()),
+      },
+      CommandRequest::Chase { actor, target } => Self::Chase {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        target: dreadstep_core::ActorId::new(target.value()),
+      },
+    }
+  }
+}
+
+impl From<CoreCommand> for CommandRequest {
+  fn from(command: CoreCommand) -> Self {
+    match command {
+      CoreCommand::Move { actor, direction } => Self::Move {
+        actor: ActorId::new(actor.value()),
+        direction: match direction {
+          CoreDirection::North => Direction::North,
+          CoreDirection::South => Direction::South,
+          CoreDirection::West => Direction::West,
+          CoreDirection::East => Direction::East,
+        },
+      },
+      CoreCommand::Wait { actor } => Self::Wait {
+        actor: ActorId::new(actor.value()),
+      },
+      CoreCommand::Attack { actor, target } => Self::Attack {
+        actor: ActorId::new(actor.value()),
+        target: ActorId::new(target.value()),
+      },
+      CoreCommand::Chase { actor, target } => Self::Chase {
+        actor: ActorId::new(actor.value()),
+        target: ActorId::new(target.value()),
+      },
+    }
+  }
+}
 
 /// A stable actor identity in the protocol projection.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

@@ -21,6 +21,8 @@ All notable contributor- and user-visible project changes are recorded here.
   core simulation and prints replay seed, events, and final state digest evidence.
 - A versioned `dreadstep-protocol` world snapshot projection for deterministic agent
   observation, without adding an MCP transport runtime.
+- A versioned protocol action envelope that maps typed agent requests to and from core commands
+  without executing them.
 
 ### Changed
 

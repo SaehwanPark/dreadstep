@@ -13,10 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is beginning Milestone 2: the agent interface. The active slice adds a versioned,
-read-only `dreadstep-protocol` snapshot over core state; the deterministic headless CLI remains
-available, but there is still no MCP transport, graphical client, interactive input, or
-authored scenario system.
+Dreadstep is beginning Milestone 2: the agent interface. The active slice adds versioned,
+read-only state snapshots and typed action requests in `dreadstep-protocol`; the deterministic
+headless CLI remains available, but there is still no MCP transport, session runtime, graphical
+client, interactive input, or authored scenario system.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

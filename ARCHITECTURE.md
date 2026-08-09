@@ -75,6 +75,10 @@ The first Milestone 2 protocol slice is a read-only `WorldSnapshot` projection. 
 stable actor data and core digest evidence, but it must not decide legal actions or mutate the
 world; MCP transport and session effects remain later adapter work.
 
+The protocol action envelope is likewise only a typed conversion boundary: it can translate
+external request values into canonical core commands and back, but command validation and
+execution remain owned by `dreadstep-core::WorldState`.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.
