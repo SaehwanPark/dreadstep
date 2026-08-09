@@ -14,8 +14,9 @@ use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world:
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
-  ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, GroundItemStack,
-  Item, ItemDefinitionId, ItemId, Position, ReplayTrace, StateDigest, Tile, WorldState,
+  ActionTime, Actor, ActorId, ActorKind, Command, CommandError, Direction, Event, GridMap,
+  GroundItemStack, HitPoints, Item, ItemDefinitionId, ItemId, Position, ReplayTrace, StateDigest,
+  Tile, WorldState,
 };
 
 /// A supported keyboard intent before it is addressed to one core actor.
@@ -185,6 +186,60 @@ impl PresentationViewport {
   #[must_use]
   pub const fn effective_height(self) -> u32 {
     self.effective_height
+  }
+}
+
+/// A typed status projection for a future HUD.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationHud {
+  actor: ActorId,
+  kind: Option<ActorKind>,
+  position: Option<Position>,
+  hit_points: Option<HitPoints>,
+  ready_at: Option<ActionTime>,
+}
+
+impl PresentationHud {
+  /// Creates an empty HUD projection for one controlled actor identity.
+  #[must_use]
+  pub const fn new(actor: ActorId) -> Self {
+    Self {
+      actor,
+      kind: None,
+      position: None,
+      hit_points: None,
+      ready_at: None,
+    }
+  }
+
+  /// Returns the actor whose status is being projected.
+  #[must_use]
+  pub const fn actor(self) -> ActorId {
+    self.actor
+  }
+
+  /// Returns the controlled actor kind, or `None` for an unknown actor.
+  #[must_use]
+  pub const fn kind(self) -> Option<ActorKind> {
+    self.kind
+  }
+
+  /// Returns the controlled actor position, or `None` for an unknown actor.
+  #[must_use]
+  pub const fn position(self) -> Option<Position> {
+    self.position
+  }
+
+  /// Returns the controlled actor hit points, or `None` for an unknown actor.
+  #[must_use]
+  pub const fn hit_points(self) -> Option<HitPoints> {
+    self.hit_points
+  }
+
+  /// Returns the controlled actor's next-ready time, or `None` for an unknown actor.
+  #[must_use]
+  pub const fn ready_at(self) -> Option<ActionTime> {
+    self.ready_at
   }
 }
 
@@ -734,6 +789,7 @@ fn update_presentation(world: &mut World) {
   sync_scene_camera(world);
   sync_viewport(world);
   sync_scene_viewport(world);
+  sync_hud(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -1032,6 +1088,36 @@ fn sync_scene_viewport(world: &mut World) {
     world.insert_resource(SceneViewportState {
       entity: Some(entity),
     });
+  }
+}
+
+fn sync_hud(world: &mut World) {
+  let Some(actor) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    return;
+  };
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
+  let Some(mut hud) = world.get_resource_mut::<PresentationHud>() else {
+    return;
+  };
+  hud.actor = actor;
+  if let Some(record) = snapshot.actors().iter().find(|record| record.id() == actor) {
+    hud.kind = Some(record.kind());
+    hud.position = Some(record.position());
+    hud.hit_points = Some(record.hit_points());
+    hud.ready_at = Some(record.ready_at());
+  } else {
+    hud.kind = None;
+    hud.position = None;
+    hud.hit_points = None;
+    hud.ready_at = None;
   }
 }
 

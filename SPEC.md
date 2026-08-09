@@ -46,8 +46,6 @@ Out of scope:
 - `rmcp`, rendering, windowing, input, or audio dependencies;
 - release packaging or deployment.
 
-## Present
-
 ### Milestone 1 slice: deterministic grid movement and scheduling
 
 - Status: verified
@@ -1336,8 +1334,6 @@ Out of scope:
 - Player inventory commands, item effects, equipment, capacity, identification, rendering, sprites,
   camera policy, HUD widgets, visibility, persistence, transport, and new gameplay rules.
 
-## Future
-
 ### Milestone 3 slice: deterministic headless camera anchor
 
 - Status: verified
@@ -1617,13 +1613,6 @@ Out of scope:
 - Item effects, equipment, consumables, affixes, rarity, identification, transfer, capacity,
   pickup/drop/use commands, protocol/MCP operations, persistence, serialization, and UI.
 
-### Deferred item gameplay semantics
-
-The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
-and pickup are specified separately below; richer player operations still require an explicit core
-contract.
-
 ### Milestone 4 slice: deterministic tester item transfer
 
 - Status: verified
@@ -1747,8 +1736,80 @@ Out of scope:
 - Player pickup commands, item effects, equipment, consumables, affixes, rarity, identification,
   capacity, stdio/MCP transport registration, persistence, serialization, and UI.
 
-### Milestone 1: Rules kernel
+## Present
 
-Implement the deterministic headless simulation described in the proposal: typed world
-state, commands and events, seeded randomness, movement, blocking, combat, scheduling,
-replay evidence, and a developer CLI.
+### Milestone 3 slice: deterministic headless HUD status projection
+
+- Status: active
+- Started: 2026-08-09
+
+Project the selected actor's authoritative status into a typed `PresentationHud` resource for a
+future HUD without introducing text, layout, rendering, or UI policy. The resource keeps the
+controlled actor identity and optional core kind, position, hit points, and scheduler readiness;
+unknown actors clear the optional values rather than inventing presentation data.
+
+Acceptance:
+
+- `PresentationHud::new` stores one typed controlled `ActorId` and starts with no projected actor;
+  getters expose the actor identity and optional typed status values.
+- The plugin refreshes the resource from the current runtime snapshot after keyboard dispatch and
+  scene synchronization, so startup, accepted movement, and controlled-actor selection are visible
+  in the same app update.
+- Selection-only actor changes update the HUD without mutating runtime, replay evidence, or complete
+  keyed tile/actor/ground/inventory scene mirrors; accepted movement updates the authoritative core
+  state and the HUD together.
+- Unknown actors clear all optional status values. Missing runtime, input, or HUD resources are
+  safe no-ops that preserve existing HUD state where a projection cannot be refreshed.
+- The projection remains headless and typed: no strings, formatting, widgets, textures, windowing,
+  rendering, animation, audio, persistence, transport, or gameplay rules are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test hud --all-features --locked` covers startup,
+  movement, selection-only changes, unknown actors, and absent-resource preservation with complete
+  scene atomicity.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on the final revision, and the normal CI matrix
+  remains green.
+
+Out of scope:
+
+- HUD widgets, text/localization, health-bar styling, inventory panels, event/combat messages,
+  sprites, animations, audio, windowing, rendering, persistence, transport, and gameplay rules.
+
+### Deferred item gameplay semantics
+
+The opaque ownership slice and content catalog foundation intentionally do not define item effects,
+equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
+and pickup are specified separately below; richer player operations still require an explicit core
+contract.
+
+## Future
+
+### Remaining roadmap milestones
+
+The completed slices above cover the rules kernel, agent interfaces, and the deterministic
+headless presentation boundary currently implemented in the repository. The proposal still
+defines these future product milestones; each needs its own bounded acceptance slice before it
+can move into `Past`:
+
+- Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
+  widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
+- Milestone 4 — Tactical Combat: richer player verbs, item use/equipment, and systemic combat
+  interactions beyond the currently verified tester-only item operations.
+- Milestone 5 — The Living Dungeon: procedural floors, enemy archetypes, environmental state,
+  and floor progression.
+- Milestone 6 — Loot and Build Formation: curated item progression, identification, and build
+  choices.
+- Milestone 7 — Vertical Slice: opening-to-victory run, mature presentation, music, polished
+  combat feedback, boss, death, victory, save/quit, and replay export.
+- Milestone 8 — Agent QA and Balance Laboratory: scenario agents, behavioral agents, and balance
+  experiments.
+- Milestone 9 — Content Alpha: broader content, authored scenarios, and coherent production
+  direction.
+- Milestone 10 — Human-Centered Alpha: structured human playtesting for fun, clarity, pacing,
+  feel, hierarchy, and audio feedback.
+- Milestone 11 — Beta / Release Candidate: stability, accessibility, performance, and release
+  hardening.
+- Milestone 12 — Dreadstep 1.0: final content, presentation, documentation, and release quality.

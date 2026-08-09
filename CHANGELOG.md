@@ -104,7 +104,8 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Changed
 
-- Presentation art and audio binaries are now explicitly local-only by ignored binary format, with
-  the concept-art reference and future screenshots retained as documented tracked exceptions.
+- Presentation art and audio binaries are now explicitly local-only under anchored root or
+  crate-local media directories, with the concept-art reference and future screenshots retained as
+  documented tracked exceptions.
 - Replaced the root Bevy starter binary with package shells for Milestone 0.
 - Limited Bevy to the presentation package and its minimal standard-library feature set.
