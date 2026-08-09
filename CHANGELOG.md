@@ -95,11 +95,14 @@ All notable contributor- and user-visible project changes are recorded here.
 - A validated typed `PresentationWindow` request for logical dimensions, integer pixel scale, and
   checked physical dimensions without creating an OS window or enabling desktop features.
 - Caller-selected `PresentationTileSize` and checked `ScenePixelPosition` metadata for terrain,
-  actors, and ground items; tile-size experiments, transforms, assets, and rendering remain
-  deferred.
+  actors, and ground items; transforms, assets, and rendering remain deferred after the verified
+  tile-size experiment.
 - A tracked Milestone 3 asset-evaluation record with local-only generated/CC0 pixel-art and audio
   candidates, exact nearest-neighbor 24×24/32×32 samples, a provisional 32×32 working scale, and
   an open decision for dungeon cue sourcing; no binary is loaded or committed.
+- A typed ordered `PresentationRenderProjection` over keyed Bevy scene mirrors, preserving complete
+  values and sprite roles while keeping pixel positions off unplaced inventory items; no render
+  features, textures, transforms, asset loading, or playback are added.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

@@ -44,8 +44,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   open.
 - Verified tile-size evidence: exact 24×24/32×32 nearest-neighbor samples and the provisional 32×32
   working-size decision are recorded in [`tile-samples.md`](docs/presentation/tile-samples.md).
-- Active presentation work: a reversible headless-to-renderer spike consumes the verified 32×32
-  placement and sprite-role boundary before widgets or text policy.
+- Active presentation work: a reversible headless-to-renderer spike exposes ordered typed
+  `PresentationRenderProjection` entries over the verified 32×32 placement and sprite-role boundary
+  before widgets or text policy.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
   message presentation, audio assets/playback, fog of war, multiple floors, and gameplay-facing
   item effects.

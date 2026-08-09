@@ -2095,10 +2095,10 @@ avoiding production asset loading until the boundary is proven.
 
 Acceptance:
 
-- A typed render-boundary projection preserves complete keyed terrain, actor, ground-item, and
-  inventory metadata after one app update, with `ScenePixelPosition` only on terrain, actors, and
-  ground items because inventory remains unplaced; `SceneSpriteRole` is preserved on all keyed
-  mirrors.
+- `PresentationRenderProjection` exposes an ordered read-only `SceneRenderEntry` slice containing
+  complete keyed terrain, actor, ground-item, and inventory metadata after one app update, with
+  `ScenePixelPosition` only on terrain, actors, and ground items because inventory remains unplaced;
+  `SceneSpriteRole` is preserved on all keyed mirrors.
 - The boundary consumes a caller-selected 32×32 `PresentationTileSize` without mutating core,
   replay/history, or existing headless scene mirrors.
 - Missing runtime, missing configuration, stale keyed entities, and recycled Bevy entity indices
@@ -2109,8 +2109,10 @@ Acceptance:
 
 Verification target:
 
-- Focused Bevy tests prove complete render-boundary projection, identity/authority behavior, and
-  32×32 placement; all Bevy targets, Clippy, docs, repository checks, and `scripts/verify.sh` pass.
+- Focused `cargo test -p dreadstep-bevy --test render_projection --all-features --locked` proves
+  complete entries, identity/authority behavior, 32×32 placement, inventory exclusion, duplicate
+  ordering, and read-only runtime state; all Bevy targets, Clippy, docs, repository checks, and
+  `scripts/verify.sh` must pass.
 - Exactly one semantic reviewer, fresh Linux/macOS/Windows CI, and canonical document reconciliation
   are required before moving this spike into Past.
 

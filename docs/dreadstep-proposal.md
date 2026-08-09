@@ -1738,6 +1738,8 @@ Current exploratory gate (2026-08-09):
   only, and this is not production asset approval.
 - This is not a production asset selection: dungeon combat, movement, pickup, detection, and
   environmental audio still require a targeted source or an explicit original-audio decision.
+- The next reversible renderer spike begins with a typed ordered projection over existing scene
+  mirrors; it does not enable render plugins or load production media.
 
 ### Content
 

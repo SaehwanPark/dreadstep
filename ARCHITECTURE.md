@@ -276,7 +276,10 @@ Rust boundary in `docs/presentation/asset-evaluation.md` and `docs/presentation/
 They record local-only generated and CC0 candidates, exact nearest-neighbor 24×24/32×32 samples,
 and a provisional 32×32 working scale; dungeon audio sourcing remains open after a UI-only fallback
 evaluation. The active reversible renderer spike consumes this metadata without loading production
-assets or enabling render plugins.
+assets or enabling render plugins. `PresentationRenderProjection` is a read-only ordered resource
+over the existing keyed mirrors: it carries complete typed values and roles, adds pixel positions
+only to map-backed entries, and keeps inventory items unplaced. It does not become another source of
+simulation truth.
 
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
