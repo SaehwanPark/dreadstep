@@ -13,11 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is beginning Milestone 2: the agent interface. The active slice adds a typed in-memory
-`get_replay` evidence bundle (seed, accepted request history, and deterministic digest) to the
-MCP player session; legal actions, versioned snapshots, and typed requests remain available, but
-there is still no MCP transport runtime, graphical client, interactive input, or authored
-scenario system.
+Dreadstep is beginning Milestone 2: the agent interface. The active slice adds read-only player
+actor inspection over the versioned snapshot; typed `get_replay` evidence, legal actions,
+versioned snapshots, and typed requests remain available, but there is still no MCP transport
+runtime, graphical client, interactive input, or authored scenario system.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

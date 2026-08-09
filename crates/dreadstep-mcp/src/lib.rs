@@ -12,7 +12,8 @@ use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, ReplayTrace, Tile, WorldState,
 };
 use dreadstep_protocol::{
-  CommandError, CommandRequest, Event, ReplayEvidence, StateDigest, WorldSnapshot,
+  ActorId as ProtocolActorId, ActorSnapshot, CommandError, CommandRequest, Event, ReplayEvidence,
+  StateDigest, WorldSnapshot,
 };
 
 /// Errors returned by the in-memory MCP player session.
@@ -102,6 +103,17 @@ impl Session {
   #[must_use]
   pub fn observe(&self) -> WorldSnapshot {
     WorldSnapshot::from_world(&self.world)
+  }
+
+  /// Returns one protocol actor snapshot, or no value for an unknown identity.
+  #[must_use]
+  pub fn inspect(&self, actor: ProtocolActorId) -> Option<ActorSnapshot> {
+    self
+      .observe()
+      .actors()
+      .iter()
+      .find(|snapshot| snapshot.id() == actor)
+      .cloned()
   }
 
   /// Returns protocol requests currently accepted by the core scheduler and rules.
