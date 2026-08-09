@@ -2131,6 +2131,7 @@ fn update_presentation(world: &mut World) {
   sync_render_command_plan(world);
   sync_render_nodes(world);
   sync_bevy_sprite_projection(world);
+  sync_sprite_node_components(world);
   sync_render_asset_projection(world);
   sync_focus(world);
   sync_scene_focus(world);
@@ -2401,6 +2402,29 @@ fn sync_bevy_sprite_projection(world: &mut World) {
   world
     .resource_mut::<PresentationBevySpriteProjection>()
     .entries = entries;
+}
+
+fn sync_sprite_node_components(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world
+      .get_resource::<PresentationRenderNodeProjection>()
+      .is_none()
+    || world
+      .get_resource::<PresentationBevySpriteProjection>()
+      .is_none()
+  {
+    return;
+  }
+  let entries = world
+    .resource::<PresentationBevySpriteProjection>()
+    .entries()
+    .to_vec();
+  for entry in entries {
+    let Ok(mut entity) = world.get_entity_mut(entry.node().node_entity()) else {
+      continue;
+    };
+    entity.insert(entry.sprite().clone());
+  }
 }
 
 fn placeholder_sprite(

@@ -1762,6 +1762,10 @@ Current exploratory gate (2026-08-09):
   deterministic solid-color Sprite values to stable placeholder nodes with optional 32×32 sizing;
   Sprite/render plugins, texture loading, transforms, windows, playback, and production media remain
   deferred.
+- The verified ECS Sprite attachment slice attaches those typed Sprite values to retained placeholder
+  node entities,
+  keeping Bevy's required components at defaults and preserving stable identity; render plugins,
+  transform placement, texture loading, playback, and production media remain deferred.
 
 ### Content
 
