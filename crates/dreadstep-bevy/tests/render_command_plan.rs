@@ -89,21 +89,23 @@ fn render_plan_preserves_complete_entries_and_assigns_deterministic_layers() {
       SceneRenderLayer::Terrain,
       SceneRenderLayer::Terrain,
       SceneRenderLayer::Terrain,
-      SceneRenderLayer::Actor,
-      SceneRenderLayer::Actor,
       SceneRenderLayer::GroundItem,
+      SceneRenderLayer::Actor,
+      SceneRenderLayer::Actor,
       SceneRenderLayer::InventoryItem,
     ]
   );
-  for (order, ((command, sprite), render)) in commands
-    .iter()
-    .zip(sprite_entries.iter())
-    .zip(render_entries.iter())
-    .enumerate()
-  {
-    assert_eq!(command.order(), order);
-    assert_eq!(command.sprite_entry(), *sprite);
+  assert_eq!(
+    commands
+      .iter()
+      .map(|command| command.order())
+      .collect::<Vec<_>>(),
+    vec![0, 1, 2, 3, 6, 4, 5, 7]
+  );
+  for command in &commands {
+    let render = &render_entries[command.order()];
     assert_eq!(command.sprite_entry().render_entry(), *render);
+    assert_eq!(command.sprite_entry().key(), render.sprite_key());
   }
   assert_eq!(
     commands
@@ -118,8 +120,8 @@ fn render_plan_preserves_complete_entries_and_assigns_deterministic_layers() {
       Some((64, 0)),
       Some((96, 0)),
       Some((0, 0)),
-      Some((32, 0)),
       Some((0, 0)),
+      Some((32, 0)),
       None,
     ]
   );
@@ -155,35 +157,52 @@ fn render_plan_refreshes_dead_role_and_retains_actor_identity() {
     .expect("dead command should exist");
   assert_eq!(dead.sprite_entry().entity(), enemy_entity);
   assert_eq!(dead.layer(), SceneRenderLayer::Actor);
+  assert!(
+    !app
+      .world()
+      .resource::<PresentationRenderCommandPlan>()
+      .commands()
+      .iter()
+      .any(|command| command.sprite_entry().key() == SceneSpriteKey::Enemy)
+  );
 }
 
 #[test]
 fn missing_source_and_runtime_preserve_existing_render_plan() {
-  let mut app = plan_app();
-  let before = app
+  let mut source_absent = plan_app();
+  let source_before = source_absent
     .world_mut()
     .resource::<PresentationRenderCommandPlan>()
     .commands()
     .to_vec();
-  app
+  source_absent
     .world_mut()
     .remove_resource::<PresentationSpriteProjection>();
-  app.update();
+  source_absent.update();
   assert_eq!(
-    app
+    source_absent
       .world()
       .resource::<PresentationRenderCommandPlan>()
       .commands(),
-    before.as_slice()
+    source_before.as_slice()
   );
-  app.world_mut().remove_resource::<PresentationRuntime>();
-  app.update();
+
+  let mut runtime_absent = plan_app();
+  let runtime_before = runtime_absent
+    .world_mut()
+    .resource::<PresentationRenderCommandPlan>()
+    .commands()
+    .to_vec();
+  runtime_absent
+    .world_mut()
+    .remove_resource::<PresentationRuntime>();
+  runtime_absent.update();
   assert_eq!(
-    app
+    runtime_absent
       .world()
       .resource::<PresentationRenderCommandPlan>()
       .commands(),
-    before.as_slice()
+    runtime_before.as_slice()
   );
 }
 

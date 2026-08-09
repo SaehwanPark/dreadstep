@@ -1762,13 +1762,15 @@ fn sync_render_command_plan(world: &mut World) {
   let commands = world
     .get_resource::<PresentationSpriteProjection>()
     .map(|projection| {
-      projection
+      let mut commands = projection
         .entries()
         .iter()
         .copied()
         .enumerate()
         .map(|(order, entry)| SceneRenderCommand::from_sprite_entry(entry, order))
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>();
+      commands.sort_by_key(|command| (command.layer(), command.order()));
+      commands
     });
   let Some(commands) = commands else {
     return;
