@@ -623,6 +623,45 @@ Out of scope:
 - spawn, item, teleport, scenario-authoring, restore changes, MCP transport/runtime, persistent
   storage, wire serialization, interactive input, and replay playback.
 
+### Milestone 2 slice: typed tester scenario replacement
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the first bounded scenario-authoring operation without introducing files or transport. A
+protocol-owned `Scenario` describes a rectangular typed map and initial actor records;
+`dreadstep-mcp::Session::create_scenario` converts it into the existing core `GridMap` and
+`WorldState::new` validators, then atomically replaces the in-memory world. The session seed is
+preserved, while accepted player history and replay evidence reset to an empty trace for the new
+scenario. Invalid maps or actors leave the previous session unchanged and return typed scenario
+errors.
+
+Acceptance:
+
+- A valid protocol scenario replaces the current world with its requested map and living actors;
+  core remains authoritative for map dimensions, tile count, actor identity, bounds, terrain,
+  occupancy, and starting hit-point validation.
+- Scenario replacement preserves the explicit session seed and resets accepted history and replay
+  evidence to the empty trace for that seed.
+- Invalid map or world data returns typed protocol scenario errors atomically; no prior world,
+  history, or replay evidence is lost.
+- The operation remains in-memory and tester-only, with no filesystem, serialization, transport,
+  item system, teleportation, or replay playback.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-protocol -p dreadstep-mcp --all-targets
+  --all-features --locked` passes.
+- Focused Clippy for the core, protocol, and MCP crates passes with `-D warnings`.
+- `scripts/verify.sh` passes before handoff.
+- `git diff --check` passes, and the single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- item, teleport, map mutation after creation, persistence, wire serialization, MCP
+  transport/runtime, interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel

@@ -11,7 +11,7 @@ use std::fmt;
 use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
   Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
-  Event as CoreEvent, WorldError as CoreWorldError, WorldState,
+  Event as CoreEvent, MapError as CoreMapError, WorldError as CoreWorldError, WorldState,
 };
 
 /// Version of the in-memory agent observation projection.
@@ -187,6 +187,113 @@ impl HitPoints {
   }
 }
 
+/// Terrain input for an in-memory tester scenario.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Tile {
+  /// A walkable cell.
+  Floor,
+  /// A blocking cell.
+  Wall,
+}
+
+/// One typed actor record in a tester scenario's initial world.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ScenarioActor {
+  id: ActorId,
+  kind: ActorKind,
+  position: Position,
+  hit_points: HitPoints,
+}
+
+impl ScenarioActor {
+  /// Creates one initial actor record for a tester scenario.
+  #[must_use]
+  pub const fn new(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+  ) -> Self {
+    Self {
+      id,
+      kind,
+      position,
+      hit_points,
+    }
+  }
+
+  /// Returns the actor identity.
+  #[must_use]
+  pub const fn id(self) -> ActorId {
+    self.id
+  }
+
+  /// Returns the actor kind.
+  #[must_use]
+  pub const fn kind(self) -> ActorKind {
+    self.kind
+  }
+
+  /// Returns the initial position.
+  #[must_use]
+  pub const fn position(self) -> Position {
+    self.position
+  }
+
+  /// Returns the initial hit points.
+  #[must_use]
+  pub const fn hit_points(self) -> HitPoints {
+    self.hit_points
+  }
+}
+
+/// A typed rectangular map and initial actor set for an in-memory tester scenario.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Scenario {
+  width: u32,
+  height: u32,
+  tiles: Vec<Tile>,
+  actors: Vec<ScenarioActor>,
+}
+
+impl Scenario {
+  /// Creates a scenario description. Core validates dimensions, tile count, and actors when it
+  /// is installed in a session.
+  #[must_use]
+  pub const fn new(width: u32, height: u32, tiles: Vec<Tile>, actors: Vec<ScenarioActor>) -> Self {
+    Self {
+      width,
+      height,
+      tiles,
+      actors,
+    }
+  }
+
+  /// Returns the map width.
+  #[must_use]
+  pub const fn width(&self) -> u32 {
+    self.width
+  }
+
+  /// Returns the map height.
+  #[must_use]
+  pub const fn height(&self) -> u32 {
+    self.height
+  }
+
+  /// Returns row-major terrain input.
+  #[must_use]
+  pub fn tiles(&self) -> &[Tile] {
+    &self.tiles
+  }
+
+  /// Returns initial actor records in caller-provided order.
+  #[must_use]
+  pub fn actors(&self) -> &[ScenarioActor] {
+    &self.actors
+  }
+}
+
 /// Protocol life state for an actor record.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum LifeState {
@@ -267,6 +374,113 @@ impl ReplayEvidence {
   #[must_use]
   pub const fn digest(&self) -> StateDigest {
     self.digest
+  }
+}
+
+/// A protocol-owned map validation error returned by tester scenario construction.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MapError {
+  /// The map width is zero.
+  ZeroWidth,
+  /// The map height is zero.
+  ZeroHeight,
+  /// The map dimensions exceed the available tile buffer.
+  TooLarge {
+    /// The requested width.
+    width: u32,
+    /// The requested height.
+    height: u32,
+  },
+  /// A dimension exceeds the signed coordinate domain.
+  CoordinateRange {
+    /// The requested width.
+    width: u32,
+    /// The requested height.
+    height: u32,
+  },
+  /// The supplied tile count does not match the dimensions.
+  TileCountMismatch {
+    /// The expected tile count.
+    expected: usize,
+    /// The supplied tile count.
+    actual: usize,
+  },
+}
+
+impl From<CoreMapError> for MapError {
+  fn from(error: CoreMapError) -> Self {
+    match error {
+      CoreMapError::ZeroWidth => Self::ZeroWidth,
+      CoreMapError::ZeroHeight => Self::ZeroHeight,
+      CoreMapError::TooLarge { width, height } => Self::TooLarge { width, height },
+      CoreMapError::CoordinateRange { width, height } => Self::CoordinateRange { width, height },
+      CoreMapError::TileCountMismatch { expected, actual } => {
+        Self::TileCountMismatch { expected, actual }
+      }
+    }
+  }
+}
+
+impl fmt::Display for MapError {
+  fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::ZeroWidth => formatter.write_str("map width must be greater than zero"),
+      Self::ZeroHeight => formatter.write_str("map height must be greater than zero"),
+      Self::TooLarge { width, height } => {
+        write!(formatter, "map dimensions {width}x{height} are too large")
+      }
+      Self::CoordinateRange { width, height } => write!(
+        formatter,
+        "map dimensions {width}x{height} exceed the signed position range"
+      ),
+      Self::TileCountMismatch { expected, actual } => {
+        write!(
+          formatter,
+          "map needs {expected} tiles but received {actual}"
+        )
+      }
+    }
+  }
+}
+
+impl std::error::Error for MapError {}
+
+/// A protocol-owned scenario construction error.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ScenarioError {
+  /// Core rejected the map description.
+  Map(MapError),
+  /// Core rejected one of the initial actors.
+  World(WorldError),
+}
+
+impl From<CoreMapError> for ScenarioError {
+  fn from(error: CoreMapError) -> Self {
+    Self::Map(error.into())
+  }
+}
+
+impl From<CoreWorldError> for ScenarioError {
+  fn from(error: CoreWorldError) -> Self {
+    Self::World(error.into())
+  }
+}
+
+impl fmt::Display for ScenarioError {
+  fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::Map(error) => write!(formatter, "scenario map rejected: {error}"),
+      Self::World(error) => write!(formatter, "scenario world rejected: {error}"),
+    }
+  }
+}
+
+impl std::error::Error for ScenarioError {
+  fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+    match self {
+      Self::Map(error) => Some(error),
+      Self::World(error) => Some(error),
+    }
   }
 }
 
