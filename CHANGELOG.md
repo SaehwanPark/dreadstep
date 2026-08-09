@@ -104,6 +104,9 @@ All notable contributor- and user-visible project changes are recorded here.
   complete values and per-kind sprite roles/checked placement while keeping pixel positions off
   unplaced inventory items; no render features, textures, transforms, asset loading, or playback
   are added.
+- An active typed `SceneSpriteKey`/`PresentationSpriteProjection` boundary over complete render
+  entries, retaining terrain/actor/item selectors, ECS identity, roles, and placement metadata
+  without loading assets, enabling rendering, or committing media binaries.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

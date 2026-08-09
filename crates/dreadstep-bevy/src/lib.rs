@@ -716,6 +716,27 @@ pub enum SceneSpriteRole {
   InventoryItem,
 }
 
+/// A stable typed content selector for one future sprite family.
+///
+/// These keys are metadata only: they do not name files, load assets, or imply a renderer. Item
+/// selectors retain the opaque definition identity so a later content boundary can resolve it
+/// without copying catalog data into the simulation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneSpriteKey {
+  /// A terrain sprite family selected by the typed tile value.
+  Terrain(Tile),
+  /// The living player sprite family.
+  Player,
+  /// The living enemy sprite family.
+  Enemy,
+  /// The retained dead-actor sprite family.
+  DeadActor,
+  /// A ground-item sprite family selected by opaque definition identity.
+  GroundItem(ItemDefinitionId),
+  /// An inventory-item sprite family selected by opaque definition identity.
+  InventoryItem(ItemDefinitionId),
+}
+
 impl SceneSpriteRole {
   fn for_actor(actor: &Actor) -> Self {
     if !actor.is_alive() {
@@ -786,6 +807,89 @@ pub enum SceneRenderEntry {
     /// The typed role consumed by a future sprite renderer.
     role: SceneSpriteRole,
   },
+}
+
+impl SceneRenderEntry {
+  /// Returns the typed content selector derived from this complete render entry.
+  #[must_use]
+  pub const fn sprite_key(self) -> SceneSpriteKey {
+    match self {
+      Self::Terrain { tile, .. } => SceneSpriteKey::Terrain(tile.terrain()),
+      Self::Actor { actor, .. } => {
+        if actor.is_alive() {
+          match actor.kind() {
+            ActorKind::Player => SceneSpriteKey::Player,
+            ActorKind::Enemy => SceneSpriteKey::Enemy,
+          }
+        } else {
+          SceneSpriteKey::DeadActor
+        }
+      }
+      Self::GroundItem { item, .. } => SceneSpriteKey::GroundItem(item.definition()),
+      Self::InventoryItem { item, .. } => SceneSpriteKey::InventoryItem(item.definition()),
+    }
+  }
+}
+
+/// One ordered typed sprite selector retaining its complete render-boundary entry.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneSpriteEntry {
+  render_entry: SceneRenderEntry,
+  key: SceneSpriteKey,
+}
+
+impl SceneSpriteEntry {
+  fn from_render_entry(render_entry: SceneRenderEntry) -> Self {
+    Self {
+      key: render_entry.sprite_key(),
+      render_entry,
+    }
+  }
+
+  /// Returns the complete render-boundary entry retained by this selector.
+  #[must_use]
+  pub const fn render_entry(self) -> SceneRenderEntry {
+    self.render_entry
+  }
+
+  /// Returns the typed content selector.
+  #[must_use]
+  pub const fn key(self) -> SceneSpriteKey {
+    self.key
+  }
+
+  /// Returns the retained ECS entity from the complete render entry.
+  #[must_use]
+  pub const fn entity(self) -> Entity {
+    match self.render_entry {
+      SceneRenderEntry::Terrain { entity, .. }
+      | SceneRenderEntry::Actor { entity, .. }
+      | SceneRenderEntry::GroundItem { entity, .. }
+      | SceneRenderEntry::InventoryItem { entity, .. } => entity,
+    }
+  }
+}
+
+/// An ordered, read-only projection of typed sprite selectors for a future renderer.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationSpriteProjection {
+  entries: Vec<SceneSpriteEntry>,
+}
+
+impl PresentationSpriteProjection {
+  /// Creates an empty sprite-key projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Returns selectors in the same deterministic order as the render projection.
+  #[must_use]
+  pub fn entries(&self) -> &[SceneSpriteEntry] {
+    &self.entries
+  }
 }
 
 /// An ordered, read-only projection for a future renderer boundary.
@@ -1388,6 +1492,7 @@ fn update_presentation(world: &mut World) {
   sync_runtime_scene(world);
   sync_scene_pixel_positions(world);
   sync_render_projection(world);
+  sync_sprite_projection(world);
   sync_focus(world);
   sync_scene_focus(world);
   sync_camera(world);
@@ -1528,6 +1633,29 @@ fn sync_render_projection(world: &mut World) {
       .collect::<Vec<_>>()
   };
   let Some(mut projection) = world.get_resource_mut::<PresentationRenderProjection>() else {
+    return;
+  };
+  projection.entries = entries;
+}
+
+fn sync_sprite_projection(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none() {
+    return;
+  }
+  let entries = world
+    .get_resource::<PresentationRenderProjection>()
+    .map(|projection| {
+      projection
+        .entries()
+        .iter()
+        .copied()
+        .map(SceneSpriteEntry::from_render_entry)
+        .collect::<Vec<_>>()
+    });
+  let Some(entries) = entries else {
+    return;
+  };
+  let Some(mut projection) = world.get_resource_mut::<PresentationSpriteProjection>() else {
     return;
   };
   projection.entries = entries;

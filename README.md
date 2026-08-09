@@ -56,6 +56,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   complete terrain, actor, ground-item, and inventory mirrors, deterministic retained entities,
   per-kind 32×32 placement, and inventory-unplaced semantics without render plugins, textures,
   asset loading, or playback.
+- Active typed sprite-key projection: `SceneSpriteKey` and `PresentationSpriteProjection` map
+  complete render entries to stable terrain/actor/item selectors while retaining entities, roles, and
+  placement metadata; texture loading, render plugins, transforms, and media remain deferred.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
   message presentation, audio assets/playback, fog of war, multiple floors, and richer gameplay
   item semantics such as effects, modifiers, capacity, and additional slots.
