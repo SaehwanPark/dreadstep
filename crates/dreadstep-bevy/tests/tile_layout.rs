@@ -6,7 +6,7 @@ use bevy::app::App;
 use bevy::ecs::entity::Entity;
 use dreadstep_bevy::{
   PresentationPlugin, PresentationRuntime, PresentationState, PresentationTileSize, SceneActor,
-  SceneGroundItem, ScenePixelPosition, SceneTile,
+  SceneGroundItem, SceneInventoryItem, ScenePixelPosition, SceneTile,
 };
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, Direction, GridMap, Item, ItemDefinitionId, ItemId, Position,
@@ -44,7 +44,50 @@ fn item_state() -> PresentationState {
   world
     .drop_item(ActorId::new(1), ItemId::new(1))
     .expect("item should be dropped");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(2), ItemDefinitionId::new(102)),
+    )
+    .expect("inventory item should be given");
   PresentationState::new(7, world)
+}
+
+type SceneProjection = (
+  BTreeMap<(i32, i32), (Entity, SceneTile, Option<ScenePixelPosition>)>,
+  BTreeMap<ActorId, (Entity, SceneActor, Option<ScenePixelPosition>)>,
+  BTreeMap<ItemId, (Entity, SceneGroundItem, Option<ScenePixelPosition>)>,
+  BTreeMap<ItemId, (Entity, SceneInventoryItem, Option<ScenePixelPosition>)>,
+);
+
+fn scene_projection(app: &mut App) -> SceneProjection {
+  let world = app.world_mut();
+  let tiles = world
+    .query::<(Entity, &SceneTile, Option<&ScenePixelPosition>)>()
+    .iter(world)
+    .map(|(entity, tile, pixel)| {
+      (
+        (tile.position().x(), tile.position().y()),
+        (entity, *tile, pixel.copied()),
+      )
+    })
+    .collect();
+  let actors = world
+    .query::<(Entity, &SceneActor, Option<&ScenePixelPosition>)>()
+    .iter(world)
+    .map(|(entity, actor, pixel)| (actor.id(), (entity, *actor, pixel.copied())))
+    .collect();
+  let ground_items = world
+    .query::<(Entity, &SceneGroundItem, Option<&ScenePixelPosition>)>()
+    .iter(world)
+    .map(|(entity, item, pixel)| (item.id(), (entity, *item, pixel.copied())))
+    .collect();
+  let inventory_items = world
+    .query::<(Entity, &SceneInventoryItem, Option<&ScenePixelPosition>)>()
+    .iter(world)
+    .map(|(entity, item, pixel)| (item.id(), (entity, *item, pixel.copied())))
+    .collect();
+  (tiles, actors, ground_items, inventory_items)
 }
 
 #[test]
@@ -66,10 +109,17 @@ fn pixel_positions_are_checked_and_reject_negative_coordinates() {
     .expect("valid coordinates should map");
   assert_eq!((position.x(), position.y()), (72, 64));
   assert!(size.pixel_position(Position::new(-1, 0)).is_none());
+  assert!(size.pixel_position(Position::new(0, -1)).is_none());
   assert!(
     PresentationTileSize::new(u32::MAX, 1)
       .expect("tile size should validate")
       .pixel_position(Position::new(2, 0))
+      .is_none()
+  );
+  assert!(
+    PresentationTileSize::new(1, u32::MAX)
+      .expect("tile size should validate")
+      .pixel_position(Position::new(0, 2))
       .is_none()
   );
 }
@@ -93,7 +143,17 @@ fn plugin_projects_terrain_actor_and_ground_item_origins() {
       )
     })
     .collect();
-  assert_eq!(tiles.get(&(2, 1)), Some(&(48, 32)));
+  assert_eq!(
+    tiles,
+    BTreeMap::from([
+      ((0, 0), (0, 0)),
+      ((1, 0), (24, 0)),
+      ((2, 0), (48, 0)),
+      ((0, 1), (0, 32)),
+      ((1, 1), (24, 32)),
+      ((2, 1), (48, 32)),
+    ])
+  );
 
   let actors: BTreeMap<_, _> = world
     .query::<(&SceneActor, &ScenePixelPosition)>()
@@ -109,6 +169,13 @@ fn plugin_projects_terrain_actor_and_ground_item_origins() {
     .map(|(item, pixel)| (item.id(), (pixel.x(), pixel.y())))
     .collect();
   assert_eq!(ground.get(&ItemId::new(1)), Some(&(0, 0)));
+
+  let inventory: BTreeMap<_, _> = world
+    .query::<(&SceneInventoryItem, Option<&ScenePixelPosition>)>()
+    .iter(world)
+    .map(|(item, pixel)| (item.id(), pixel.copied()))
+    .collect();
+  assert_eq!(inventory, BTreeMap::from([(ItemId::new(2), None)]));
 }
 
 #[test]
@@ -167,19 +234,15 @@ fn missing_tile_size_leaves_scene_without_pixel_metadata() {
 #[test]
 fn missing_runtime_preserves_existing_pixel_metadata() {
   let mut app = App::new();
-  let position = PresentationTileSize::new(24, 24)
-    .expect("tile size should validate")
-    .pixel_position(Position::new(2, 1))
-    .expect("position should validate");
-  app.world_mut().spawn(position);
+  app.insert_resource(PresentationRuntime::new(item_state()));
   app.insert_resource(PresentationTileSize::new(24, 24).expect("tile size should validate"));
   app.add_plugins(PresentationPlugin);
   app.update();
+  let before = scene_projection(&mut app);
 
-  let pixel = app
-    .world_mut()
-    .query::<&ScenePixelPosition>()
-    .single(app.world())
-    .expect("existing metadata should remain");
-  assert_eq!((pixel.x(), pixel.y()), (48, 24));
+  app.world_mut().remove_resource::<PresentationRuntime>();
+  app.insert_resource(PresentationTileSize::new(32, 16).expect("tile size should validate"));
+  app.update();
+
+  assert_eq!(scene_projection(&mut app), before);
 }
