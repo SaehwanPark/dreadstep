@@ -604,6 +604,13 @@ pub enum WorldError {
     /// The item identity that was not found.
     item: ItemId,
   },
+  /// A tester pickup source has no matching item in its current ground stack.
+  ItemNotOnGround {
+    /// The actor whose current ground stack was searched.
+    actor: ActorId,
+    /// The item identity that was not found.
+    item: ItemId,
+  },
   /// A tester teleport destination is outside the map.
   TeleportOutOfBounds {
     /// The actor being teleported.
@@ -668,6 +675,10 @@ impl From<CoreWorldError> for WorldError {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreWorldError::ItemNotOnGround { actor, item } => Self::ItemNotOnGround {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
       CoreWorldError::TeleportOutOfBounds { actor, position } => Self::TeleportOutOfBounds {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
@@ -722,6 +733,12 @@ impl fmt::Display for WorldError {
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
         "actor {} does not own item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotOnGround { actor, item } => write!(
+        formatter,
+        "actor {} has no item {} on the ground at its position",
         actor.value(),
         item.value()
       ),

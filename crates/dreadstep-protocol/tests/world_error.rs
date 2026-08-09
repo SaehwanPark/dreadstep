@@ -6,7 +6,7 @@ use dreadstep_core::{
 use dreadstep_protocol::{ActorId, Position, WorldError};
 
 #[test]
-fn every_core_world_error_maps_to_protocol_values() {
+fn every_core_validation_error_maps_to_protocol_values() {
   let errors = [
     (
       CoreWorldError::UnknownActor(CoreActorId::new(9)),
@@ -24,6 +24,16 @@ fn every_core_world_error_maps_to_protocol_values() {
       WorldError::ItemNotOwned {
         actor: ActorId::new(4),
         item: dreadstep_protocol::ItemId::new(9),
+      },
+    ),
+    (
+      CoreWorldError::ItemNotOnGround {
+        actor: CoreActorId::new(4),
+        item: dreadstep_core::ItemId::new(10),
+      },
+      WorldError::ItemNotOnGround {
+        actor: ActorId::new(4),
+        item: dreadstep_protocol::ItemId::new(10),
       },
     ),
     (
@@ -70,6 +80,16 @@ fn every_core_world_error_maps_to_protocol_values() {
         actor: ActorId::new(2),
       },
     ),
+  ];
+
+  for (core, protocol) in errors {
+    assert_eq!(WorldError::from(core), protocol);
+  }
+}
+
+#[test]
+fn every_core_teleport_error_maps_to_protocol_values() {
+  let errors = [
     (
       CoreWorldError::TeleportOutOfBounds {
         actor: CoreActorId::new(2),

@@ -1301,8 +1301,8 @@ Out of scope:
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, pickup, or gameplay-facing item commands. Tester-only transfer
-and drop are specified separately below; richer player operations still require an explicit core
+equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
+and pickup are specified separately below; richer player operations still require an explicit core
 contract.
 
 ### Milestone 4 slice: deterministic tester item transfer
@@ -1386,6 +1386,47 @@ Out of scope:
 
 - Pickup, item effects, equipment, consumables, affixes, rarity, identification, capacity,
   player commands, stdio/MCP transport registration, persistence, serialization, and UI.
+
+### Milestone 4 slice: deterministic tester item pickup
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the inverse tester mutation for an opaque item on the ground. Core validates an existing actor
+and the requested item in that actor's current ground stack, removes the item while preserving the
+remaining stack order, and appends it unchanged to the actor's ordered inventory. Protocol maps a
+typed ground-miss error and reuses the version-2 ground snapshot; MCP exposes only the in-memory
+tester mutation. No player command or gameplay effect is introduced.
+
+Acceptance:
+
+- A successful pickup changes the deterministic world digest, removes the unchanged item from the
+  actor's current ground stack, removes an empty stack, and appends the item to the actor inventory
+  without reordering existing inventory items.
+- Unknown actors and items absent from the actor's current ground stack return typed errors before
+  mutation; dead actor records remain valid sources at their retained position.
+- Core remains authoritative for the global item identity and position/order invariants. Protocol
+  projects the typed error and complete ground-item snapshot; MCP leaves player history and replay
+  evidence unchanged for accepted and rejected tester pickups.
+
+Verification:
+
+- Focused core pickup tests cover stack-order preservation, inventory append order, stack cleanup,
+  dead sources, digest changes, and typed atomic rejection; protocol tests cover exhaustive error
+  mapping; MCP tests cover complete snapshot plus history/replay invariants.
+- `cargo test -p dreadstep-core --test item_pickup --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test item_pickup --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test world_error --all-features --locked`, and
+  `cargo test -p dreadstep-mcp --test tester_item_pickup --all-features --locked` pass.
+- Focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass; exactly one
+  semantic code reviewer reports pass on implementation revision `d7dac61`; Linux, Apple Silicon
+  macOS, and Windows CI are green for that revision.
+
+Out of scope:
+
+- Player pickup commands, item effects, equipment, consumables, affixes, rarity, identification,
+  capacity, stdio/MCP transport registration, persistence, serialization, and UI.
 
 ### Milestone 1: Rules kernel
 
