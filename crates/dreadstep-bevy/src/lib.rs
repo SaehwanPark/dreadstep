@@ -189,6 +189,69 @@ impl PresentationViewport {
   }
 }
 
+/// A validated logical window request for a future desktop presentation client.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationWindow {
+  logical_width: u32,
+  logical_height: u32,
+  pixel_scale: u32,
+  physical_width: u32,
+  physical_height: u32,
+}
+
+impl PresentationWindow {
+  /// Creates a non-empty request with checked integer pixel dimensions.
+  #[must_use]
+  pub const fn new(logical_width: u32, logical_height: u32, pixel_scale: u32) -> Option<Self> {
+    if logical_width == 0 || logical_height == 0 || pixel_scale == 0 {
+      return None;
+    }
+    let Some(physical_width) = logical_width.checked_mul(pixel_scale) else {
+      return None;
+    };
+    let Some(physical_height) = logical_height.checked_mul(pixel_scale) else {
+      return None;
+    };
+    Some(Self {
+      logical_width,
+      logical_height,
+      pixel_scale,
+      physical_width,
+      physical_height,
+    })
+  }
+
+  /// Returns the logical width before pixel scaling.
+  #[must_use]
+  pub const fn logical_width(self) -> u32 {
+    self.logical_width
+  }
+
+  /// Returns the logical height before pixel scaling.
+  #[must_use]
+  pub const fn logical_height(self) -> u32 {
+    self.logical_height
+  }
+
+  /// Returns the integer scale from logical to physical pixels.
+  #[must_use]
+  pub const fn pixel_scale(self) -> u32 {
+    self.pixel_scale
+  }
+
+  /// Returns the checked physical width.
+  #[must_use]
+  pub const fn physical_width(self) -> u32 {
+    self.physical_width
+  }
+
+  /// Returns the checked physical height.
+  #[must_use]
+  pub const fn physical_height(self) -> u32 {
+    self.physical_height
+  }
+}
+
 /// A typed status projection for a future HUD.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
 pub struct PresentationHud {

@@ -1943,6 +1943,44 @@ Out of scope:
 - Timers, interpolation, animation state machines, textures, asset handles, materials, transforms,
   window/render plugins, audio playback, persistence, transport, and gameplay rules.
 
+### Milestone 3 slice: deterministic headless window request
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Define a typed `PresentationWindow` request with logical dimensions and an integer pixel scale for a
+future desktop client. The headless adapter validates checked physical dimensions without creating
+an OS window, enabling desktop features, or adding another source of presentation state.
+
+Acceptance:
+
+- `PresentationWindow::new` accepts nonzero logical width/height and pixel scale, exposes each typed
+  value, and computes checked physical width/height deterministically.
+- Zero dimensions/scale and physical-size multiplication overflow are rejected without panic or
+  partial configuration.
+- The request is ordinary typed configuration that can be inserted as a Bevy resource but does not
+  create a window, process OS events, choose a default resolution, or mutate runtime/scene state.
+- The projection remains headless and configuration-only: no window/render plugins, desktop
+  backends, transforms, textures, assets, audio, timers, persistence, transport, or gameplay rules
+  are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test window_request --all-features --locked` covers valid
+  dimensions, deterministic physical sizes, zero values, overflow, and resource equality; all four
+  focused tests pass.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `d864a32`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- OS windows, platform event loops, desktop backends, rendering, transforms, textures, assets,
+  audio, timers, persistence, transport, and gameplay rules.
+
 ## Present
 
 ### Deferred item gameplay semantics
