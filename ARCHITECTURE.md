@@ -305,7 +305,7 @@ source/layer identity across role refreshes, typed placeholder families, orderin
 placement without introducing Bevy `Sprite` components, render plugins, windows, transforms, asset
 loading, or audio.
 
-The active headless Sprite API bridge enables only Bevy's `bevy_sprite` API feature. It adds
+The verified headless Sprite API bridge enables only Bevy's `bevy_sprite` API feature. It adds
 `PresentationBevySpriteProjection`, whose ordered `SceneBevySpriteEntry` values join each stable
 placeholder node to a deterministic solid-color `Sprite` with the caller-selected tile size when
 available. The Sprite keeps Bevy's default image handle unset and is never attached to an ECS entity;

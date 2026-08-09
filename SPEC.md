@@ -2428,12 +2428,11 @@ Out of scope:
 - Filesystem loading, asset handles, audio backends, playback, render dependencies, gameplay rules,
   persistence, transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: headless Bevy Sprite API bridge
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Advance the verified placeholder render-node boundary to Bevy's typed `Sprite` API without enabling
 a renderer. The adapter exposes deterministic solid-color placeholder `Sprite` values downstream
@@ -2461,19 +2460,24 @@ Acceptance:
 
 Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test sprite_components --locked` proves all six typed
-  placeholder families, complete node metadata and placement, 32×32 sizing, unsized missing
-  configuration, dead/stale/co-located identity behavior, and independent authority/source/
+- Focused `cargo test -p dreadstep-bevy --test sprite_components --locked` passes 7/7, proving all
+  six typed placeholder families, complete node metadata and placement, 32×32 sizing, unsized
+  missing configuration, dead/stale/co-located identity behavior, and independent authority/source/
   destination guards.
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
-  and `scripts/verify.sh` must pass; media checks keep local binaries ignored while concept art and
-  root screenshot exceptions remain visible.
+  and `scripts/verify.sh` pass; media checks keep local binaries ignored while concept art and root
+  screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `688419d` (implementation `85502f3`,
+  bounded evidence corrections `37b2fb5` and `688419d`); Linux, Apple Silicon macOS, and Windows CI
+  are green on PR #71. This docs-only closeout is reviewed separately.
 
 Out of scope:
 
 - `SpritePlugin`, `SpriteRenderPlugin`, render backends, OS windows/platform features, transforms,
   cameras, texture handles/loading, production assets, audio playback, animation, gameplay rules,
   persistence, transport, and committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 

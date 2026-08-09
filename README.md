@@ -36,15 +36,15 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     working size, and complete ordered render/sprite-key/command/node projections.
   - Local-only pixel-art and audio manifests preserve typed placeholder/cue metadata without file
     loading, asset handles, playback, or render plugins; media binaries remain ignored.
-- Active presentation boundary
-  - The headless Bevy Sprite API bridge is being verified: `PresentationBevySpriteProjection`
-    derives deterministic solid-color `Sprite` values with optional 32×32 sizing from stable
-    placeholder nodes while keeping the Sprite/render plugins, textures, transforms, windows,
-    playback, and production media deferred.
+- Verified Sprite API boundary
+  - `PresentationBevySpriteProjection` derives deterministic solid-color `Sprite` values with
+    optional 32×32 sizing from stable placeholder nodes while preserving inventory-unplaced and
+    authority-guard semantics; no Sprite/render plugin or production image is loaded.
 - Still deferred
-  - Windowing, rendering plugins and production assets, transforms/cameras, animation playback, HUD
-    widgets, event/combat message presentation, audio assets/playback, fog of war, multiple floors,
-    and richer gameplay item semantics such as effects, modifiers, capacity, and additional slots.
+  - Windowing, Sprite/render plugins, production textures/assets, transforms/cameras, animation
+    playback, HUD widgets, event/combat message presentation, audio assets/playback, fog of war,
+    multiple floors, and richer gameplay item semantics such as effects, modifiers, capacity, and
+    additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
