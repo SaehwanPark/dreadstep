@@ -256,6 +256,38 @@ Out of scope:
 - MCP transport/runtime registration, sessions, `start_run`, `legal_actions`, `act`, tester
   tools, wire serialization, and authored scenarios.
 
+### Milestone 2 slice: versioned agent action requests
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the protocol-owned action envelope that a future MCP session can accept. The envelope
+represents movement, waiting, melee, and chase with protocol-owned actor identities and
+directions, and provides explicit conversion to and from the canonical core command. It does
+not execute commands, enumerate legal actions, or introduce a transport.
+
+Acceptance:
+
+- `dreadstep-protocol` exposes a typed `CommandRequest` and protocol `Direction` without public
+  fields that leak core representations.
+- Every supported request maps exactly to one `dreadstep-core::Command`, and core commands can
+  be projected back without changing actor, target, or direction values.
+- Conversion is deterministic, side-effect free, and does not apply scheduling, validation, or
+  gameplay rules; core remains the authority for command acceptance.
+- Focused protocol tests cover all four request variants and round-trip mapping.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-protocol --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, sessions, `start_run`, `legal_actions`, `act`, tester
+  tools, wire serialization, authored scenarios, and command validation beyond representation
+  conversion.
+
 ## Future
 
 ### Milestone 1: Rules kernel
