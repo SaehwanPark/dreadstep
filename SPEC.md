@@ -1344,10 +1344,10 @@ Out of scope:
 - Started: 2026-08-09
 - Completed: 2026-08-09
 
-Bind authored starter-floor item placements to an explicit content-owned
-`ItemCatalogDefinition`. `StarterFloorDefinition` will validate the catalog and every placement's
-opaque `ItemDefinitionId` before constructing the core world, while the catalog remains content
-authoring data and never enters `WorldState`.
+The authored starter-floor item placement binding is complete. `StarterFloorDefinition` validates
+an explicit content-owned `ItemCatalogDefinition` and every placement's opaque `ItemDefinitionId`
+before constructing the core world, while the catalog remains content authoring data and never
+enters `WorldState`.
 
 Acceptance:
 
