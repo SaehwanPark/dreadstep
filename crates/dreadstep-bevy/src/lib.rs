@@ -1410,6 +1410,7 @@ fn sync_render_projection(world: &mut World) {
     return;
   }
   let entries = {
+    let tile_size = world.get_resource::<PresentationTileSize>().copied();
     let mut query = world.query::<(
       Entity,
       Option<&SceneTile>,
@@ -1427,6 +1428,7 @@ fn sync_render_projection(world: &mut World) {
         ground_item.copied(),
         inventory_item.copied(),
         pixel_position.copied(),
+        tile_size,
       ) {
         match keyed.entry(key) {
           std::collections::btree_map::Entry::Occupied(mut retained) => {
@@ -1458,7 +1460,13 @@ fn render_entries(
   ground_item: Option<SceneGroundItem>,
   inventory_item: Option<SceneInventoryItem>,
   pixel_position: Option<ScenePixelPosition>,
+  tile_size: Option<PresentationTileSize>,
 ) -> Vec<((u8, i32, i32, u32), SceneRenderEntry)> {
+  let pixel_position_for = |position: Position| {
+    tile_size.map_or(pixel_position, |tile_size| {
+      tile_size.pixel_position(position)
+    })
+  };
   let mut entries = Vec::new();
   if let Some(tile) = tile {
     entries.push((
@@ -1467,7 +1475,7 @@ fn render_entries(
         entity,
         tile,
         role: SceneSpriteRole::Terrain,
-        pixel_position,
+        pixel_position: pixel_position_for(tile.position()),
       },
     ));
   }
@@ -1478,7 +1486,7 @@ fn render_entries(
         entity,
         actor,
         role: SceneSpriteRole::for_scene_actor(actor),
-        pixel_position,
+        pixel_position: pixel_position_for(actor.position()),
       },
     ));
   }
@@ -1489,7 +1497,7 @@ fn render_entries(
         entity,
         item,
         role: SceneSpriteRole::GroundItem,
-        pixel_position,
+        pixel_position: pixel_position_for(item.position()),
       },
     ));
   }

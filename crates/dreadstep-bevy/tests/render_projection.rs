@@ -362,9 +362,9 @@ fn co_located_lower_tile_entity_retains_actor_projection() {
     let (actor_entity, actor) = world
       .query::<(Entity, &SceneActor)>()
       .iter(world)
-      .find(|(_, actor)| actor.id() == ActorId::new(1))
+      .find(|(_, actor)| actor.id() == ActorId::new(2))
       .map(|(entity, actor)| (entity, *actor))
-      .expect("player mirror should exist");
+      .expect("enemy mirror should exist");
     (tile, actor, actor_entity)
   };
   let tile_entity = app.world_mut().spawn(tile).id();
@@ -377,24 +377,28 @@ fn co_located_lower_tile_entity_retains_actor_projection() {
     .get(&(0, 0, 0, 0))
     .expect("co-located tile should remain represented");
   let projected_actor = projection
-    .get(&(1, 0, 0, ActorId::new(1).value()))
+    .get(&(1, 0, 0, ActorId::new(2).value()))
     .expect("co-located actor should remain represented");
   assert!(matches!(
     tile,
     SceneRenderEntry::Terrain {
       entity,
       role: SceneSpriteRole::Terrain,
+      pixel_position,
       ..
     } if *entity == tile_entity
+      && pixel_position.map(|pixel| (pixel.x(), pixel.y())) == Some((0, 0))
   ));
   assert!(matches!(
     projected_actor,
     SceneRenderEntry::Actor {
       entity,
       actor: projected,
-      role: SceneSpriteRole::Player,
-      ..
-    } if *entity == tile_entity && *projected == actor
+      role: SceneSpriteRole::Enemy,
+      pixel_position,
+    } if *entity == tile_entity
+      && *projected == actor
+      && pixel_position.map(|pixel| (pixel.x(), pixel.y())) == Some((64, 32))
   ));
 }
 
