@@ -1261,8 +1261,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic content item-definition catalog
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add a content-owned catalog of opaque `ItemDefinitionId` values as the smallest foundation for
 future item authoring. `ItemCatalogDefinition` preserves authored order and validates globally
@@ -1284,10 +1285,13 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-content --test item_catalog --all-features --locked` covers
-  stable starter order, known/unknown lookup, repeatability, and duplicate rejection.
-- Focused Clippy and `scripts/verify.sh` pass before handoff.
+  stable starter order, known/unknown lookup, repeatability, and duplicate rejection; all three
+  focused tests pass.
+- `cargo test -p dreadstep-content --all-targets --all-features --locked`, focused Clippy,
+  `cargo doc`, and `scripts/verify.sh` pass; Linux, Apple Silicon macOS, and Windows CI are green
+  for the reviewed revision.
 - `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
-  revision.
+  revision (`655b042`).
 
 Out of scope:
 
