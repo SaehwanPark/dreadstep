@@ -139,7 +139,11 @@ Update an existing lesson instead of adding a duplicate.
   adapters need a complete deterministic projection for inspection and typed pickup failures.
 - Resolution: Keep stacks in core, order positions row-major and items by append order, validate
   ownership before both mutations, remove empty stacks, include ground items in the world digest, and
-  project them read-only through protocol/MCP without player replay/history.
+  project them read-only through protocol/MCP without player replay/history. For the headless Bevy
+  mirror, snapshot the complete stacks before ECS mutation, key scene entities by globally unique
+  `ItemId`, preserve typed definition/position data, and remove stale items before updating retained
+  identities.
 - Prevention: Test source/stack order, round-trip item data, empty-stack cleanup, row-major
-  projection, duplicate give-after-drop, dead-source behavior, typed ground misses, and
-  accepted/rejected tester replay invariants.
+  projection, duplicate give-after-drop, dead-source behavior, typed ground misses, accepted/rejected
+  tester replay invariants, complete Bevy item data, retained scene identities, duplicate cleanup,
+  and picked-up stale removal alongside tile/actor projections.

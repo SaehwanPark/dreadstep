@@ -83,6 +83,8 @@ All notable contributor- and user-visible project changes are recorded here.
   protocol/MCP snapshot projection; pickup and item gameplay semantics remain deferred.
 - A deterministic tester-only item pickup that removes from ordered ground stacks, appends to actor
   inventories, and projects typed ground-miss errors without player replay/history effects.
+- A deterministic headless Bevy ground-item scene projection that preserves complete typed item
+  data, stable item-identity entities, stack order, and stale cleanup without rendering policy.
 
 ### Changed
 
