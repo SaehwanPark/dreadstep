@@ -34,7 +34,8 @@ Ground-item projection through protocol/MCP is stable and tester-only; the headl
 The headless `SceneInventoryItem` projection is verified; inventory ownership and gameplay semantics
 remain core/tester-only. Authored starter-floor item placements are verified: optional ordered
 opaque instances delegate identity and inventory validation to core, while the default starter
-floor remains item-free.
+floor remains item-free. The current content slice also binds placements to an explicit
+item-definition catalog before core world construction; catalog data remains authoring-only.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

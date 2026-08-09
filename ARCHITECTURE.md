@@ -176,11 +176,12 @@ then delegates all dimension, terrain, identity, occupancy, and life validation 
 future clients may choose their own adapter scenarios without making content or presentation
 state authoritative over the rules kernel.
 
-The authored starter-item extension adds optional ordered `StarterItemPlacement` values to that
-content input. Building a floor constructs the validated core world first, then delegates each
-opaque item instance to `WorldState::give_item`, so core remains authoritative for actor identity,
-global item identity, inventory order, and digest state. The default starter floor remains
-item-free, and the content catalog is not silently turned into runtime item behavior.
+The authored starter-item extension adds optional ordered `StarterItemPlacement` values and an
+explicit `ItemCatalogDefinition` binding to that content input. Building a floor validates catalog
+duplicates and placement definition membership before map/world construction, then delegates each
+valid opaque item instance to `WorldState::give_item`. Core remains authoritative for actor
+identity, global item identity, inventory order, and digest state; the catalog is never copied into
+the world. The default starter floor remains item-free.
 
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position

@@ -119,7 +119,9 @@ Authored item instances now follow the same boundary: `StarterFloorDefinition` m
 `StarterItemPlacement` values, but construction delegates each one to `WorldState::give_item`.
 This preserves core-owned actor/ItemId validation and inventory/digest updates without coupling
 the independent definition catalog to runtime item behavior; keep the default starter floor empty
-until a content decision explicitly adds instances.
+until a content decision explicitly adds instances. When a floor binds a catalog, validate catalog
+duplicates and placement membership before constructing the map/world, but never store the catalog
+in core state.
 
 ## Keep tester item transfer atomic and outside player replay
 
