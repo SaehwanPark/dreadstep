@@ -4,8 +4,8 @@ use std::collections::BTreeMap;
 
 use bevy::app::App;
 use dreadstep_bevy::{
-  PresentationPlugin, PresentationRuntime, PresentationState, SceneActor, SceneGroundItem,
-  SceneInventoryItem, SceneTile,
+  PresentationPlugin, PresentationRuntime, PresentationSnapshot, PresentationState, SceneActor,
+  SceneGroundItem, SceneInventoryItem, SceneTile,
 };
 use dreadstep_content::{starter_floor, starter_item_floor};
 use dreadstep_core::{ActorId, ItemDefinitionId, ItemId, ReplayTrace};
@@ -55,60 +55,8 @@ fn item_run_startup_projects_complete_inventory_scene() {
 
   let world = app.world_mut();
   let snapshot = world.resource::<PresentationRuntime>().snapshot();
-  let width = usize::try_from(snapshot.width()).expect("snapshot width should fit usize");
-  let expected_tiles: BTreeMap<_, _> = snapshot
-    .tiles()
-    .iter()
-    .enumerate()
-    .map(|(index, terrain)| {
-      (
-        (
-          i32::try_from(index % width).expect("tile x should fit i32"),
-          i32::try_from(index / width).expect("tile y should fit i32"),
-        ),
-        *terrain,
-      )
-    })
-    .collect();
-  let projected_tiles: BTreeMap<_, _> = world
-    .query::<&SceneTile>()
-    .iter(world)
-    .map(|tile| ((tile.position().x(), tile.position().y()), tile.terrain()))
-    .collect();
-  assert_eq!(projected_tiles, expected_tiles);
-  let expected_actors: BTreeMap<_, _> = snapshot
-    .actors()
-    .iter()
-    .map(|actor| {
-      (
-        actor.id(),
-        (
-          actor.kind(),
-          actor.position(),
-          actor.hit_points(),
-          actor.ready_at(),
-          actor.is_alive(),
-        ),
-      )
-    })
-    .collect();
-  let projected_actors: BTreeMap<_, _> = world
-    .query::<&SceneActor>()
-    .iter(world)
-    .map(|actor| {
-      (
-        actor.id(),
-        (
-          actor.kind(),
-          actor.position(),
-          actor.hit_points(),
-          actor.ready_at(),
-          actor.is_alive(),
-        ),
-      )
-    })
-    .collect();
-  assert_eq!(projected_actors, expected_actors);
+  assert_complete_tile_scene(world, &snapshot);
+  assert_complete_actor_scene(world, &snapshot);
   assert_eq!(world.query::<&SceneGroundItem>().iter(world).count(), 0);
   assert_eq!(world.query::<&SceneInventoryItem>().iter(world).count(), 3);
   let inventory: BTreeMap<_, _> = world
@@ -139,4 +87,80 @@ fn item_run_startup_projects_complete_inventory_scene() {
     ])
   );
   assert!(snapshot.ground_items().is_empty());
+}
+
+fn assert_complete_tile_scene(
+  world: &mut bevy::ecs::world::World,
+  snapshot: &PresentationSnapshot,
+) {
+  let width = usize::try_from(snapshot.width()).expect("snapshot width should fit usize");
+  let expected: BTreeMap<_, _> = snapshot
+    .tiles()
+    .iter()
+    .enumerate()
+    .map(|(index, terrain)| {
+      (
+        (
+          i32::try_from(index % width).expect("tile x should fit i32"),
+          i32::try_from(index / width).expect("tile y should fit i32"),
+        ),
+        *terrain,
+      )
+    })
+    .collect();
+  let projected: BTreeMap<_, _> = world
+    .query::<&SceneTile>()
+    .iter(world)
+    .map(|tile| ((tile.position().x(), tile.position().y()), tile.terrain()))
+    .collect();
+  assert_eq!(projected.len(), expected.len());
+  assert_eq!(
+    world.query::<&SceneTile>().iter(world).count(),
+    expected.len()
+  );
+  assert_eq!(projected, expected);
+}
+
+fn assert_complete_actor_scene(
+  world: &mut bevy::ecs::world::World,
+  snapshot: &PresentationSnapshot,
+) {
+  let expected: BTreeMap<_, _> = snapshot
+    .actors()
+    .iter()
+    .map(|actor| {
+      (
+        actor.id(),
+        (
+          actor.kind(),
+          actor.position(),
+          actor.hit_points(),
+          actor.ready_at(),
+          actor.is_alive(),
+        ),
+      )
+    })
+    .collect();
+  let projected: BTreeMap<_, _> = world
+    .query::<&SceneActor>()
+    .iter(world)
+    .map(|actor| {
+      (
+        actor.id(),
+        (
+          actor.kind(),
+          actor.position(),
+          actor.hit_points(),
+          actor.ready_at(),
+          actor.is_alive(),
+        ),
+      )
+    })
+    .collect();
+  assert_eq!(projected.len(), expected.len());
+  assert_eq!(
+    world.query::<&SceneActor>().iter(world).count(),
+    expected.len()
+  );
+  assert_eq!(projected, expected);
 }
