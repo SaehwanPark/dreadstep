@@ -978,7 +978,7 @@ impl PresentationRenderCommandPlan {
     }
   }
 
-  /// Returns commands in the same deterministic order as the sprite projection.
+  /// Returns commands in deterministic layer order, retaining source order within each layer.
   #[must_use]
   pub fn commands(&self) -> &[SceneRenderCommand] {
     &self.commands
