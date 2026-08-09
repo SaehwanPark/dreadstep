@@ -129,6 +129,11 @@ Core owns global identity uniqueness, ordered actor inventories, digest inclusio
 projection; MCP only converts the request to `WorldState::give_item`. Effects, equipment, capacity,
 transfer, and content catalogs remain outside this slice so no adapter invents item truth.
 
+Validated tester teleport crosses the boundary as a typed actor identity and destination position.
+Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only
+converts the request and projects typed world errors. Dead actor records remain non-occupying, and
+the mutation does not enter player history or replay evidence.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

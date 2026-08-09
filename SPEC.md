@@ -698,6 +698,43 @@ Out of scope:
   capacity, teleport, persistence, wire serialization, MCP transport/runtime, interactive input,
   and replay playback.
 
+### Milestone 2 slice: validated tester teleport
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add one explicit tester relocation operation without changing player commands or scheduler rules.
+`WorldState::teleport` moves an existing actor record to a typed walkable map position while
+preserving identity, life, hit points, inventory, readiness, and current world time. Living actors
+cannot enter another living actor's tile; dead records remain non-occupying and may be positioned on
+an occupied living tile, matching existing dead-record reuse semantics. The MCP session performs
+typed conversion only, and the mutation does not enter accepted player history or replay evidence.
+
+Acceptance:
+
+- A valid teleport updates the selected actor's position and digest/snapshot while preserving all
+  other actor and scheduler fields.
+- Unknown actors, out-of-bounds destinations, blocked terrain, and living-actor overlap return
+  typed world errors atomically.
+- Dead actor records remain valid teleport targets and do not block living destinations.
+- The operation remains an in-memory tester mutation with no player-facing teleport command,
+  map mutation, transport, persistence, wire serialization, or replay playback.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-protocol -p dreadstep-mcp --all-targets
+  --all-features --locked` passes.
+- Focused Clippy for the core, protocol, and MCP crates passes with `-D warnings`.
+- `scripts/verify.sh` passes before handoff.
+- `git diff --check` passes, and the single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- player teleport commands, action costs, map editing, item effects, equipment, capacity, transfer,
+  identification, content catalogs, persistence, wire serialization, MCP transport/runtime,
+  interactive input, and replay playback.
+
 ## Future
 
 ### Deferred item gameplay semantics
