@@ -69,7 +69,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   per placeholder family and `PresentationRenderAssetProjection` joins those references to stable
   node metadata without loading files or creating asset handles; pixel-art/audio binaries remain
   ignored local files with provenance kept in tracked documents.
-- Active local-only audio cue manifest: `PresentationAudioAssetManifest` binds all eight typed cue
+- Verified local-only audio cue manifest: `PresentationAudioAssetManifest` binds all eight typed cue
   families to validated `audio/` references and `PresentationAudioAssetProjection` preserves cue
   payload/order without loading files, creating handles, enabling playback, or adding an audio
   backend.

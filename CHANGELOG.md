@@ -118,7 +118,7 @@ All notable contributor- and user-visible project changes are recorded here.
   `PresentationRenderAssetProjection` boundary that validates one anchored local-media reference per
   placeholder family and joins it to stable node metadata without file loading, asset handles, or
   committed pixel-art/audio binaries.
-- An active metadata-only `PresentationAudioAssetManifest` and
+- A verified metadata-only `PresentationAudioAssetManifest` and
   `PresentationAudioAssetProjection` boundary that exhaustively binds eight typed cue families to
   validated local `audio/` references while preserving payload/order without playback or an audio
   backend.
