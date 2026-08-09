@@ -63,6 +63,8 @@ All notable contributor- and user-visible project changes are recorded here.
   mapping, core command execution, and replay evidence without enabling desktop platform features.
 - A validated authored starter-floor definition in `dreadstep-content` and a Bevy `start_run` path
   that delegates to it while preserving the explicit replay seed.
+- Headless Bevy scene synchronization for deterministic map-tile and actor ECS mirrors, including
+  stable entity identity, stale-entity removal, and retained dead-record presentation.
 
 ### Changed
 

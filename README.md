@@ -18,8 +18,8 @@ not need to care about the testing architecture to enjoy it.
 ## Current Status
 
 Dreadstep is continuing Milestone 3: the human presentation boundary. The latest completed slice
-adds a shared deterministic authored starter floor and Bevy `start_run` path, building on the
-headless-testable presentation bridge with immutable map/actor snapshots and keyboard-to-core
+adds deterministic headless Bevy scene synchronization for map tiles and actor mirrors, building
+on the shared authored starter floor, `start_run` path, immutable snapshots, and keyboard-to-core
 command translation. The completed Milestone 2 MCP observation, action, history, replay, and tester
 operations remain available. Windowing, rendering assets, animation, HUD, audio, fog of war,
 multiple floors, and gameplay-facing item effects remain deferred.

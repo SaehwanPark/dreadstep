@@ -159,6 +159,12 @@ then delegates all dimension, terrain, identity, occupancy, and life validation 
 future clients may choose their own adapter scenarios without making content or presentation
 state authoritative over the rules kernel.
 
+The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
+`SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position
+and `ActorId`, preserves identity across updates, removes stale keys, and retains dead actor records
+because core snapshots retain them. ECS data is a render mirror only; it cannot issue commands or
+replace `WorldState` as game truth.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.
