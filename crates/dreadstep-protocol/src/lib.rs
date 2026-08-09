@@ -6,9 +6,12 @@
 
 #![forbid(unsafe_code)]
 
+use std::fmt;
+
 use dreadstep_core::{
-  Actor as CoreActor, ActorKind as CoreActorKind, Command as CoreCommand,
-  Direction as CoreDirection, WorldState,
+  Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
+  Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
+  Event as CoreEvent, WorldState,
 };
 
 /// Version of the in-memory agent observation projection.
@@ -228,6 +231,250 @@ impl StateDigest {
     self.0
   }
 }
+
+/// Protocol damage evidence emitted by an accepted attack.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Damage(u16);
+
+impl Damage {
+  /// Creates protocol damage evidence.
+  #[must_use]
+  pub const fn new(value: u16) -> Self {
+    Self(value)
+  }
+
+  /// Returns the numeric damage value.
+  #[must_use]
+  pub const fn value(self) -> u16 {
+    self.0
+  }
+}
+
+/// A protocol movement-blocking reason.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum BlockReason {
+  /// The destination is outside the map or blocked terrain.
+  Terrain,
+  /// The destination is occupied by another living actor.
+  Actor(ActorId),
+}
+
+/// A semantic event projected for agent responses.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Event {
+  /// An actor entered an unoccupied walkable tile.
+  Moved {
+    /// The actor that moved.
+    actor: ActorId,
+    /// The position before movement.
+    from: Position,
+    /// The position after movement.
+    to: Position,
+  },
+  /// An actor attempted movement but remained in place.
+  MovementBlocked {
+    /// The actor that attempted movement.
+    actor: ActorId,
+    /// The position before the attempt.
+    from: Position,
+    /// The requested destination.
+    to: Position,
+    /// Why the destination could not be entered.
+    reason: BlockReason,
+  },
+  /// An actor spent a standard action without moving.
+  Waited {
+    /// The actor that waited.
+    actor: ActorId,
+    /// The action time at which the wait began.
+    at: ActionTime,
+  },
+  /// A melee attack reduced a target's hit points.
+  Attacked {
+    /// The actor that attacked.
+    attacker: ActorId,
+    /// The actor that was hit.
+    target: ActorId,
+    /// The fixed damage applied.
+    damage: Damage,
+    /// The target's hit points after damage.
+    remaining_hit_points: HitPoints,
+  },
+  /// An actor reached zero hit points.
+  Died {
+    /// The actor that died.
+    actor: ActorId,
+  },
+}
+
+impl From<CoreBlockReason> for BlockReason {
+  fn from(reason: CoreBlockReason) -> Self {
+    match reason {
+      CoreBlockReason::Terrain => Self::Terrain,
+      CoreBlockReason::Actor(actor) => Self::Actor(ActorId::new(actor.value())),
+    }
+  }
+}
+
+impl From<CoreEvent> for Event {
+  fn from(event: CoreEvent) -> Self {
+    match event {
+      CoreEvent::Moved { actor, from, to } => Self::Moved {
+        actor: ActorId::new(actor.value()),
+        from: Position::new(from.x(), from.y()),
+        to: Position::new(to.x(), to.y()),
+      },
+      CoreEvent::MovementBlocked {
+        actor,
+        from,
+        to,
+        reason,
+      } => Self::MovementBlocked {
+        actor: ActorId::new(actor.value()),
+        from: Position::new(from.x(), from.y()),
+        to: Position::new(to.x(), to.y()),
+        reason: reason.into(),
+      },
+      CoreEvent::Waited { actor, at } => Self::Waited {
+        actor: ActorId::new(actor.value()),
+        at: ActionTime::new(at.value()),
+      },
+      CoreEvent::Attacked {
+        attacker,
+        target,
+        damage,
+        remaining_hit_points,
+      } => Self::Attacked {
+        attacker: ActorId::new(attacker.value()),
+        target: ActorId::new(target.value()),
+        damage: Damage::new(damage.value()),
+        remaining_hit_points: HitPoints::new(remaining_hit_points.value()),
+      },
+      CoreEvent::Died { actor } => Self::Died {
+        actor: ActorId::new(actor.value()),
+      },
+    }
+  }
+}
+
+/// A structured command rejection projected for an adapter boundary.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CommandError {
+  /// The command addresses no actor in the world.
+  UnknownActor(ActorId),
+  /// A different actor is scheduled to act first.
+  ActorNotScheduled {
+    /// The actor addressed by the request.
+    requested: ActorId,
+    /// The actor selected by the scheduler.
+    scheduled: ActorId,
+  },
+  /// The actor's ready time cannot advance.
+  ScheduleOverflow(ActorId),
+  /// The command actor is dead.
+  ActorDead(ActorId),
+  /// The attack target is not present.
+  UnknownTarget(ActorId),
+  /// The attack target is dead.
+  TargetDead(ActorId),
+  /// An actor cannot attack itself.
+  CannotAttackSelf(ActorId),
+  /// A chase request must come from an enemy.
+  ChaseRequiresEnemy(ActorId),
+  /// An enemy cannot chase itself.
+  CannotChaseSelf(ActorId),
+  /// The attack target is not adjacent.
+  AttackOutOfRange {
+    /// The actor issuing the attack.
+    attacker: ActorId,
+    /// The actor outside melee range.
+    target: ActorId,
+  },
+}
+
+impl From<CoreCommandError> for CommandError {
+  fn from(error: CoreCommandError) -> Self {
+    match error {
+      CoreCommandError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
+      CoreCommandError::ActorNotScheduled {
+        requested,
+        scheduled,
+      } => Self::ActorNotScheduled {
+        requested: ActorId::new(requested.value()),
+        scheduled: ActorId::new(scheduled.value()),
+      },
+      CoreCommandError::ScheduleOverflow(actor) => {
+        Self::ScheduleOverflow(ActorId::new(actor.value()))
+      }
+      CoreCommandError::ActorDead(actor) => Self::ActorDead(ActorId::new(actor.value())),
+      CoreCommandError::UnknownTarget(target) => Self::UnknownTarget(ActorId::new(target.value())),
+      CoreCommandError::TargetDead(target) => Self::TargetDead(ActorId::new(target.value())),
+      CoreCommandError::CannotAttackSelf(actor) => {
+        Self::CannotAttackSelf(ActorId::new(actor.value()))
+      }
+      CoreCommandError::ChaseRequiresEnemy(actor) => {
+        Self::ChaseRequiresEnemy(ActorId::new(actor.value()))
+      }
+      CoreCommandError::CannotChaseSelf(actor) => {
+        Self::CannotChaseSelf(ActorId::new(actor.value()))
+      }
+      CoreCommandError::AttackOutOfRange { attacker, target } => Self::AttackOutOfRange {
+        attacker: ActorId::new(attacker.value()),
+        target: ActorId::new(target.value()),
+      },
+    }
+  }
+}
+
+impl fmt::Display for CommandError {
+  fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
+      Self::ActorNotScheduled {
+        requested,
+        scheduled,
+      } => write!(
+        formatter,
+        "actor {} is not scheduled; actor {} must act next",
+        requested.value(),
+        scheduled.value()
+      ),
+      Self::ScheduleOverflow(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot advance its ready time",
+          actor.value()
+        )
+      }
+      Self::ActorDead(actor) => write!(formatter, "actor {} is dead", actor.value()),
+      Self::UnknownTarget(target) => {
+        write!(formatter, "unknown attack target {}", target.value())
+      }
+      Self::TargetDead(target) => write!(formatter, "attack target {} is dead", target.value()),
+      Self::CannotAttackSelf(actor) => {
+        write!(formatter, "actor {} cannot attack itself", actor.value())
+      }
+      Self::ChaseRequiresEnemy(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue an enemy chase",
+          actor.value()
+        )
+      }
+      Self::CannotChaseSelf(actor) => {
+        write!(formatter, "actor {} cannot chase itself", actor.value())
+      }
+      Self::AttackOutOfRange { attacker, target } => write!(
+        formatter,
+        "actor {} cannot attack non-adjacent target {}",
+        attacker.value(),
+        target.value()
+      ),
+    }
+  }
+}
+
+impl std::error::Error for CommandError {}
 
 /// A read-only actor projection for agent observation.
 #[derive(Clone, Debug, Eq, PartialEq)]
