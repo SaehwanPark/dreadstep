@@ -28,7 +28,8 @@ HUD, audio, fog of war, multiple floors, and gameplay-facing item effects remain
 typed headless `SceneFocus` marker reuses the existing keyed actor projection; camera transforms
 and marker visuals remain deferred. The deterministic content-owned opaque item-definition catalog
 and tester-only deterministic item transfer and item drop are now verified. Ground-item projection
-is stable and tester-only; pickup and item gameplay semantics remain deferred.
+is stable and tester-only. The active follow-on slice adds deterministic tester item pickup; player
+pickup and item gameplay semantics remain deferred.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
