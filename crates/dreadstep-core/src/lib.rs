@@ -751,6 +751,29 @@ pub enum WorldError {
   UnknownActor(ActorId),
   /// An item identity is already owned by an actor in the world.
   DuplicateItemId(ItemId),
+  /// A tester teleport destination is outside the map.
+  TeleportOutOfBounds {
+    /// The actor being teleported.
+    actor: ActorId,
+    /// The invalid destination.
+    position: Position,
+  },
+  /// A tester teleport destination is blocking terrain.
+  TeleportOnBlockedTile {
+    /// The actor being teleported.
+    actor: ActorId,
+    /// The blocked destination.
+    position: Position,
+  },
+  /// A living tester teleport destination is occupied by another living actor.
+  TeleportOccupied {
+    /// The actor being teleported.
+    actor: ActorId,
+    /// The living actor already at the destination.
+    blocker: ActorId,
+    /// The occupied destination.
+    position: Position,
+  },
   /// Two actors use the same stable identity.
   DuplicateActorId(ActorId),
   /// An actor starts outside the map.
@@ -790,6 +813,32 @@ impl fmt::Display for WorldError {
       Self::DuplicateItemId(item) => {
         write!(formatter, "item id {} is duplicated", item.value())
       }
+      Self::TeleportOutOfBounds { actor, position } => write!(
+        formatter,
+        "actor {} cannot teleport out of bounds to ({}, {})",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::TeleportOnBlockedTile { actor, position } => write!(
+        formatter,
+        "actor {} cannot teleport onto blocked tile at ({}, {})",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::TeleportOccupied {
+        actor,
+        blocker,
+        position,
+      } => write!(
+        formatter,
+        "actor {} cannot teleport onto actor {} at ({}, {})",
+        actor.value(),
+        blocker.value(),
+        position.x(),
+        position.y()
+      ),
       Self::DuplicateActorId(actor) => {
         write!(formatter, "actor id {} is duplicated", actor.value())
       }
@@ -1084,6 +1133,55 @@ impl WorldState {
       .ok_or(WorldError::UnknownActor(actor_id))?
       .inventory
       .push(item);
+    Ok(())
+  }
+
+  /// Teleports one existing actor for an explicit tester operation.
+  ///
+  /// Teleport preserves the actor's identity, life, hit points, inventory, and ready time, and
+  /// does not alter the world's current action time. Living actors occupy destinations; dead
+  /// records do not, so a dead actor may be positioned on a living actor's tile until it is
+  /// revived. The destination must remain a walkable map position.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`WorldError::UnknownActor`] when no actor has the requested identity,
+  /// [`WorldError::TeleportOutOfBounds`] or [`WorldError::TeleportOnBlockedTile`] when the
+  /// destination is invalid, or [`WorldError::TeleportOccupied`] when a living actor would
+  /// overlap another living actor. Rejected teleports leave the world unchanged.
+  pub fn teleport(&mut self, actor_id: ActorId, position: Position) -> Result<(), WorldError> {
+    let Some(existing) = self.actors.get(&actor_id) else {
+      return Err(WorldError::UnknownActor(actor_id));
+    };
+    if !self.map.in_bounds(position) {
+      return Err(WorldError::TeleportOutOfBounds {
+        actor: actor_id,
+        position,
+      });
+    }
+    if !self.map.is_walkable(position) {
+      return Err(WorldError::TeleportOnBlockedTile {
+        actor: actor_id,
+        position,
+      });
+    }
+    if existing.is_alive()
+      && let Some(blocker) = self
+        .actors
+        .values()
+        .find(|actor| actor.id() != actor_id && actor.is_alive() && actor.position() == position)
+    {
+      return Err(WorldError::TeleportOccupied {
+        actor: actor_id,
+        blocker: blocker.id(),
+        position,
+      });
+    }
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(WorldError::UnknownActor(actor_id))?
+      .position = position;
     Ok(())
   }
 

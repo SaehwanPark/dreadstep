@@ -214,6 +214,26 @@ impl Session {
       .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
+  /// Teleports one existing actor through the tester boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core rejects the actor or destination. The
+  /// mutation does not record a player command or alter replay evidence.
+  pub fn teleport(
+    &mut self,
+    actor: ProtocolActorId,
+    position: ProtocolPosition,
+  ) -> Result<(), SessionError> {
+    self
+      .world
+      .teleport(
+        ActorId::new(actor.value()),
+        Position::new(position.x(), position.y()),
+      )
+      .map_err(|error| SessionError::WorldRejected(error.into()))
+  }
+
   /// Spawns one validated living actor through the tester operation boundary.
   ///
   /// # Errors

@@ -43,6 +43,8 @@ All notable contributor- and user-visible project changes are recorded here.
   atomic failure and a fresh replay trace for the preserved seed.
 - Opaque typed tester item ownership with deterministic actor inventory snapshots and duplicate
   identity validation; gameplay effects and inventory capacity remain deferred.
+- Validated tester teleport with typed destination validation, dead-record occupancy semantics, and
+  no player-trace effects.
 
 ### Changed
 

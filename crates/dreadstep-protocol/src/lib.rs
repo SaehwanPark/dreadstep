@@ -556,6 +556,29 @@ pub enum WorldError {
   UnknownActor(ActorId),
   /// An item identity is already owned by an actor in the world.
   DuplicateItemId(ItemId),
+  /// A tester teleport destination is outside the map.
+  TeleportOutOfBounds {
+    /// The actor being teleported.
+    actor: ActorId,
+    /// The invalid destination.
+    position: Position,
+  },
+  /// A tester teleport destination is blocking terrain.
+  TeleportOnBlockedTile {
+    /// The actor being teleported.
+    actor: ActorId,
+    /// The blocked destination.
+    position: Position,
+  },
+  /// A living tester teleport destination is occupied by another living actor.
+  TeleportOccupied {
+    /// The actor being teleported.
+    actor: ActorId,
+    /// The living actor already at the destination.
+    blocker: ActorId,
+    /// The occupied destination.
+    position: Position,
+  },
   /// The requested actor identity already exists.
   DuplicateActorId(ActorId),
   /// The requested actor position is outside the map.
@@ -593,6 +616,23 @@ impl From<CoreWorldError> for WorldError {
     match error {
       CoreWorldError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
       CoreWorldError::DuplicateItemId(item) => Self::DuplicateItemId(ItemId::new(item.value())),
+      CoreWorldError::TeleportOutOfBounds { actor, position } => Self::TeleportOutOfBounds {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreWorldError::TeleportOnBlockedTile { actor, position } => Self::TeleportOnBlockedTile {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreWorldError::TeleportOccupied {
+        actor,
+        blocker,
+        position,
+      } => Self::TeleportOccupied {
+        actor: ActorId::new(actor.value()),
+        blocker: ActorId::new(blocker.value()),
+        position: Position::new(position.x(), position.y()),
+      },
       CoreWorldError::DuplicateActorId(actor) => {
         Self::DuplicateActorId(ActorId::new(actor.value()))
       }
@@ -627,6 +667,32 @@ impl fmt::Display for WorldError {
       Self::DuplicateItemId(item) => {
         write!(formatter, "item id {} is duplicated", item.value())
       }
+      Self::TeleportOutOfBounds { actor, position } => write!(
+        formatter,
+        "actor {} cannot teleport out of bounds to ({}, {})",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::TeleportOnBlockedTile { actor, position } => write!(
+        formatter,
+        "actor {} cannot teleport onto blocked tile at ({}, {})",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::TeleportOccupied {
+        actor,
+        blocker,
+        position,
+      } => write!(
+        formatter,
+        "actor {} cannot teleport onto actor {} at ({}, {})",
+        actor.value(),
+        blocker.value(),
+        position.x(),
+        position.y()
+      ),
       Self::DuplicateActorId(actor) => {
         write!(formatter, "actor id {} is duplicated", actor.value())
       }

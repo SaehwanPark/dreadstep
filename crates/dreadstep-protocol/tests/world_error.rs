@@ -60,6 +60,38 @@ fn every_core_world_error_maps_to_protocol_values() {
         actor: ActorId::new(2),
       },
     ),
+    (
+      CoreWorldError::TeleportOutOfBounds {
+        actor: CoreActorId::new(2),
+        position: CorePosition::new(4, 0),
+      },
+      WorldError::TeleportOutOfBounds {
+        actor: ActorId::new(2),
+        position: Position::new(4, 0),
+      },
+    ),
+    (
+      CoreWorldError::TeleportOnBlockedTile {
+        actor: CoreActorId::new(2),
+        position: CorePosition::new(1, 1),
+      },
+      WorldError::TeleportOnBlockedTile {
+        actor: ActorId::new(2),
+        position: Position::new(1, 1),
+      },
+    ),
+    (
+      CoreWorldError::TeleportOccupied {
+        actor: CoreActorId::new(1),
+        blocker: CoreActorId::new(2),
+        position: CorePosition::new(0, 0),
+      },
+      WorldError::TeleportOccupied {
+        actor: ActorId::new(1),
+        blocker: ActorId::new(2),
+        position: Position::new(0, 0),
+      },
+    ),
   ];
 
   for (core, protocol) in errors {

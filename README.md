@@ -13,9 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is beginning Milestone 2: the agent interface. The active slice adds opaque typed tester
-item ownership through the deterministic core; typed scenario replacement, validated hit-point
-mutation and actor spawning, read-only `inspect_world`, in-memory tester `snapshot`/`restore`
+Dreadstep is continuing Milestone 2: the agent interface. The active slice adds validated tester
+teleport through the deterministic core; opaque typed item ownership, typed scenario replacement,
+validated hit-point mutation and actor spawning, read-only `inspect_world`, in-memory tester
+`snapshot`/`restore`
 savepoints, the named `get_history` player operation, actor inspection, typed `get_replay`
 evidence, legal actions, versioned snapshots, and typed requests remain available. Item effects,
 equipment, capacity, and gameplay-facing item commands are still deferred, as are MCP transport,
