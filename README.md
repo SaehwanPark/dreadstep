@@ -37,7 +37,9 @@ opaque instances delegate identity and inventory validation to core, while the d
 floor remains item-free. The verified content slice also binds placements to an explicit
 item-definition catalog before core world construction; catalog data remains authoring-only. A
 separate deterministic starter-item scenario is verified as a reusable non-default content
-fixture; it does not add item gameplay semantics.
+fixture; it does not add item gameplay semantics. The Bevy adapter now has a verified explicit
+item-run startup path that projects that fixture's typed inventory items headlessly; the default
+`start_run` path remains item-free.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

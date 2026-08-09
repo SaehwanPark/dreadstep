@@ -93,6 +93,8 @@ All notable contributor- and user-visible project changes are recorded here.
   definitions before core world construction without leaking catalog data into runtime state.
 - A deterministic non-default starter-item content scenario that exercises the catalog-bound
   placement path while preserving the item-free default starter floor.
+- Explicit headless Bevy `start_item_run` constructors that project the non-default scenario's
+  typed inventory items while preserving the item-free default startup path.
 
 ### Changed
 

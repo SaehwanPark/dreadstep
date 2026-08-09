@@ -124,6 +124,11 @@ duplicates and placement membership before constructing the map/world, but never
 in core state. When a reusable fixture is needed, expose it as a separate explicit content helper
 and test its complete inventory/digest projection; do not silently populate the default scenario.
 
+The Bevy adapter follows the same distinction: `start_run` remains the stable item-free default,
+while `start_item_run` explicitly opts into the non-default content fixture. Verify both the
+state/runtime snapshot and the complete typed `SceneInventoryItem` projection so a convenience
+constructor cannot silently alter the default client path or lose owner/order data.
+
 ## Keep tester item transfer atomic and outside player replay
 
 - Context: Opaque item ownership now needs a deterministic tester operation to move an existing item

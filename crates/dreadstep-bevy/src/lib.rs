@@ -12,7 +12,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world::World};
 use bevy::input::{ButtonInput, keyboard::KeyCode};
-use dreadstep_content::{ContentError, starter_floor};
+use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, GroundItemStack,
   Item, ItemDefinitionId, ItemId, Position, ReplayTrace, StateDigest, Tile, WorldState,
@@ -394,6 +394,15 @@ impl PresentationState {
     Ok(Self::new(seed, starter_floor()?))
   }
 
+  /// Starts a presentation state from the shared authored starter-item scenario.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] when the authored item floor fails core or catalog validation.
+  pub fn start_item_run(seed: u64) -> Result<Self, ContentError> {
+    Ok(Self::new(seed, starter_item_floor()?))
+  }
+
   /// Creates a presentation state around an already validated core world.
   #[must_use]
   pub fn new(seed: u64, world: WorldState) -> Self {
@@ -466,6 +475,18 @@ impl PresentationRuntime {
   pub fn start_run(seed: u64) -> Result<Self, ContentError> {
     Ok(Self {
       state: PresentationState::start_run(seed)?,
+      output: None,
+    })
+  }
+
+  /// Starts a runtime from the shared authored starter-item scenario.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] when the authored item floor fails core or catalog validation.
+  pub fn start_item_run(seed: u64) -> Result<Self, ContentError> {
+    Ok(Self {
+      state: PresentationState::start_item_run(seed)?,
       output: None,
     })
   }

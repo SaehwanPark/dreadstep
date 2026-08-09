@@ -1338,6 +1338,47 @@ Out of scope:
 
 ## Future
 
+### Milestone 3 slice: deterministic Bevy starter-item run projection
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+The explicit Bevy startup bridge for the verified non-default content scenario is complete.
+`PresentationState::start_item_run` and `PresentationRuntime::start_item_run` consume
+`dreadstep-content::starter_item_floor()` while preserving the caller's seed; the existing
+`start_run` constructors continue to consume the item-free starter floor. The existing plugin
+projects the scenario's core-owned inventory items through `SceneInventoryItem` during its normal
+headless synchronization.
+
+Acceptance:
+
+- Item-run state/runtime constructors produce the same complete map, actor, inventory, ground,
+  scheduler, digest, and empty replay projection as the content scenario with the explicit seed.
+- A Bevy `App` with `PresentationPlugin` and item-run runtime creates the complete tile/actor and
+  typed inventory-item scene projection, preserving item ID, owner, opaque definition, and
+  insertion order; no ground item or duplicate scene entity appears.
+- The default `start_run` path remains item-free and unchanged, and both constructors preserve
+  core authority, replay behavior, and deterministic snapshots.
+- This remains a headless adapter bridge: no windowing, rendering, camera, HUD, item gameplay,
+  player/tester commands, persistence, serialization, or transport behavior is introduced.
+
+Verification:
+
+- Focused Bevy startup tests cover item-run state/runtime equality, seed/replay preservation,
+  complete tile/actor/inventory/ground scene projection, duplicate-entity cardinality, and default
+  item-free startup stability. The focused `start_run` test passes all three tests.
+- All Bevy targets, focused Clippy with `-D warnings`, Bevy Cargo docs, formatting,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `2df4d35`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
+
+Out of scope:
+
+- Changing content scenario definitions, default starter contents, core/protocol/MCP APIs, item
+  effects, equipment, capacity, identification, gameplay commands, ground placement, windowing,
+  rendering, camera policy, HUD, persistence, serialization, transport, and UI.
+
 ### Milestone 4 slice: deterministic authored starter-item scenario
 
 - Status: verified
