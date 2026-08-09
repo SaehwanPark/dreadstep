@@ -67,6 +67,8 @@ All notable contributor- and user-visible project changes are recorded here.
   stable entity identity, stale-entity removal, and retained dead-record presentation.
 - A headless Bevy `PresentationRuntime` resource and `PresentationPlugin` that automatically project
   core-backed snapshots into the scene after each app update without desktop engine features.
+- Deterministic headless keyboard dispatch with explicit controlled-actor selection, fixed key
+  priority, one-command-per-update consumption, and same-update scene projection.
 
 ### Changed
 
