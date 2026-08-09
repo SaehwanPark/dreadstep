@@ -73,6 +73,8 @@ All notable contributor- and user-visible project changes are recorded here.
   stale-output clearing on rejected commands and no new authoritative state.
 - A typed headless `PresentationFocus` projection that mirrors the selected actor's position for
   future camera systems without adding viewport, visibility, or rendering policy.
+- A typed headless `SceneFocus` marker that reuses the stable keyed actor entity for future camera
+  or selection systems without copying actor state or adding marker visuals.
 
 ### Changed
 

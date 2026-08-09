@@ -1218,6 +1218,45 @@ Out of scope:
 - Camera entities/transforms, viewport policy, rendering, windowing, interpolation, smoothing,
   visibility/fog rules, transport, input rebinding, and new gameplay rules.
 
+### Milestone 3 slice: deterministic headless scene-focus marker
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Project the selected actor onto the existing keyed `SceneActor` entity with a typed `SceneFocus`
+marker. The marker is a disposable ECS identity projection for future camera or selection systems;
+it stores no actor position or gameplay state and does not decide visual styling or visibility.
+
+Acceptance:
+
+- `SceneFocus` is a marker-only component attached to at most one keyed `SceneActor` entity when
+  runtime, input, and focus resources are present; absent resources are safe no-ops.
+- The plugin performs dispatch, complete scene synchronization, focus synchronization, then marker
+  synchronization in one deterministic update; accepted movement preserves the focused entity's
+  identity while updating its existing `SceneActor` projection.
+- Changing the controlled actor moves the marker to that actor's existing keyed entity without
+  duplicate markers; an unknown actor clears stale markers while preserving runtime snapshot,
+  replay digest, and complete keyed tile/actor projections.
+- The projection remains headless and independent of camera transforms, viewport policy, marker
+  visuals, rendering, windowing, visibility/fog, transport, and new gameplay rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test scene_focus --all-features --locked` covers startup,
+  accepted movement, actor changes, unknown actors, stable identity, and independent
+  absent-resource no-ops; all seven focused tests pass.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked` passes all Bevy targets,
+  and Linux, Apple Silicon macOS, and Windows CI are green for the reviewed revision.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision (`c8ba7a1`).
+
+Out of scope:
+
+- Camera entities/transforms, viewport policy, marker styling, rendering, windowing,
+  visibility/fog rules, transport, input rebinding, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics
