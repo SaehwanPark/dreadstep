@@ -1065,8 +1065,9 @@ Out of scope:
 
 ### Milestone 3 slice: headless Bevy application shell
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Own the headless presentation boundary inside a Bevy `App` without making ECS state authoritative.
 `dreadstep-bevy` will expose a `PresentationRuntime` resource that contains one
