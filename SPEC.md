@@ -1338,6 +1338,45 @@ Out of scope:
 
 ## Future
 
+### Milestone 4 slice: deterministic authored starter-floor item placements
+
+- Status: active
+- Started: 2026-08-09
+
+Add the smallest content-to-core bridge for authored opaque item instances without changing the
+default starter scenario. `StarterFloorDefinition` will accept an ordered list of typed
+`StarterItemPlacement` values, and its validated build will delegate each placement to core's
+existing `WorldState::give_item` operation. Item definition references remain opaque; catalog
+membership, item effects, capacity, player commands, and ground placement are not inferred here.
+
+Acceptance:
+
+- `StarterItemPlacement` carries a typed target `ActorId` and complete core `Item`; placement
+  declaration order becomes the target actor's deterministic inventory order.
+- A floor with valid placements builds an equivalent core world with those items, while the
+  existing default `starter_floor_definition()` remains item-free and deterministic.
+- Unknown target actors and duplicate item identities return typed `ContentError::World` before
+  the built world is returned; no partial `WorldState` escapes a failed content build.
+- The content boundary remains independent of Bevy, MCP, transport, persistence, item effects,
+  equipment, capacity, identification, ground stacks, and player-facing item commands. Core still
+  owns item identity, inventory state, digest inclusion, and all mutation rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-content --test starter_items --all-features --locked` covers
+  ordered valid placements, default-floor stability, unknown actors, and duplicate identities.
+- Existing core item tests plus `cargo test -p dreadstep-content --all-targets --all-features
+  --locked`, focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass before
+  handoff.
+- Exactly one semantic code reviewer must review the cross-boundary implementation, and Linux,
+  Apple Silicon macOS, and Windows CI must be green for the reviewed revision before closeout.
+
+Out of scope:
+
+- Changing the default starter-floor contents, item-definition catalog membership checks, item
+  effects, equipment, capacity, identification, pickup/drop/transfer commands, ground placement,
+  player replay/history, protocol/MCP operations, persistence, serialization, rendering, or UI.
+
 ### Milestone 4 slice: deterministic content item-definition catalog
 
 - Status: verified
