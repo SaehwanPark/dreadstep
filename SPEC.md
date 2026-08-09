@@ -1338,6 +1338,47 @@ Out of scope:
 
 ## Future
 
+### Milestone 4 slice: deterministic authored starter-item scenario
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+The reusable, non-default starter-floor scenario is complete. `starter_item_floor_definition()`
+binds the existing starter item catalog and declares a small deterministic set of opaque item
+instances in actor inventory order; `starter_item_floor()` builds that definition into a core world.
+The existing `starter_floor()` scenario remains item-free and unchanged.
+
+Acceptance:
+
+- The item scenario uses the shared authored map and actors, binds the starter catalog, and
+  preserves complete item identity/definition data plus declaration order within each inventory.
+- `starter_item_floor_definition()` and `starter_item_floor()` are repeatable and produce equal
+  core worlds/digests with empty ground stacks; the default starter scenario remains equal to its
+  item-free definition and has no inventory items.
+- The scenario delegates actor/item identity validation to `StarterFloorDefinition::build` and
+  core; no catalog is stored in `WorldState` and no item effects or gameplay rules are inferred.
+- The helper remains content-owned and independent of Bevy, MCP, transport, persistence,
+  serialization, rendering, and player/tester item commands.
+
+Verification:
+
+- Focused content tests assert complete item data, interleaved declaration order, repeatability,
+  item-free ground state, exact canonical map/actor/scheduler reuse, and preservation of the
+  default item-free scenario.
+- `cargo test -p dreadstep-content --test starter_items --all-features --locked` passes all five
+  focused tests; `cargo test -p dreadstep-content --all-targets --all-features --locked` passes
+  all ten content tests. Focused Clippy with `-D warnings`, content Cargo docs, formatting,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `e9f5810`, and
+  Linux, Apple Silicon macOS, and Windows CI are green for that revision.
+
+Out of scope:
+
+- Changing the default starter scenario, item effects, equipment, capacity, identification,
+  player/tester commands, ground placement, protocol/MCP/Bevy APIs, persistence, serialization,
+  rendering, and UI.
+
 ### Milestone 4 slice: deterministic catalog-bound starter item placements
 
 - Status: verified

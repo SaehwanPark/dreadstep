@@ -9,8 +9,8 @@
 use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HitPoints, Item, ItemDefinitionId, MapError, Position, Tile,
-  WorldError, WorldState,
+  Actor, ActorId, ActorKind, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, MapError,
+  Position, Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -305,6 +305,41 @@ pub fn starter_floor_definition() -> StarterFloorDefinition {
 /// Returns [`ContentError`] when the authored definition fails core map or world validation.
 pub fn starter_floor() -> Result<WorldState, ContentError> {
   starter_floor_definition().build()
+}
+
+/// Returns the deterministic authored starter-item scenario definition.
+///
+/// This scenario is separate from [`starter_floor_definition`], which intentionally remains
+/// item-free. It binds the shared starter catalog and uses interleaved placements to provide a
+/// stable content fixture for adapters and tests without introducing item gameplay semantics.
+#[must_use]
+pub fn starter_item_floor_definition() -> StarterFloorDefinition {
+  starter_floor_definition()
+    .with_item_catalog(starter_item_catalog_definition())
+    .with_items(vec![
+      StarterItemPlacement::new(
+        ActorId::new(1),
+        Item::new(ItemId::new(101), ItemDefinitionId::new(2)),
+      ),
+      StarterItemPlacement::new(
+        ActorId::new(2),
+        Item::new(ItemId::new(100), ItemDefinitionId::new(1)),
+      ),
+      StarterItemPlacement::new(
+        ActorId::new(1),
+        Item::new(ItemId::new(102), ItemDefinitionId::new(3)),
+      ),
+    ])
+}
+
+/// Builds the validated deterministic authored starter-item scenario.
+///
+/// # Errors
+///
+/// Returns [`ContentError`] when the authored scenario fails catalog, map, world, or item
+/// placement validation.
+pub fn starter_item_floor() -> Result<WorldState, ContentError> {
+  starter_item_floor_definition().build()
 }
 
 /// Returns the deterministic authored starter item-definition references.

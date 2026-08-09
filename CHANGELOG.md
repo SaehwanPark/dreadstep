@@ -91,6 +91,8 @@ All notable contributor- and user-visible project changes are recorded here.
   item-identity and inventory validation while preserving the item-free default scenario.
 - Explicit starter-floor catalog binding that rejects duplicate catalog IDs and unknown placement
   definitions before core world construction without leaking catalog data into runtime state.
+- A deterministic non-default starter-item content scenario that exercises the catalog-bound
+  placement path while preserving the item-free default starter floor.
 
 ### Changed
 

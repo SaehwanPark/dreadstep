@@ -181,7 +181,9 @@ explicit `ItemCatalogDefinition` binding to that content input. Building a floor
 duplicates and placement definition membership before map/world construction, then delegates each
 valid opaque item instance to `WorldState::give_item`. Core remains authoritative for actor
 identity, global item identity, inventory order, and digest state; the catalog is never copied into
-the world. The default starter floor remains item-free.
+the world. The default starter floor remains item-free. A separate `starter_item_floor` content
+helper provides one deterministic catalog-bound fixture for adapters and tests without changing
+that default or introducing item gameplay semantics.
 
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position
