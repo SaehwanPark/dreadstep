@@ -95,6 +95,10 @@ The `get_replay` projection packages that history, explicit seed, and core trace
 protocol-owned `ReplayEvidence` value. It remains an in-memory read-only view; persistence,
 serialization, playback, and transport registration stay outside this slice.
 
+The player `inspect` operation is likewise a read-only lookup over the protocol world snapshot.
+It returns one protocol `ActorSnapshot` or no value for an unknown identity, preserves dead actor
+records for inspection, and adds no visibility policy or gameplay behavior.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

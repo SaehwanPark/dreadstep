@@ -30,6 +30,8 @@ All notable contributor- and user-visible project changes are recorded here.
   `ReplayTrace`.
 - A typed in-memory `get_replay` evidence bundle exposing seed, accepted protocol requests, and
   deterministic digest without persistence or transport serialization.
+- Read-only player actor inspection over the versioned snapshot, including retained dead actor
+  records and an explicit unknown-actor result.
 
 ### Changed
 

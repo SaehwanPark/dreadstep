@@ -423,6 +423,39 @@ Out of scope:
 - MCP transport/runtime registration, replay files, wire serialization, session restore, tester
   tools, authored scenarios, interactive input, and replay playback.
 
+### Milestone 2 slice: player actor inspection
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Complete the player-facing `inspect` projection as a read-only lookup over the versioned world
+snapshot. `dreadstep-mcp::Session::inspect` accepts a protocol actor identity and returns the
+matching protocol `ActorSnapshot` when present, including dead records retained by core; an
+unknown identity returns `None`. The method does not add visibility policy, mutate the world, or
+duplicate core rules.
+
+Acceptance:
+
+- Inspecting a known living actor returns its protocol identity, kind, position, hit points, life,
+  and ready-time values equal to the current `observe` snapshot.
+- Inspecting an unknown actor returns `None` without changing the session snapshot or replay
+  evidence.
+- A dead actor remains inspectable after a valid combat sequence and reports dead life state and
+  zero hit points.
+- Inspection uses protocol-owned values and remains a pure read-only adapter projection without
+  transport, filesystem, or visibility-policy dependencies.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-mcp --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, hidden-information rules, tester tools, authored scenarios,
+  interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel
