@@ -1301,8 +1301,9 @@ Out of scope:
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, transfer, or gameplay-facing item commands. Those contracts
-must be specified in core before adding richer tester or player operations.
+equipment, identification, capacity, pickup, or gameplay-facing item commands. Tester-only transfer
+and drop are specified separately below; richer player operations still require an explicit core
+contract.
 
 ### Milestone 4 slice: deterministic tester item transfer
 
@@ -1365,8 +1366,8 @@ Acceptance:
 - Unknown actors and source items not owned return typed errors before mutation. Duplicate item
   identity checks for `give_item` include ground items, so the global instance invariant remains
   atomic and explicit.
-- Protocol exposes ground-item snapshots without inventing rules, and MCP delegates the tester
-  drop without recording player history or replay evidence. Core remains authoritative.
+- Protocol version 2 exposes ground-item snapshots without inventing rules, and MCP delegates the
+  tester drop without recording player history or replay evidence. Core remains authoritative.
 
 Verification target:
 

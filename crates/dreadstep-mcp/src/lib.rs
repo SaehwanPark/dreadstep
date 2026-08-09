@@ -244,6 +244,23 @@ impl Session {
       .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
+  /// Drops one opaque item at its actor's current position through the tester boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core rejects the actor or item ownership. The
+  /// mutation does not record a player command or alter replay evidence.
+  pub fn drop_item(
+    &mut self,
+    actor: ProtocolActorId,
+    item: ProtocolItemId,
+  ) -> Result<(), SessionError> {
+    self
+      .world
+      .drop_item(ActorId::new(actor.value()), ItemId::new(item.value()))
+      .map_err(|error| SessionError::WorldRejected(error.into()))
+  }
+
   /// Teleports one existing actor through the tester boundary.
   ///
   /// # Errors

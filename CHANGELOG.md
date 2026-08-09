@@ -79,6 +79,8 @@ All notable contributor- and user-visible project changes are recorded here.
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
   effects, equipment, and player commands remain deferred.
+- A deterministic tester-only item drop with core-owned row-major ground-item stacks and complete
+  protocol/MCP snapshot projection; pickup and item gameplay semantics remain deferred.
 
 ### Changed
 

@@ -11,14 +11,14 @@ use std::fmt;
 use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
   Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
-  Event as CoreEvent, Item as CoreItem, MapError as CoreMapError, WorldError as CoreWorldError,
-  WorldState,
+  Event as CoreEvent, GroundItemStack as CoreGroundItemStack, Item as CoreItem,
+  MapError as CoreMapError, WorldError as CoreWorldError, WorldState,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 1;
+pub const PROTOCOL_VERSION: u16 = 2;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -256,6 +256,39 @@ impl ItemSnapshot {
   #[must_use]
   pub const fn definition(self) -> ItemDefinitionId {
     self.definition
+  }
+}
+
+/// A read-only protocol projection of one ground-item stack.
+#[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
+pub struct GroundItemSnapshot {
+  position: Position,
+  items: Vec<ItemSnapshot>,
+}
+
+impl GroundItemSnapshot {
+  fn from_stack(stack: &CoreGroundItemStack) -> Self {
+    Self {
+      position: Position::new(stack.position().x(), stack.position().y()),
+      items: stack
+        .items()
+        .iter()
+        .copied()
+        .map(ItemSnapshot::from_item)
+        .collect(),
+    }
+  }
+
+  /// Returns the map position of this stack.
+  #[must_use]
+  pub const fn position(&self) -> Position {
+    self.position
+  }
+
+  /// Returns item snapshots in deterministic insertion order.
+  #[must_use]
+  pub fn items(&self) -> &[ItemSnapshot] {
+    &self.items
   }
 }
 
@@ -1100,6 +1133,7 @@ pub struct WorldSnapshot {
   next_actor: Option<ActorId>,
   digest: StateDigest,
   actors: Vec<ActorSnapshot>,
+  ground_items: Vec<GroundItemSnapshot>,
 }
 
 impl WorldSnapshot {
@@ -1112,6 +1146,11 @@ impl WorldSnapshot {
       next_actor: world.next_actor().map(|actor| ActorId::new(actor.value())),
       digest: StateDigest::new(world.digest().value()),
       actors: world.actors().map(ActorSnapshot::from_actor).collect(),
+      ground_items: world
+        .ground_items()
+        .iter()
+        .map(GroundItemSnapshot::from_stack)
+        .collect(),
     }
   }
 
@@ -1143,5 +1182,11 @@ impl WorldSnapshot {
   #[must_use]
   pub fn actors(&self) -> &[ActorSnapshot] {
     &self.actors
+  }
+
+  /// Returns ground-item stacks in deterministic row-major position order.
+  #[must_use]
+  pub fn ground_items(&self) -> &[GroundItemSnapshot] {
+    &self.ground_items
   }
 }
