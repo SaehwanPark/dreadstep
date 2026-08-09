@@ -1389,8 +1389,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic tester item pickup
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add the inverse tester mutation for an opaque item on the ground. Core validates an existing actor
 and the requested item in that actor's current ground stack, removes the item while preserving the
@@ -1414,8 +1415,13 @@ Verification:
 - Focused core pickup tests cover stack-order preservation, inventory append order, stack cleanup,
   dead sources, digest changes, and typed atomic rejection; protocol tests cover exhaustive error
   mapping; MCP tests cover complete snapshot plus history/replay invariants.
+- `cargo test -p dreadstep-core --test item_pickup --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test item_pickup --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test world_error --all-features --locked`, and
+  `cargo test -p dreadstep-mcp --test tester_item_pickup --all-features --locked` pass.
 - Focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass; exactly one
-  semantic code reviewer reports pass; Linux, Apple Silicon macOS, and Windows CI are green.
+  semantic code reviewer reports pass on implementation revision `d7dac61`; Linux, Apple Silicon
+  macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
