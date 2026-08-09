@@ -2617,6 +2617,45 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: deterministic ECS Sprite depth
+
+- Status: active
+- Started: 2026-08-09
+
+Extend the verified ECS Sprite-transform attachment with a deterministic z-layer policy derived from
+the existing typed render layers. Terrain is lowest, ground items are above terrain, actors are above
+ground items, and inventory remains unplaced/default at zero depth.
+
+Acceptance:
+
+- Retained terrain, ground-item, living/dead-actor, and inventory nodes receive deterministic
+  `Transform.translation.z` values `0.0`, `1.0`, `2.0`, and `0.0` respectively; checked x/y
+  translations, source order, typed keys, and node Entities remain unchanged.
+- Accepted refreshes preserve node identity and update depth only when the typed layer changes;
+  stale nodes despawn and retained nodes keep complete transforms. Co-located source mirrors remain
+  distinct and ordered by layer/source order.
+- Missing runtime, node/projection resources, and node entities are independent safe no-ops that
+  preserve existing ECS components. Runtime snapshots, replay history, digests, and scene authority
+  remain unchanged.
+- No centering/anchor policy, camera, visibility, window, render plugin/backend, texture/asset
+  loading, audio, animation, gameplay, persistence, transport, or committed media behavior is
+  introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_depth --locked` passes 5/5 and proves
+  complete per-layer depth values, x/y preservation, source/order/identity retention,
+  stale/dead/co-located refreshes, independent guards, and component preservation.
+- Existing transform attachment/projection suites remain green (9/9 and 8/8); all Bevy targets,
+  warning-denied Clippy/docs, formatting, repository checks, `git diff --check`, and
+  `scripts/verify.sh` pass locally. Remote PR review and CI remain the handoff gate.
+
+Out of scope:
+
+- Centering/anchor policy, cameras, visibility/fog, windows, render plugins/backends, texture or
+  production asset loading, audio playback, animation, gameplay rules, persistence, transport, and
+  committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

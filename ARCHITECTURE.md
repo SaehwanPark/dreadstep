@@ -327,6 +327,11 @@ logical-pixel `Transform` translations `(pixel_x, pixel_y, 0)` onto retained map
 entities. Inventory nodes remain unplaced/default. Centering, anchors, depth, cameras, visibility,
 render plugins, windows, and production media remain separate deferred boundaries.
 
+The active ECS Sprite-depth boundary extends those transforms with deterministic layer depth:
+terrain `0.0`, ground items `1.0`, actors `2.0`, and inventory default/unplaced `0.0`. It preserves
+the existing checked x/y values, source/order/identity semantics, and authority guards without adding
+centering, cameras, visibility, render plugins, windows, or production media.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does
