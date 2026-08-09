@@ -312,6 +312,12 @@ not inspect the filesystem, create asset handles, or load pixel/audio binaries. 
 source, manifest, or destination resources preserve the prior projection, and the repository media
 policy keeps binaries ignored while tracked provenance remains visible.
 
+The verified local-only audio cue manifest adds `PresentationAudioAssetManifest` and
+`PresentationAudioAssetProjection` over the typed `PresentationAudioCues` resource. It binds all
+eight cue families to validated root/crate-local `audio/` references while preserving event payload
+and order. This metadata boundary performs no filesystem reads, handle creation, backend setup, or
+playback; audio remains outside simulation authority.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and

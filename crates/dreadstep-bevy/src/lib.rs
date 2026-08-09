@@ -575,6 +575,172 @@ impl PresentationAudioCues {
   }
 }
 
+/// The family key used to bind one typed audio cue to a local-only asset reference.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PresentationAudioCueKind {
+  /// A successful movement cue.
+  Moved,
+  /// A blocked movement cue.
+  MovementBlocked,
+  /// A wait cue.
+  Waited,
+  /// An attack cue.
+  Attacked,
+  /// A death cue.
+  Died,
+  /// An equip cue.
+  ItemEquipped,
+  /// An unequip cue.
+  ItemUnequipped,
+  /// An item-consumption cue.
+  ItemConsumed,
+}
+
+impl PresentationAudioCueKind {
+  /// Derives the closed family key without inspecting or changing cue payloads.
+  #[must_use]
+  pub const fn from_cue(cue: PresentationAudioCue) -> Self {
+    match cue {
+      PresentationAudioCue::Moved { .. } => Self::Moved,
+      PresentationAudioCue::MovementBlocked { .. } => Self::MovementBlocked,
+      PresentationAudioCue::Waited { .. } => Self::Waited,
+      PresentationAudioCue::Attacked { .. } => Self::Attacked,
+      PresentationAudioCue::Died { .. } => Self::Died,
+      PresentationAudioCue::ItemEquipped { .. } => Self::ItemEquipped,
+      PresentationAudioCue::ItemUnequipped { .. } => Self::ItemUnequipped,
+      PresentationAudioCue::ItemConsumed { .. } => Self::ItemConsumed,
+    }
+  }
+
+  const fn index(self) -> usize {
+    match self {
+      Self::Moved => 0,
+      Self::MovementBlocked => 1,
+      Self::Waited => 2,
+      Self::Attacked => 3,
+      Self::Died => 4,
+      Self::ItemEquipped => 5,
+      Self::ItemUnequipped => 6,
+      Self::ItemConsumed => 7,
+    }
+  }
+}
+
+/// A complete mapping from typed audio cue families to local-only audio references.
+#[derive(Clone, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationAudioAssetManifest {
+  bindings: Vec<(PresentationAudioCueKind, PresentationAssetReference)>,
+}
+
+impl PresentationAudioAssetManifest {
+  /// Creates a complete eight-family audio manifest, rejecting non-audio paths and duplicates.
+  #[must_use]
+  pub fn new(
+    bindings: Vec<(PresentationAudioCueKind, PresentationAssetReference)>,
+  ) -> Option<Self> {
+    if bindings.len() != 8 {
+      return None;
+    }
+    let mut seen = [false; 8];
+    for (family, reference) in &bindings {
+      if !reference.is_audio_path() {
+        return None;
+      }
+      let slot = family.index();
+      if seen[slot] {
+        return None;
+      }
+      seen[slot] = true;
+    }
+    Some(Self { bindings })
+  }
+
+  /// Returns bindings in authored deterministic order.
+  #[must_use]
+  pub fn bindings(&self) -> &[(PresentationAudioCueKind, PresentationAssetReference)] {
+    &self.bindings
+  }
+
+  /// Returns the validated audio reference for one closed cue family.
+  ///
+  /// # Panics
+  ///
+  /// Panics only if the private complete-manifest invariant has been violated. Every manifest
+  /// constructed through [`Self::new`] contains all eight families, so valid callers cannot
+  /// trigger this panic.
+  #[must_use]
+  pub fn reference(&self, family: PresentationAudioCueKind) -> &PresentationAssetReference {
+    self
+      .bindings
+      .iter()
+      .find(|(candidate, _)| *candidate == family)
+      .map(|(_, reference)| reference)
+      .expect("validated audio manifests contain every cue family")
+  }
+}
+
+/// One typed audio cue joined with its validated local-only audio reference.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PresentationAudioAssetEntry {
+  cue: PresentationAudioCue,
+  reference: PresentationAssetReference,
+}
+
+impl PresentationAudioAssetEntry {
+  /// Returns the complete typed cue payload.
+  #[must_use]
+  pub fn cue(&self) -> PresentationAudioCue {
+    self.cue
+  }
+
+  /// Returns the validated local-only audio reference.
+  #[must_use]
+  pub fn reference(&self) -> &PresentationAssetReference {
+    &self.reference
+  }
+}
+
+/// An ordered projection joining typed audio cues to local-only metadata.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationAudioAssetProjection {
+  entries: Vec<PresentationAudioAssetEntry>,
+}
+
+impl PresentationAudioAssetProjection {
+  /// Creates an empty audio asset projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Derives a complete ordered projection without reading or loading any referenced file.
+  #[must_use]
+  pub fn from_cues(
+    cues: &[PresentationAudioCue],
+    manifest: &PresentationAudioAssetManifest,
+  ) -> Self {
+    let entries = cues
+      .iter()
+      .copied()
+      .map(|cue| PresentationAudioAssetEntry {
+        cue,
+        reference: manifest
+          .reference(PresentationAudioCueKind::from_cue(cue))
+          .clone(),
+      })
+      .collect();
+    Self { entries }
+  }
+
+  /// Returns entries in the source cue order.
+  #[must_use]
+  pub fn entries(&self) -> &[PresentationAudioAssetEntry] {
+    &self.entries
+  }
+}
+
 /// A typed animation signal derived from one core semantic event.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PresentationAnimationCue {
@@ -1038,6 +1204,13 @@ impl PresentationAssetReference {
   pub fn path(&self) -> &str {
     &self.path
   }
+
+  /// Returns whether this reference is rooted in a root or crate-local `audio/` directory.
+  #[must_use]
+  pub fn is_audio_path(&self) -> bool {
+    self.path.starts_with("audio/")
+      || matches!(crate_local_media_directory(&self.path), Some("audio"))
+  }
 }
 
 /// A deterministic complete mapping from typed placeholder families to local asset references.
@@ -1088,17 +1261,24 @@ impl PresentationAssetManifest {
   }
 }
 
-fn is_crate_local_media_path(path: &str) -> bool {
-  let Some(crate_relative) = path.strip_prefix("crates/") else {
-    return false;
-  };
+fn crate_local_media_directory(path: &str) -> Option<&str> {
+  let crate_relative = path.strip_prefix("crates/")?;
   let mut segments = crate_relative.split('/');
   let crate_name = segments.next();
   let media_directory = segments.next();
   let asset_path = segments.next();
-  crate_name.is_some()
-    && matches!(media_directory, Some("assets" | "art" | "audio"))
-    && asset_path.is_some()
+  if crate_name.is_some() && asset_path.is_some() {
+    media_directory
+  } else {
+    None
+  }
+}
+
+fn is_crate_local_media_path(path: &str) -> bool {
+  matches!(
+    crate_local_media_directory(path),
+    Some("assets" | "art" | "audio")
+  )
 }
 
 impl SceneRenderPlaceholder {
@@ -1887,6 +2067,7 @@ fn update_presentation(world: &mut World) {
   sync_hud(world);
   sync_messages(world);
   sync_audio_cues(world);
+  sync_audio_asset_projection(world);
   sync_animation_cues(world);
 }
 
@@ -2533,6 +2714,24 @@ fn sync_audio_cues(world: &mut World) {
     return;
   };
   cues.cues = projected;
+}
+
+fn sync_audio_asset_projection(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world.get_resource::<PresentationAudioCues>().is_none()
+    || world
+      .get_resource::<PresentationAudioAssetManifest>()
+      .is_none()
+  {
+    return;
+  }
+  let cues = world.resource::<PresentationAudioCues>().cues().to_vec();
+  let manifest = world.resource::<PresentationAudioAssetManifest>();
+  let projection = PresentationAudioAssetProjection::from_cues(&cues, manifest);
+  let Some(mut destination) = world.get_resource_mut::<PresentationAudioAssetProjection>() else {
+    return;
+  };
+  destination.entries = projection.entries;
 }
 
 fn sync_animation_cues(world: &mut World) {

@@ -2387,6 +2387,47 @@ Out of scope:
   transforms, playback, animation, gameplay rules, persistence, transport, dependencies, and
   committed media binaries.
 
+### Milestone 3 slice: validated local-only audio cue asset manifest
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Bind the verified typed `PresentationAudioCues` boundary to local-only audio metadata. The manifest
+covers every current cue family exactly once with a validated root or crate-local `audio/` reference,
+preserves complete cue payloads and event order, and remains independent of filesystem access, asset
+handles, audio backends, and playback. Audio binaries remain ignored by Git and available locally;
+tracked provenance and licensing records remain outside ignored media directories.
+
+Acceptance:
+
+- `PresentationAudioCueKind` exhaustively identifies movement, blocked, wait, attack, death, equip,
+  unequip, and consumption cue families without discarding actor, target, reason, or item payloads.
+- `PresentationAudioAssetManifest` requires exactly one root/crate-local `audio/` reference for
+  each family and rejects incomplete, duplicate, and non-audio mappings.
+- `PresentationAudioAssetProjection` joins ordered typed cues to required references without
+  changing cue values or runtime authority; manifest refresh changes references only.
+- Missing runtime, cue source, manifest, or destination resources preserve prior projection safely.
+- No filesystem reads, asset handles, audio backend, playback, render dependencies, gameplay rules,
+  or committed media binaries are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test audio_cue_asset_manifest --locked` passes all four
+  tests covering exhaustive payload/order mapping, manifest validation, authority-preserving
+  refresh, and independent missing-resource guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally; anchored media ignore checks keep local audio binaries
+  ignored while the tracked concept-art and future screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 2 at `90aa29f` (initial implementation
+  `35acc75`, media-root evidence correction `90aa29f`); Linux, Apple Silicon macOS, and Windows CI
+  are green on PR #70. This docs-only closeout is reviewed separately.
+
+Out of scope:
+
+- Filesystem loading, asset handles, audio backends, playback, render dependencies, gameplay rules,
+  persistence, transport, and committed media binaries.
+
 ## Present
 
 ### Deferred item gameplay semantics
