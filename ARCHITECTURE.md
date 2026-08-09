@@ -271,13 +271,12 @@ scene, and inventory items remain unplaced because they have no map coordinate. 
 window/render plugins, audio, timers, interpolation, visibility, persistence, and gameplay remain
 outside this boundary.
 
-The verified presentation asset gate is tracked outside the Rust boundary in
-`docs/presentation/asset-evaluation.md` and `docs/presentation/tile-samples.md`. It records
-local-only generated and CC0 candidates, exact nearest-neighbor 24×24/32×32 samples, and a
-provisional 32×32 working scale; dungeon audio sourcing remains open after a UI-only fallback
-evaluation. The next reversible renderer spike consumes this metadata without loading production
-assets or enabling render plugins; asset handles, normalization, audio playback, and production
-licensing approval remain later integration concerns.
+The verified presentation asset evaluation is tracked outside the Rust boundary in
+`docs/presentation/asset-evaluation.md`; its native tile-size evidence is the active follow-up in
+`docs/presentation/tile-samples.md`. That follow-up records local-only generated and CC0 candidates,
+exact nearest-neighbor 24×24/32×32 samples, and a provisional 32×32 working scale; dungeon audio
+sourcing remains open after a UI-only fallback evaluation. A reversible renderer spike follows
+after this evidence closes, without loading production assets or enabling render plugins.
 
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while

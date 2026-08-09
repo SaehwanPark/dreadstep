@@ -2025,7 +2025,7 @@ Out of scope:
   transforms, textures, asset handles, audio, timers, interpolation, persistence, transport, and
   gameplay rules.
 
-### Milestone 3 slice: presentation asset and tile experiment
+### Milestone 3 slice: presentation asset evaluation
 
 - Status: verified
 - Started: 2026-08-09
@@ -2033,18 +2033,15 @@ Out of scope:
 
 Evaluate representative original/generated and free reusable candidates before enabling a real
 renderer. Keep all binaries local-only while recording source, creator, license, attribution, and
-modification status in tracked [`docs/presentation/asset-evaluation.md`](docs/presentation/asset-evaluation.md)
-and [`docs/presentation/tile-samples.md`](docs/presentation/tile-samples.md). The generated sheets
-remain visual direction only; exact nearest-neighbor samples from the official 16×16 CC0 source
-support 32×32 as the provisional logical working size. The audio result remains bounded: generated
-timing/UI and Kenney CC0 UI cues are evaluated, while dungeon combat/movement/item cue sourcing is
-explicitly deferred.
+modification status in tracked [`docs/presentation/asset-evaluation.md`](docs/presentation/asset-evaluation.md).
+The generated sheets remain visual direction only; tile-size selection is deferred to the separate
+active native-sample slice. The audio result remains bounded: generated timing/UI and Kenney CC0 UI
+cues are evaluated, while dungeon combat/movement/item cue sourcing is explicitly deferred.
 
 Acceptance:
 
 - Unconstrained original/generated contact sheets are retained locally as visual-direction evidence;
-  exact 24×24 and 32×32 nearest-neighbor samples are produced from twelve named 16×16 source tiles,
-  compared for silhouette clarity, and support the provisional 32×32 decision.
+  native/normalized tile-size evidence remains a separate active acceptance slice.
 - A free reusable pixel-art candidate and a free reusable audio candidate are retained locally with
   factual source, creator, license, attribution, modification, and SHA-256 records.
 - A generated/original audio cue candidate is evaluated for timing and level, without claiming a
@@ -2056,43 +2053,48 @@ Acceptance:
 
 Verification:
 
-- `docs/presentation/tile-samples.md` records the official archive hash, 16×16 source metadata,
-  twelve source IDs, exact 24×24/32×32 output dimensions, nearest-neighbor method, and hashes.
 - `git check-ignore --no-index` covers local candidates and `git ls-files` confirms no candidate
   binary is tracked; repository checks, `git diff --check`, and full `scripts/verify.sh` pass.
-- Exactly one semantic reviewer reports PASS on final reviewed revision `a3b7cc0`; PR #57 merged as
-  `c98b5a9` with Linux, Apple Silicon macOS, and Windows CI green.
+- Exactly one semantic reviewer reports PASS on final reviewed revision `a3b7cc0` for the initial
+  asset-evaluation record; PR #57 merged as `c98b5a9` with Linux, Apple Silicon macOS, and Windows
+  CI green. The native tile-sample evidence is tracked in the active Present slice below.
 
 ## Present
 
-### Milestone 3 slice: reversible headless-to-renderer spike
+### Milestone 3 slice: native tile-size evidence
 
 - Status: active
 - Started: 2026-08-09
 
-Consume the verified 32×32 placement and sprite-role decisions at a reversible Bevy presentation
-boundary. The spike must make the mapping from keyed `Scene*` mirrors to render-ready metadata
-observable without creating a second source of truth, while keeping all local media ignored and
-avoiding production asset loading until the boundary is proven.
+Resolve the tile-size decision with exact nearest-neighbor samples from the official 16×16 CC0
+source. Keep the archive and output sheets under ignored `art/`, record source IDs, method,
+dimensions, hashes, and comparison in [`docs/presentation/tile-samples.md`](docs/presentation/tile-samples.md),
+and leave production asset loading deferred.
 
 Acceptance:
 
-- A typed render-boundary projection preserves complete keyed terrain, actor, ground-item, and
-  inventory metadata plus `ScenePixelPosition` and `SceneSpriteRole` values after one app update.
-- The boundary consumes a caller-selected 32×32 `PresentationTileSize` without mutating core,
-  replay/history, or existing headless scene mirrors.
-- Missing runtime, missing configuration, stale keyed entities, and recycled Bevy entity indices
-  preserve or clear the render-ready projection deterministically according to authority rules.
-- The spike introduces no production texture/asset handles, transforms, window/render plugins,
-  animation timers, audio playback, visibility policy, persistence, transport, or gameplay rules.
+- Twelve named 16×16 source tiles produce exact 24×24 and 32×32 4×3 sheets with nearest-neighbor
+  interpolation, byte-stable hashes, and an explicit comparison.
+- The evidence supports 32×32 as a provisional logical working size while retaining 24×24 as a
+  valid typed option; no production asset adoption is claimed.
 - Local media remains ignored and tracked concept-art/screenshot exceptions remain visible.
 
 Verification target:
 
-- Focused Bevy tests prove complete render-boundary projection, identity/authority behavior, and
-  32×32 placement; all Bevy targets, Clippy, docs, repository checks, and `scripts/verify.sh` pass.
-- Exactly one semantic reviewer, fresh Linux/macOS/Windows CI, and canonical document reconciliation
-  are required before moving this spike into Past.
+- Exact source/archive/output hashes and dimensions, independent pixel/order checks, repository
+  checks, `git diff --check`, and full `scripts/verify.sh` pass.
+- Exactly one semantic reviewer, fresh Linux/macOS/Windows CI, and a docs closeout recording the
+  current reviewed revision are required before moving this slice into Past.
+
+### Milestone 3 slice: reversible headless-to-renderer spike
+
+- Status: planned
+
+After the native tile-size slice closes, consume the provisional 32×32 placement and sprite-role
+decisions at a reversible Bevy presentation boundary. Preserve complete keyed terrain, actor,
+ground-item, and inventory metadata; attach `ScenePixelPosition` only to terrain, actors, and
+ground items because inventory remains unplaced; and preserve `SceneSpriteRole` on all keyed mirrors.
+The spike must not create a second source of truth or load production assets.
 
 ### Deferred item gameplay semantics
 
