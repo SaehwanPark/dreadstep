@@ -85,8 +85,9 @@ Out of scope:
 
 ### Milestone 1 slice: basic melee combat and death
 
-- Status: active
+- Status: verified
 - Started: 2026-08-08
+- Completed: 2026-08-08
 
 Extend the deterministic core with typed hit points and a fixed basic melee attack. A
 scheduled living actor may attack one adjacent living actor, reducing its hit points by the
@@ -114,6 +115,40 @@ Verification:
 Out of scope:
 
 - Variable weapons or damage, armor or resistances, status effects, enemy chase behavior,
+  seeded randomness, replay schemas, and the developer CLI.
+
+### Milestone 1 slice: deterministic enemy chase
+
+- Status: active
+- Started: 2026-08-08
+
+Add a deterministic chase command for enemy actors. The command selects one cardinal step
+toward a living target using horizontal-axis priority when both axes differ, then reuses the
+same terrain and living-actor blocking rules as movement. A blocked chase still consumes the
+standard action and emits the existing blocking event; invalid actor or target roles return
+structured errors.
+
+Acceptance:
+
+- Only living enemy actors may issue a chase command, and the target must be a distinct living
+  actor in the world.
+- Chase direction is deterministic: horizontal movement wins a diagonal tie, with east/west
+  selected from the target's relative position and north/south used when columns align.
+- Successful chase emits the normal movement event and consumes the standard action cost.
+- Terrain and living-actor blocking emit the normal blocking event and consume the action;
+  dead actors do not block chase movement.
+- Structured command errors cover a player chase, self-target, unknown target, and dead target.
+- Core remains independent of Bevy, MCP, filesystem, wall-clock time, and host randomness.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core` covers diagonal tie-breaking, movement, blocking, and
+  invalid chase cases.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- Pathfinding around obstacles, multiple-step planning, ranged behavior, enemy archetypes,
   seeded randomness, replay schemas, and the developer CLI.
 
 ## Future

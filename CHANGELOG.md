@@ -14,6 +14,8 @@ All notable contributor- and user-visible project changes are recorded here.
   events, and deterministic integer action scheduling.
 - Typed hit points, fixed basic melee attacks, and semantic death events with dead actors
   removed from scheduling and movement occupancy.
+- Deterministic enemy chase commands with explicit axis tie-breaking and shared blocking
+  events.
 
 ### Changed
 
