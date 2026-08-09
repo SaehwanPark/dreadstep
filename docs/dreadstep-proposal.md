@@ -1748,6 +1748,9 @@ Current exploratory gate (2026-08-09):
 - The verified render-command presentation boundary derives deterministic typed layer, source-order,
   and optional placement metadata while keeping actual rendering, texture loading, transforms,
   windows, and media deferred to a later renderer slice.
+- The next active presentation boundary reconciles stable placeholder ECS render nodes from those
+  commands, preserving deterministic identity while keeping actual Sprite components, render
+  plugins, windows, texture loading, animation, audio, and media deferred.
 
 ### Content
 

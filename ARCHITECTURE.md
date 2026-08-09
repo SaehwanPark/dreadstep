@@ -299,6 +299,12 @@ key, optional placement, deterministic layer, and source order. This is a read-o
 future renderer; it does not load assets, create transforms or windows, enable render plugins, or
 become simulation authority.
 
+The active placeholder render-node bootstrap reconciles `PresentationRenderNodeProjection` from
+that command plan. `SceneRenderNode` entities are disposable renderer-facing metadata: they retain
+source/layer identity across role refreshes, typed placeholder families, ordering, and optional
+placement without introducing Bevy `Sprite` components, render plugins, windows, transforms, asset
+loading, or audio.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and

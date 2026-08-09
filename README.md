@@ -62,6 +62,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified deterministic render-command plan: `PresentationRenderCommandPlan` derives typed layer,
   source-order, and optional pixel-placement metadata from sprite entries for a future renderer;
   texture loading, render plugins, transforms, windows, and media remain deferred.
+- Active placeholder render-node bootstrap: `PresentationRenderNodeProjection` reconciles stable
+  ECS nodes from typed commands with deterministic placeholder families; actual Sprite components,
+  render plugins, windows, texture loading, animation, audio, and media remain deferred.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
   message presentation, audio assets/playback, fog of war, multiple floors, and richer gameplay
   item semantics such as effects, modifiers, capacity, and additional slots.

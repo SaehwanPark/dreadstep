@@ -2303,6 +2303,37 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: deterministic placeholder render-node bootstrap
+
+- Status: active
+- Started: 2026-08-10
+
+Reconcile stable ECS placeholder nodes from the verified typed render-command plan. This is the
+first renderer-facing node boundary: node entities retain source mirror identity, typed key, layer,
+source order, placement, and a placeholder family while actual Bevy render plugins and production
+media remain deferred.
+
+Acceptance:
+
+- `PresentationRenderNodeProjection` exposes ordered read-only node entries derived from
+  `PresentationRenderCommandPlan`; each node has a stable ECS entity independent of the source
+  mirror entity and retains the complete typed command metadata.
+- Role changes such as living enemy to retained dead actor update the same source/layer node entity;
+  stale commands are removed, and co-located source mirrors remain independently representable.
+- Missing runtime or command-plan resources preserve existing nodes, and a missing destination
+  projection is a safe no-op.
+- Placeholder families are typed metadata only; no production `Sprite`, texture handle, asset
+  loading, OS window, render plugin, transform, audio playback, animation, gameplay rule,
+  persistence, transport, dependency, or committed media binary is introduced.
+
+Verification target:
+
+- Focused render-bootstrap tests prove ordered placeholder nodes, stable source/layer identity across
+  dead-role refresh, stale cleanup, independent authority/resource guards, and inventory-unplaced
+  metadata.
+- All Bevy targets, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
+  `scripts/verify.sh` pass before the single-reviewer handoff.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
