@@ -24,9 +24,8 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified headless Bevy bridge: shared authored floors, runtime/app projection, keyboard dispatch,
   feedback evidence, focus, scene focus, camera, viewport, tile/actor, ground-item, and
   inventory-item projections, typed `PresentationHud` actor status, and ordered typed
-  `PresentationMessages` for every current core event.
-- Active headless audio placeholder: typed `PresentationAudioCues` preserves current event order
-  without loading assets, enabling playback, or adding an audio backend.
+  `PresentationMessages` for every current core event, plus typed `PresentationAudioCues`
+  placeholders preserving event order without loading assets or enabling playback.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.

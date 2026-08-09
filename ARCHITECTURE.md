@@ -242,7 +242,7 @@ latest runtime output as ordered typed `PresentationMessage` values. It clears s
 runtime output disappears, preserves state when authority is absent, and performs no formatting,
 localization, widget, audio, or gameplay work.
 
-The active audio-placeholder slice adds an optional `PresentationAudioCues` resource that maps the
+The verified audio-placeholder slice adds an optional `PresentationAudioCues` resource that maps the
 same latest events to ordered typed cue values. It is a headless contract for a future player only:
 it loads no assets, enables no audio backend, performs no playback, and preserves the adapter's
 authority and stale-output rules.

@@ -1818,19 +1818,11 @@ Out of scope:
 - Text/localization, text layout, widgets, sprites, animation, audio, windowing, rendering,
   persistence, transport, and gameplay rules.
 
-## Present
-
-### Deferred item gameplay semantics
-
-The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
-and pickup are verified separately in their completed slices above; richer player operations still
-require an explicit core contract.
-
 ### Milestone 3 slice: deterministic headless audio-cue evidence
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Project current core events into a typed `PresentationAudioCues` resource as a placeholder boundary
 for a future audio player. The adapter preserves event order and typed identities without loading
@@ -1854,10 +1846,27 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test audio_cues --all-features --locked` covers every core
-  event mapping, deterministic order, stale-output clearing, and absent-resource preservation.
+  event mapping, deterministic order, stale-output clearing, and absent-resource preservation; all
+  seven focused tests pass.
 - All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
   `git diff --check`, and `scripts/verify.sh` pass locally.
-- Exactly one semantic code reviewer reviews the implementation and docs closeout before merge.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `81e444a`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- Audio assets, asset handles, playback, audio backends, text/localization, text layout, widgets,
+  sprites, animation, windowing, rendering, persistence, transport, and gameplay rules.
+
+## Present
+
+### Deferred item gameplay semantics
+
+The opaque ownership slice and content catalog foundation intentionally do not define item effects,
+equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
+and pickup are verified separately in their completed slices above; richer player operations still
+require an explicit core contract.
 
 ## Future
 
