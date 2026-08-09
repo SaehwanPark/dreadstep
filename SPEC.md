@@ -1300,6 +1300,44 @@ Out of scope:
 
 ## Future
 
+### Milestone 3 slice: deterministic headless inventory-item scene projection
+
+- Status: active
+- Started: 2026-08-09
+
+Extend the disposable Bevy scene mirror with complete core-owned actor inventory records. A typed
+`SceneInventoryItem` will carry each item's global identity, owner actor, opaque definition reference,
+and insertion order; `sync_scene` will update those entities deterministically from the immutable
+actor projections. Core remains authoritative for ownership and order, and this slice adds no item
+gameplay or UI policy.
+
+Acceptance:
+
+- `SceneInventoryItem` carries typed `ItemId`, owner `ActorId`, `ItemDefinitionId`, and zero-based
+  inventory order without mutable core storage, gameplay effects, or presentation policy.
+- `sync_scene` creates, updates, and deduplicates inventory-item entities deterministically by global
+  `ItemId`, preserves entity identity when an item remains projected, and removes stale items absent
+  from later snapshots.
+- Owner and order changes from a core-authoritative tester transfer update the retained item entity;
+  complete keyed tile, actor, and ground-item mirrors remain unchanged.
+- The projection remains headless and independent of rendering, camera, HUD, transport, desktop
+  platform features, persistence, and new gameplay rules.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test scene_sync --all-features --locked` covers empty
+  inventories, complete item data, owner/order updates, stable identities, duplicate cleanup, stale
+  removal, and complete tile/actor/ground preservation.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked`, focused Clippy, Cargo docs,
+  `git diff --check`, and `scripts/verify.sh` pass before handoff.
+- Exactly one semantic code reviewer reports PASS and Linux, Apple Silicon macOS, and Windows CI
+  are green for the reviewed implementation revision before docs closeout.
+
+Out of scope:
+
+- Player inventory commands, item effects, equipment, capacity, identification, rendering, sprites,
+  camera policy, HUD widgets, visibility, persistence, transport, and new gameplay rules.
+
 ### Milestone 4 slice: deterministic content item-definition catalog
 
 - Status: verified
