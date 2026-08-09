@@ -81,6 +81,41 @@ fn sized_app(with_sprite_projection: bool) -> App {
   )
 }
 
+fn nonzero_y_app() -> App {
+  let map = GridMap::from_tiles(2, 2, vec![Tile::Floor; 4]).expect("map should validate");
+  let world = WorldState::new(
+    map,
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 1)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(1, 1),
+        HitPoints::new(1),
+      ),
+      Actor::with_hit_points(
+        ActorId::new(3),
+        ActorKind::Enemy,
+        Position::new(0, 0),
+        HitPoints::new(2),
+      ),
+    ],
+  )
+  .expect("world should validate");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationTileSize::new(32, 24).expect("tile size should validate"));
+  app.insert_resource(PresentationRenderProjection::new());
+  app.insert_resource(PresentationSpriteProjection::new());
+  app.insert_resource(PresentationRenderCommandPlan::new());
+  app.insert_resource(PresentationRenderNodeProjection::new());
+  app.insert_resource(PresentationBevySpriteProjection::new());
+  app.insert_resource(PresentationBevySpriteTransformProjection::new());
+  app.add_plugins(PresentationPlugin);
+  app.update();
+  app
+}
+
 #[allow(clippy::cast_precision_loss)]
 fn transform(entry: dreadstep_bevy::SceneBevySpriteTransformEntry) -> Option<Vec3> {
   entry
@@ -115,6 +150,59 @@ fn attaches_complete_map_transforms_and_leaves_inventory_unplaced() {
       assert_eq!(actual, expected);
     }
   }
+}
+
+#[test]
+fn attaches_nonzero_y_transform_in_logical_pixels() {
+  let app = nonzero_y_app();
+  let (tile_source, actor_source) = app
+    .world()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .fold(
+      (None, None),
+      |(tile_source, actor_source), entry| match entry {
+        SceneRenderEntry::Terrain { entity, tile, .. }
+          if tile.position() == Position::new(0, 1) =>
+        {
+          (Some(*entity), actor_source)
+        }
+        SceneRenderEntry::Actor { entity, actor, .. } if actor.id() == ActorId::new(2) => {
+          (tile_source, Some(*entity))
+        }
+        _ => (tile_source, actor_source),
+      },
+    );
+  let tile_source = tile_source.expect("nonzero-y tile mirror should exist");
+  let actor_source = actor_source.expect("nonzero-y actor mirror should exist");
+  let nodes = app
+    .world()
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .to_vec();
+  let tile_node = nodes
+    .iter()
+    .find(|entry| {
+      entry.node().source_entity() == tile_source
+        && entry.node().placeholder() == SceneRenderPlaceholder::Terrain
+    })
+    .expect("nonzero-y tile node should exist");
+  let actor_node = nodes
+    .iter()
+    .find(|entry| {
+      entry.node().source_entity() == actor_source
+        && entry.node().placeholder() == SceneRenderPlaceholder::Enemy
+    })
+    .expect("nonzero-y actor node should exist");
+  assert_eq!(
+    node_transform(&app, tile_node.node_entity()),
+    Some(Transform::from_xyz(0.0, 24.0, 0.0))
+  );
+  assert_eq!(
+    node_transform(&app, actor_node.node_entity()),
+    Some(Transform::from_xyz(32.0, 24.0, 0.0))
+  );
 }
 
 #[test]
@@ -396,6 +484,7 @@ fn colocated_nodes_receive_independent_transform_components() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn missing_resources_and_entities_preserve_transform_components() {
   let mut app = sized_app(true);
   let before = app
@@ -456,6 +545,27 @@ fn missing_resources_and_entities_preserve_transform_components() {
     })
     .collect::<Vec<_>>();
   assert_eq!(after, before);
+
+  let mut missing_projection = sized_app(true);
+  let before = missing_projection
+    .world()
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .iter()
+    .map(|entry| {
+      (
+        entry.node().node_entity(),
+        node_transform(&missing_projection, entry.node().node_entity()),
+      )
+    })
+    .collect::<Vec<_>>();
+  missing_projection
+    .world_mut()
+    .remove_resource::<PresentationBevySpriteTransformProjection>();
+  missing_projection.update();
+  for (entity, expected) in before {
+    assert_eq!(node_transform(&missing_projection, entity), expected);
+  }
 
   let mut missing_entity = sized_app(true);
   let player = missing_entity

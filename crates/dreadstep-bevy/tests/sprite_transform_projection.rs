@@ -384,7 +384,7 @@ fn accepted_movement_refreshes_the_same_node_translation() {
 }
 
 #[test]
-fn transform_projection_attaches_only_transform_component() {
+fn plugin_attaches_transform_without_sprite_projection() {
   let app = transform_only_app();
   let entries = app
     .world()

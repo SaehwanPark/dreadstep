@@ -2599,9 +2599,10 @@ Acceptance:
 
 Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test sprite_transform_components --locked` passes 8/8 and
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_components --locked` passes 9/9 and
   proves exact map translations, inventory exclusion, fresh/retained tile-size behavior, accepted
-  movement, dead/stale/co-located identity, independent guards, and runtime/replay preservation.
+  movement, nonzero-Y mapping, dead/stale/co-located identity, independent guards, and runtime/replay
+  preservation.
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
   and `scripts/verify.sh` pass locally; media checks keep local binaries ignored while concept art
   and root screenshot exceptions remain visible. Remote PR review and CI remain the handoff gate.
