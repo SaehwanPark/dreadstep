@@ -257,6 +257,11 @@ latest runtime events as ordered typed movement and combat signals. It is eviden
 renderer only: no timers, interpolation, animation state machine, assets, transforms, or rendering
 work occurs at this boundary.
 
+The active window-request slice adds an optional `PresentationWindow` resource that validates logical
+dimensions, integer pixel scale, and checked physical dimensions. It is configuration for a future
+desktop client only; no OS window, platform event loop, desktop feature, or rendering state is
+created here.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and
