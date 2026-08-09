@@ -12,8 +12,10 @@ Update an existing lesson instead of adding a duplicate.
 - Cause: Bevy's default platform features pulled windowing, Wayland, X11, input, and audio
   dependencies into every repository check before any project code was analyzed.
 - Resolution: Move Bevy into `dreadstep-bevy`, disable default features, and enable only
-  `std` until a presentation milestone needs a reviewed feature set. A representative
-  Bevy 0.19 package with this configuration passed Clippy on the same environment.
+  `std` until a presentation milestone needs a reviewed feature set. Later headless Sprite API
+  work enabled only Bevy's `bevy_sprite` feature; its image/mesh/camera support remains usable
+  without adding render plugins or desktop backends. A representative Bevy 0.19 package with this
+  configuration passed Clippy on the same environment.
 - Prevention: Keep engine dependencies out of core, protocol, and content; inspect enabled
   features before adding presentation capabilities; verify the headless Linux workflow.
 

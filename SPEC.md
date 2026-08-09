@@ -2430,6 +2430,51 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: headless Bevy Sprite API bridge
+
+- Status: active
+- Started: 2026-08-09
+
+Advance the verified placeholder render-node boundary to Bevy's typed `Sprite` API without enabling
+a renderer. The adapter exposes deterministic solid-color placeholder `Sprite` values downstream
+of the ordered node projection; production textures, asset loading, and render plugins remain
+deferred while the API boundary is proven headlessly.
+
+Acceptance:
+
+- The workspace Bevy dependency enables only the `bevy_sprite` API feature in addition to the
+  existing `keyboard` and `std` features; audio, default-platform, Wayland, X11, and render-plugin
+  features remain disabled.
+- `PresentationBevySpriteProjection` exposes one ordered entry for every
+  `SceneRenderNodeEntry`, retaining node identity, source/key/layer/order/placement metadata and a
+  deterministic solid-color `Sprite` selected by the six typed placeholder families.
+- When `PresentationTileSize` is present, each placeholder Sprite uses the checked caller-selected
+  tile extent as its custom size; inventory entries remain unplaced because their node metadata has
+  no map pixel position. Without tile-size configuration the Sprite remains unsized metadata.
+- Accepted scene refreshes retain existing node identity and refresh Sprite values; missing
+  runtime, node source, or destination resources are independent safe no-ops preserving the prior
+  projection. The projection never mutates runtime snapshots, replay history, digests, or scene
+  authority.
+- The slice introduces no `SpritePlugin`/render plugin, texture/image loading or production asset
+  handles, transforms, cameras, windows, audio playback, animation, gameplay rules, persistence,
+  transport, dependencies beyond the Bevy API feature, or committed media binaries.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_components --locked` proves all six typed
+  placeholder families, complete node metadata and placement, 32×32 sizing, unsized missing
+  configuration, dead/stale/co-located identity behavior, and independent authority/source/
+  destination guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` must pass; media checks keep local binaries ignored while concept art and
+  root screenshot exceptions remain visible.
+
+Out of scope:
+
+- `SpritePlugin`, `SpriteRenderPlugin`, render backends, OS windows/platform features, transforms,
+  cameras, texture handles/loading, production assets, audio playback, animation, gameplay rules,
+  persistence, transport, and committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -2442,8 +2487,9 @@ explicit core contract.
 
 ### Remaining roadmap milestones
 
-The completed slices above cover the rules kernel, agent interfaces, and the deterministic
-headless presentation boundary currently implemented in the repository. The proposal still
+The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
+headless presentation boundary currently implemented in the repository; the active Present slice
+extends that boundary toward Bevy's Sprite API. The proposal still
 defines these future product milestones; each needs its own bounded acceptance slice before it
 can move into `Past`:
 

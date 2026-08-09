@@ -305,6 +305,14 @@ source/layer identity across role refreshes, typed placeholder families, orderin
 placement without introducing Bevy `Sprite` components, render plugins, windows, transforms, asset
 loading, or audio.
 
+The active headless Sprite API bridge enables only Bevy's `bevy_sprite` API feature. It adds
+`PresentationBevySpriteProjection`, whose ordered `SceneBevySpriteEntry` values join each stable
+placeholder node to a deterministic solid-color `Sprite` with the caller-selected tile size when
+available. The Sprite keeps Bevy's default image handle unset and is never attached to an ECS entity;
+no Sprite/render plugin, texture loading, transform, window, playback, or production media is
+introduced. Missing runtime, node source, or projection destination resources preserve the prior
+projection, and the wrapped core runtime remains authoritative.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does

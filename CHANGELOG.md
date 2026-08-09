@@ -122,6 +122,9 @@ All notable contributor- and user-visible project changes are recorded here.
   `PresentationAudioAssetProjection` boundary that exhaustively binds eight typed cue families to
   validated local `audio/` references while preserving payload/order without playback or an audio
   backend.
+- A headless Bevy Sprite API projection in progress: `PresentationBevySpriteProjection` joins
+  deterministic solid-color `Sprite` values to stable placeholder nodes with optional logical tile
+  sizing while keeping Sprite/render plugins, textures, transforms, playback, and media deferred.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
