@@ -13,9 +13,9 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is beginning Milestone 2: the agent interface. The active slice adds a pure in-memory
-MCP player session over versioned snapshots and typed action requests; the deterministic
-headless CLI remains available, but there is still no MCP transport runtime, graphical client,
+Dreadstep is beginning Milestone 2: the agent interface. The active slice adds deterministic
+legal-action discovery through the in-memory MCP player session; versioned snapshots and typed
+action requests remain available, but there is still no MCP transport runtime, graphical client,
 interactive input, or authored scenario system.
 
 The long-term design and roadmap are in

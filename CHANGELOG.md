@@ -25,6 +25,7 @@ All notable contributor- and user-visible project changes are recorded here.
   without executing them.
 - A pure in-memory MCP player session for deterministic start, observe, and act flows without a
   transport runtime.
+- Core-owned deterministic legal-action discovery exposed through the in-memory MCP session.
 
 ### Changed
 

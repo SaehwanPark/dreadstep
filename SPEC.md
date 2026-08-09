@@ -323,6 +323,41 @@ Out of scope:
 - MCP transport/runtime registration, legal-action enumeration, tester tools, session restore,
   wire serialization, authored scenarios, and interactive input.
 
+### Milestone 2 slice: deterministic legal-action discovery
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Expose the core's deterministic legal command set through `Session::legal_actions`. Core owns
+the actor-role, target, adjacency, and scheduling rules; the MCP adapter only converts the
+resulting canonical commands into protocol requests. Blocked movement remains discoverable as an
+accepted movement request, while invalid targets and wrong actor roles are excluded.
+
+Acceptance:
+
+- `WorldState::legal_commands` returns an ordered, read-only command list for the scheduled living
+  actor, or an empty list when no actor can act.
+- Enumeration includes four cardinal moves and wait for a living scheduled actor, plus only
+  valid adjacent attacks for players or valid living targets for enemy chase.
+- Enumeration order is deterministic: cardinal directions follow the core direction order,
+  wait follows movement, and target commands follow stable `ActorId` order.
+- `dreadstep-mcp::Session::legal_actions` returns protocol-owned requests with no world mutation
+  or duplicated legality logic.
+- Focused core/MCP tests cover initial player actions, enemy chase actions after scheduling, and
+  deterministic equality across equivalent sessions.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-mcp --all-targets --all-features --locked`
+  passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, tester tools, session restore, wire serialization, authored
+  scenarios, interactive input, and AI policy over the legal-action list.
+
 ## Future
 
 ### Milestone 1: Rules kernel
