@@ -174,7 +174,10 @@ validated `starter_floor` constructor. Content owns the row-major map and initia
 then delegates all dimension, terrain, identity, occupancy, and life validation to core.
 `PresentationState::start_run` consumes that constructor and preserves the caller's seed; MCP and
 future clients may choose their own adapter scenarios without making content or presentation
-state authoritative over the rules kernel.
+state authoritative over the rules kernel. `PresentationState::start_item_run` and the matching
+`PresentationRuntime` constructor explicitly consume the separate catalog-bound item scenario;
+the default startup remains item-free, and the normal plugin sync projects its inventory items as
+disposable `SceneInventoryItem` mirrors.
 
 The authored starter-item extension adds optional ordered `StarterItemPlacement` values and an
 explicit `ItemCatalogDefinition` binding to that content input. Building a floor validates catalog
