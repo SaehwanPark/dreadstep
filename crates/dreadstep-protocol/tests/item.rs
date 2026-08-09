@@ -63,6 +63,16 @@ fn item_ids_are_typed_and_duplicate_identity_maps_to_protocol_world_error() {
     )),
     CommandError::NothingEquipped(ActorId::new(1))
   );
+  assert_eq!(
+    CommandError::from(dreadstep_core::CommandError::ItemEquipped {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(7),
+    }),
+    CommandError::ItemEquipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(7),
+    }
+  );
 }
 
 #[test]

@@ -117,6 +117,9 @@ All notable contributor- and user-visible project changes are recorded here.
   ordered replacement events, versioned digest/replay state, protocol/MCP snapshot evidence, and a
   typed Bevy `SceneActor` projection; item effects, modifiers, capacity, and extra slots remain
   deferred.
+- An active deterministic single-item consumption preparation contract with scheduled `UseItem`,
+  atomic ownership/equipment validation, typed `ItemConsumed` protocol/MCP evidence, and stale
+  Bevy inventory cleanup; item effects, stats, capacity, and richer gameplay remain deferred.
 - A deterministic headless Bevy ground-item scene projection that preserves complete typed item
   data, stable item-identity entities, stack order, and stale cleanup without rendering policy.
 - A deterministic headless Bevy inventory-item scene projection that preserves global item identity,

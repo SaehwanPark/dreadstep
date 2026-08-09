@@ -2173,6 +2173,37 @@ Out of scope:
 
 ## Present
 
+### Milestone 4 preparation slice: deterministic single-item consumption
+
+- Status: active
+- Started: 2026-08-09
+
+Define the smallest gameplay-facing item-use boundary: a scheduled living actor may consume one
+owned, unequipped opaque item instance. Consumption removes that instance and emits a typed event;
+it does not infer an effect, alter stats, or introduce a second item store.
+
+Acceptance:
+
+- Typed `Command::UseItem` validates actor scheduling, life, ownership, and equipment, while
+  rejected commands preserve complete world and digest state.
+- An accepted consumption advances one standard action, removes exactly the requested inventory
+  instance, emits `ItemConsumed`, and records the command in replay history/digest evidence.
+- Legal-action discovery includes each owned unequipped item in deterministic inventory order and
+  excludes the currently equipped item.
+- Protocol JSON, MCP action/history/replay/snapshot projections, and Bevy scene/message/audio/
+  animation projections preserve the typed command/event and remove only the stale inventory
+  mirror; retained actor and remaining-item identities stay stable.
+- No item effects, stat modifiers, capacity, identification, additional slots, rendering, assets,
+  audio playback, windowing, persistence, transport, or dependencies are introduced.
+
+Verification target:
+
+- Focused core, protocol JSON, MCP, and Bevy consumption suites prove accepted removal, unknown/
+  equipped atomic rejection, legal ordering, replay identity, complete snapshot/history evidence,
+  stale inventory cleanup, retained scene identity, and all three ordered typed cue projections.
+- Workspace checks, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
+  `scripts/verify.sh` pass before the single-reviewer handoff.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -2191,8 +2222,9 @@ can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
-- Milestone 4 — Tactical Combat: richer player verbs, item use, and systemic combat interactions
-  beyond the verified single-slot equipment contract and verified tester item operations.
+- Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
+  active single-item consumption preparation, verified single-slot equipment contract, and tester
+  item operations.
 - Milestone 5 — The Living Dungeon: procedural floors, enemy archetypes, environmental state,
   and floor progression.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build

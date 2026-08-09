@@ -648,6 +648,13 @@ pub enum Command {
     /// The actor issuing the command.
     actor: ActorId,
   },
+  /// Consume one owned item instance without defining its future effect.
+  UseItem {
+    /// The actor issuing the command.
+    actor: ActorId,
+    /// The owned item instance to consume.
+    item: ItemId,
+  },
 }
 
 impl Command {
@@ -658,7 +665,8 @@ impl Command {
       | Self::Attack { actor, .. }
       | Self::Chase { actor, .. }
       | Self::Equip { actor, .. }
-      | Self::Unequip { actor } => actor,
+      | Self::Unequip { actor }
+      | Self::UseItem { actor, .. } => actor,
     }
   }
 }
@@ -744,6 +752,11 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u8(6);
       hasher.write_u32(actor.value());
     }
+    Command::UseItem { actor, item } => {
+      hasher.write_u8(7);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(item.value());
+    }
   }
 }
 
@@ -823,6 +836,13 @@ pub enum Event {
     /// The actor whose equipment changed.
     actor: ActorId,
     /// The item that was unequipped.
+    item: ItemId,
+  },
+  /// An actor consumed an owned item instance; effect semantics remain outside this slice.
+  ItemConsumed {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The consumed item identity.
     item: ItemId,
   },
 }
@@ -1036,7 +1056,7 @@ pub enum CommandError {
     /// The actor outside melee range.
     target: ActorId,
   },
-  /// The actor does not own the item requested for equipment.
+  /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
     actor: ActorId,
@@ -1052,6 +1072,13 @@ pub enum CommandError {
   },
   /// The actor has no equipped item to remove.
   NothingEquipped(ActorId),
+  /// The requested item is equipped and cannot be consumed.
+  ItemEquipped {
+    /// The actor whose equipment references the item.
+    actor: ActorId,
+    /// The equipped item identity.
+    item: ItemId,
+  },
 }
 
 impl fmt::Display for CommandError {
@@ -1098,7 +1125,7 @@ impl fmt::Display for CommandError {
       ),
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
-        "actor {} does not own item {} for equipment",
+        "actor {} does not own item {}",
         actor.value(),
         item.value()
       ),
@@ -1111,6 +1138,12 @@ impl fmt::Display for CommandError {
       Self::NothingEquipped(actor) => {
         write!(formatter, "actor {} has no equipped item", actor.value())
       }
+      Self::ItemEquipped { actor, item } => write!(
+        formatter,
+        "actor {} cannot consume equipped item {}",
+        actor.value(),
+        item.value()
+      ),
     }
   }
 }
@@ -1681,10 +1714,11 @@ impl WorldState {
   /// Returns commands currently available to the scheduled living actor.
   ///
   /// Cardinal movement and waiting are always listed because blocked movement still produces an
-  /// accepted semantic action. Owned items that are not already equipped are listed before the
-  /// optional unequip action. Player attacks are limited to adjacent living targets; enemy chase
-  /// requests include every distinct living target. Results follow the fixed direction, equipment,
-  /// and then stable actor identity order.
+  /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
+  /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
+  /// Player attacks are limited to adjacent living targets; enemy chase requests include every
+  /// distinct living target. Results follow the fixed direction, inventory, and then stable actor
+  /// identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
     let Some(actor_id) = self.next_actor() else {
@@ -1719,6 +1753,10 @@ impl WorldState {
     for item in actor.inventory() {
       if actor.equipped_item() != Some(item.id()) {
         commands.push(Command::Equip {
+          actor: actor_id,
+          item: item.id(),
+        });
+        commands.push(Command::UseItem {
           actor: actor_id,
           item: item.id(),
         });
@@ -1792,6 +1830,7 @@ impl WorldState {
       }
       Command::Equip { item, .. } => self.equip_item(actor_id, item)?,
       Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
+      Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],
     };
     self
       .actors
@@ -1869,6 +1908,36 @@ impl WorldState {
     Ok(Event::ItemUnequipped {
       actor: actor_id,
       item,
+    })
+  }
+
+  fn use_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<Event, CommandError> {
+    let item_index = self
+      .actors
+      .get(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .inventory()
+      .iter()
+      .position(|item| item.id() == item_id)
+      .ok_or(CommandError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      })?;
+    if self.actors.get(&actor_id).and_then(Actor::equipped_item) == Some(item_id) {
+      return Err(CommandError::ItemEquipped {
+        actor: actor_id,
+        item: item_id,
+      });
+    }
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .inventory
+      .remove(item_index);
+    Ok(Event::ItemConsumed {
+      actor: actor_id,
+      item: item_id,
     })
   }
 
