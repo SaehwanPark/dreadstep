@@ -83,8 +83,8 @@ execution remain owned by `dreadstep-core::WorldState`.
 
 The first MCP player slice is an in-memory session over those protocol values. It owns session
 seed/scenario setup and response shaping only; the minimal stdio server wraps its `start_run`,
-`observe`, and typed `act` operations without duplicating core transition rules. Broader transport
-tools remain future slices.
+`observe`, `legal_actions`, `inspect`, and typed `act` operations without duplicating core
+transition rules. Additional transports and tester operations remain future slices.
 
 Legal-action discovery is a core query, not an MCP policy: `WorldState::legal_commands` decides
 which typed commands are currently valid, and the session only maps those commands into protocol
@@ -150,6 +150,10 @@ Tester mutations remain outside the process wire contract.
 The legal-action MCP slice exposes `Session::legal_actions` as a no-argument, read-only tool. Core
 selects the scheduled actor and deterministic command order; the MCP adapter only serializes the
 typed protocol request array. A legal-action call cannot mutate world, history, or replay state.
+
+The actor-inspection MCP slice exposes `Session::inspect` through a typed actor-ID parameter. The
+session performs the existing snapshot lookup and returns an `ActorSnapshot` or `None`; MCP only
+serializes that visible projection and does not invent hidden-information or visibility rules.
 
 ## Constraints
 

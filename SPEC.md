@@ -840,6 +840,40 @@ Out of scope:
 - tester mutations over MCP, replay persistence, alternate transports, hidden information,
   interactive input, map editing, and gameplay item semantics.
 
+### Milestone 2 slice: MCP actor inspection
+
+- Status: verified
+- Started: 2026-08-08
+- Completed: 2026-08-08
+
+Expose the existing read-only `Session::inspect` lookup through the local stdio MCP server. The
+`inspect` tool takes a typed actor identity and returns the corresponding protocol `ActorSnapshot`
+or `null` when no actor with that identity exists. It preserves the existing information boundary:
+the adapter projects already-visible actor data and does not add hidden state, visibility policy, or
+gameplay behavior.
+
+Acceptance:
+
+- A stdio MCP client can call `inspect` with an object containing a typed actor ID and receive a
+  structured actor snapshot or an explicit absent result.
+- The input schema is an object with a protocol-owned actor ID, and the output schema represents
+  `ActorSnapshot | null` without ad-hoc strings or IDs.
+- Known and unknown inspection calls do not change the world snapshot, history, or replay evidence.
+- The process exposes exactly `start_run`, `observe`, `legal_actions`, `act`, and `inspect`; tester
+  mutations and other broader tools remain outside this slice.
+
+Verification:
+
+- Focused MCP tool-schema and ordered subprocess tests pass.
+- Direct session and stdio tests cover known, unknown, deterministic, and read-only inspection.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- The single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- tester mutations over MCP, replay persistence, alternate transports, hidden information,
+  interactive input, map editing, and gameplay item semantics.
+
 ## Future
 
 ### Deferred item gameplay semantics

@@ -5,7 +5,7 @@ use std::{
   process::{Command, Stdio},
 };
 
-use dreadstep_mcp::{ActParams, DreadstepMcpServer, StartRunParams};
+use dreadstep_mcp::{ActParams, DreadstepMcpServer, InspectParams, StartRunParams};
 use dreadstep_protocol::{ActorId, CommandRequest};
 use rmcp::handler::server::wrapper::Parameters;
 use serde_json::{Value, json};
@@ -40,6 +40,23 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
     before_legal_actions.0,
     server.observe().await.expect("observe should succeed").0
   );
+  let inspected = server
+    .inspect(Parameters(InspectParams {
+      actor: ActorId::new(1),
+    }))
+    .await
+    .expect("inspect should succeed");
+  assert_eq!(
+    inspected.0.expect("known actor should be present").id(),
+    ActorId::new(1)
+  );
+  let absent = server
+    .inspect(Parameters(InspectParams {
+      actor: ActorId::new(99),
+    }))
+    .await
+    .expect("inspect should succeed");
+  assert!(absent.0.is_none());
   let acted = server
     .act(Parameters(ActParams {
       request: CommandRequest::Wait {
@@ -66,6 +83,7 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
     DreadstepMcpServer::legal_actions_tool_attr().name,
     "legal_actions"
   );
+  assert_eq!(DreadstepMcpServer::inspect_tool_attr().name, "inspect");
   assert_eq!(DreadstepMcpServer::act_tool_attr().name, "act");
 }
 
@@ -131,10 +149,30 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     &mut input,
     &mut output,
   );
-  let legal = round_trip(
+  let inspected = round_trip(
     &json!({
       "jsonrpc": "2.0",
       "id": 4,
+      "method": "tools/call",
+      "params": {"name": "inspect", "arguments": {"actor": 1}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let absent = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 5,
+      "method": "tools/call",
+      "params": {"name": "inspect", "arguments": {"actor": 99}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let legal = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 6,
       "method": "tools/call",
       "params": {"name": "legal_actions", "arguments": {}}
     }),
@@ -144,7 +182,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let observed = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 5,
+      "id": 7,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -154,7 +192,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let acted = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 6,
+      "id": 8,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
     }),
@@ -164,7 +202,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let rejected = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 7,
+      "id": 9,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
     }),
@@ -174,7 +212,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let after_rejection = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 8,
+      "id": 10,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -198,7 +236,19 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     .map(|tool| tool["name"].as_str().expect("tool name should be text"))
     .collect::<Vec<_>>();
   tools.sort_unstable();
-  assert_eq!(tools, ["act", "legal_actions", "observe", "start_run"]);
+  assert_eq!(
+    tools,
+    ["act", "inspect", "legal_actions", "observe", "start_run"]
+  );
+  let inspect_tool = tools_list["result"]["tools"]
+    .as_array()
+    .expect("tools/list should return tools")
+    .iter()
+    .find(|tool| tool["name"] == "inspect")
+    .expect("inspect tool should be present");
+  assert_eq!(inspect_tool["inputSchema"]["type"], "object");
+  assert!(inspect_tool["inputSchema"]["properties"]["actor"].is_object());
+  assert!(inspect_tool["outputSchema"]["anyOf"].is_array());
   let legal_actions_tool = tools_list["result"]["tools"]
     .as_array()
     .expect("tools/list should return tools")
@@ -217,12 +267,17 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   assert!(act_tool["inputSchema"]["properties"]["request"].is_object());
   assert_eq!(act_tool["outputSchema"]["type"], "object");
   let started_snapshot = &started["result"]["structuredContent"];
+  let inspected_actor = &inspected["result"]["structuredContent"];
+  let absent_actor = &absent["result"]["structuredContent"];
   let legal_actions_output = &legal["result"]["structuredContent"];
   let observed_snapshot = &observed["result"]["structuredContent"];
   let acted_output = &acted["result"]["structuredContent"];
   let after_rejection_snapshot = &after_rejection["result"]["structuredContent"];
   assert_eq!(started_snapshot["protocol_version"], 1);
   assert_eq!(started_snapshot, observed_snapshot);
+  assert_eq!(inspected_actor["id"], 1);
+  assert_eq!(inspected_actor, &started_snapshot["actors"][0]);
+  assert!(absent_actor.is_null());
   assert_eq!(
     legal_actions_output
       .as_array()

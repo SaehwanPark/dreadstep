@@ -51,6 +51,8 @@ All notable contributor- and user-visible project changes are recorded here.
   evidence over stdio, and invalid-params rejection that leaves state and replay unchanged.
 - Read-only MCP `legal_actions` discovery over stdio with core-defined deterministic ordering and
   no world, history, or replay mutation.
+- Read-only MCP actor inspection over stdio with typed IDs, structured snapshot-or-null results, and
+  no world, history, or replay mutation.
 
 ### Changed
 

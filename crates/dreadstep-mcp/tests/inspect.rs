@@ -6,6 +6,9 @@ use dreadstep_protocol::{ActorId, CommandRequest, LifeState};
 #[test]
 fn inspect_returns_known_actor_from_the_current_snapshot() {
   let session = Session::start_run(7).expect("fixed scenario should be valid");
+  let before_snapshot = session.observe();
+  let before_history = session.history();
+  let before_replay = session.get_replay();
   let inspected = session
     .inspect(ActorId::new(1))
     .expect("player actor should be present");
@@ -18,16 +21,21 @@ fn inspect_returns_known_actor_from_the_current_snapshot() {
 
   assert_eq!(&inspected, from_snapshot);
   assert_eq!(inspected.life(), LifeState::Alive);
+  assert_eq!(session.observe(), before_snapshot);
+  assert_eq!(session.history(), before_history);
+  assert_eq!(session.get_replay(), before_replay);
 }
 
 #[test]
 fn inspect_unknown_actor_is_absent_and_does_not_mutate_session() {
   let session = Session::start_run(7).expect("fixed scenario should be valid");
   let snapshot = session.observe();
+  let history = session.history();
   let replay = session.get_replay();
 
   assert_eq!(session.inspect(ActorId::new(99)), None);
   assert_eq!(session.observe(), snapshot);
+  assert_eq!(session.history(), history);
   assert_eq!(session.get_replay(), replay);
 }
 
