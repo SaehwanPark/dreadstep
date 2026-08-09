@@ -985,6 +985,140 @@ impl PresentationRenderCommandPlan {
   }
 }
 
+/// The placeholder family used by the renderer bootstrap before production assets are loaded.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneRenderPlaceholder {
+  /// A terrain placeholder.
+  Terrain,
+  /// A living player placeholder.
+  Player,
+  /// A living enemy placeholder.
+  Enemy,
+  /// A retained dead-actor placeholder.
+  DeadActor,
+  /// A ground-item placeholder.
+  GroundItem,
+  /// An inventory-item placeholder.
+  InventoryItem,
+}
+
+impl SceneRenderPlaceholder {
+  fn from_key(key: SceneSpriteKey) -> Self {
+    match key {
+      SceneSpriteKey::Terrain(_) => Self::Terrain,
+      SceneSpriteKey::Player => Self::Player,
+      SceneSpriteKey::Enemy => Self::Enemy,
+      SceneSpriteKey::DeadActor => Self::DeadActor,
+      SceneSpriteKey::GroundItem(_) => Self::GroundItem,
+      SceneSpriteKey::InventoryItem(_) => Self::InventoryItem,
+    }
+  }
+}
+
+/// A stable ECS placeholder node reconciled from one typed render command.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneRenderNode {
+  source_entity: Entity,
+  key: SceneSpriteKey,
+  layer: SceneRenderLayer,
+  order: usize,
+  pixel_position: Option<ScenePixelPosition>,
+  placeholder: SceneRenderPlaceholder,
+}
+
+impl SceneRenderNode {
+  fn from_command(command: SceneRenderCommand) -> Self {
+    let sprite = command.sprite_entry();
+    Self {
+      source_entity: sprite.entity(),
+      key: sprite.key(),
+      layer: command.layer(),
+      order: command.order(),
+      pixel_position: command.pixel_position(),
+      placeholder: SceneRenderPlaceholder::from_key(sprite.key()),
+    }
+  }
+
+  /// Returns the authoritative scene mirror entity represented by this node.
+  #[must_use]
+  pub const fn source_entity(self) -> Entity {
+    self.source_entity
+  }
+
+  /// Returns the typed sprite selector represented by this node.
+  #[must_use]
+  pub const fn key(self) -> SceneSpriteKey {
+    self.key
+  }
+
+  /// Returns the deterministic draw layer.
+  #[must_use]
+  pub const fn layer(self) -> SceneRenderLayer {
+    self.layer
+  }
+
+  /// Returns the retained source order within the render command plan.
+  #[must_use]
+  pub const fn order(self) -> usize {
+    self.order
+  }
+
+  /// Returns optional checked map placement, absent for inventory entries.
+  #[must_use]
+  pub const fn pixel_position(self) -> Option<ScenePixelPosition> {
+    self.pixel_position
+  }
+
+  /// Returns the placeholder family used until production assets are available.
+  #[must_use]
+  pub const fn placeholder(self) -> SceneRenderPlaceholder {
+    self.placeholder
+  }
+}
+
+/// One read-only projection entry for a reconciled placeholder render node.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneRenderNodeEntry {
+  node_entity: Entity,
+  node: SceneRenderNode,
+}
+
+impl SceneRenderNodeEntry {
+  /// Returns the stable ECS entity carrying the placeholder node.
+  #[must_use]
+  pub const fn node_entity(self) -> Entity {
+    self.node_entity
+  }
+
+  /// Returns the typed node metadata.
+  #[must_use]
+  pub const fn node(self) -> SceneRenderNode {
+    self.node
+  }
+}
+
+/// An ordered, read-only projection of deterministic placeholder render nodes.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationRenderNodeProjection {
+  entries: Vec<SceneRenderNodeEntry>,
+}
+
+impl PresentationRenderNodeProjection {
+  /// Creates an empty placeholder-node projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Returns placeholder nodes in layer/source-order command order.
+  #[must_use]
+  pub fn entries(&self) -> &[SceneRenderNodeEntry] {
+    &self.entries
+  }
+}
+
 /// An ordered, read-only projection for a future renderer boundary.
 ///
 /// Entries are derived from the current keyed scene mirrors after scene and pixel synchronization.
@@ -1587,6 +1721,7 @@ fn update_presentation(world: &mut World) {
   sync_render_projection(world);
   sync_sprite_projection(world);
   sync_render_command_plan(world);
+  sync_render_nodes(world);
   sync_focus(world);
   sync_scene_focus(world);
   sync_camera(world);
@@ -1779,6 +1914,55 @@ fn sync_render_command_plan(world: &mut World) {
     return;
   };
   plan.commands = commands;
+}
+
+fn sync_render_nodes(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world
+      .get_resource::<PresentationRenderCommandPlan>()
+      .is_none()
+    || world
+      .get_resource::<PresentationRenderNodeProjection>()
+      .is_none()
+  {
+    return;
+  }
+  let commands = world
+    .resource::<PresentationRenderCommandPlan>()
+    .commands()
+    .to_vec();
+  let existing = {
+    let mut query = world.query::<(Entity, &SceneRenderNode)>();
+    query
+      .iter(world)
+      .map(|(entity, node)| (entity, *node))
+      .collect::<Vec<_>>()
+  };
+  let mut retained = Vec::new();
+  let mut entries = Vec::with_capacity(commands.len());
+  for command in commands {
+    let node = SceneRenderNode::from_command(command);
+    let retained_entity = existing
+      .iter()
+      .find(|(entity, existing_node)| {
+        !retained.contains(entity)
+          && existing_node.source_entity() == node.source_entity()
+          && existing_node.layer() == node.layer()
+      })
+      .map(|(entity, _)| *entity);
+    let node_entity = retained_entity.unwrap_or_else(|| world.spawn(node).id());
+    world.entity_mut(node_entity).insert(node);
+    retained.push(node_entity);
+    entries.push(SceneRenderNodeEntry { node_entity, node });
+  }
+  for (entity, _) in existing {
+    if !retained.contains(&entity) {
+      let _ = world.despawn(entity);
+    }
+  }
+  world
+    .resource_mut::<PresentationRenderNodeProjection>()
+    .entries = entries;
 }
 
 fn render_entries(

@@ -111,6 +111,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - A verified `PresentationRenderCommandPlan` boundary that derives deterministic terrain, ground,
   actor, and inventory draw layers plus source order and optional placement from sprite entries,
   without loading assets or enabling render plugins; actual rendering remains deferred.
+- An active `PresentationRenderNodeProjection` bootstrap that reconciles stable ECS placeholder nodes
+  from typed render commands while keeping Sprite components, render plugins, windows, assets,
+  animation, audio, and media deferred.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
