@@ -91,6 +91,10 @@ Session history is an adapter-owned view over core `ReplayTrace`: accepted comma
 after successful execution, rejected requests are omitted, and only protocol requests plus the
 core digest value cross the MCP boundary.
 
+The `get_replay` projection packages that history, explicit seed, and core trace digest in a
+protocol-owned `ReplayEvidence` value. It remains an in-memory read-only view; persistence,
+serialization, playback, and transport registration stay outside this slice.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

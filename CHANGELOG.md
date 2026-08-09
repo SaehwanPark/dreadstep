@@ -28,6 +28,8 @@ All notable contributor- and user-visible project changes are recorded here.
 - Core-owned deterministic legal-action discovery exposed through the in-memory MCP session.
 - Accepted-action session history and deterministic replay digest evidence backed by core
   `ReplayTrace`.
+- A typed in-memory `get_replay` evidence bundle exposing seed, accepted protocol requests, and
+  deterministic digest without persistence or transport serialization.
 
 ### Changed
 
