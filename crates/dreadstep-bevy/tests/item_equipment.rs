@@ -1,7 +1,7 @@
 //! Contract tests for the typed equipment field across Bevy scene and cue projections.
 
-use bevy::app::App;
 use bevy::input::{ButtonInput, keyboard::KeyCode};
+use bevy::{app::App, ecs::entity::Entity};
 use dreadstep_bevy::{
   PresentationAnimationCue, PresentationAnimationCues, PresentationAudioCue, PresentationAudioCues,
   PresentationInput, PresentationMessage, PresentationMessages, PresentationPlugin,
@@ -29,6 +29,12 @@ fn equipment_runtime() -> PresentationRuntime {
       Item::new(ItemId::new(4), ItemDefinitionId::new(104)),
     )
     .expect("item should be accepted");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(5), ItemDefinitionId::new(105)),
+    )
+    .expect("second item should be accepted");
   PresentationRuntime::new(PresentationState::new(7, world))
 }
 
@@ -75,7 +81,7 @@ fn equipment_updates_complete_actor_inventory_and_typed_cues() {
       .iter(app.world())
       .map(|item| item.id())
       .collect::<Vec<_>>(),
-    vec![ItemId::new(4)]
+    vec![ItemId::new(4), ItemId::new(5)]
   );
   assert_eq!(
     app.world().resource::<PresentationMessages>().messages(),
@@ -96,6 +102,146 @@ fn equipment_updates_complete_actor_inventory_and_typed_cues() {
     &[PresentationAnimationCue::ItemEquipped {
       actor: ActorId::new(1),
       item: ItemId::new(4),
+    }]
+  );
+}
+
+#[test]
+#[expect(
+  clippy::too_many_lines,
+  reason = "the contract intentionally compares retained identity and three ordered projections"
+)]
+fn replacement_and_unequip_preserve_scene_identity_and_ordered_projections() {
+  let mut app = equipment_app();
+  app.update();
+  let initial_actor_entity = app
+    .world_mut()
+    .query::<(Entity, &SceneActor)>()
+    .iter(app.world())
+    .map(|(entity, actor)| (actor.id(), entity))
+    .find(|(actor, _)| *actor == ActorId::new(1))
+    .map(|(_, entity)| entity)
+    .expect("actor mirror should exist");
+  let initial_inventory_entities: Vec<_> = app
+    .world_mut()
+    .query::<(Entity, &SceneInventoryItem)>()
+    .iter(app.world())
+    .map(|(entity, item)| (item.id(), entity))
+    .collect();
+
+  for command in [
+    Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    },
+    Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(5),
+    },
+  ] {
+    app
+      .world_mut()
+      .resource_mut::<PresentationRuntime>()
+      .execute(command)
+      .expect("equipment command should be accepted");
+    app.update();
+  }
+
+  let actor_after_replacement = app
+    .world_mut()
+    .query::<(Entity, &SceneActor)>()
+    .iter(app.world())
+    .find(|(_, actor)| actor.id() == ActorId::new(1))
+    .map(|(entity, actor)| (entity, *actor))
+    .expect("actor mirror should remain");
+  assert_eq!(actor_after_replacement.0, initial_actor_entity);
+  assert_eq!(
+    actor_after_replacement.1.equipped_item(),
+    Some(ItemId::new(5))
+  );
+  let replacement_inventory_entities: Vec<_> = app
+    .world_mut()
+    .query::<(Entity, &SceneInventoryItem)>()
+    .iter(app.world())
+    .map(|(entity, item)| (item.id(), entity))
+    .collect();
+  assert_eq!(replacement_inventory_entities, initial_inventory_entities);
+  assert_eq!(
+    app.world().resource::<PresentationMessages>().messages(),
+    &[
+      PresentationMessage::ItemUnequipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(4),
+      },
+      PresentationMessage::ItemEquipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(5),
+      },
+    ]
+  );
+  assert_eq!(
+    app.world().resource::<PresentationAudioCues>().cues(),
+    &[
+      PresentationAudioCue::ItemUnequipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(4),
+      },
+      PresentationAudioCue::ItemEquipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(5),
+      },
+    ]
+  );
+  assert_eq!(
+    app.world().resource::<PresentationAnimationCues>().cues(),
+    &[
+      PresentationAnimationCue::ItemUnequipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(4),
+      },
+      PresentationAnimationCue::ItemEquipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(5),
+      },
+    ]
+  );
+
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Unequip {
+      actor: ActorId::new(1),
+    })
+    .expect("equipment should be removable");
+  app.update();
+  let actor_after_unequip = app
+    .world_mut()
+    .query::<(Entity, &SceneActor)>()
+    .iter(app.world())
+    .find(|(_, actor)| actor.id() == ActorId::new(1))
+    .map(|(entity, actor)| (entity, *actor))
+    .expect("actor mirror should remain after unequip");
+  assert_eq!(actor_after_unequip.0, initial_actor_entity);
+  assert_eq!(actor_after_unequip.1.equipped_item(), None);
+  assert_eq!(
+    app.world().resource::<PresentationMessages>().messages(),
+    &[PresentationMessage::ItemUnequipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(5),
+    }]
+  );
+  assert_eq!(
+    app.world().resource::<PresentationAudioCues>().cues(),
+    &[PresentationAudioCue::ItemUnequipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(5),
+    }]
+  );
+  assert_eq!(
+    app.world().resource::<PresentationAnimationCues>().cues(),
+    &[PresentationAnimationCue::ItemUnequipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(5),
     }]
   );
 }

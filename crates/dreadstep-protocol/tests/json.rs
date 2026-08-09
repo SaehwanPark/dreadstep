@@ -6,7 +6,8 @@ use dreadstep_core::{
   Position as CorePosition, Tile as CoreTile, WorldState as CoreWorldState,
 };
 use dreadstep_protocol::{
-  ActionTime, ActorId, CommandRequest, Direction, Event, ReplayEvidence, StateDigest, WorldSnapshot,
+  ActionTime, ActorId, CommandRequest, Direction, Event, ItemId, ReplayEvidence, StateDigest,
+  WorldSnapshot,
 };
 
 fn snapshot() -> WorldSnapshot {
@@ -28,6 +29,31 @@ fn snapshot() -> WorldSnapshot {
   WorldSnapshot::from_world(&world)
 }
 
+fn equipped_snapshot() -> WorldSnapshot {
+  let mut world = CoreWorldState::new(
+    CoreGridMap::filled(2, 1, CoreTile::Floor).expect("map should be valid"),
+    vec![CoreActor::new(
+      CoreActorId::new(1),
+      CoreActorKind::Player,
+      CorePosition::new(0, 0),
+    )],
+  )
+  .expect("world should be valid");
+  world
+    .give_item(
+      CoreActorId::new(1),
+      CoreItem::new(CoreItemId::new(4), CoreItemDefinitionId::new(9)),
+    )
+    .expect("item should be accepted");
+  world
+    .execute(dreadstep_core::Command::Equip {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(4),
+    })
+    .expect("item should equip");
+  WorldSnapshot::from_world(&world)
+}
+
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
@@ -42,6 +68,10 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
   assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
+  let equipped_value =
+    serde_json::to_value(equipped_snapshot()).expect("snapshot should serialize");
+  assert_eq!(equipped_value["protocol_version"], 3);
+  assert_eq!(equipped_value["actors"][0]["equipped_item"], 4);
 }
 
 #[test]
@@ -90,6 +120,27 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     serde_json::to_value(equipment).expect("equipment request should serialize"),
     serde_json::json!({"equip": {"actor": 3, "item": 4}})
   );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "equip": {"actor": 3, "item": 4}
+    }))
+    .expect("equip request should deserialize"),
+    equipment
+  );
+  let unequipment = CommandRequest::Unequip {
+    actor: ActorId::new(3),
+  };
+  assert_eq!(
+    serde_json::to_value(unequipment).expect("unequip request should serialize"),
+    serde_json::json!({"unequip": {"actor": 3}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "unequip": {"actor": 3}
+    }))
+    .expect("unequip request should deserialize"),
+    unequipment
+  );
 
   let event = Event::Waited {
     actor: ActorId::new(3),
@@ -106,6 +157,28 @@ fn command_and_event_json_use_explicit_tagged_variants() {
   assert_eq!(
     serde_json::to_value(equipment_event).expect("equipment event should serialize"),
     serde_json::json!({"item_equipped": {"actor": 3, "item": 4}})
+  );
+  assert_eq!(
+    serde_json::from_value::<Event>(serde_json::json!({
+      "item_equipped": {"actor": 3, "item": 4}
+    }))
+    .expect("equipped event should deserialize"),
+    equipment_event
+  );
+  let unequipment_event = Event::ItemUnequipped {
+    actor: ActorId::new(3),
+    item: ItemId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(unequipment_event).expect("unequipped event should serialize"),
+    serde_json::json!({"item_unequipped": {"actor": 3, "item": 4}})
+  );
+  assert_eq!(
+    serde_json::from_value::<Event>(serde_json::json!({
+      "item_unequipped": {"actor": 3, "item": 4}
+    }))
+    .expect("unequipped event should deserialize"),
+    unequipment_event
   );
   let command_schema = serde_json::to_value(schemars::schema_for!(CommandRequest))
     .expect("command schema should serialize");

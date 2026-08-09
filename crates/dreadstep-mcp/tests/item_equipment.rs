@@ -1,7 +1,9 @@
 //! Contract tests for player-facing item equipment through the MCP session.
 
 use dreadstep_mcp::{Session, SessionError};
-use dreadstep_protocol::{ActorId, CommandError, CommandRequest, Event, ItemDefinitionId, ItemId};
+use dreadstep_protocol::{
+  ActorId, CommandError, CommandRequest, Event, ItemDefinitionId, ItemId, WorldError,
+};
 
 #[test]
 fn equipment_actions_project_events_snapshot_history_and_replay() {
@@ -80,6 +82,51 @@ fn rejected_equipment_preserves_snapshot_history_and_replay() {
       actor: ActorId::new(1),
       item: ItemId::new(99),
     }))
+  );
+  assert_eq!(session.observe(), before);
+  assert_eq!(session.history(), history);
+  assert_eq!(session.get_replay(), replay);
+}
+
+#[test]
+fn tester_cannot_move_equipped_item_and_preserves_session_evidence() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  session
+    .give_item(ActorId::new(1), ItemId::new(4), ItemDefinitionId::new(104))
+    .expect("item should be accepted");
+  session
+    .act(CommandRequest::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    })
+    .expect("item should equip");
+  let before = session.observe();
+  let history = session.history();
+  let replay = session.get_replay();
+
+  let drop_error = session
+    .drop_item(ActorId::new(1), ItemId::new(4))
+    .expect_err("equipped drop should be rejected");
+  assert_eq!(
+    drop_error,
+    SessionError::WorldRejected(WorldError::ItemEquipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    })
+  );
+  assert_eq!(session.observe(), before);
+  assert_eq!(session.history(), history);
+  assert_eq!(session.get_replay(), replay);
+
+  let transfer_error = session
+    .transfer_item(ActorId::new(1), ActorId::new(2), ItemId::new(4))
+    .expect_err("equipped transfer should be rejected");
+  assert_eq!(
+    transfer_error,
+    SessionError::WorldRejected(WorldError::ItemEquipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    })
   );
   assert_eq!(session.observe(), before);
   assert_eq!(session.history(), history);

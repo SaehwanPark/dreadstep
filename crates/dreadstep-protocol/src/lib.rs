@@ -177,7 +177,7 @@ pub enum ActorKind {
 }
 
 /// A protocol position value.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
 pub struct Position {
   x: i32,
   y: i32,
@@ -204,7 +204,9 @@ impl Position {
 }
 
 /// Protocol hit-point evidence for an actor.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
+#[derive(
+  Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize,
+)]
 pub struct HitPoints(u16);
 
 impl HitPoints {
@@ -438,7 +440,9 @@ pub enum LifeState {
 }
 
 /// A protocol action timestamp.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
+#[derive(
+  Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize,
+)]
 pub struct ActionTime(u64);
 
 impl ActionTime {
@@ -856,7 +860,9 @@ impl fmt::Display for WorldError {
 impl std::error::Error for WorldError {}
 
 /// Protocol damage evidence emitted by an accepted attack.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
+#[derive(
+  Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize,
+)]
 pub struct Damage(u16);
 
 impl Damage {
@@ -874,7 +880,7 @@ impl Damage {
 }
 
 /// A protocol movement-blocking reason.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BlockReason {
   /// The destination is outside the map or blocked terrain.
@@ -884,7 +890,7 @@ pub enum BlockReason {
 }
 
 /// A semantic event projected for agent responses.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, JsonSchema, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, JsonSchema, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Event {
   /// An actor entered an unoccupied walkable tile.

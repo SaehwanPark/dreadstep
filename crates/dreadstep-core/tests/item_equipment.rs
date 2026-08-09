@@ -132,13 +132,30 @@ fn replacement_is_ordered_and_rejected_commands_are_atomic() {
 
 #[test]
 fn equipped_items_cannot_be_moved_by_tester_mutations() {
-  let mut world = equipment_world();
+  let map = GridMap::filled(2, 1, Tile::Floor).expect("map should validate");
+  let mut world = WorldState::new(
+    map,
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(1, 0)),
+    ],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(1), ItemDefinitionId::new(101)),
+    )
+    .expect("item should be accepted");
   world
     .execute(Command::Equip {
       actor: ActorId::new(1),
       item: ItemId::new(1),
     })
     .expect("item should equip");
+
+  let before_drop = world.clone();
+  let before_drop_digest = world.digest();
   assert_eq!(
     world.drop_item(ActorId::new(1), ItemId::new(1)),
     Err(dreadstep_core::WorldError::ItemEquipped {
@@ -146,16 +163,27 @@ fn equipped_items_cannot_be_moved_by_tester_mutations() {
       item: ItemId::new(1),
     })
   );
+  assert_eq!(world, before_drop);
+  assert_eq!(world.digest(), before_drop_digest);
+
+  let before_transfer = world.clone();
+  let before_transfer_digest = world.digest();
   assert_eq!(
-    world.transfer_item(ActorId::new(1), ActorId::new(1), ItemId::new(1)),
+    world.transfer_item(ActorId::new(1), ActorId::new(2), ItemId::new(1)),
     Err(dreadstep_core::WorldError::ItemEquipped {
       actor: ActorId::new(1),
       item: ItemId::new(1),
     })
   );
+  assert_eq!(world, before_transfer);
+  assert_eq!(world.digest(), before_transfer_digest);
 }
 
 #[test]
+#[expect(
+  clippy::too_many_lines,
+  reason = "the contract intentionally compares legal ordering and isolated digest variants"
+)]
 fn legal_commands_and_replay_digest_include_equipment_in_order() {
   let mut world = equipment_world();
   let before = world.digest();
@@ -189,13 +217,68 @@ fn legal_commands_and_replay_digest_include_equipment_in_order() {
     ]
   );
 
-  let mut trace = dreadstep_core::ReplayTrace::new(7);
-  trace.record(Command::Equip {
+  let mut equip_one = dreadstep_core::ReplayTrace::new(7);
+  equip_one.record(Command::Equip {
     actor: ActorId::new(1),
     item: ItemId::new(1),
   });
-  let initial_trace = dreadstep_core::ReplayTrace::new(7).digest();
-  assert_ne!(trace.digest(), initial_trace);
+  let mut equip_two = dreadstep_core::ReplayTrace::new(7);
+  equip_two.record(Command::Equip {
+    actor: ActorId::new(1),
+    item: ItemId::new(2),
+  });
+  assert_ne!(equip_one.digest(), equip_two.digest());
+
+  let mut unequip = dreadstep_core::ReplayTrace::new(7);
+  unequip.record(Command::Unequip {
+    actor: ActorId::new(1),
+  });
+  assert_ne!(equip_one.digest(), unequip.digest());
+
+  let mut equip_then_unequip = dreadstep_core::ReplayTrace::new(7);
+  equip_then_unequip.record(Command::Equip {
+    actor: ActorId::new(1),
+    item: ItemId::new(1),
+  });
+  equip_then_unequip.record(Command::Unequip {
+    actor: ActorId::new(1),
+  });
+  let mut unequip_then_equip = dreadstep_core::ReplayTrace::new(7);
+  unequip_then_equip.record(Command::Unequip {
+    actor: ActorId::new(1),
+  });
+  unequip_then_equip.record(Command::Equip {
+    actor: ActorId::new(1),
+    item: ItemId::new(1),
+  });
+  assert_ne!(equip_then_unequip.digest(), unequip_then_equip.digest());
+
+  let mut first_world = equipment_world();
+  first_world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(2), ItemDefinitionId::new(102)),
+    )
+    .expect("second item should be owned");
+  let mut second_world = first_world.clone();
+  first_world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(1),
+    })
+    .expect("first item should equip");
+  second_world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(2),
+    })
+    .expect("second item should equip");
+  assert_eq!(first_world.current_time(), second_world.current_time());
+  assert_eq!(
+    first_world.actor(ActorId::new(1)).unwrap().inventory(),
+    second_world.actor(ActorId::new(1)).unwrap().inventory()
+  );
+  assert_ne!(first_world.digest(), second_world.digest());
 
   world
     .execute(Command::Equip {

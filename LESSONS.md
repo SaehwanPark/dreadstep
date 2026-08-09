@@ -167,3 +167,18 @@ constructor cannot silently alter the default client path or lose owner/order da
   tester replay invariants, complete Bevy item data, retained scene identities, duplicate cleanup,
   picked-up stale removal, inventory owner/order updates, and inventory stale removal alongside
   complete tile/actor/ground projections.
+
+## Refresh every adapter golden after a digest schema change
+
+- Context: The equipment contract added optional identity bytes to the state digest and new command
+  codes to the replay digest, intentionally changing both deterministic namespaces to `V2`.
+- Symptom: Core, protocol, and presentation tests passed locally while Linux CI failed in the
+  headless CLI's exact rendered-output golden, which still contained the pre-change digest value.
+- Cause: Digest values are consumed by adapter tests as observable evidence; searching only core
+  assertions misses hard-coded values in downstream CLI or integration fixtures.
+- Resolution: Refresh the headless golden from the observed `scripts/verify.sh` failure, then rerun
+  the focused headless suite and full workspace verification. The corrected expectation is tracked
+  in `crates/dreadstep-headless/src/lib.rs`.
+- Prevention: Whenever digest bytes or namespace changes, search the full workspace for every old
+  golden value, run `scripts/verify.sh`, and isolate new hash-field tests from action-time or trace-
+  length changes so identity bytes are proven directly.
