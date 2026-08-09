@@ -1,16 +1,20 @@
 //! Model Context Protocol adapter boundary for Dreadstep.
 //!
 //! The in-memory [`Session`] remains the semantic adapter boundary. The [`server`] module adds
-//! only a narrow local stdio process wrapper around its read-only observation and start operations;
-//! it must not become a generic shell, filesystem escape hatch, or hidden source of game truth.
+//! only a narrow local stdio process wrapper around its observation, start, and typed player-action
+//! operations; it must not become a generic shell, filesystem escape hatch, or hidden source of game
+//! truth.
 
 #![forbid(unsafe_code)]
 
 pub mod server;
 
-pub use server::{DreadstepMcpServer, StartRunParams};
+pub use server::{ActParams, DreadstepMcpServer, StartRunParams};
 
 use std::{error::Error, fmt};
+
+use schemars::JsonSchema;
+use serde::Serialize;
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position,
@@ -56,7 +60,7 @@ impl Error for SessionError {
 }
 
 /// Evidence returned after one accepted player action.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
 pub struct SessionOutput {
   seed: u64,
   events: Vec<Event>,

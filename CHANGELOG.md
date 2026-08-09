@@ -46,7 +46,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - Validated tester teleport with typed destination validation, dead-record occupancy semantics, and
   no player-trace effects.
 - Minimal local MCP stdio observation with versioned snapshot JSON, `start_run`, and read-only
-  `observe` tools; broader actions and tester mutations remain library-only.
+  `observe` tools.
+- Typed MCP player `act` requests with explicit command/event JSON and schemas, structured action
+  evidence over stdio, and invalid-params rejection that leaves state and replay unchanged.
 
 ### Changed
 

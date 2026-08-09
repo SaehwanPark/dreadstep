@@ -5,7 +5,7 @@ use dreadstep_core::{
   Item as CoreItem, ItemDefinitionId as CoreItemDefinitionId, ItemId as CoreItemId,
   Position as CorePosition, Tile as CoreTile, WorldState as CoreWorldState,
 };
-use dreadstep_protocol::WorldSnapshot;
+use dreadstep_protocol::{ActionTime, ActorId, CommandRequest, Direction, Event, WorldSnapshot};
 
 fn snapshot() -> WorldSnapshot {
   let mut world = CoreWorldState::new(
@@ -57,4 +57,38 @@ fn snapshot_schema_exposes_the_versioned_projection_shape() {
   assert!(properties["next_actor"].is_object());
   assert!(properties["digest"].is_object());
   assert!(properties["actors"].is_object());
+}
+
+#[test]
+fn command_and_event_json_use_explicit_tagged_variants() {
+  let request = CommandRequest::Move {
+    actor: ActorId::new(3),
+    direction: Direction::East,
+  };
+  assert_eq!(
+    serde_json::to_value(request).expect("request should serialize"),
+    serde_json::json!({"move": {"actor": 3, "direction": "east"}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "move": {"actor": 3, "direction": "east"}
+    }))
+    .expect("request should deserialize"),
+    request
+  );
+
+  let event = Event::Waited {
+    actor: ActorId::new(3),
+    at: ActionTime::new(7),
+  };
+  assert_eq!(
+    serde_json::to_value(event).expect("event should serialize"),
+    serde_json::json!({"waited": {"actor": 3, "at": 7}})
+  );
+  let command_schema = serde_json::to_value(schemars::schema_for!(CommandRequest))
+    .expect("command schema should serialize");
+  assert!(command_schema["oneOf"].is_array());
+  let event_schema =
+    serde_json::to_value(schemars::schema_for!(Event)).expect("event schema should serialize");
+  assert!(event_schema["oneOf"].is_array());
 }

@@ -15,13 +15,14 @@ use dreadstep_core::{
   WorldState,
 };
 use schemars::JsonSchema;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
 pub const PROTOCOL_VERSION: u16 = 1;
 
 /// A cardinal direction in a protocol action request.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Direction {
   /// One row toward decreasing vertical coordinates.
   North,
@@ -34,7 +35,8 @@ pub enum Direction {
 }
 
 /// A typed agent request that can be converted into one core command.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum CommandRequest {
   /// Move one tile in a cardinal direction.
   Move {
@@ -119,7 +121,9 @@ impl From<CoreCommand> for CommandRequest {
 }
 
 /// A stable actor identity in the protocol projection.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
+#[derive(
+  Clone, Copy, Debug, Deserialize, Eq, Hash, JsonSchema, Ord, PartialEq, PartialOrd, Serialize,
+)]
 pub struct ActorId(u32);
 
 impl ActorId {
@@ -740,7 +744,7 @@ impl fmt::Display for WorldError {
 impl std::error::Error for WorldError {}
 
 /// Protocol damage evidence emitted by an accepted attack.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct Damage(u16);
 
 impl Damage {
@@ -758,7 +762,8 @@ impl Damage {
 }
 
 /// A protocol movement-blocking reason.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum BlockReason {
   /// The destination is outside the map or blocked terrain.
   Terrain,
@@ -767,7 +772,8 @@ pub enum BlockReason {
 }
 
 /// A semantic event projected for agent responses.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Event {
   /// An actor entered an unoccupied walkable tile.
   Moved {
