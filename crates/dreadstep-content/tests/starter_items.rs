@@ -1,10 +1,10 @@
 //! Authored starter-floor item placement behavior.
 
 use dreadstep_content::{
-  ContentError, ItemCatalogDefinition, StarterItemPlacement, starter_floor_definition,
-  starter_item_floor, starter_item_floor_definition,
+  ContentError, ItemCatalogDefinition, StarterItemPlacement, starter_floor,
+  starter_floor_definition, starter_item_floor, starter_item_floor_definition,
 };
-use dreadstep_core::{ActorId, Item, ItemDefinitionId, ItemId};
+use dreadstep_core::{ActorId, Item, ItemDefinitionId, ItemId, WorldState};
 
 #[test]
 fn starter_item_floor_is_complete_and_repeatable() {
@@ -12,9 +12,32 @@ fn starter_item_floor_is_complete_and_repeatable() {
     .build()
     .expect("authored starter item floor should validate");
   let from_wrapper = starter_item_floor().expect("starter item floor wrapper should validate");
+  let default = starter_floor().expect("default starter floor should validate");
   let actors: Vec<_> = from_definition.actors().collect();
 
   assert_eq!(from_wrapper, from_definition);
+  assert_eq!(from_definition.map(), default.map());
+  let actor_projection = |world: &WorldState| {
+    world
+      .actors()
+      .map(|actor| {
+        (
+          actor.id(),
+          actor.kind(),
+          actor.position(),
+          actor.hit_points(),
+          actor.ready_at(),
+          actor.is_alive(),
+        )
+      })
+      .collect::<Vec<_>>()
+  };
+  assert_eq!(
+    actor_projection(&from_definition),
+    actor_projection(&default)
+  );
+  assert_eq!(from_definition.current_time(), default.current_time());
+  assert_eq!(from_definition.next_actor(), default.next_actor());
   assert_eq!(
     actors[0].inventory(),
     &[
