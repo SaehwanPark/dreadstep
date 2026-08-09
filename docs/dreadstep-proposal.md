@@ -1729,6 +1729,15 @@ OpenGameArt.org and similar catalogs are discovery sources, not blanket licenses
 asset's terms individually; prefer CC0 or CC BY 4.0, and require explicit project approval for
 other terms before integration.
 
+Current exploratory gate (2026-08-09):
+
+- [`docs/presentation/asset-evaluation.md`](presentation/asset-evaluation.md) records local-only
+  generated candidates, a Kenney Tiny Dungeon CC0 fallback, and Kenney UI Audio CC0 evidence.
+- No working renderer tile size is selected yet: the retained generated sheets are unconstrained,
+  and native or explicitly normalized samples are still required before comparing 24×24 and 32×32.
+- This is not a production asset selection: dungeon combat, movement, pickup, detection, and
+  environmental audio still require a targeted source or an explicit original-audio decision.
+
 ### Content
 
 Approximately:
