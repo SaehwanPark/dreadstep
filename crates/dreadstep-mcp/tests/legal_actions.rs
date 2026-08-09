@@ -32,3 +32,18 @@ fn equivalent_sessions_expose_equal_legal_action_lists() {
 
   assert_eq!(first.legal_actions(), second.legal_actions());
 }
+
+#[test]
+fn legal_action_discovery_is_read_only_for_world_history_and_replay() {
+  let session = Session::start_run(7).expect("fixed scenario should be valid");
+  let before_snapshot = session.observe();
+  let before_history = session.history();
+  let before_replay = session.get_replay();
+
+  let actions = session.legal_actions();
+
+  assert_eq!(actions.len(), 6);
+  assert_eq!(session.observe(), before_snapshot);
+  assert_eq!(session.history(), before_history);
+  assert_eq!(session.get_replay(), before_replay);
+}

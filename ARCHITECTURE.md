@@ -145,7 +145,11 @@ Stdout is reserved for MCP protocol traffic, and tester mutations remain library
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.
-Legal-action discovery and tester mutations remain outside the process wire contract.
+Tester mutations remain outside the process wire contract.
+
+The legal-action MCP slice exposes `Session::legal_actions` as a no-argument, read-only tool. Core
+selects the scheduled actor and deterministic command order; the MCP adapter only serializes the
+typed protocol request array. A legal-action call cannot mutate world, history, or replay state.
 
 ## Constraints
 

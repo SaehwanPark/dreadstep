@@ -807,6 +807,39 @@ Out of scope:
 - legal-actions transport, tester mutations over MCP, replay persistence, alternate transports,
   hidden information, interactive input, map editing, and gameplay item semantics.
 
+### Milestone 2 slice: MCP legal-action discovery
+
+- Status: verified
+- Started: 2026-08-08
+- Completed: 2026-08-08
+
+Expose the existing deterministic `Session::legal_actions` query through the local stdio MCP
+server. The `legal_actions` tool takes no arguments and returns the core-selected command list as
+typed protocol requests with stable ordering. It is read-only: the scheduler and rules remain in
+`dreadstep-core`, and the MCP adapter only projects the result.
+
+Acceptance:
+
+- A stdio MCP client can discover and call `legal_actions` without arguments and receive an array
+  of typed move/wait/attack/chase requests in core-defined deterministic order.
+- The tool's input and output schemas are explicit (`object` input and array output), and command
+  variants retain the same tagged JSON shape used by `act`.
+- Calling `legal_actions` does not change the world snapshot, accepted history, or replay evidence.
+- The process exposes exactly `start_run`, `observe`, `legal_actions`, and `act`; tester mutations
+  and other broader tools remain outside this slice.
+
+Verification:
+
+- Focused MCP tool-schema and ordered subprocess tests pass.
+- Direct session and stdio tests prove read-only behavior and deterministic action ordering.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- The single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- tester mutations over MCP, replay persistence, alternate transports, hidden information,
+  interactive input, map editing, and gameplay item semantics.
+
 ## Future
 
 ### Deferred item gameplay semantics
