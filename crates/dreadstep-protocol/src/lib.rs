@@ -11,7 +11,8 @@ use std::fmt;
 use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
   Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
-  Event as CoreEvent, MapError as CoreMapError, WorldError as CoreWorldError, WorldState,
+  Event as CoreEvent, Item as CoreItem, MapError as CoreMapError, WorldError as CoreWorldError,
+  WorldState,
 };
 
 /// Version of the in-memory agent observation projection.
@@ -184,6 +185,70 @@ impl HitPoints {
   #[must_use]
   pub const fn value(self) -> u16 {
     self.0
+  }
+}
+
+/// A stable item instance identity in the protocol projection.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ItemId(u32);
+
+impl ItemId {
+  /// Creates an item identity from its stable numeric value.
+  #[must_use]
+  pub const fn new(value: u32) -> Self {
+    Self(value)
+  }
+
+  /// Returns the stable numeric identity.
+  #[must_use]
+  pub const fn value(self) -> u32 {
+    self.0
+  }
+}
+
+/// An opaque item-definition reference in the protocol projection.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ItemDefinitionId(u32);
+
+impl ItemDefinitionId {
+  /// Creates a definition reference from its stable numeric value.
+  #[must_use]
+  pub const fn new(value: u32) -> Self {
+    Self(value)
+  }
+
+  /// Returns the stable numeric definition reference.
+  #[must_use]
+  pub const fn value(self) -> u32 {
+    self.0
+  }
+}
+
+/// A read-only protocol projection of one owned opaque item.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ItemSnapshot {
+  id: ItemId,
+  definition: ItemDefinitionId,
+}
+
+impl ItemSnapshot {
+  fn from_item(item: CoreItem) -> Self {
+    Self {
+      id: ItemId::new(item.id().value()),
+      definition: ItemDefinitionId::new(item.definition().value()),
+    }
+  }
+
+  /// Returns the stable item instance identity.
+  #[must_use]
+  pub const fn id(self) -> ItemId {
+    self.id
+  }
+
+  /// Returns the opaque definition reference.
+  #[must_use]
+  pub const fn definition(self) -> ItemDefinitionId {
+    self.definition
   }
 }
 
@@ -489,6 +554,8 @@ impl std::error::Error for ScenarioError {
 pub enum WorldError {
   /// A tester mutation addresses no actor in the world.
   UnknownActor(ActorId),
+  /// An item identity is already owned by an actor in the world.
+  DuplicateItemId(ItemId),
   /// The requested actor identity already exists.
   DuplicateActorId(ActorId),
   /// The requested actor position is outside the map.
@@ -525,6 +592,7 @@ impl From<CoreWorldError> for WorldError {
   fn from(error: CoreWorldError) -> Self {
     match error {
       CoreWorldError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
+      CoreWorldError::DuplicateItemId(item) => Self::DuplicateItemId(ItemId::new(item.value())),
       CoreWorldError::DuplicateActorId(actor) => {
         Self::DuplicateActorId(ActorId::new(actor.value()))
       }
@@ -556,6 +624,9 @@ impl fmt::Display for WorldError {
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
+      Self::DuplicateItemId(item) => {
+        write!(formatter, "item id {} is duplicated", item.value())
+      }
       Self::DuplicateActorId(actor) => {
         write!(formatter, "actor id {} is duplicated", actor.value())
       }
@@ -851,6 +922,7 @@ pub struct ActorSnapshot {
   hit_points: HitPoints,
   life: LifeState,
   ready_at: ActionTime,
+  inventory: Vec<ItemSnapshot>,
 }
 
 impl ActorSnapshot {
@@ -869,6 +941,12 @@ impl ActorSnapshot {
         LifeState::Dead
       },
       ready_at: ActionTime::new(actor.ready_at().value()),
+      inventory: actor
+        .inventory()
+        .iter()
+        .copied()
+        .map(ItemSnapshot::from_item)
+        .collect(),
     }
   }
 
@@ -912,6 +990,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn ready_at(&self) -> ActionTime {
     self.ready_at
+  }
+
+  /// Returns owned item snapshots in deterministic insertion order.
+  #[must_use]
+  pub fn inventory(&self) -> &[ItemSnapshot] {
+    &self.inventory
   }
 }
 

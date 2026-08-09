@@ -26,6 +26,69 @@ impl ActorId {
   }
 }
 
+/// A globally unique identity for one opaque item instance.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ItemId(u32);
+
+impl ItemId {
+  /// Creates an item identity from its stable numeric value.
+  #[must_use]
+  pub const fn new(value: u32) -> Self {
+    Self(value)
+  }
+
+  /// Returns the stable numeric value of this identity.
+  #[must_use]
+  pub const fn value(self) -> u32 {
+    self.0
+  }
+}
+
+/// An opaque content reference for an item instance.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ItemDefinitionId(u32);
+
+impl ItemDefinitionId {
+  /// Creates an item-definition reference from its stable numeric value.
+  #[must_use]
+  pub const fn new(value: u32) -> Self {
+    Self(value)
+  }
+
+  /// Returns the stable numeric value of this definition reference.
+  #[must_use]
+  pub const fn value(self) -> u32 {
+    self.0
+  }
+}
+
+/// One opaque item instance owned by an actor.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Item {
+  id: ItemId,
+  definition: ItemDefinitionId,
+}
+
+impl Item {
+  /// Creates an item instance with an explicit identity and content reference.
+  #[must_use]
+  pub const fn new(id: ItemId, definition: ItemDefinitionId) -> Self {
+    Self { id, definition }
+  }
+
+  /// Returns the globally unique instance identity.
+  #[must_use]
+  pub const fn id(self) -> ItemId {
+    self.id
+  }
+
+  /// Returns the opaque content reference.
+  #[must_use]
+  pub const fn definition(self) -> ItemDefinitionId {
+    self.definition
+  }
+}
+
 /// A tile coordinate in the simulation's row-major grid.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Position {
@@ -419,13 +482,14 @@ impl StableHasher {
   }
 }
 
-/// An actor with a stable identity, kind, position, hit points, and next ready time.
+/// An actor with a stable identity, kind, position, hit points, inventory, and next ready time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Actor {
   id: ActorId,
   kind: ActorKind,
   position: Position,
   hit_points: HitPoints,
+  inventory: Vec<Item>,
   ready_at: ActionTime,
 }
 
@@ -449,6 +513,7 @@ impl Actor {
       kind,
       position,
       hit_points,
+      inventory: Vec::new(),
       ready_at: ActionTime::new(0),
     }
   }
@@ -475,6 +540,12 @@ impl Actor {
   #[must_use]
   pub const fn hit_points(&self) -> HitPoints {
     self.hit_points
+  }
+
+  /// Returns this actor's items in deterministic insertion order.
+  #[must_use]
+  pub fn inventory(&self) -> &[Item] {
+    &self.inventory
   }
 
   /// Returns whether this actor can be scheduled, targeted, or moved around.
@@ -678,6 +749,8 @@ pub enum Event {
 pub enum WorldError {
   /// A tester mutation addresses no actor in the world.
   UnknownActor(ActorId),
+  /// An item identity is already owned by an actor in the world.
+  DuplicateItemId(ItemId),
   /// Two actors use the same stable identity.
   DuplicateActorId(ActorId),
   /// An actor starts outside the map.
@@ -714,6 +787,9 @@ impl fmt::Display for WorldError {
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
+      Self::DuplicateItemId(item) => {
+        write!(formatter, "item id {} is duplicated", item.value())
+      }
       Self::DuplicateActorId(actor) => {
         write!(formatter, "actor id {} is duplicated", actor.value())
       }
@@ -978,6 +1054,39 @@ impl WorldState {
     Ok(())
   }
 
+  /// Gives one opaque item instance to an existing actor for an explicit tester operation.
+  ///
+  /// Item ownership is recorded in insertion order. The instance identity is global across all
+  /// actor inventories; item effects, transfer, and capacity rules are intentionally outside this
+  /// slice. Dead actor records remain valid ownership targets because the mutation does not alter
+  /// scheduling or occupancy.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`WorldError::UnknownActor`] when the target identity is absent or
+  /// [`WorldError::DuplicateItemId`] when another actor already owns the item identity. A
+  /// rejected item is not inserted.
+  pub fn give_item(&mut self, actor_id: ActorId, item: Item) -> Result<(), WorldError> {
+    if !self.actors.contains_key(&actor_id) {
+      return Err(WorldError::UnknownActor(actor_id));
+    }
+    if self.actors.values().any(|actor| {
+      actor
+        .inventory()
+        .iter()
+        .any(|owned| owned.id() == item.id())
+    }) {
+      return Err(WorldError::DuplicateItemId(item.id()));
+    }
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(WorldError::UnknownActor(actor_id))?
+      .inventory
+      .push(item);
+    Ok(())
+  }
+
   /// Sets one existing actor's hit points for an explicit tester operation.
   ///
   /// Setting zero leaves the dead actor record inspectable while existing scheduling and
@@ -1061,8 +1170,9 @@ impl WorldState {
   /// Returns a stable digest of all semantic world state.
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
-  /// identity, kind, life, position, hit points, and ready time. It is deterministic regression
-  /// evidence, not a cryptographic integrity check or serialized state format.
+  /// identity, kind, life, position, hit points, ready time, and ordered inventory item
+  /// identities and definition references. It is deterministic regression evidence, not a
+  /// cryptographic integrity check or serialized state format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
@@ -1087,6 +1197,11 @@ impl WorldState {
       hasher.write_i32(actor.position().y());
       hasher.write_u16(actor.hit_points().value());
       hasher.write_u64(actor.ready_at().value());
+      hasher.write_u64(u64::try_from(actor.inventory().len()).unwrap_or(u64::MAX));
+      for item in actor.inventory() {
+        hasher.write_u32(item.id().value());
+        hasher.write_u32(item.definition().value());
+      }
     }
     hasher.finish()
   }

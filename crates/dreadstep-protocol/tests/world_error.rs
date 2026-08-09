@@ -13,6 +13,10 @@ fn every_core_world_error_maps_to_protocol_values() {
       WorldError::UnknownActor(ActorId::new(9)),
     ),
     (
+      CoreWorldError::DuplicateItemId(dreadstep_core::ItemId::new(7)),
+      WorldError::DuplicateItemId(dreadstep_protocol::ItemId::new(7)),
+    ),
+    (
       CoreWorldError::DuplicateActorId(CoreActorId::new(1)),
       WorldError::DuplicateActorId(ActorId::new(1)),
     ),

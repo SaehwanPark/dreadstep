@@ -9,13 +9,15 @@
 use std::{error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, ReplayTrace, Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position,
+  ReplayTrace, Tile, WorldState,
 };
 use dreadstep_protocol::{
   ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
-  CommandRequest, Event, HitPoints as ProtocolHitPoints, Position as ProtocolPosition,
-  ReplayEvidence, Scenario, ScenarioError, StateDigest, Tile as ProtocolTile, WorldError,
-  WorldSnapshot,
+  CommandRequest, Event, HitPoints as ProtocolHitPoints,
+  ItemDefinitionId as ProtocolItemDefinitionId, ItemId as ProtocolItemId,
+  Position as ProtocolPosition, ReplayEvidence, Scenario, ScenarioError, StateDigest,
+  Tile as ProtocolTile, WorldError, WorldSnapshot,
 };
 
 /// Errors returned by the in-memory MCP player session.
@@ -186,6 +188,30 @@ impl Session {
     self.world = world;
     self.trace = ReplayTrace::new(self.seed);
     Ok(())
+  }
+
+  /// Gives one opaque item instance to an existing actor through the tester boundary.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::WorldRejected`] when core rejects the target actor or duplicate
+  /// item identity. The mutation does not record a player command or alter replay evidence.
+  pub fn give_item(
+    &mut self,
+    actor: ProtocolActorId,
+    item: ProtocolItemId,
+    definition: ProtocolItemDefinitionId,
+  ) -> Result<(), SessionError> {
+    self
+      .world
+      .give_item(
+        ActorId::new(actor.value()),
+        Item::new(
+          ItemId::new(item.value()),
+          ItemDefinitionId::new(definition.value()),
+        ),
+      )
+      .map_err(|error| SessionError::WorldRejected(error.into()))
   }
 
   /// Spawns one validated living actor through the tester operation boundary.
