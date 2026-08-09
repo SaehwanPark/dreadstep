@@ -2345,6 +2345,39 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: validated local-only presentation asset manifest
+
+- Status: active
+- Started: 2026-08-10
+
+Define a metadata-only asset boundary for the verified placeholder render nodes. The manifest
+must use validated relative repository paths, cover every typed placeholder family exactly once,
+and join references to the ordered node projection without reading files or creating Bevy asset
+handles. Pixel-art and audio binaries remain local-only and ignored by Git; tracked provenance and
+licensing records remain outside ignored media directories.
+
+Acceptance:
+
+- `PresentationAssetReference` accepts non-empty relative paths and rejects traversal, empty
+  segments, absolute paths, platform prefixes, backslashes, and NUL bytes without filesystem I/O.
+- `PresentationAssetManifest` requires exactly one reference for each terrain, player, enemy,
+  dead-actor, ground-item, and inventory-item placeholder family.
+- `PresentationRenderAssetProjection` joins every ordered `SceneRenderNodeEntry` to its typed
+  reference while retaining node identity, command metadata, and inventory-unplaced semantics.
+- Manifest refresh changes only references; missing runtime, node projection, manifest, or
+  destination resources preserve the prior asset projection as a safe no-op.
+- No asset handles, file loading, render/audio plugins, transforms, windows, gameplay rules,
+  dependencies, or committed media binaries are introduced.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test presentation_asset_manifest --locked` passes all
+  four tests covering complete joins, path/manifest validation, identity-preserving refresh, and
+  independent missing-resource guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally; anchored media ignore checks keep local binaries ignored
+  while the tracked concept-art and future screenshot exceptions remain visible.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
