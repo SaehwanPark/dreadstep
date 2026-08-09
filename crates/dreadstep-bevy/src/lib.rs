@@ -1821,7 +1821,7 @@ impl SceneCamera {
     Self { center }
   }
 
-  /// Returns the authoritative map position represented by this camera anchor.
+  /// Returns the projected map position copied from the authoritative camera state.
   #[must_use]
   pub const fn center(self) -> Position {
     self.center

@@ -76,6 +76,37 @@ fn movement_and_actor_selection_refresh_same_camera_transform_entity() {
 }
 
 #[test]
+fn recycled_lower_duplicate_keeps_centered_transform_on_stable_camera_entity() {
+  let mut app = camera_app(Some(tile_size()));
+  let recycled = app.world_mut().spawn_empty().id();
+  app.update();
+  let before = camera_transform_projection(&mut app);
+  let stable = before[0].0;
+  assert_eq!(before[0].2, Transform::from_xyz(48.0, 36.0, 0.0));
+
+  let duplicate = {
+    let world = app.world_mut();
+    let recycled = world
+      .despawn_no_free(recycled)
+      .expect("recycled entity should exist");
+    world
+      .spawn_at(recycled, SceneCamera::new(Position::new(9, 9)))
+      .expect("recycled entity should be reusable")
+      .id()
+  };
+  assert!(duplicate.index() < stable.index());
+
+  app.update();
+
+  let after = camera_transform_projection(&mut app);
+  assert_eq!(after.len(), 1);
+  assert_eq!(after[0].0, stable);
+  assert_eq!(after[0].1, Position::new(1, 1));
+  assert_eq!(after[0].2, Transform::from_xyz(48.0, 36.0, 0.0));
+  assert!(app.world().get_entity(duplicate).is_err());
+}
+
+#[test]
 fn fresh_missing_tile_size_is_default_but_later_removal_retains_transform() {
   let mut app = camera_app(None);
   app.update();
