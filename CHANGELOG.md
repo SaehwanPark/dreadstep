@@ -125,7 +125,7 @@ All notable contributor- and user-visible project changes are recorded here.
 - A verified headless Bevy Sprite API projection: `PresentationBevySpriteProjection` joins
   deterministic solid-color `Sprite` values to stable placeholder nodes with optional logical tile
   sizing while keeping Sprite/render plugins, textures, transforms, playback, and media deferred.
-- An active ECS Sprite-node attachment slice copies those typed values onto retained placeholder
+- A verified ECS Sprite-node attachment slice copies those typed values onto retained placeholder
   entities while preserving identity and default required components; render plugins, transform
   placement, texture loading, playback, and production media remain deferred.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate

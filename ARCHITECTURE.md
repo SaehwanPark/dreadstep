@@ -302,13 +302,14 @@ become simulation authority.
 The verified placeholder render-node bootstrap reconciles `PresentationRenderNodeProjection` from
 that command plan. `SceneRenderNode` entities are disposable renderer-facing metadata: they retain
 source/layer identity across role refreshes, typed placeholder families, ordering, and optional
-placement without introducing Bevy `Sprite` components, render plugins, windows, transforms, asset
-loading, or audio.
+placement before the separate ECS Sprite attachment. The attachment adds raw Sprite components with
+default required state; no render plugins, windows, transform placement, asset loading, or audio are
+introduced.
 
 The verified headless Sprite API bridge enables only Bevy's `bevy_sprite` API feature. It adds
 `PresentationBevySpriteProjection`, whose ordered `SceneBevySpriteEntry` values join each stable
 placeholder node to a deterministic solid-color `Sprite` with the caller-selected tile size when
-available. The Sprite keeps Bevy's default image handle unset. The active ECS attachment slice copies
+available. The Sprite keeps Bevy's default image handle unset. The verified ECS attachment copies
 those typed values onto retained node entities, where Bevy's required Transform/Visibility components
 remain defaults; no Sprite/render plugin, texture loading, transform placement, window, playback, or
 production media policy is introduced. Missing runtime, node source, projection destination, or node

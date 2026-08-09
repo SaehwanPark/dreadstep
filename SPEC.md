@@ -2477,12 +2477,11 @@ Out of scope:
   cameras, texture handles/loading, production assets, audio playback, animation, gameplay rules,
   persistence, transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: stable ECS Sprite-node attachment
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Attach the verified headless `Sprite` values to the already reconciled `SceneRenderNode` ECS
 entities. The node entity remains a disposable renderer-facing handle, while Bevy's required
@@ -2506,19 +2505,24 @@ Acceptance:
 
 Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test sprite_node_components --locked` proves complete
-  node/Sprite metadata, six-family colors and sizes, default image handle and required components,
-  stable refresh/dead/stale/co-located identity, independent authority/source/destination/entity
-  guards, and runtime snapshot/replay preservation.
+- Focused `cargo test -p dreadstep-bevy --test sprite_node_components --locked` passes 6/6,
+  proving complete node/Sprite metadata, six-family colors and sizes, default image handle and
+  required components, stable refresh/dead/stale/co-located identity, independent authority/source/
+  destination/entity guards, and runtime snapshot/replay preservation.
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
-  and `scripts/verify.sh` must pass; anchored media checks keep local binaries ignored while tracked
+  and `scripts/verify.sh` pass; anchored media checks keep local binaries ignored while tracked
   concept art and root screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `495817a` (implementation `e7d77f5`,
+  bounded test/docs correction `495817a`); Linux, Apple Silicon macOS, and Windows CI are green on
+  PR #72 (run `31333356159`). This docs-only closeout is reviewed separately.
 
 Out of scope:
 
 - `SpritePlugin`, `SpriteRenderPlugin`, render backends, texture handles/loading, production assets,
   transform placement, cameras, visibility/fog, OS windows/platform features, audio playback,
   animation, gameplay rules, persistence, transport, and committed media binaries.
+
+## Present
 
 ### Deferred item gameplay semantics
 
@@ -2534,8 +2538,8 @@ explicit core contract.
 
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
-Bevy Sprite API boundary. The remaining renderer work in the proposal still
-defines these future product milestones; each needs its own bounded acceptance slice before it
+Bevy Sprite API and ECS Sprite attachment boundaries. The remaining renderer work in the proposal
+still defines these future product milestones; each needs its own bounded acceptance slice before it
 can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
