@@ -8,8 +8,10 @@
 
 use std::{error::Error, fmt};
 
-use dreadstep_core::{Actor, ActorId, ActorKind, GridMap, HitPoints, Position, Tile, WorldState};
-use dreadstep_protocol::{CommandError, CommandRequest, Event, WorldSnapshot};
+use dreadstep_core::{
+  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, ReplayTrace, Tile, WorldState,
+};
+use dreadstep_protocol::{CommandError, CommandRequest, Event, StateDigest, WorldSnapshot};
 
 /// Errors returned by the in-memory MCP player session.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -71,6 +73,7 @@ impl SessionOutput {
 pub struct Session {
   seed: u64,
   world: WorldState,
+  trace: ReplayTrace,
 }
 
 impl Session {
@@ -83,6 +86,7 @@ impl Session {
     Ok(Self {
       seed,
       world: fixed_scenario()?,
+      trace: ReplayTrace::new(seed),
     })
   }
 
@@ -109,6 +113,24 @@ impl Session {
       .collect()
   }
 
+  /// Returns accepted requests in execution order.
+  #[must_use]
+  pub fn history(&self) -> Vec<CommandRequest> {
+    self
+      .trace
+      .commands()
+      .iter()
+      .copied()
+      .map(CommandRequest::from)
+      .collect()
+  }
+
+  /// Returns the deterministic core replay digest for accepted actions.
+  #[must_use]
+  pub fn replay_digest(&self) -> StateDigest {
+    StateDigest::new(self.trace.digest().value())
+  }
+
   /// Applies one protocol request through the core and returns protocol evidence.
   ///
   /// # Errors
@@ -116,10 +138,12 @@ impl Session {
   /// Returns [`SessionError::CommandRejected`] when core rejects the request. Rejected commands
   /// produce no output and leave the session unchanged.
   pub fn act(&mut self, request: CommandRequest) -> Result<SessionOutput, SessionError> {
+    let command = Command::from(request);
     let result = self
       .world
-      .execute(request.into())
+      .execute(command)
       .map_err(|error| SessionError::CommandRejected(error.into()))?;
+    self.trace.record(command);
     Ok(SessionOutput {
       seed: self.seed,
       events: result.events().iter().copied().map(Event::from).collect(),

@@ -358,6 +358,38 @@ Out of scope:
 - MCP transport/runtime registration, tester tools, session restore, wire serialization, authored
   scenarios, interactive input, and AI policy over the legal-action list.
 
+### Milestone 2 slice: session history and replay evidence
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Complete the first player session's replay-facing evidence. `dreadstep-mcp::Session` records each
+accepted protocol request in core-owned `ReplayTrace` order, exposes protocol history values, and
+returns the deterministic replay digest. Rejected requests are not recorded; no replay file or
+transport serialization is introduced.
+
+Acceptance:
+
+- A new session has empty history and a replay digest derived from its explicit seed.
+- Every accepted `act` appends exactly one converted core command in execution order; rejected
+  actions leave history and replay digest unchanged.
+- `Session::history` returns protocol-owned requests, and `Session::replay_digest` returns the
+  core trace identity without leaking core trace types.
+- Equivalent sessions with the same seed and accepted request sequence produce equal history and
+  replay digest values; changing seed or order changes the digest through core replay evidence.
+- Focused MCP tests cover empty/accepted/rejected history and deterministic replay equality.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-mcp --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, replay files, wire serialization, session restore, tester
+  tools, authored scenarios, interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel
