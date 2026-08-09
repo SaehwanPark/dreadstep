@@ -61,6 +61,8 @@ All notable contributor- and user-visible project changes are recorded here.
   deterministic digest, explicit JSON/JSON Schema, and no persistence or playback semantics.
 - A deterministic Bevy presentation bridge with immutable map/actor snapshots, keyboard intent
   mapping, core command execution, and replay evidence without enabling desktop platform features.
+- A validated authored starter-floor definition in `dreadstep-content` and a Bevy `start_run` path
+  that delegates to it while preserving the explicit replay seed.
 
 ### Changed
 

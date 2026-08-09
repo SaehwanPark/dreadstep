@@ -152,6 +152,13 @@ commands delegate to `WorldState::execute`; rejected commands are not recorded. 
 headless-testable and enables only Bevy's keyboard feature, so windowing, rendering, assets, and
 audio remain later presentation slices.
 
+The shared authored starter-floor slice adds `dreadstep-content::StarterFloorDefinition` and its
+validated `starter_floor` constructor. Content owns the row-major map and initial actor records,
+then delegates all dimension, terrain, identity, occupancy, and life validation to core.
+`PresentationState::start_run` consumes that constructor and preserves the caller's seed; MCP and
+future clients may choose their own adapter scenarios without making content or presentation
+state authoritative over the rules kernel.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.
