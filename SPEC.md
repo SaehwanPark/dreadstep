@@ -50,8 +50,9 @@ Out of scope:
 
 ### Milestone 1 slice: deterministic grid movement and scheduling
 
-- Status: active
+- Status: verified
 - Started: 2026-08-08
+- Completed: 2026-08-08
 
 The rules kernel begins with a typed rectangular grid, actor identity and position, terrain
 and actor blocking, and an integer action scheduler. A command addressed to the scheduled
@@ -81,6 +82,39 @@ Out of scope:
 
 - HP changes, melee combat, death, enemy chase behavior, seeded randomness, replay schemas,
   and the developer CLI; each is a later Milestone 1 slice with its own acceptance evidence.
+
+### Milestone 1 slice: basic melee combat and death
+
+- Status: active
+- Started: 2026-08-08
+
+Extend the deterministic core with typed hit points and a fixed basic melee attack. A
+scheduled living actor may attack one adjacent living actor, reducing its hit points by the
+fixed melee damage and emitting semantic attack evidence. Reaching zero hit points emits a
+death event and removes the actor from scheduling and movement occupancy while retaining the
+dead actor record for inspection.
+
+Acceptance:
+
+- Actors expose typed hit points and living/dead state; worlds reject actors that start dead.
+- A basic melee command requires an adjacent living target and consumes the same standard
+  action cost as movement and waiting.
+- Successful attacks emit attacker, target, damage, and remaining-hit-point evidence.
+- Attacks that reach zero hit points emit a death event; dead actors are not selected by the
+  scheduler and do not block movement.
+- Structured command errors cover unknown, dead, self, and out-of-range targets.
+- Core remains independent of Bevy, MCP, filesystem, wall-clock time, and host randomness.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core` covers attack success, death, scheduler removal,
+  occupancy removal, and invalid target cases.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- Variable weapons or damage, armor or resistances, status effects, enemy chase behavior,
+  seeded randomness, replay schemas, and the developer CLI.
 
 ## Future
 

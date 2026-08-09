@@ -10,8 +10,9 @@ kernel decides game outcomes; adapters translate external input into semantic co
 translate semantic events into presentation, files, telemetry, or transport responses.
 
 Milestone 1 now exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
-actors, movement commands, semantic movement/blocking events, and an integer ready-time
-scheduler. The API is still headless and does not provide a runnable application.
+actors, movement and melee commands, semantic movement/blocking/combat/death events, and an
+integer ready-time scheduler. The API is still headless and does not provide a runnable
+application.
 
 ## Package Ownership
 
@@ -55,10 +56,12 @@ materially more efficient in Rust.
 
 `dreadstep-core` owns the canonical `WorldState`. `GridMap` limits dimensions to the signed
 `Position` coordinate domain and treats out-of-bounds and wall tiles as terrain blockers;
-actor occupancy is checked separately so events can distinguish terrain from another actor.
-`WorldState::execute` accepts only the actor at the minimum `ActionTime`, orders ties by
-`ActorId`, and advances the acting actor by the fixed action cost. No wall-clock time or
-process-global randomness participates in these transitions.
+living actor occupancy is checked separately so events can distinguish terrain from another
+actor. `WorldState::execute` accepts only the living actor at the minimum `ActionTime`, orders
+ties by `ActorId`, applies fixed melee damage to adjacent targets, and advances the acting
+actor by the fixed action cost. Dead actor records remain inspectable but are removed from
+scheduling and movement occupancy. No wall-clock time or process-global randomness
+participates in these transitions.
 
 ## Constraints
 

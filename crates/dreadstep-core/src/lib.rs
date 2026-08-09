@@ -296,7 +296,7 @@ impl ActionTime {
 pub struct ActionCost(u64);
 
 impl ActionCost {
-  /// The fixed cost used by movement and waiting in this slice.
+  /// The fixed cost used by movement, waiting, and basic melee attacks in this slice.
   pub const STANDARD: Self = Self(1);
 
   /// Creates an action cost from its numeric value.
@@ -312,12 +312,62 @@ impl ActionCost {
   }
 }
 
-/// An actor with a stable identity, kind, position, and next ready time.
+/// The current integer hit points of an actor.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct HitPoints(u16);
+
+impl HitPoints {
+  /// Creates hit points from a numeric value. Zero represents a dead actor.
+  #[must_use]
+  pub const fn new(value: u16) -> Self {
+    Self(value)
+  }
+
+  /// Returns the numeric hit-point value.
+  #[must_use]
+  pub const fn value(self) -> u16 {
+    self.0
+  }
+
+  /// Returns whether these hit points represent a living actor.
+  #[must_use]
+  pub const fn is_alive(self) -> bool {
+    self.0 > 0
+  }
+
+  fn reduced_by(self, damage: Damage) -> Self {
+    Self(self.0.saturating_sub(damage.0))
+  }
+}
+
+/// A typed amount of damage applied by an attack.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Damage(u16);
+
+impl Damage {
+  /// The fixed damage dealt by the basic melee command.
+  pub const MELEE: Self = Self(1);
+
+  /// Creates damage from a numeric value.
+  #[must_use]
+  pub const fn new(value: u16) -> Self {
+    Self(value)
+  }
+
+  /// Returns the numeric damage value.
+  #[must_use]
+  pub const fn value(self) -> u16 {
+    self.0
+  }
+}
+
+/// An actor with a stable identity, kind, position, hit points, and next ready time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Actor {
   id: ActorId,
   kind: ActorKind,
   position: Position,
+  hit_points: HitPoints,
   ready_at: ActionTime,
 }
 
@@ -325,10 +375,22 @@ impl Actor {
   /// Creates an actor that is ready at the beginning of the world timeline.
   #[must_use]
   pub const fn new(id: ActorId, kind: ActorKind, position: Position) -> Self {
+    Self::with_hit_points(id, kind, position, HitPoints::new(10))
+  }
+
+  /// Creates an actor with explicit hit points that is ready at the beginning of the timeline.
+  #[must_use]
+  pub const fn with_hit_points(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+  ) -> Self {
     Self {
       id,
       kind,
       position,
+      hit_points,
       ready_at: ActionTime::new(0),
     }
   }
@@ -349,6 +411,18 @@ impl Actor {
   #[must_use]
   pub const fn position(&self) -> Position {
     self.position
+  }
+
+  /// Returns this actor's current hit points.
+  #[must_use]
+  pub const fn hit_points(&self) -> HitPoints {
+    self.hit_points
+  }
+
+  /// Returns whether this actor can be scheduled, targeted, or moved around.
+  #[must_use]
+  pub const fn is_alive(&self) -> bool {
+    self.hit_points.is_alive()
   }
 
   /// Returns the timestamp when this actor can next act.
@@ -373,12 +447,19 @@ pub enum Command {
     /// The actor issuing the command.
     actor: ActorId,
   },
+  /// Make a fixed basic melee attack against an adjacent actor.
+  Attack {
+    /// The actor issuing the attack.
+    actor: ActorId,
+    /// The adjacent actor being targeted.
+    target: ActorId,
+  },
 }
 
 impl Command {
   const fn actor(self) -> ActorId {
     match self {
-      Self::Move { actor, .. } | Self::Wait { actor } => actor,
+      Self::Move { actor, .. } | Self::Wait { actor } | Self::Attack { actor, .. } => actor,
     }
   }
 }
@@ -422,6 +503,22 @@ pub enum Event {
     /// The action time at which the wait began.
     at: ActionTime,
   },
+  /// A melee attack reduced a living target's hit points.
+  Attacked {
+    /// The actor that attacked.
+    attacker: ActorId,
+    /// The actor that was hit.
+    target: ActorId,
+    /// The fixed damage applied.
+    damage: Damage,
+    /// The target's hit points after damage.
+    remaining_hit_points: HitPoints,
+  },
+  /// An actor reached zero hit points and became dead.
+  Died {
+    /// The actor that died.
+    actor: ActorId,
+  },
 }
 
 /// Errors produced while constructing a world state.
@@ -451,6 +548,11 @@ pub enum WorldError {
     second: ActorId,
     /// The shared position.
     position: Position,
+  },
+  /// An actor starts with zero hit points.
+  ActorDeadAtStart {
+    /// The actor that starts dead.
+    actor: ActorId,
   },
 }
 
@@ -486,6 +588,13 @@ impl fmt::Display for WorldError {
         position.x(),
         position.y()
       ),
+      Self::ActorDeadAtStart { actor } => {
+        write!(
+          formatter,
+          "actor {} starts with zero hit points",
+          actor.value()
+        )
+      }
     }
   }
 }
@@ -506,6 +615,21 @@ pub enum CommandError {
   },
   /// The actor's next ready time would overflow the integer timeline.
   ScheduleOverflow(ActorId),
+  /// The command actor is dead and cannot act.
+  ActorDead(ActorId),
+  /// The attack target is not present in the world.
+  UnknownTarget(ActorId),
+  /// The attack target is already dead.
+  TargetDead(ActorId),
+  /// An actor cannot target itself with a melee attack.
+  CannotAttackSelf(ActorId),
+  /// The attack target is not adjacent to the attacker.
+  AttackOutOfRange {
+    /// The actor issuing the attack.
+    attacker: ActorId,
+    /// The actor outside melee range.
+    target: ActorId,
+  },
 }
 
 impl fmt::Display for CommandError {
@@ -528,6 +652,18 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::ActorDead(actor) => write!(formatter, "actor {} is dead", actor.value()),
+      Self::UnknownTarget(target) => write!(formatter, "unknown attack target {}", target.value()),
+      Self::TargetDead(target) => write!(formatter, "attack target {} is dead", target.value()),
+      Self::CannotAttackSelf(actor) => {
+        write!(formatter, "actor {} cannot attack itself", actor.value())
+      }
+      Self::AttackOutOfRange { attacker, target } => write!(
+        formatter,
+        "actor {} cannot attack non-adjacent target {}",
+        attacker.value(),
+        target.value()
+      ),
     }
   }
 }
@@ -576,7 +712,7 @@ impl WorldState {
   /// # Errors
   ///
   /// Returns a [`WorldError`] when an actor identity is duplicated, an actor is outside the
-  /// map, an actor starts on blocking terrain, or two actors overlap.
+  /// map, an actor starts on blocking terrain, an actor starts dead, or two actors overlap.
   pub fn new(map: GridMap, actors: Vec<Actor>) -> Result<Self, WorldError> {
     let mut indexed_actors = BTreeMap::new();
     for actor in actors {
@@ -584,6 +720,9 @@ impl WorldState {
       let position = actor.position();
       if indexed_actors.contains_key(&actor_id) {
         return Err(WorldError::DuplicateActorId(actor_id));
+      }
+      if !actor.is_alive() {
+        return Err(WorldError::ActorDeadAtStart { actor: actor_id });
       }
       if !map.in_bounds(position) {
         return Err(WorldError::ActorOutOfBounds {
@@ -645,6 +784,7 @@ impl WorldState {
     self
       .actors
       .values()
+      .filter(|actor| actor.is_alive())
       .min_by_key(|actor| (actor.ready_at(), actor.id()))
       .map(Actor::id)
   }
@@ -654,15 +794,20 @@ impl WorldState {
   /// # Errors
   ///
   /// Returns [`CommandError::UnknownActor`] for an unknown identity,
-  /// [`CommandError::ActorNotScheduled`] when a different actor must act first, or
-  /// [`CommandError::ScheduleOverflow`] if the integer timeline cannot advance.
+  /// [`CommandError::ActorDead`] for a dead command actor,
+  /// [`CommandError::ActorNotScheduled`] when a different actor must act first, a target
+  /// error for an invalid attack, or [`CommandError::ScheduleOverflow`] if the integer
+  /// timeline cannot advance.
   pub fn execute(&mut self, command: Command) -> Result<ActionResult, CommandError> {
     let actor_id = command.actor();
-    let ready_at = self
+    let actor = self
       .actors
       .get(&actor_id)
-      .map(Actor::ready_at)
       .ok_or(CommandError::UnknownActor(actor_id))?;
+    if !actor.is_alive() {
+      return Err(CommandError::ActorDead(actor_id));
+    }
+    let ready_at = actor.ready_at();
     if let Some(scheduled) = self.next_actor()
       && scheduled != actor_id
     {
@@ -674,7 +819,7 @@ impl WorldState {
     let next_ready_at = ready_at
       .checked_add(ActionCost::STANDARD)
       .ok_or(CommandError::ScheduleOverflow(actor_id))?;
-    let event = match command {
+    let events = match command {
       Command::Move { direction, .. } => {
         let from = self
           .actors
@@ -683,36 +828,37 @@ impl WorldState {
           .ok_or(CommandError::UnknownActor(actor_id))?;
         let to = from.translated(direction);
         if !self.map.is_walkable(to) {
-          Event::MovementBlocked {
+          vec![Event::MovementBlocked {
             actor: actor_id,
             from,
             to,
             reason: BlockReason::Terrain,
-          }
+          }]
         } else if let Some(blocker) = self.actor_at(to) {
-          Event::MovementBlocked {
+          vec![Event::MovementBlocked {
             actor: actor_id,
             from,
             to,
             reason: BlockReason::Actor(blocker),
-          }
+          }]
         } else {
           self
             .actors
             .get_mut(&actor_id)
             .ok_or(CommandError::UnknownActor(actor_id))?
             .position = to;
-          Event::Moved {
+          vec![Event::Moved {
             actor: actor_id,
             from,
             to,
-          }
+          }]
         }
       }
-      Command::Wait { .. } => Event::Waited {
+      Command::Wait { .. } => vec![Event::Waited {
         actor: actor_id,
         at: self.current_time,
-      },
+      }],
+      Command::Attack { target, .. } => self.attack(actor_id, target)?,
     };
     self
       .actors
@@ -724,7 +870,7 @@ impl WorldState {
       .and_then(|next| self.actors.get(&next).map(Actor::ready_at))
       .unwrap_or(next_ready_at);
     Ok(ActionResult {
-      events: vec![event],
+      events,
       next_actor: self.next_actor(),
       current_time: self.current_time,
     })
@@ -734,8 +880,50 @@ impl WorldState {
     self
       .actors
       .values()
-      .find(|actor| actor.position() == position)
+      .find(|actor| actor.is_alive() && actor.position() == position)
       .map(Actor::id)
+  }
+
+  fn attack(&mut self, attacker: ActorId, target: ActorId) -> Result<Vec<Event>, CommandError> {
+    if attacker == target {
+      return Err(CommandError::CannotAttackSelf(attacker));
+    }
+    let attacker_position = self
+      .actors
+      .get(&attacker)
+      .map(Actor::position)
+      .ok_or(CommandError::UnknownActor(attacker))?;
+    let target_actor = self
+      .actors
+      .get(&target)
+      .ok_or(CommandError::UnknownTarget(target))?;
+    if !target_actor.is_alive() {
+      return Err(CommandError::TargetDead(target));
+    }
+    let target_position = target_actor.position();
+    let distance = attacker_position
+      .x()
+      .abs_diff(target_position.x())
+      .saturating_add(attacker_position.y().abs_diff(target_position.y()));
+    if distance != 1 {
+      return Err(CommandError::AttackOutOfRange { attacker, target });
+    }
+    let remaining_hit_points = target_actor.hit_points().reduced_by(Damage::MELEE);
+    self
+      .actors
+      .get_mut(&target)
+      .ok_or(CommandError::UnknownTarget(target))?
+      .hit_points = remaining_hit_points;
+    let mut events = vec![Event::Attacked {
+      attacker,
+      target,
+      damage: Damage::MELEE,
+      remaining_hit_points,
+    }];
+    if !remaining_hit_points.is_alive() {
+      events.push(Event::Died { actor: target });
+    }
+    Ok(events)
   }
 }
 
@@ -885,6 +1073,212 @@ mod tests {
         to: Position::new(-1, 0),
         reason: BlockReason::Terrain,
       }]
+    );
+  }
+
+  #[test]
+  fn adjacent_melee_attack_reduces_hit_points_and_consumes_an_action() {
+    let mut world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Player,
+          Position::new(0, 0),
+          HitPoints::new(10),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(1, 0),
+          HitPoints::new(3),
+        ),
+      ],
+    )
+    .unwrap();
+
+    let result = world
+      .execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+
+    assert_eq!(
+      result.events(),
+      &[Event::Attacked {
+        attacker: ActorId::new(1),
+        target: ActorId::new(2),
+        damage: Damage::MELEE,
+        remaining_hit_points: HitPoints::new(2),
+      }]
+    );
+    assert_eq!(
+      world.actor(ActorId::new(2)).unwrap().hit_points(),
+      HitPoints::new(2)
+    );
+    assert_eq!(
+      world.actor(ActorId::new(1)).unwrap().ready_at(),
+      ActionTime::new(1)
+    );
+    assert_eq!(result.next_actor(), Some(ActorId::new(2)));
+  }
+
+  #[test]
+  fn killing_an_actor_emits_death_and_removes_it_from_scheduling_and_occupancy() {
+    let mut world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Player,
+          Position::new(0, 0),
+          HitPoints::new(10),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(1, 0),
+          HitPoints::new(1),
+        ),
+      ],
+    )
+    .unwrap();
+
+    let attack = world
+      .execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+
+    assert_eq!(
+      attack.events(),
+      &[
+        Event::Attacked {
+          attacker: ActorId::new(1),
+          target: ActorId::new(2),
+          damage: Damage::MELEE,
+          remaining_hit_points: HitPoints::new(0),
+        },
+        Event::Died {
+          actor: ActorId::new(2),
+        },
+      ]
+    );
+    assert!(!world.actor(ActorId::new(2)).unwrap().is_alive());
+    assert_eq!(attack.next_actor(), Some(ActorId::new(1)));
+
+    let move_result = world
+      .execute(Command::Move {
+        actor: ActorId::new(1),
+        direction: Direction::East,
+      })
+      .unwrap();
+    assert_eq!(
+      move_result.events(),
+      &[Event::Moved {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(1, 0),
+      }]
+    );
+  }
+
+  #[test]
+  fn rejects_unknown_dead_self_and_out_of_range_attack_targets() {
+    let mut world = WorldState::new(
+      floor_map(3, 1),
+      vec![
+        Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Player,
+          Position::new(0, 0),
+          HitPoints::new(10),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(2, 0),
+          HitPoints::new(1),
+        ),
+      ],
+    )
+    .unwrap();
+
+    assert_eq!(
+      world.execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(99),
+      }),
+      Err(CommandError::UnknownTarget(ActorId::new(99)))
+    );
+    assert_eq!(
+      world.execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(1),
+      }),
+      Err(CommandError::CannotAttackSelf(ActorId::new(1)))
+    );
+    assert_eq!(
+      world.execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }),
+      Err(CommandError::AttackOutOfRange {
+        attacker: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+    );
+
+    let mut dead_target_world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Player,
+          Position::new(0, 0),
+          HitPoints::new(10),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(1, 0),
+          HitPoints::new(1),
+        ),
+      ],
+    )
+    .unwrap();
+    dead_target_world
+      .execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .unwrap();
+    assert_eq!(
+      dead_target_world.execute(Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }),
+      Err(CommandError::TargetDead(ActorId::new(2)))
+    );
+  }
+
+  #[test]
+  fn rejects_an_actor_that_starts_with_zero_hit_points() {
+    assert_eq!(
+      WorldState::new(
+        floor_map(1, 1),
+        vec![Actor::with_hit_points(
+          ActorId::new(1),
+          ActorKind::Player,
+          Position::new(0, 0),
+          HitPoints::new(0),
+        )],
+      ),
+      Err(WorldError::ActorDeadAtStart {
+        actor: ActorId::new(1),
+      })
     );
   }
 
