@@ -70,6 +70,38 @@ check_skill() {
 check_skill "develop-dreadstep"
 check_skill "review-dreadstep"
 
+check_local_media_policy() {
+  local ignored_path
+  local tracked_path
+
+  for ignored_path in \
+    "assets/example.aiff" \
+    "art/example.psd" \
+    "audio/example.caf" \
+    "crates/dreadstep-bevy/assets/example.unknown"; do
+    if ! git check-ignore --no-index -q -- "${ignored_path}"; then
+      echo "presentation binary should be ignored: ${ignored_path}" >&2
+      exit 1
+    fi
+  done
+
+  for tracked_path in \
+    "dreadstep-concept-art.png" \
+    "screenshots/future.png" \
+    "crates/dreadstep-bevy/src/audio/mod.rs" \
+    "docs/audio/licensing.md" \
+    "LICENSES/CC-BY-4.0.txt"; do
+    if git check-ignore --no-index -q -- "${tracked_path}"; then
+      echo "tracked exception or source/documentation path is unexpectedly ignored: ${tracked_path}" >&2
+      exit 1
+    fi
+  done
+
+  git ls-files --error-unmatch -- "dreadstep-concept-art.png" >/dev/null
+}
+
+check_local_media_policy
+
 check_forbidden_dependency() {
   local package="$1"
   local tree

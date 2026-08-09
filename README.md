@@ -48,6 +48,18 @@ The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
 work lives in [`SPEC.md`](SPEC.md).
 
+## Local Presentation Assets
+
+Pixel-art and audio binaries are intentionally excluded from GitHub. Keep local copies under
+the root or crate-local `assets/`, `art/`, or `audio/` directories; the repository ignore rules
+keep everything in those media directories available in a working tree without allowing accidental
+commits. Store or sync the files manually through the project’s external asset service. Keep
+source, creator, license, attribution, and modification records outside those directories in
+tracked documentation such as
+[`CREDITS.md`](CREDITS.md) and the proposal; do not commit service credentials.
+The tracked concept-art reference and future README screenshots under root `screenshots/` are
+explicit exceptions because they are outside the local-media directories.
+
 ## Design Principles
 
 - Every movement choice should matter without making routine turns laborious.

@@ -1,2 +1,13 @@
 /target
 /_workspace
+
+# Presentation art and audio are kept locally and synchronized through external asset storage.
+# These are the only local-media directories; keep source, creator, license, attribution, and
+# modification records in tracked docs outside them. The concept-art reference and future root
+# `screenshots/` images remain tracked because they are outside these paths.
+/assets/
+/art/
+/audio/
+/crates/*/assets/
+/crates/*/art/
+/crates/*/audio/

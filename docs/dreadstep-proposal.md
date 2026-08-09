@@ -758,9 +758,9 @@ Later MCP agents can test higher-order questions that graph validation cannot an
 
 ![Aspirational Dreadstep concept art](../dreadstep-concept-art.png)
 
-> **Concept-art note:** This image is an aspirational visual reference, not a screenshot of
-> the current game, an implemented feature set, or a final asset direction. It is subject to
-> change.
+> **Concept-art note:** This tracked reference is an aspirational visual reference, not a
+> screenshot of the current game, an implemented feature set, or a final asset direction. It is
+> subject to change. Future screenshots may be tracked under `screenshots/`.
 
 Presentation should reference the readability of JHC rather than imitate it directly.
 
