@@ -2524,6 +2524,46 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: typed headless Sprite-transform projection
+
+- Status: active
+- Started: 2026-08-09
+
+Derive a read-only renderer boundary that joins each retained render node to a deterministic map-space
+translation from its checked `ScenePixelPosition`. This slice prepares transform values for a later
+renderer while leaving ECS `Transform` components at their existing defaults.
+
+Acceptance:
+
+- `PresentationBevySpriteTransformProjection` exposes one ordered entry per retained render node,
+  preserving source Entity, typed key, layer, order, and node identity; map-backed terrain, actors,
+  and ground items receive a translation from their checked pixel origin, while inventory items stay
+  unplaced with no translation.
+- Missing tile-size configuration yields no translations without inventing placement; accepted
+  refreshes retain node identity and update translations, including dead-actor refresh and stale
+  inventory removal. Co-located source mirrors retain distinct entries and values.
+- Missing runtime, node source, transform projection, and missing node entity are safe no-ops that
+  preserve existing projection values. Runtime snapshots, replay history, digests, and scene
+  authority remain unchanged.
+- The projection does not attach or mutate ECS `Transform`, `Visibility`, or `Sprite` components;
+  it adds no camera, window, render backend/plugin, texture loading, audio playback, animation,
+  gameplay, persistence, transport, or committed media binaries.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_projection --locked` passes 6/6 and
+  proves complete keyed translations, inventory exclusion, unsized/missing configuration, stable refresh/dead/stale/
+  co-located identity, independent guards, and runtime snapshot/replay preservation.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass; anchored media checks keep local binaries ignored while tracked
+  concept art and root screenshot exceptions remain visible.
+
+Out of scope:
+
+- ECS transform attachment, centering/anchor or z-layer policy, camera/visibility/window behavior,
+  render plugins/backends, texture or production asset loading, audio playback, animation, gameplay
+  rules, persistence, transport, and committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
