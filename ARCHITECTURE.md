@@ -99,6 +99,10 @@ The player `inspect` operation is likewise a read-only lookup over the protocol 
 It returns one protocol `ActorSnapshot` or no value for an unknown identity, preserves dead actor
 records for inspection, and adds no visibility policy or gameplay behavior.
 
+The proposal's `get_history` name maps to the same adapter-owned protocol request projection as
+`Session::history`; the alias does not create a second source of truth or alter core trace
+recording.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

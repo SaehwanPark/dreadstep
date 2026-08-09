@@ -139,6 +139,12 @@ impl Session {
       .collect()
   }
 
+  /// Returns accepted requests in execution order using the named player operation.
+  #[must_use]
+  pub fn get_history(&self) -> Vec<CommandRequest> {
+    self.history()
+  }
+
   /// Returns the deterministic core replay digest for accepted actions.
   #[must_use]
   pub fn replay_digest(&self) -> StateDigest {
