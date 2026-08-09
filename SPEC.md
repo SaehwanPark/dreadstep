@@ -1344,11 +1344,11 @@ Out of scope:
 - Started: 2026-08-09
 - Completed: 2026-08-09
 
-Add the smallest content-to-core bridge for authored opaque item instances without changing the
-default starter scenario. `StarterFloorDefinition` will accept an ordered list of typed
-`StarterItemPlacement` values, and its validated build will delegate each placement to core's
-existing `WorldState::give_item` operation. Item definition references remain opaque; catalog
-membership, item effects, capacity, player commands, and ground placement are not inferred here.
+The smallest content-to-core bridge for authored opaque item instances is complete without
+changing the default starter scenario. `StarterFloorDefinition` accepts an ordered list of typed
+`StarterItemPlacement` values, and its validated build delegates each placement to core's existing
+`WorldState::give_item` operation. Item definition references remain opaque; catalog membership,
+item effects, capacity, player commands, and ground placement are not inferred here.
 
 Acceptance:
 
