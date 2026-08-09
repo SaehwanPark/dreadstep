@@ -38,12 +38,13 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified scene placement boundary: caller-selected logical tile extents project checked pixel
   origins onto terrain, actor, and ground-item mirrors while inventory items remain unplaced; no
   tile size is chosen and no rendering is enabled.
-- Active asset gate: local candidates are evaluated in the tracked
-  [`asset-evaluation.md`](docs/presentation/asset-evaluation.md) record; tile size remains open
-  until native or normalized samples are measured, the Kenney CC0 pack is a reusable pixel-art
-  fallback, and UI audio is only a fallback. Dungeon combat/movement/item audio remains open.
-- Next presentation work: produce measured native/normalized tile samples, then run a reversible
-  headless-to-renderer spike before widgets or text policy.
+- Verified asset/tile gate: local candidates, exact 24×24/32×32 nearest-neighbor samples, source
+  metadata, and the provisional 32×32 working size are recorded in
+  [`asset-evaluation.md`](docs/presentation/asset-evaluation.md) and
+  [`tile-samples.md`](docs/presentation/tile-samples.md). The Kenney CC0 pack is a reusable
+  fallback and UI audio is only a fallback; dungeon combat/movement/item audio remains open.
+- Active presentation work: a reversible headless-to-renderer spike consuming the verified 32×32
+  placement and sprite-role boundary before widgets or text policy.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
   message presentation, audio assets/playback, fog of war, multiple floors, and gameplay-facing
   item effects.
