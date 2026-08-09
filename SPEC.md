@@ -2569,8 +2569,6 @@ Out of scope:
   render plugins/backends, texture or production asset loading, audio playback, animation, gameplay
   rules, persistence, transport, and committed media binaries.
 
-## Present
-
 ### Milestone 3 slice: ECS Sprite-transform attachment
 
 - Status: verified
@@ -2617,6 +2615,8 @@ Out of scope:
   texture or production asset loading, audio playback, animation, gameplay rules, persistence,
   transport, and committed media binaries.
 
+## Present
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -2632,8 +2632,8 @@ explicit core contract.
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
 Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, and ECS Sprite-transform
-attachment boundaries. The
-remaining renderer work in the proposal still defines these future product milestones; each needs
+attachment boundaries. The remaining renderer work in the proposal still defines these future
+product milestones; each needs
 its own bounded acceptance slice before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
