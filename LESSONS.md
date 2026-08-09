@@ -182,3 +182,17 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Whenever digest bytes or namespace changes, search the full workspace for every old
   golden value, run `scripts/verify.sh`, and isolate new hash-field tests from action-time or trace-
   length changes so identity bytes are proven directly.
+
+## Refresh legal-command expectations when adding a command variant
+
+- Context: The single-item consumption slice added `UseItem` to core legal-action discovery while
+  preserving deterministic inventory order.
+- Symptom: Focused new tests passed, but Linux CI failed in an older equipment ordering test whose
+  exact expected vector still ended at `Equip`.
+- Cause: Adding a public command changes every deterministic discovery projection, not only the
+  new command's own tests; the stale assertion was outside the edited slice.
+- Resolution: Add `UseItem` immediately after each eligible `Equip`, update the prior exact-order
+  expectation, and rerun the full workspace verification.
+- Prevention: Whenever a command variant changes legal discovery, search all workspace tests and
+  adapters for exact command vectors, update those expectations deliberately, and require the full
+  cross-platform verification before handoff.

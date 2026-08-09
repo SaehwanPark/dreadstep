@@ -95,6 +95,10 @@ fn snapshot_schema_exposes_the_versioned_projection_shape() {
 }
 
 #[test]
+#[expect(
+  clippy::too_many_lines,
+  reason = "the contract intentionally round-trips every tagged command and event variant"
+)]
 fn command_and_event_json_use_explicit_tagged_variants() {
   let request = CommandRequest::Move {
     actor: ActorId::new(3),
@@ -141,6 +145,21 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     .expect("unequip request should deserialize"),
     unequipment
   );
+  let consumption = CommandRequest::UseItem {
+    actor: ActorId::new(3),
+    item: ItemId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(consumption).expect("consumption request should serialize"),
+    serde_json::json!({"use_item": {"actor": 3, "item": 4}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "use_item": {"actor": 3, "item": 4}
+    }))
+    .expect("consumption request should deserialize"),
+    consumption
+  );
 
   let event = Event::Waited {
     actor: ActorId::new(3),
@@ -179,6 +198,21 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     }))
     .expect("unequipped event should deserialize"),
     unequipment_event
+  );
+  let consumed_event = Event::ItemConsumed {
+    actor: ActorId::new(3),
+    item: ItemId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(consumed_event).expect("consumed event should serialize"),
+    serde_json::json!({"item_consumed": {"actor": 3, "item": 4}})
+  );
+  assert_eq!(
+    serde_json::from_value::<Event>(serde_json::json!({
+      "item_consumed": {"actor": 3, "item": 4}
+    }))
+    .expect("consumed event should deserialize"),
+    consumed_event
   );
   let command_schema = serde_json::to_value(schemars::schema_for!(CommandRequest))
     .expect("command schema should serialize");

@@ -76,6 +76,13 @@ pub enum CommandRequest {
     /// The actor issuing the request.
     actor: ActorId,
   },
+  /// Consume one owned, unequipped item instance.
+  UseItem {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The owned item instance to consume.
+    item: ItemId,
+  },
 }
 
 impl From<CommandRequest> for CoreCommand {
@@ -107,6 +114,10 @@ impl From<CommandRequest> for CoreCommand {
       },
       CommandRequest::Unequip { actor } => Self::Unequip {
         actor: dreadstep_core::ActorId::new(actor.value()),
+      },
+      CommandRequest::UseItem { actor, item } => Self::UseItem {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        item: dreadstep_core::ItemId::new(item.value()),
       },
     }
   }
@@ -141,6 +152,10 @@ impl From<CoreCommand> for CommandRequest {
       },
       CoreCommand::Unequip { actor } => Self::Unequip {
         actor: ActorId::new(actor.value()),
+      },
+      CoreCommand::UseItem { actor, item } => Self::UseItem {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
       },
     }
   }
@@ -950,6 +965,13 @@ pub enum Event {
     /// The item that was unequipped.
     item: ItemId,
   },
+  /// An actor consumed one owned, unequipped item instance.
+  ItemConsumed {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance removed from inventory.
+    item: ItemId,
+  },
 }
 
 impl From<CoreBlockReason> for BlockReason {
@@ -1006,6 +1028,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreEvent::ItemConsumed { actor, item } => Self::ItemConsumed {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
     }
   }
 }
@@ -1043,7 +1069,7 @@ pub enum CommandError {
     /// The actor outside melee range.
     target: ActorId,
   },
-  /// The actor does not own the requested equipment item.
+  /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
     actor: ActorId,
@@ -1059,6 +1085,13 @@ pub enum CommandError {
   },
   /// The actor has no equipment to remove.
   NothingEquipped(ActorId),
+  /// The requested item is equipped and therefore cannot be consumed.
+  ItemEquipped {
+    /// The actor whose inventory was queried.
+    actor: ActorId,
+    /// The equipped item identity.
+    item: ItemId,
+  },
 }
 
 impl From<CoreCommandError> for CommandError {
@@ -1102,6 +1135,10 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::NothingEquipped(actor) => {
         Self::NothingEquipped(ActorId::new(actor.value()))
       }
+      CoreCommandError::ItemEquipped { actor, item } => Self::ItemEquipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
     }
   }
 }
@@ -1152,7 +1189,7 @@ impl fmt::Display for CommandError {
       ),
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
-        "actor {} does not own item {} for equipment",
+        "actor {} does not own item {}",
         actor.value(),
         item.value()
       ),
@@ -1165,6 +1202,12 @@ impl fmt::Display for CommandError {
       Self::NothingEquipped(actor) => {
         write!(formatter, "actor {} has no equipped item", actor.value())
       }
+      Self::ItemEquipped { actor, item } => write!(
+        formatter,
+        "actor {} cannot consume equipped item {}",
+        actor.value(),
+        item.value()
+      ),
     }
   }
 }

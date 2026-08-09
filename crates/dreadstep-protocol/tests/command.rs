@@ -42,6 +42,10 @@ fn every_request_variant_round_trips_through_core() {
     CommandRequest::Unequip {
       actor: ActorId::new(1),
     },
+    CommandRequest::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(9),
+    },
   ];
 
   for request in requests {
@@ -86,6 +90,10 @@ fn every_core_command_round_trips_through_protocol() {
     },
     Command::Unequip {
       actor: CoreActorId::new(1),
+    },
+    Command::UseItem {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(9),
     },
   ];
 

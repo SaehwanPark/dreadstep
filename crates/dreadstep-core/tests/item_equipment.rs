@@ -214,6 +214,10 @@ fn legal_commands_and_replay_digest_include_equipment_in_order() {
         actor: ActorId::new(1),
         item: ItemId::new(1),
       },
+      Command::UseItem {
+        actor: ActorId::new(1),
+        item: ItemId::new(1),
+      },
     ]
   );
 

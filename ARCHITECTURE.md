@@ -307,6 +307,12 @@ world, snapshot, and digest state. Protocol/MCP expose the typed field and event
 `SceneActor` mirrors the field without owning item storage. Effects, modifiers, capacity, and
 additional slots remain outside this boundary.
 
+The active single-item consumption preparation slice adds scheduled `UseItem` for one owned,
+unequipped item. Core removes only that inventory instance and emits `ItemConsumed`; protocol and
+MCP preserve the typed action/evidence, while Bevy removes the stale inventory mirror and retains
+the actor and remaining item entities. No effect, stat, capacity, identification, or rendering
+policy is inferred here.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.

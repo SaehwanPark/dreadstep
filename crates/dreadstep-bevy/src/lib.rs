@@ -417,6 +417,13 @@ pub enum PresentationMessage {
     /// The item that was unequipped.
     item: ItemId,
   },
+  /// An actor consumed an owned, unequipped item instance.
+  ItemConsumed {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance removed from inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationMessage {
@@ -449,6 +456,7 @@ impl PresentationMessage {
       Event::Died { actor } => Self::Died { actor },
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
+      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
     }
   }
 }
@@ -521,6 +529,13 @@ pub enum PresentationAudioCue {
     /// The item that was unequipped.
     item: ItemId,
   },
+  /// An actor consumed an owned, unequipped item instance.
+  ItemConsumed {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance removed from inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationAudioCue {
@@ -535,6 +550,7 @@ impl PresentationAudioCue {
       Event::Died { actor } => Self::Died { actor },
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
+      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
     }
   }
 }
@@ -619,6 +635,13 @@ pub enum PresentationAnimationCue {
     /// The item that was unequipped.
     item: ItemId,
   },
+  /// An actor consumed an owned, unequipped item instance.
+  ItemConsumed {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance removed from inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationAnimationCue {
@@ -651,6 +674,7 @@ impl PresentationAnimationCue {
       Event::Died { actor } => Self::Died { actor },
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
+      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
     }
   }
 }
