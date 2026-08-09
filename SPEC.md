@@ -1259,12 +1259,13 @@ Out of scope:
 
 ### Milestone 3 slice: deterministic headless ground-item scene projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Extend the disposable Bevy scene mirror with complete core-owned ground-item records. The
-`PresentationSnapshot` will expose stable row-major ground stacks, and `sync_scene` will project
-each opaque item as a typed `SceneGroundItem` keyed by globally unique item identity. Core remains
+`PresentationSnapshot` exposes stable row-major ground stacks, and `sync_scene` projects each
+opaque item as a typed `SceneGroundItem` keyed by globally unique item identity. Core remains
 authoritative for item ownership, stack order, and digest state; this slice only mirrors data for
 future presentation systems.
 
@@ -1282,15 +1283,15 @@ Acceptance:
 - The projection remains headless and independent of rendering, camera, HUD, transport, desktop
   platform features, persistence, and new gameplay rules.
 
-Verification target:
+Verification:
 
-- Focused `cargo test -p dreadstep-bevy --test scene_sync --all-features --locked` covers empty
-  ground, complete item data, stack order, stable identities, duplicate cleanup, stale removal,
-  and tile/actor preservation.
-- `cargo test -p dreadstep-bevy --all-targets --all-features --locked`, focused Clippy, Cargo
-  docs, `git diff --check`, and `scripts/verify.sh` pass before handoff.
-- Exactly one semantic code reviewer reports PASS and Linux, Apple Silicon macOS, and Windows CI
-  are green for the reviewed implementation revision before docs closeout.
+- Focused `cargo test -p dreadstep-bevy --test scene_sync --all-features --locked` passes all seven
+  ordered projection, identity-update, duplicate-cleanup, stale-removal, and mirror-preservation
+  tests.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked`, focused Clippy, Cargo docs,
+  `git diff --check`, and `scripts/verify.sh` pass.
+- Exactly one semantic code reviewer reports PASS on implementation revision `4f24029`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 

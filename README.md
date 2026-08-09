@@ -21,15 +21,16 @@ Dreadstep is continuing Milestone 3: the human presentation boundary. The latest
 add deterministic headless Bevy scene synchronization, a `PresentationRuntime`/`App` plugin for
 automatic projection, ordered keyboard dispatch through core, a one-shot presentation feedback
 buffer for typed event/snapshot evidence, and a typed headless focus projection for future camera
-systems. These build on the shared authored starter floor, `start_run` path, immutable snapshots,
-and keyboard-to-core command translation. The completed Milestone 2 MCP observation, action,
+systems, plus complete typed ground-item scene projection. These build on the shared authored starter
+floor, `start_run` path, immutable snapshots, and keyboard-to-core command translation. The completed
+Milestone 2 MCP observation, action,
 history, replay, and tester operations remain available. Windowing, rendering assets, animation,
 HUD, audio, fog of war, multiple floors, and gameplay-facing item effects remain deferred. The
 typed headless `SceneFocus` marker reuses the existing keyed actor projection; camera transforms
 and marker visuals remain deferred. The deterministic content-owned opaque item-definition catalog
 and tester-only deterministic item transfer, item drop, and item pickup are now verified.
-Ground-item projection through protocol/MCP is stable and tester-only; a headless Bevy
-`SceneGroundItem` projection is active. Player pickup and item gameplay semantics remain deferred.
+Ground-item projection through protocol/MCP is stable and tester-only; the headless Bevy
+`SceneGroundItem` projection is verified. Player pickup and item gameplay semantics remain deferred.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

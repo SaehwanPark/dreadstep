@@ -208,7 +208,7 @@ The scene-focus-marker slice adds a marker-only `SceneFocus` component to the ex
 position or gameplay state; unknown actors clear stale markers only when an authoritative runtime
 snapshot exists, while missing resources leave the disposable scene unchanged.
 
-The active ground-item scene-projection slice extends the same disposable snapshot boundary with
+The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and
 stack index; `sync_scene` keys those entities by globally unique `ItemId` and removes stale picked-up
