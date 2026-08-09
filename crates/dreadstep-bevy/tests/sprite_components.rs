@@ -139,6 +139,7 @@ fn sprite_projection_covers_all_families_and_complete_node_metadata() {
     .collect::<Vec<_>>();
   assert!(families.contains(&SceneRenderPlaceholder::Terrain));
   assert!(families.contains(&SceneRenderPlaceholder::Player));
+  assert!(families.contains(&SceneRenderPlaceholder::Enemy));
   assert!(families.contains(&SceneRenderPlaceholder::DeadActor));
   assert!(families.contains(&SceneRenderPlaceholder::GroundItem));
   assert!(families.contains(&SceneRenderPlaceholder::InventoryItem));
