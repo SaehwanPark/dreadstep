@@ -386,15 +386,40 @@ fn missing_runtime_source_projection_and_node_entity_are_safe() {
     .find(|entry| entry.node().key() == SceneSpriteKey::Player)
     .copied()
     .expect("player node should exist");
+  let before_nodes = missing_entity
+    .world()
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .to_vec();
+  let before_sprites = missing_entity
+    .world()
+    .resource::<PresentationBevySpriteProjection>()
+    .entries()
+    .to_vec();
   missing_entity.world_mut().despawn(player.node_entity());
+  missing_entity
+    .world_mut()
+    .remove_resource::<PresentationRenderCommandPlan>();
   missing_entity.update();
   assert!(
     missing_entity
       .world()
+      .get_entity(player.node_entity())
+      .is_err()
+  );
+  assert_eq!(
+    missing_entity
+      .world()
       .resource::<PresentationRenderNodeProjection>()
-      .entries()
-      .iter()
-      .any(|entry| entry.node().key() == SceneSpriteKey::Player)
+      .entries(),
+    before_nodes.as_slice()
+  );
+  assert_eq!(
+    missing_entity
+      .world()
+      .resource::<PresentationBevySpriteProjection>()
+      .entries(),
+    before_sprites.as_slice()
   );
 }
 

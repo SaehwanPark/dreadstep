@@ -310,10 +310,9 @@ The verified headless Sprite API bridge enables only Bevy's `bevy_sprite` API fe
 placeholder node to a deterministic solid-color `Sprite` with the caller-selected tile size when
 available. The Sprite keeps Bevy's default image handle unset. The active ECS attachment slice copies
 those typed values onto retained node entities, where Bevy's required Transform/Visibility components
-remain defaults;
-no Sprite/render plugin, texture loading, transform placement, window, playback, or production media
-policy is introduced. Missing runtime, node source, projection destination, or node entities preserve
-existing components safely, and the wrapped core runtime remains authoritative.
+remain defaults; no Sprite/render plugin, texture loading, transform placement, window, playback, or
+production media policy is introduced. Missing runtime, node source, projection destination, or node
+entities preserve existing components safely, and the wrapped core runtime remains authoritative.
 
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references

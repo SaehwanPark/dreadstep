@@ -43,7 +43,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Active Sprite-node attachment
   - The current slice attaches those typed `Sprite` values to retained render-node ECS entities,
     preserving node identity and default required components without enabling a render plugin,
-    transforms, texture loading, or production media.
+    transform placement, texture loading, or production media.
 - Still deferred
   - Windowing, Sprite/render plugins, production textures/assets, transforms/cameras, animation
     playback, HUD widgets, event/combat message presentation, audio assets/playback, fog of war,

@@ -126,8 +126,8 @@ All notable contributor- and user-visible project changes are recorded here.
   deterministic solid-color `Sprite` values to stable placeholder nodes with optional logical tile
   sizing while keeping Sprite/render plugins, textures, transforms, playback, and media deferred.
 - An active ECS Sprite-node attachment slice copies those typed values onto retained placeholder
-  entities while preserving identity and default required components; render plugins, transforms,
-  texture loading, playback, and production media remain deferred.
+  entities while preserving identity and default required components; render plugins, transform
+  placement, texture loading, playback, and production media remain deferred.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
