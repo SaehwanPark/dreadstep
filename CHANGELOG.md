@@ -115,9 +115,13 @@ All notable contributor- and user-visible project changes are recorded here.
   nodes from typed render commands while keeping Sprite components, render plugins, windows, assets,
   animation, audio, and media deferred; actual rendering remains future work.
 - A verified metadata-only `PresentationAssetManifest` and
-  `PresentationRenderAssetProjection` boundary that validates one relative local reference per
+  `PresentationRenderAssetProjection` boundary that validates one anchored local-media reference per
   placeholder family and joins it to stable node metadata without file loading, asset handles, or
   committed pixel-art/audio binaries.
+- An active metadata-only `PresentationAudioAssetManifest` and
+  `PresentationAudioAssetProjection` boundary that exhaustively binds eight typed cue families to
+  validated local `audio/` references while preserving payload/order without playback or an audio
+  backend.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

@@ -1755,6 +1755,9 @@ Current exploratory gate (2026-08-09):
   placeholder family and joins those references to stable node metadata without filesystem reads,
   asset handles, or committed pixel-art/audio binaries. Provenance remains in tracked documents;
   production loading and rendering remain a later slice.
+- The active local-only audio cue manifest binds all eight typed cue families to validated root or
+  crate-local `audio/` references and preserves ordered payloads without filesystem reads, asset
+  handles, playback, or an audio backend. Production audio remains a later slice.
 
 ### Content
 
