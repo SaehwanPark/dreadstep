@@ -1,6 +1,9 @@
 //! Headless Bevy application-shell behavior.
 
+use std::collections::BTreeMap;
+
 use bevy::app::App;
+use bevy::ecs::entity::Entity;
 use dreadstep_bevy::{PresentationPlugin, PresentationRuntime, SceneActor, SceneTile};
 use dreadstep_core::{ActorId, Command, Direction, Position};
 
@@ -9,6 +12,40 @@ fn app_with_runtime() -> App {
   app.insert_resource(PresentationRuntime::start_run(7).expect("content should validate"));
   app.add_plugins(PresentationPlugin);
   app
+}
+
+type TileProjection = BTreeMap<(i32, i32), (Entity, SceneTile)>;
+type ActorProjection = BTreeMap<ActorId, (Entity, SceneActor)>;
+
+fn scene_projection(app: &mut App) -> (TileProjection, ActorProjection) {
+  let world = app.world_mut();
+  let tiles = {
+    let mut query = world.query::<(Entity, &SceneTile)>();
+    query
+      .iter(world)
+      .map(|(entity, tile)| ((tile.position().x(), tile.position().y()), (entity, *tile)))
+      .collect()
+  };
+  let actors = {
+    let mut query = world.query::<(Entity, &SceneActor)>();
+    query
+      .iter(world)
+      .map(|(entity, actor)| (actor.id(), (entity, *actor)))
+      .collect()
+  };
+  (tiles, actors)
+}
+
+#[test]
+fn plugin_without_runtime_is_a_safe_noop() {
+  let mut app = App::new();
+  app.add_plugins(PresentationPlugin);
+
+  app.update();
+
+  let world = app.world_mut();
+  assert_eq!(world.query::<&SceneTile>().iter(world).count(), 0);
+  assert_eq!(world.query::<&SceneActor>().iter(world).count(), 0);
 }
 
 #[test]
@@ -66,10 +103,7 @@ fn rejected_runtime_command_is_atomic_for_state_and_scene() {
     .world()
     .resource::<PresentationRuntime>()
     .replay_digest();
-  let before_entities = {
-    let world = app.world_mut();
-    world.query::<&SceneActor>().iter(world).count()
-  };
+  let before_projection = scene_projection(&mut app);
 
   let error = app
     .world_mut()
@@ -84,9 +118,5 @@ fn rejected_runtime_command_is_atomic_for_state_and_scene() {
   let runtime = app.world().resource::<PresentationRuntime>();
   assert_eq!(runtime.snapshot(), before);
   assert_eq!(runtime.replay_digest(), before_digest);
-  let after_entities = {
-    let world = app.world_mut();
-    world.query::<&SceneActor>().iter(world).count()
-  };
-  assert_eq!(after_entities, before_entities);
+  assert_eq!(scene_projection(&mut app), before_projection);
 }

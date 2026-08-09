@@ -353,6 +353,10 @@ impl PresentationRuntime {
 }
 
 /// A headless Bevy plugin that keeps disposable scene mirrors synchronized with runtime state.
+///
+/// The plugin expects [`PresentationRuntime`] to be inserted by the application. Until a runtime
+/// is present, its update system is a safe no-op so app construction can install plugins before
+/// selecting or restoring a run.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct PresentationPlugin;
 
@@ -363,7 +367,12 @@ impl Plugin for PresentationPlugin {
 }
 
 fn sync_runtime_scene(world: &mut World) {
-  let snapshot = world.resource::<PresentationRuntime>().snapshot();
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
   sync_scene(world, &snapshot);
 }
 
