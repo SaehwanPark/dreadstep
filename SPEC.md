@@ -2027,6 +2027,40 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: presentation asset and tile experiment
+
+- Status: active
+- Started: 2026-08-09
+
+Evaluate representative original/generated and free reusable candidates before enabling a real
+renderer. Keep all binaries local-only while recording source, creator, license, attribution, and
+modification status in tracked [`docs/presentation/asset-evaluation.md`](docs/presentation/asset-evaluation.md).
+The experiment selects 32×32 as the working logical tile size because it preserves actor/item
+readability and gives Kenney's 16×16 CC0 candidate an exact 2× integer scale; 24×24 remains a valid
+caller configuration but is not the current prototype target. The audio result is intentionally
+open: generated timing/UI and Kenney CC0 UI cues are evaluated, while dungeon combat/movement/item
+cue sourcing remains a later explicit decision.
+
+Acceptance:
+
+- Representative 24×24 and 32×32 original/generated pixel-art candidates are retained locally and
+  evaluated for tactical clarity, visual fit, editability, coverage, and integration effort.
+- A free reusable pixel-art candidate and a free reusable audio candidate are retained locally with
+  factual source, creator, license, attribution, modification, and SHA-256 records.
+- A generated/original audio cue candidate is evaluated for timing and level, without claiming a
+  distribution license or integrating it into Bevy playback.
+- The working tile-size and mixed pixel-art fallback decisions are recorded; unresolved dungeon
+  audio sourcing is explicit rather than silently treated as complete.
+- Root/crate-local `assets/`, `art/`, and `audio/` binaries remain ignored; tracked concept art and
+  root `screenshots/` remain visible; no binary is loaded by code or committed.
+
+Verification target:
+
+- `git check-ignore --no-index` covers every local candidate and `git ls-files` confirms no candidate
+  binary is tracked; recorded SHA-256 values and media metadata match the local files.
+- Repository checks and `git diff --check` pass; the existing full Rust verification remains green
+  because this slice adds no code, dependency, Bevy feature, or asset handle.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

@@ -97,6 +97,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - Caller-selected `PresentationTileSize` and checked `ScenePixelPosition` metadata for terrain,
   actors, and ground items; tile-size experiments, transforms, assets, and rendering remain
   deferred.
+- A tracked Milestone 3 asset-evaluation record with local-only generated/CC0 pixel-art and audio
+  candidates, a provisional 32×32 working scale, and an explicit open decision for dungeon cue
+  sourcing; no binary is loaded or committed.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
