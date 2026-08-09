@@ -78,6 +78,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - A deterministic headless `PresentationCamera` resource and `SceneCamera` ECS projection that
   mirror the selected actor's authoritative center, retain one camera entity, and clear unknown
   anchors without adding viewport or rendering policy.
+- A deterministic headless `PresentationViewport` request and `SceneViewport` ECS projection that
+  clamp tile rectangles to the map around the camera anchor without adding visibility or rendering
+  policy.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

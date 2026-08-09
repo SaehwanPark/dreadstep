@@ -1378,6 +1378,43 @@ Out of scope:
 - Window or camera plugins, transforms, viewport sizing or clamping, interpolation, smoothing,
   rendering, sprites, HUD, visibility/fog rules, input rebinding, transport, and new gameplay.
 
+### Milestone 3 slice: deterministic headless viewport projection
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Extend the headless camera boundary with an explicit viewport size and deterministic map clamping.
+`PresentationViewport` owns only the requested tile dimensions and the latest projected origin;
+`SceneViewport` mirrors the effective in-map rectangle for future renderers. The projection follows
+the authoritative camera center and remains disposable adapter state.
+
+Acceptance:
+
+- `PresentationViewport::new` rejects zero-sized viewports and exposes typed requested dimensions,
+  an optional in-map origin, and effective dimensions after map clamping.
+- The plugin centers the effective rectangle on the camera anchor, clamps it to the snapshot map,
+  and updates both resource and one disposable `SceneViewport` entity deterministically in one app
+  update after keyboard dispatch and camera synchronization.
+- Viewports larger than the map shrink to the full map. Accepted actor movement updates the
+  authoritative runtime, replay, and actor projection through core while moving the viewport;
+  selection-only controlled-actor changes update the origin without mutating runtime, replay, or
+  complete keyed tile/actor/item mirrors.
+- Unknown actors clear the origin and scene viewport. Missing runtime, input, or viewport resources
+  are safe no-ops, and duplicate viewport entities are reduced to one retained identity.
+- The projection remains headless and adds no window/camera plugins, transforms, interpolation,
+  rendering, visibility/fog policy, transport, persistence, or gameplay rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test viewport --all-features --locked` covers validation,
+  startup, movement, edge/oversize clamping, actor changes, unknown actors, duplicate cleanup, and
+  absent-resource no-ops; all thirteen focused tests pass.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on the final revision, and the normal CI matrix
+  remains green.
+
 ### Milestone 3 slice: deterministic Bevy starter-item run projection
 
 - Status: verified

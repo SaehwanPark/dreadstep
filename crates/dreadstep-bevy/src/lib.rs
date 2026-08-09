@@ -131,6 +131,63 @@ impl PresentationCamera {
   }
 }
 
+/// A deterministic tile viewport requested by a presentation client.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationViewport {
+  width: u32,
+  height: u32,
+  origin: Option<Position>,
+  effective_width: u32,
+  effective_height: u32,
+}
+
+impl PresentationViewport {
+  /// Creates a non-empty viewport request.
+  #[must_use]
+  pub const fn new(width: u32, height: u32) -> Option<Self> {
+    if width == 0 || height == 0 {
+      return None;
+    }
+    Some(Self {
+      width,
+      height,
+      origin: None,
+      effective_width: 0,
+      effective_height: 0,
+    })
+  }
+
+  /// Returns the requested viewport width in tiles.
+  #[must_use]
+  pub const fn width(self) -> u32 {
+    self.width
+  }
+
+  /// Returns the requested viewport height in tiles.
+  #[must_use]
+  pub const fn height(self) -> u32 {
+    self.height
+  }
+
+  /// Returns the clamped row-major map origin, or `None` without an authoritative center.
+  #[must_use]
+  pub const fn origin(self) -> Option<Position> {
+    self.origin
+  }
+
+  /// Returns the effective in-map width after clamping to the current map.
+  #[must_use]
+  pub const fn effective_width(self) -> u32 {
+    self.effective_width
+  }
+
+  /// Returns the effective in-map height after clamping to the current map.
+  #[must_use]
+  pub const fn effective_height(self) -> u32 {
+    self.effective_height
+  }
+}
+
 /// A disposable ECS mirror of one projected map tile.
 #[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SceneTile {
@@ -330,6 +387,47 @@ impl SceneCamera {
 
 #[derive(Default, Resource)]
 struct SceneCameraState {
+  entity: Option<Entity>,
+}
+
+/// A disposable ECS mirror of one effective in-map viewport rectangle.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneViewport {
+  origin: Position,
+  width: u32,
+  height: u32,
+}
+
+impl SceneViewport {
+  const fn new(origin: Position, width: u32, height: u32) -> Self {
+    Self {
+      origin,
+      width,
+      height,
+    }
+  }
+
+  /// Returns the row-major map origin of this viewport.
+  #[must_use]
+  pub const fn origin(self) -> Position {
+    self.origin
+  }
+
+  /// Returns the effective viewport width in tiles.
+  #[must_use]
+  pub const fn width(self) -> u32 {
+    self.width
+  }
+
+  /// Returns the effective viewport height in tiles.
+  #[must_use]
+  pub const fn height(self) -> u32 {
+    self.height
+  }
+}
+
+#[derive(Default, Resource)]
+struct SceneViewportState {
   entity: Option<Entity>,
 }
 
@@ -634,6 +732,8 @@ fn update_presentation(world: &mut World) {
   sync_scene_focus(world);
   sync_camera(world);
   sync_scene_camera(world);
+  sync_viewport(world);
+  sync_scene_viewport(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -828,6 +928,108 @@ fn sync_scene_camera(world: &mut World) {
   } else {
     let entity = world.spawn(SceneCamera::new(center)).id();
     world.insert_resource(SceneCameraState {
+      entity: Some(entity),
+    });
+  }
+}
+
+fn sync_viewport(world: &mut World) {
+  if world.get_resource::<PresentationInput>().is_none() {
+    return;
+  }
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    return;
+  };
+  let Some(camera) = world.get_resource::<PresentationCamera>() else {
+    return;
+  };
+  let Some(center) = camera.center() else {
+    let Some(mut viewport) = world.get_resource_mut::<PresentationViewport>() else {
+      return;
+    };
+    viewport.origin = None;
+    viewport.effective_width = 0;
+    viewport.effective_height = 0;
+    return;
+  };
+  let Some((requested_width, requested_height)) = world
+    .get_resource::<PresentationViewport>()
+    .map(|viewport| (viewport.width(), viewport.height()))
+  else {
+    return;
+  };
+  let effective_width = requested_width.min(snapshot.width());
+  let effective_height = requested_height.min(snapshot.height());
+  let origin = Position::new(
+    clamped_viewport_axis(center.x(), effective_width, snapshot.width()),
+    clamped_viewport_axis(center.y(), effective_height, snapshot.height()),
+  );
+  let Some(mut viewport) = world.get_resource_mut::<PresentationViewport>() else {
+    return;
+  };
+  viewport.origin = Some(origin);
+  viewport.effective_width = effective_width;
+  viewport.effective_height = effective_height;
+}
+
+fn clamped_viewport_axis(center: i32, extent: u32, map_extent: u32) -> i32 {
+  let half_extent = i64::from(extent / 2);
+  let desired = i64::from(center) - half_extent;
+  let maximum = i64::from(map_extent.saturating_sub(extent));
+  i32::try_from(desired.clamp(0, maximum)).unwrap_or_default()
+}
+
+fn sync_scene_viewport(world: &mut World) {
+  if world.get_resource::<PresentationInput>().is_none()
+    || world.get_resource::<PresentationRuntime>().is_none()
+  {
+    return;
+  }
+  let Some(viewport) = world.get_resource::<PresentationViewport>() else {
+    return;
+  };
+  let Some(origin) = viewport.origin() else {
+    let mut query = world.query::<(Entity, &SceneViewport)>();
+    let stale_entities = query
+      .iter(world)
+      .map(|(entity, _)| entity)
+      .collect::<Vec<_>>();
+    for entity in stale_entities {
+      let _ = world.despawn(entity);
+    }
+    world.insert_resource(SceneViewportState::default());
+    return;
+  };
+  let dimensions = (viewport.effective_width(), viewport.effective_height());
+  let mut query = world.query::<(Entity, &SceneViewport)>();
+  let mut existing = query
+    .iter(world)
+    .map(|(entity, _)| entity)
+    .collect::<Vec<_>>();
+  existing.sort_unstable();
+  let retained = world
+    .get_resource::<SceneViewportState>()
+    .and_then(|state| state.entity)
+    .filter(|entity| existing.contains(entity))
+    .or_else(|| existing.first().copied());
+  let scene_viewport = SceneViewport::new(origin, dimensions.0, dimensions.1);
+  if let Some(entity) = retained {
+    world.entity_mut(entity).insert(scene_viewport);
+    for stale in existing
+      .into_iter()
+      .filter(|candidate| *candidate != entity)
+    {
+      let _ = world.despawn(stale);
+    }
+    world.insert_resource(SceneViewportState {
+      entity: Some(entity),
+    });
+  } else {
+    let entity = world.spawn(scene_viewport).id();
+    world.insert_resource(SceneViewportState {
       entity: Some(entity),
     });
   }
