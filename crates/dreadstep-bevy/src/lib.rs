@@ -14,9 +14,9 @@ use bevy::ecs::{component::Component, entity::Entity, resource::Resource, world:
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
-  ActionTime, Actor, ActorId, ActorKind, Command, CommandError, Direction, Event, GridMap,
-  GroundItemStack, HitPoints, Item, ItemDefinitionId, ItemId, Position, ReplayTrace, StateDigest,
-  Tile, WorldState,
+  ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
+  Event, GridMap, GroundItemStack, HitPoints, Item, ItemDefinitionId, ItemId, Position,
+  ReplayTrace, StateDigest, Tile, WorldState,
 };
 
 /// A supported keyboard intent before it is addressed to one core actor.
@@ -240,6 +240,108 @@ impl PresentationHud {
   #[must_use]
   pub const fn ready_at(self) -> Option<ActionTime> {
     self.ready_at
+  }
+}
+
+/// A typed message projection of one core semantic event.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PresentationMessage {
+  /// An actor entered a new map position.
+  Moved {
+    /// The actor that moved.
+    actor: ActorId,
+    /// The position before movement.
+    from: Position,
+    /// The position after movement.
+    to: Position,
+  },
+  /// An actor attempted movement but remained in place.
+  MovementBlocked {
+    /// The actor that attempted movement.
+    actor: ActorId,
+    /// The position before the attempt.
+    from: Position,
+    /// The requested destination.
+    to: Position,
+    /// Why the destination could not be entered.
+    reason: BlockReason,
+  },
+  /// An actor spent a standard action without moving.
+  Waited {
+    /// The actor that waited.
+    actor: ActorId,
+    /// The action time at which the wait began.
+    at: ActionTime,
+  },
+  /// A melee attack reduced a target's hit points.
+  Attacked {
+    /// The actor that attacked.
+    attacker: ActorId,
+    /// The actor that was hit.
+    target: ActorId,
+    /// The fixed damage applied.
+    damage: Damage,
+    /// The target's hit points after damage.
+    remaining_hit_points: HitPoints,
+  },
+  /// An actor reached zero hit points.
+  Died {
+    /// The actor that died.
+    actor: ActorId,
+  },
+}
+
+impl PresentationMessage {
+  fn from_event(event: Event) -> Self {
+    match event {
+      Event::Moved { actor, from, to } => Self::Moved { actor, from, to },
+      Event::MovementBlocked {
+        actor,
+        from,
+        to,
+        reason,
+      } => Self::MovementBlocked {
+        actor,
+        from,
+        to,
+        reason,
+      },
+      Event::Waited { actor, at } => Self::Waited { actor, at },
+      Event::Attacked {
+        attacker,
+        target,
+        damage,
+        remaining_hit_points,
+      } => Self::Attacked {
+        attacker,
+        target,
+        damage,
+        remaining_hit_points,
+      },
+      Event::Died { actor } => Self::Died { actor },
+    }
+  }
+}
+
+/// A disposable ordered buffer of typed messages derived from the latest runtime output.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationMessages {
+  messages: Vec<PresentationMessage>,
+}
+
+impl PresentationMessages {
+  /// Creates an empty message projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      messages: Vec::new(),
+    }
+  }
+
+  /// Returns messages in the core event order of the latest runtime output.
+  #[must_use]
+  pub fn messages(&self) -> &[PresentationMessage] {
+    &self.messages
   }
 }
 
@@ -790,6 +892,7 @@ fn update_presentation(world: &mut World) {
   sync_viewport(world);
   sync_scene_viewport(world);
   sync_hud(world);
+  sync_messages(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -1119,6 +1222,28 @@ fn sync_hud(world: &mut World) {
     hud.hit_points = None;
     hud.ready_at = None;
   }
+}
+
+fn sync_messages(world: &mut World) {
+  let Some(projected) = world.get_resource::<PresentationRuntime>().map(|runtime| {
+    runtime
+      .output()
+      .map(|output| {
+        output
+          .events()
+          .iter()
+          .copied()
+          .map(PresentationMessage::from_event)
+          .collect()
+      })
+      .unwrap_or_default()
+  }) else {
+    return;
+  };
+  let Some(mut messages) = world.get_resource_mut::<PresentationMessages>() else {
+    return;
+  };
+  messages.messages = projected;
 }
 
 fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {
