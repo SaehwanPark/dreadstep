@@ -40,8 +40,8 @@ protocol ----> core <---- content
 ```
 
 The adapter packages may depend on protocol and content as well as core. Core, protocol,
-and content must never depend on Bevy or MCP runtime libraries. Bevy currently enables
-only its `std` feature so headless Linux checks do not require desktop system libraries.
+and content must never depend on Bevy or MCP runtime libraries. Bevy currently enables only its
+`std` and `keyboard` features, so headless Linux checks do not require desktop system libraries.
 
 ## Intended Data Flow
 

@@ -25,7 +25,8 @@ Update an existing lesson instead of adding a duplicate.
   are not available to the presentation adapter.
 - Cause: Bevy gates keyboard support behind its optional `keyboard` feature; `std` does not enable
   optional input modules.
-- Resolution: Enable only Bevy's `keyboard` feature in the workspace dependency. The bridge then
-  compiles and tests without enabling `default_platform`, Wayland, X11, audio, or window backends.
+- Resolution: Enable Bevy's `keyboard` feature alongside the existing `std` feature in the
+  workspace dependency. The bridge then compiles and tests without enabling `default_platform`,
+  Wayland, X11, audio, or window backends.
 - Prevention: Add the narrowest Bevy feature required by a presentation slice, inspect
   `cargo tree -e features`, and keep `scripts/check-repository.sh` guarding desktop features.

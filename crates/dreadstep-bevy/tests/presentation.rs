@@ -3,7 +3,8 @@
 use bevy::input::keyboard::KeyCode;
 use dreadstep_bevy::{KeyboardIntent, PresentationState};
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, Direction, GridMap, HitPoints, Position, Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, Direction, Event, GridMap, HitPoints, Position, ReplayTrace,
+  Tile, WorldState,
 };
 
 fn world() -> WorldState {
@@ -35,7 +36,10 @@ fn world() -> WorldState {
 
 #[test]
 fn snapshot_projects_map_and_actors_deterministically() {
-  let state = PresentationState::new(7, world());
+  let source = world();
+  let expected_current_time = source.current_time();
+  let expected_digest = source.digest();
+  let state = PresentationState::new(7, source);
   let snapshot = state.snapshot();
 
   assert_eq!(snapshot.width(), 4);
@@ -47,8 +51,9 @@ fn snapshot_projects_map_and_actors_deterministically() {
   assert_eq!(snapshot.actors().len(), 2);
   assert_eq!(snapshot.actors()[0].id(), ActorId::new(1));
   assert_eq!(snapshot.actors()[1].id(), ActorId::new(2));
+  assert_eq!(snapshot.current_time(), expected_current_time);
   assert_eq!(snapshot.next_actor(), Some(ActorId::new(1)));
-  assert_eq!(snapshot.digest(), state.snapshot().digest());
+  assert_eq!(snapshot.digest(), expected_digest);
   assert_eq!(snapshot, PresentationState::new(7, world()).snapshot());
 }
 
@@ -86,11 +91,24 @@ fn accepted_command_emits_events_and_rejected_command_is_atomic() {
       direction: Direction::East,
     })
     .expect("scheduled player should act");
-  assert_eq!(accepted.events().len(), 1);
+  assert_eq!(
+    accepted.events(),
+    &[Event::Moved {
+      actor: ActorId::new(1),
+      from: Position::new(0, 0),
+      to: Position::new(1, 0),
+    }]
+  );
   assert_eq!(
     accepted.snapshot().actors()[0].position(),
     Position::new(1, 0)
   );
+  let mut expected_trace = ReplayTrace::new(7);
+  expected_trace.record(Command::Move {
+    actor: ActorId::new(1),
+    direction: Direction::East,
+  });
+  assert_eq!(state.replay_digest(), expected_trace.digest());
   let before_rejection = (state.snapshot(), state.replay_digest());
 
   let error = state
