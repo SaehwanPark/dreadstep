@@ -1231,7 +1231,7 @@ impl PresentationRenderNodeProjection {
   }
 }
 
-/// One render-node entry joined with an optional local-only asset reference.
+/// One render-node entry joined with its validated local-only asset reference.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SceneRenderAssetEntry {
   node: SceneRenderNodeEntry,
