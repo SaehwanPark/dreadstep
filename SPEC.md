@@ -1859,6 +1859,48 @@ Out of scope:
 - Audio assets, asset handles, playback, audio backends, text/localization, text layout, widgets,
   sprites, animation, windowing, rendering, persistence, transport, and gameplay rules.
 
+### Milestone 3 slice: deterministic headless sprite-role metadata
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Attach a typed `SceneSpriteRole` to each existing headless Bevy scene mirror so a future renderer
+can classify terrain, living actors, retained dead records, and item entities without inspecting
+untyped ECS layout. The role is disposable metadata derived from core-owned scene components; it
+does not select assets or become a second source of presentation state.
+
+Acceptance:
+
+- `SceneSpriteRole` classifies every synchronized mirror as `Terrain`, `Player`, `Enemy`,
+  `DeadActor`, `GroundItem`, or `InventoryItem`.
+- `sync_scene` inserts or refreshes exactly one role alongside each keyed `SceneTile`, `SceneActor`,
+  `SceneGroundItem`, and `SceneInventoryItem`; actor roles follow authoritative kind/life data and
+  stale entities are still removed by the existing stable keys.
+- Role metadata preserves existing scene entity identity and complete typed tile/actor/item values;
+  it cannot issue commands or mutate core state.
+- Missing or unsynchronized scene data is not invented; no role is projected without the existing
+  scene mirror, and no output adds hidden-information or visibility policy.
+- The projection remains headless and metadata-only: no textures, asset handles, materials,
+  transforms, window/render plugins, animation, audio, persistence, transport, or gameplay rules
+  are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_roles --all-features --locked` covers every
+  role variant, item mirrors, stable identity, stale cleanup, and actor role refresh; all five
+  focused tests pass.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `4fad448`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- Text/localization, textures, asset handles, materials, transforms, window/render plugins,
+  animation, audio, persistence, transport, and gameplay rules.
+
 ## Present
 
 ### Deferred item gameplay semantics
