@@ -33,6 +33,13 @@ fn authored_items_preserve_actor_order_and_complete_data() {
     actors[1].inventory(),
     &[Item::new(ItemId::new(43), ItemDefinitionId::new(9))]
   );
+  assert_eq!(
+    world.digest(),
+    definition
+      .build()
+      .expect("repeated authored items should validate")
+      .digest()
+  );
 }
 
 #[test]
