@@ -17,32 +17,20 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is continuing Milestone 3: the human presentation boundary. The latest completed slices
-add deterministic headless Bevy scene synchronization, a `PresentationRuntime`/`App` plugin for
-automatic projection, ordered keyboard dispatch through core, a one-shot presentation feedback
-buffer for typed event/snapshot evidence, a typed headless focus projection, a deterministic
-headless camera anchor, and a clamped headless viewport projection, plus complete typed ground-item
-scene projection.
-These build on the shared authored starter
-floor, `start_run` path, immutable snapshots, and keyboard-to-core command translation. The completed
-Milestone 2 MCP observation, action,
-history, replay, and tester operations remain available. Windowing, rendering assets, animation,
-HUD, audio, fog of war, multiple floors, and gameplay-facing item effects remain deferred. The
-typed headless `SceneFocus`, `SceneCamera`, and `SceneViewport` projections reuse stable keyed
-presentation identity; window transforms, viewport rendering, and marker visuals remain deferred.
-The deterministic content-owned opaque item-definition catalog
-and tester-only deterministic item transfer, item drop, and item pickup are now verified.
-Ground-item projection through protocol/MCP is stable and tester-only; the headless Bevy
-`SceneGroundItem` projection is verified. Player pickup and item gameplay semantics remain deferred.
-The headless `SceneInventoryItem` projection is verified; inventory ownership and gameplay semantics
-remain core/tester-only. Authored starter-floor item placements are verified: optional ordered
-opaque instances delegate identity and inventory validation to core, while the default starter
-floor remains item-free. The verified content slice also binds placements to an explicit
-item-definition catalog before core world construction; catalog data remains authoring-only. A
-separate deterministic starter-item scenario is verified as a reusable non-default content
-fixture; it does not add item gameplay semantics. The Bevy adapter now has a verified explicit
-item-run startup path that projects that fixture's typed inventory items headlessly; the default
-`start_run` path remains item-free.
+Dreadstep is continuing Milestone 3: the human presentation boundary.
+
+- Verified simulation and agent foundations: deterministic core rules, replay evidence, headless
+  CLI, protocol/MCP observation and actions, tester operations, and stdio tools.
+- Verified headless Bevy bridge: shared authored floors, runtime/app projection, keyboard dispatch,
+  feedback evidence, focus, scene focus, camera, viewport, tile/actor, ground-item, and
+  inventory-item projections, plus typed `PresentationHud` actor status.
+- Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
+  placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
+  startup. The default `start_run` remains item-free.
+- Next presentation work: typed event/combat message evidence before any rendered widgets or text
+  policy.
+- Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
+  message presentation, audio, fog of war, multiple floors, and gameplay-facing item effects.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

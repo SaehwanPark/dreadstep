@@ -232,6 +232,11 @@ centers it on the camera anchor with integer arithmetic, and mirrors only the ef
 dimensions. Oversized requests use the complete map; unknown or missing authority leaves the
 disposable viewport unchanged or clears it deterministically without adding visibility policy.
 
+The verified headless HUD-status slice adds an optional `PresentationHud` resource keyed by the
+controlled actor. It mirrors only typed actor kind, position, hit points, and scheduler readiness;
+unknown actors clear those optional values and missing resources preserve existing status. This is
+future-HUD data, not text, layout, widget, rendering, audio, or gameplay policy.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and
