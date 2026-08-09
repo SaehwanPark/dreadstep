@@ -1141,6 +1141,44 @@ Out of scope:
 - Windowing/event readers, mouse/gamepad/text input, rebinding persistence, rendering, audio,
   transport, ECS-issued commands, and new gameplay rules.
 
+### Milestone 3 slice: deterministic presentation feedback buffer
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Expose accepted presentation output as an adapter-owned, one-shot feedback buffer for future HUD
+and combat-message systems. `PresentationRuntime` will retain the latest `PresentationOutput` from
+an accepted direct or keyboard command, expose read-only inspection, and offer explicit consumption.
+Rejected commands clear stale feedback but do not change the authoritative core world, replay trace,
+or scene mirrors.
+
+Acceptance:
+
+- A fresh runtime has no pending output; accepted commands publish exact typed core events and the
+  post-command snapshot/digest, regardless of whether the command came from direct API or keyboard
+  dispatch.
+- `output()` never exposes mutable core/ECS storage, and `take_output()` transfers a pending output
+  exactly once; no wall-clock expiry or unordered event source exists.
+- Rejected commands clear stale output while preserving runtime snapshot, replay digest, and
+  complete keyed scene projections; feedback is evidence only and cannot issue commands.
+- The buffer remains headless and independent of HUD widgets, text layout, animations, persistence,
+  transport, windowing, audio, and new gameplay rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --all-targets --all-features --locked` covers startup
+  emptiness, accepted keyboard/direct output, exact event/snapshot evidence, one-shot consumption,
+  and rejection clearing/atomicity.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- HUD, messages, animations, output persistence, replay-file formats, ECS authority, transport,
+  windowing, audio, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics

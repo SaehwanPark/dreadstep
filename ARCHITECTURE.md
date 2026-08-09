@@ -175,6 +175,12 @@ an explicit runtime API and never originates from scene components. Its keyboard
 uses an explicit `PresentationInput` actor and fixed key priority, consumes one frame's supported
 just-pressed keys deterministically, delegates through core, and projects before the update ends.
 
+The presentation-feedback slice extends that same runtime with an optional latest
+`PresentationOutput`. Accepted direct or keyboard commands publish typed event/snapshot evidence;
+consumers can inspect it without mutation or take it once. Rejected commands clear stale feedback
+while preserving `WorldState`, replay digest, and disposable scene mirrors, so the buffer remains
+adapter evidence rather than a second simulation store.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.
