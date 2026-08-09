@@ -11,7 +11,9 @@ use std::{error::Error, fmt};
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Position, ReplayTrace, Tile, WorldState,
 };
-use dreadstep_protocol::{CommandError, CommandRequest, Event, StateDigest, WorldSnapshot};
+use dreadstep_protocol::{
+  CommandError, CommandRequest, Event, ReplayEvidence, StateDigest, WorldSnapshot,
+};
 
 /// Errors returned by the in-memory MCP player session.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -129,6 +131,12 @@ impl Session {
   #[must_use]
   pub fn replay_digest(&self) -> StateDigest {
     StateDigest::new(self.trace.digest().value())
+  }
+
+  /// Returns the explicit seed, accepted requests, and deterministic trace digest.
+  #[must_use]
+  pub fn get_replay(&self) -> ReplayEvidence {
+    ReplayEvidence::new(self.seed, self.history(), self.replay_digest())
   }
 
   /// Applies one protocol request through the core and returns protocol evidence.

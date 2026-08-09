@@ -232,6 +232,44 @@ impl StateDigest {
   }
 }
 
+/// In-memory replay evidence exposed to an agent without claiming a serialized replay format.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReplayEvidence {
+  seed: u64,
+  commands: Vec<CommandRequest>,
+  digest: StateDigest,
+}
+
+impl ReplayEvidence {
+  /// Creates replay evidence from an explicit seed, accepted requests, and trace digest.
+  #[must_use]
+  pub const fn new(seed: u64, commands: Vec<CommandRequest>, digest: StateDigest) -> Self {
+    Self {
+      seed,
+      commands,
+      digest,
+    }
+  }
+
+  /// Returns the explicit run seed.
+  #[must_use]
+  pub const fn seed(&self) -> u64 {
+    self.seed
+  }
+
+  /// Returns accepted protocol requests in execution order.
+  #[must_use]
+  pub fn commands(&self) -> &[CommandRequest] {
+    &self.commands
+  }
+
+  /// Returns the deterministic core trace digest.
+  #[must_use]
+  pub const fn digest(&self) -> StateDigest {
+    self.digest
+  }
+}
+
 /// Protocol damage evidence emitted by an accepted attack.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Damage(u16);
