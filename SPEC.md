@@ -1306,8 +1306,9 @@ must be specified in core before adding richer tester or player operations.
 
 ### Milestone 4 slice: deterministic tester item transfer
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add an in-memory tester mutation that transfers one existing opaque item instance between actor
 inventories. Core validates source ownership and actor identities, preserves item identity and
@@ -1330,9 +1331,13 @@ Verification:
 
 - Focused core, protocol, and MCP item-transfer tests cover success/order/digest, same-actor
   idempotence, dead records, typed rejection/atomicity, and replay/history preservation.
-- Focused Clippy and `scripts/verify.sh` pass before handoff.
-- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
-  revision.
+- `cargo test -p dreadstep-core --test item_transfer --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test item_transfer --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test world_error --all-features --locked`, and
+  `cargo test -p dreadstep-mcp --test tester_item_transfer --all-features --locked` pass.
+- Focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass.
+- Exactly one semantic code reviewer reports pass on the implementation revision (`921a227`), and
+  Linux, Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
