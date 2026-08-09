@@ -2792,6 +2792,37 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: headless ECS camera transform attachment
+
+- Status: active
+- Started: 2026-08-09
+
+Attach a checked map-space `Transform` to the retained disposable `SceneCamera` entity when a
+caller-selected `PresentationTileSize` is available. `PresentationCamera` and the runtime remain
+authoritative; this slice adds only the camera's centered logical-pixel translation and leaves
+viewport policy separate.
+
+Acceptance:
+
+- A valid runtime/input/camera center plus tile size maps the selected map position to the retained
+  SceneCamera `Transform` center `(pixel_x + tile_width/2, pixel_y + tile_height/2, 0.0)` using the
+  same checked origin conversion as scene placement.
+- Accepted movement and actor selection refresh the same SceneCamera Entity and exact transform;
+  duplicate/recycled cleanup, unknown-actor clearing, and runtime/replay authority remain intact.
+- Fresh missing tile size leaves the default camera transform; later tile-size removal preserves the
+  last checked transform, matching retained placement behavior. Missing runtime, input, camera, or
+  tile-size resources are independent safe no-ops; SceneCamera creation and cleanup remain the
+  existing synchronization behavior.
+- No viewport/projection policy, window/OS integration, render backend/plugin, visibility/fog,
+  texture/assets, audio, animation, gameplay, persistence, transport, or committed media behavior
+  is introduced.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test camera_transform_attachment --locked` proves checked
+  rectangular placement, movement/selection refresh, stable identity, fresh/later tile-size behavior,
+  stale/unknown cleanup, independent guards, and runtime/replay preservation.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

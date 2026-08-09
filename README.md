@@ -59,16 +59,20 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified headless ECS Camera2d attachment
   - The presentation boundary attaches Bevy's typed `Camera2d` marker and required default
     orthographic camera components to the retained disposable camera projection entity while
-    retaining runtime/PresentationCamera authority and leaving window creation, camera
-    transform/viewport policy, render plugins, visibility, production assets/audio, and media deferred.
+    retaining runtime/PresentationCamera authority and leaving window creation, camera viewport
+    policy, render plugins, visibility, production assets/audio, and media deferred.
 - Verified headless ECS Window configuration attachment
   - The presentation boundary mirrors validated logical/physical dimensions plus the exact integer
     scale onto a disposable `SceneWindow`, and exposes a deterministic `f32` scale adapter on
     Bevy's `WindowResolution`; OS/window plugins, render backends, camera policy, visibility,
     production assets/audio, and media remain deferred.
+- Active headless ECS camera transform attachment
+  - The next camera boundary will attach checked centered logical-pixel `Transform` values to the
+    retained disposable `SceneCamera` when a tile size is present, while leaving viewport policy,
+    OS/window integration, render backends, visibility, production assets/audio, and media deferred.
 - Still deferred
   - OS window creation, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
-    camera transform/viewport policy,
+    camera viewport policy,
     animation playback, HUD widgets, event/combat message presentation, audio assets/
     playback, fog of war, multiple floors, and richer gameplay item semantics such as effects,
     modifiers, capacity, and additional slots.
