@@ -28,8 +28,8 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   placeholders preserving event order without loading assets or enabling playback, plus typed
   `SceneSpriteRole` metadata classifying terrain, living actors, dead records, and item mirrors
   without textures, assets, or rendering plugins.
-- Active animation boundary: typed `PresentationAnimationCues` preserves movement and combat event
-  order without timers, interpolation, textures, or rendering plugins.
+- Verified animation boundary: typed `PresentationAnimationCues` preserves movement and combat
+  event order without timers, interpolation, textures, or rendering plugins.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.

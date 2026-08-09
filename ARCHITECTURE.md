@@ -252,7 +252,7 @@ mirror. It classifies terrain, living player/enemy actors, retained dead records
 the existing typed scene components remain authoritative projections, while textures, transforms,
 asset selection, and rendering stay outside this headless boundary.
 
-The active animation-cue slice adds an optional `PresentationAnimationCues` resource that mirrors
+The verified animation-cue slice adds an optional `PresentationAnimationCues` resource that mirrors
 latest runtime events as ordered typed movement and combat signals. It is evidence for a future
 renderer only: no timers, interpolation, animation state machine, assets, transforms, or rendering
 work occurs at this boundary.
