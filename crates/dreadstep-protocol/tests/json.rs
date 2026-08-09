@@ -1,0 +1,60 @@
+//! Contract tests for versioned snapshot JSON projection.
+
+use dreadstep_core::{
+  Actor as CoreActor, ActorId as CoreActorId, ActorKind as CoreActorKind, GridMap as CoreGridMap,
+  Item as CoreItem, ItemDefinitionId as CoreItemDefinitionId, ItemId as CoreItemId,
+  Position as CorePosition, Tile as CoreTile, WorldState as CoreWorldState,
+};
+use dreadstep_protocol::WorldSnapshot;
+
+fn snapshot() -> WorldSnapshot {
+  let mut world = CoreWorldState::new(
+    CoreGridMap::filled(2, 1, CoreTile::Floor).expect("map should be valid"),
+    vec![CoreActor::new(
+      CoreActorId::new(1),
+      CoreActorKind::Player,
+      CorePosition::new(0, 0),
+    )],
+  )
+  .expect("world should be valid");
+  world
+    .give_item(
+      CoreActorId::new(1),
+      CoreItem::new(CoreItemId::new(4), CoreItemDefinitionId::new(9)),
+    )
+    .expect("item should be accepted");
+  WorldSnapshot::from_world(&world)
+}
+
+#[test]
+fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
+  let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
+  assert_eq!(value["protocol_version"], 1);
+  assert_eq!(value["current_time"], 0);
+  assert_eq!(value["next_actor"], 1);
+  assert!(value["digest"].is_number());
+  assert_eq!(value["actors"][0]["id"], 1);
+  assert_eq!(value["actors"][0]["kind"], "player");
+  assert_eq!(value["actors"][0]["life"], "alive");
+  assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
+  assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
+}
+
+#[test]
+fn equivalent_snapshots_have_identical_json_bytes() {
+  let first = serde_json::to_string(&snapshot()).expect("snapshot should serialize");
+  let second = serde_json::to_string(&snapshot()).expect("snapshot should serialize");
+  assert_eq!(first, second);
+}
+
+#[test]
+fn snapshot_schema_exposes_the_versioned_projection_shape() {
+  let schema = schemars::schema_for!(WorldSnapshot);
+  let value = serde_json::to_value(schema).expect("schema should serialize");
+  let properties = &value["properties"];
+  assert!(properties["protocol_version"].is_object());
+  assert!(properties["current_time"].is_object());
+  assert!(properties["next_actor"].is_object());
+  assert!(properties["digest"].is_object());
+  assert!(properties["actors"].is_object());
+}

@@ -18,6 +18,11 @@ dreadstep-core = { path = "crates/dreadstep-core" }
 dreadstep-headless = { path = "crates/dreadstep-headless" }
 dreadstep-mcp = { path = "crates/dreadstep-mcp" }
 dreadstep-protocol = { path = "crates/dreadstep-protocol" }
+rmcp = { version = "=3.1.2", default-features = false, features = ["macros", "server", "transport-io"] }
+schemars = { version = "=1.2.2", features = ["derive"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+tokio = { version = "=1.53.1", features = ["io-std", "macros", "rt-multi-thread", "sync"] }
 
 [workspace.lints.rust]
 missing_docs = "warn"

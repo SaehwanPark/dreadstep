@@ -735,6 +735,42 @@ Out of scope:
   identification, content catalogs, persistence, wire serialization, MCP transport/runtime,
   interactive input, and replay playback.
 
+### Milestone 2 slice: minimal MCP stdio observation
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the first process boundary around the existing in-memory player session. The versioned
+`WorldSnapshot` projection gains explicit JSON serialization, and the `dreadstep-mcp` package gains
+a local stdio server using the official MCP runtime. It exposes only `start_run(seed)` and the
+read-only `observe()` tool; both return structured snapshots, while protocol text remains on stdout
+and startup/runtime failures go to stderr. Core rules and session history remain authoritative in
+the existing library, and no tester mutation or player action is exposed through transport yet.
+
+Acceptance:
+
+- A stdio MCP client can initialize, discover exactly the bounded observation tools, start a seeded
+  fixed scenario, and observe the resulting versioned JSON snapshot.
+- Snapshot JSON includes protocol version, current time, next actor, digest, and stable actor/item
+  projections with deterministic field names and ordering.
+- `observe` does not mutate the session; `start_run` replaces only the in-memory session state and
+  does not expose host filesystem, environment, or arbitrary process access.
+- The server's stdout is reserved for MCP protocol traffic, and operational failures are reported
+  through structured MCP errors/stderr rather than ad-hoc game output.
+
+Verification:
+
+- Focused protocol serialization and MCP server tests pass.
+- A subprocess smoke test completes initialize, tools/list, start_run, and observe over stdio.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and the single semantic review reports pass at revision 0.
+
+Out of scope:
+
+- player `act`, legal-actions transport, tester mutations over MCP, replay persistence, transport
+  alternatives, hidden information, interactive input, map editing, and gameplay item semantics.
+
 ## Future
 
 ### Deferred item gameplay semantics

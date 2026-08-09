@@ -14,6 +14,8 @@ use dreadstep_core::{
   Event as CoreEvent, Item as CoreItem, MapError as CoreMapError, WorldError as CoreWorldError,
   WorldState,
 };
+use schemars::JsonSchema;
+use serde::Serialize;
 
 /// Version of the in-memory agent observation projection.
 pub const PROTOCOL_VERSION: u16 = 1;
@@ -117,7 +119,7 @@ impl From<CoreCommand> for CommandRequest {
 }
 
 /// A stable actor identity in the protocol projection.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct ActorId(u32);
 
 impl ActorId {
@@ -135,7 +137,8 @@ impl ActorId {
 }
 
 /// An actor kind represented by the protocol projection.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ActorKind {
   /// The player-controlled actor.
   Player,
@@ -144,7 +147,7 @@ pub enum ActorKind {
 }
 
 /// A protocol position value.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
 pub struct Position {
   x: i32,
   y: i32,
@@ -171,7 +174,7 @@ impl Position {
 }
 
 /// Protocol hit-point evidence for an actor.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct HitPoints(u16);
 
 impl HitPoints {
@@ -189,7 +192,7 @@ impl HitPoints {
 }
 
 /// A stable item instance identity in the protocol projection.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct ItemId(u32);
 
 impl ItemId {
@@ -207,7 +210,7 @@ impl ItemId {
 }
 
 /// An opaque item-definition reference in the protocol projection.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct ItemDefinitionId(u32);
 
 impl ItemDefinitionId {
@@ -225,7 +228,7 @@ impl ItemDefinitionId {
 }
 
 /// A read-only protocol projection of one owned opaque item.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
 pub struct ItemSnapshot {
   id: ItemId,
   definition: ItemDefinitionId,
@@ -360,7 +363,8 @@ impl Scenario {
 }
 
 /// Protocol life state for an actor record.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LifeState {
   /// The actor can participate in scheduling and actions.
   Alive,
@@ -369,7 +373,7 @@ pub enum LifeState {
 }
 
 /// A protocol action timestamp.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct ActionTime(u64);
 
 impl ActionTime {
@@ -387,7 +391,7 @@ impl ActionTime {
 }
 
 /// A protocol view of the core's non-cryptographic state digest.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
 pub struct StateDigest(u64);
 
 impl StateDigest {
@@ -980,7 +984,7 @@ impl fmt::Display for CommandError {
 impl std::error::Error for CommandError {}
 
 /// A read-only actor projection for agent observation.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
 pub struct ActorSnapshot {
   id: ActorId,
   kind: ActorKind,
@@ -1066,7 +1070,7 @@ impl ActorSnapshot {
 }
 
 /// A versioned, read-only projection of semantic world state.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
 pub struct WorldSnapshot {
   protocol_version: u16,
   current_time: ActionTime,
