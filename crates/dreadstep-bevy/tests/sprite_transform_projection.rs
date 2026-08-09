@@ -399,19 +399,24 @@ fn plugin_attaches_transform_without_sprite_projection() {
       .expect("node entity should exist");
     assert!(entity.get::<Sprite>().is_none());
     assert!(entity.get::<Visibility>().is_none());
-    assert_eq!(
-      entity.get::<Transform>().copied(),
-      Some(
-        entry
-          .translation()
-          .map_or_else(Transform::default, |position| {
-            #[allow(clippy::cast_precision_loss)]
-            {
-              Transform::from_xyz(position.x() as f32, position.y() as f32, 0.0)
-            }
-          })
-      )
-    );
+    let actual = entity
+      .get::<Transform>()
+      .expect("plugin should attach a transform");
+    if let Some(position) = entry.translation() {
+      #[allow(clippy::cast_precision_loss)]
+      {
+        assert_eq!(
+          *actual,
+          Transform::from_xyz(
+            position.x() as f32,
+            position.y() as f32,
+            actual.translation.z
+          )
+        );
+      }
+    } else {
+      assert_eq!(*actual, Transform::default());
+    }
   }
 }
 

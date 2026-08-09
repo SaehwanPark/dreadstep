@@ -2521,17 +2521,30 @@ fn sync_sprite_transform_components(world: &mut World) {
     entity.insert(
       entry
         .translation()
-        .map_or_else(Transform::default, transform_from_pixel_position),
+        .map_or_else(Transform::default, |position| {
+          transform_from_pixel_position(position, entry.node().node().layer())
+        }),
     );
   }
 }
 
-fn transform_from_pixel_position(position: ScenePixelPosition) -> Transform {
+fn transform_from_pixel_position(
+  position: ScenePixelPosition,
+  layer: SceneRenderLayer,
+) -> Transform {
   // Bevy's Transform API stores f32 values; the checked integer pixel origin remains available in
   // ScenePixelPosition and this is the deliberate adapter conversion at the ECS boundary.
   #[allow(clippy::cast_precision_loss)]
   {
-    Transform::from_xyz(position.x() as f32, position.y() as f32, 0.0)
+    Transform::from_xyz(position.x() as f32, position.y() as f32, layer_depth(layer))
+  }
+}
+
+const fn layer_depth(layer: SceneRenderLayer) -> f32 {
+  match layer {
+    SceneRenderLayer::GroundItem => 1.0,
+    SceneRenderLayer::Actor => 2.0,
+    SceneRenderLayer::Terrain | SceneRenderLayer::InventoryItem => 0.0,
   }
 }
 

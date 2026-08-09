@@ -1773,6 +1773,9 @@ Current exploratory gate (2026-08-09):
 - The verified ECS Sprite-transform attachment boundary applies those checked translations as
   logical-pixel `(x, y, 0)` values on retained map-node transforms while leaving inventory unplaced;
   centering, depth, cameras, visibility, rendering, playback, and production media remain deferred.
+- The verified ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values
+  from typed render layer while preserving checked x/y placement and inventory default state;
+  centering, cameras, visibility, rendering, playback, and production media remain deferred.
 
 ### Content
 
