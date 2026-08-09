@@ -1338,6 +1338,47 @@ Out of scope:
 
 ## Future
 
+### Milestone 4 slice: deterministic authored starter-floor item placements
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+The smallest content-to-core bridge for authored opaque item instances is complete without
+changing the default starter scenario. `StarterFloorDefinition` accepts an ordered list of typed
+`StarterItemPlacement` values, and its validated build delegates each placement to core's existing
+`WorldState::give_item` operation. Item definition references remain opaque; catalog membership,
+item effects, capacity, player commands, and ground placement are not inferred here.
+
+Acceptance:
+
+- `StarterItemPlacement` carries a typed target `ActorId` and complete core `Item`; placement
+  declaration order becomes the target actor's deterministic inventory order.
+- A floor with valid placements builds an equivalent core world with those items, while the
+  existing default `starter_floor_definition()` remains item-free and deterministic.
+- Unknown target actors and duplicate item identities return typed `ContentError::World` before
+  the built world is returned; no partial `WorldState` escapes a failed content build.
+- The content boundary remains independent of Bevy, MCP, transport, persistence, item effects,
+  equipment, capacity, identification, ground stacks, and player-facing item commands. Core still
+  owns item identity, inventory state, digest inclusion, and all mutation rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-content --test starter_items --all-features --locked` covers
+  interleaved ordered placements, repeatability, both item-free default constructors, unknown
+  actors, and duplicate identities; all three focused tests pass.
+- `cargo test -p dreadstep-content --all-targets --all-features --locked` passes all eight content
+  tests. Focused Clippy with `-D warnings`, content Cargo docs, `git diff --check`, and the full
+  `scripts/verify.sh` suite pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `8b5d4d9`, and Linux,
+  Apple Silicon macOS, and Windows CI are green for that revision.
+
+Out of scope:
+
+- Changing the default starter-floor contents, item-definition catalog membership checks, item
+  effects, equipment, capacity, identification, pickup/drop/transfer commands, ground placement,
+  player replay/history, protocol/MCP operations, persistence, serialization, rendering, or UI.
+
 ### Milestone 4 slice: deterministic content item-definition catalog
 
 - Status: verified

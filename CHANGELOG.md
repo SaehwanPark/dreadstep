@@ -87,6 +87,8 @@ All notable contributor- and user-visible project changes are recorded here.
   data, stable item-identity entities, stack order, and stale cleanup without rendering policy.
 - A deterministic headless Bevy inventory-item scene projection that preserves global item identity,
   owner/order updates, and stale cleanup without adding inventory gameplay or HUD policy.
+- Optional ordered opaque item placements for authored starter floors, delegated to core's existing
+  item-identity and inventory validation while preserving the item-free default scenario.
 
 ### Changed
 
