@@ -1340,13 +1340,14 @@ Out of scope:
 
 ### Milestone 3 slice: deterministic Bevy starter-item run projection
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
-Expose the verified content scenario through explicit Bevy startup constructors without changing
-the default run. `PresentationState::start_item_run` and `PresentationRuntime::start_item_run`
-consume `dreadstep-content::starter_item_floor()` while preserving the caller's seed; the existing
-`start_run` constructors continue to consume the item-free starter floor. The existing plugin then
+The explicit Bevy startup bridge for the verified non-default content scenario is complete.
+`PresentationState::start_item_run` and `PresentationRuntime::start_item_run` consume
+`dreadstep-content::starter_item_floor()` while preserving the caller's seed; the existing
+`start_run` constructors continue to consume the item-free starter floor. The existing plugin
 projects the scenario's core-owned inventory items through `SceneInventoryItem` during its normal
 headless synchronization.
 
@@ -1362,13 +1363,14 @@ Acceptance:
 - This remains a headless adapter bridge: no windowing, rendering, camera, HUD, item gameplay,
   player/tester commands, persistence, serialization, or transport behavior is introduced.
 
-Verification target:
+Verification:
 
 - Focused Bevy startup tests cover item-run state/runtime equality, seed/replay preservation,
-  complete scene inventory projection, and default item-free startup stability.
-- `cargo test -p dreadstep-bevy --test start_run --all-features --locked`, all Bevy targets,
-  focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass.
-- Exactly one semantic code reviewer reports PASS on the implementation revision, and Linux,
+  complete tile/actor/inventory/ground scene projection, duplicate-entity cardinality, and default
+  item-free startup stability. The focused `start_run` test passes all three tests.
+- All Bevy targets, focused Clippy with `-D warnings`, Bevy Cargo docs, formatting,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on implementation revision `2df4d35`, and Linux,
   Apple Silicon macOS, and Windows CI are green for that revision.
 
 Out of scope:
