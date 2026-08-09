@@ -2218,6 +2218,36 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: typed sprite-key projection
+
+- Status: active
+- Started: 2026-08-09
+
+Extend the verified headless render boundary with a closed typed content selector for each complete
+render entry. Terrain keys retain the typed tile, actor keys distinguish living player/enemy and
+dead records, and item keys retain opaque definition identity. The projection remains read-only and
+does not load or commit presentation media.
+
+Acceptance:
+
+- `SceneSpriteKey` exhaustively maps terrain, player, enemy, dead-actor, ground-item, and
+  inventory-item families without string paths or catalog copies.
+- `PresentationSpriteProjection` preserves the ordered complete `SceneRenderEntry`, retained ECS
+  entity, typed role, and optional pixel metadata; inventory entries remain unplaced.
+- Accepted scene updates refresh stale keys and role changes while retaining keyed identity;
+  missing runtime authority preserves the prior sprite projection, and missing projection resources
+  are safe no-ops.
+- The slice adds no texture handles, asset loading, render plugins, transforms, windowing, audio
+  playback, committed binaries, gameplay rules, persistence, transport, or dependencies.
+
+Verification target:
+
+- Focused sprite-key tests prove exhaustive ordered keys, complete render-entry retention, dead-role
+  refresh with retained entity identity, missing-runtime preservation, inventory-unplaced metadata,
+  and no-op resource guards.
+- All Bevy targets, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
+  `scripts/verify.sh` pass before the single-reviewer handoff.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

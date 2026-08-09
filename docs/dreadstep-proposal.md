@@ -1742,6 +1742,8 @@ Current exploratory gate (2026-08-09):
   scene mirrors preserves complete keyed values, per-kind checked placement, and inventory-unplaced
   semantics without enabling render plugins or loading production media. Actual windowing,
   rendering, asset loading, and playback remain future slices.
+- The next active presentation boundary derives typed sprite selectors from those complete render
+  entries while keeping actual texture loading, render plugins, transforms, and media deferred.
 
 ### Content
 
