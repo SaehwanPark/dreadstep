@@ -2034,14 +2034,14 @@ Out of scope:
 Evaluate representative original/generated and free reusable candidates before enabling a real
 renderer. Keep all binaries local-only while recording source, creator, license, attribution, and
 modification status in tracked [`docs/presentation/asset-evaluation.md`](docs/presentation/asset-evaluation.md).
-The generated sheets remain visual direction only; tile-size selection is deferred to the separate
-active native-sample slice. The audio result remains bounded: generated timing/UI and Kenney CC0 UI
-cues are evaluated, while dungeon combat/movement/item cue sourcing is explicitly deferred.
+The generated sheets remain visual direction only; tile-size selection was deferred to the separately
+verified native-sample slice below. The audio result remains bounded: generated timing/UI and Kenney
+CC0 UI cues are evaluated, while dungeon combat/movement/item cue sourcing is explicitly deferred.
 
 Acceptance:
 
 - Unconstrained original/generated contact sheets are retained locally as visual-direction evidence;
-  native/normalized tile-size evidence remains a separate active acceptance slice.
+  native/normalized tile-size evidence is verified separately below.
 - A free reusable pixel-art candidate and a free reusable audio candidate are retained locally with
   factual source, creator, license, attribution, modification, and SHA-256 records.
 - A generated/original audio cue candidate is evaluated for timing and level, without claiming a
