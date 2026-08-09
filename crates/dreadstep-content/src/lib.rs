@@ -13,7 +13,7 @@ use dreadstep_core::{
   WorldError, WorldState,
 };
 
-/// Errors raised while converting authored content into a validated core world.
+/// Errors raised while validating or building authored content and core-world inputs.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ContentError {
   /// The authored rectangular map is invalid.
