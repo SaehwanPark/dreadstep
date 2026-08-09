@@ -83,6 +83,10 @@ The first MCP player slice is an in-memory session over those protocol values. I
 seed/scenario setup and response shaping only; it must not register a transport, enumerate
 legal actions, or duplicate core transition rules.
 
+Legal-action discovery is a core query, not an MCP policy: `WorldState::legal_commands` decides
+which typed commands are currently valid, and the session only maps those commands into protocol
+requests without mutating state.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.

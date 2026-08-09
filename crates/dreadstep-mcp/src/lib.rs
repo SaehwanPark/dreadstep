@@ -98,6 +98,17 @@ impl Session {
     WorldSnapshot::from_world(&self.world)
   }
 
+  /// Returns protocol requests currently accepted by the core scheduler and rules.
+  #[must_use]
+  pub fn legal_actions(&self) -> Vec<CommandRequest> {
+    self
+      .world
+      .legal_commands()
+      .into_iter()
+      .map(CommandRequest::from)
+      .collect()
+  }
+
   /// Applies one protocol request through the core and returns protocol evidence.
   ///
   /// # Errors

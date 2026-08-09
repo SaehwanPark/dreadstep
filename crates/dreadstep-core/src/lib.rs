@@ -997,6 +997,65 @@ impl WorldState {
       .map(Actor::id)
   }
 
+  /// Returns commands currently available to the scheduled living actor.
+  ///
+  /// Cardinal movement and waiting are always listed because blocked movement still produces an
+  /// accepted semantic action. Player attacks are limited to adjacent living targets; enemy
+  /// chase requests include every distinct living target. Results follow the fixed direction
+  /// order and then stable actor identity order.
+  #[must_use]
+  pub fn legal_commands(&self) -> Vec<Command> {
+    let Some(actor_id) = self.next_actor() else {
+      return Vec::new();
+    };
+    let Some(actor) = self.actors.get(&actor_id) else {
+      return Vec::new();
+    };
+    if actor.ready_at().checked_add(ActionCost::STANDARD).is_none() {
+      return Vec::new();
+    }
+
+    let mut commands = vec![
+      Command::Move {
+        actor: actor_id,
+        direction: Direction::North,
+      },
+      Command::Move {
+        actor: actor_id,
+        direction: Direction::South,
+      },
+      Command::Move {
+        actor: actor_id,
+        direction: Direction::West,
+      },
+      Command::Move {
+        actor: actor_id,
+        direction: Direction::East,
+      },
+      Command::Wait { actor: actor_id },
+    ];
+    for target in self
+      .actors
+      .values()
+      .filter(|target| target.is_alive() && target.id() != actor_id)
+    {
+      match actor.kind() {
+        ActorKind::Player if Self::is_adjacent(actor.position(), target.position()) => {
+          commands.push(Command::Attack {
+            actor: actor_id,
+            target: target.id(),
+          });
+        }
+        ActorKind::Enemy => commands.push(Command::Chase {
+          actor: actor_id,
+          target: target.id(),
+        }),
+        ActorKind::Player => {}
+      }
+    }
+    commands
+  }
+
   /// Applies one command from the deterministically scheduled actor.
   ///
   /// # Errors
@@ -1061,6 +1120,12 @@ impl WorldState {
       .values()
       .find(|actor| actor.is_alive() && actor.position() == position)
       .map(Actor::id)
+  }
+
+  fn is_adjacent(first: Position, second: Position) -> bool {
+    let horizontal = i64::from(first.x()) - i64::from(second.x());
+    let vertical = i64::from(first.y()) - i64::from(second.y());
+    horizontal.abs() + vertical.abs() == 1
   }
 
   fn move_actor(&mut self, actor_id: ActorId, direction: Direction) -> Result<Event, CommandError> {
