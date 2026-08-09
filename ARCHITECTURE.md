@@ -87,6 +87,10 @@ Legal-action discovery is a core query, not an MCP policy: `WorldState::legal_co
 which typed commands are currently valid, and the session only maps those commands into protocol
 requests without mutating state.
 
+Session history is an adapter-owned view over core `ReplayTrace`: accepted commands are recorded
+after successful execution, rejected requests are omitted, and only protocol requests plus the
+core digest value cross the MCP boundary.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.
