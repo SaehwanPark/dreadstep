@@ -361,6 +361,64 @@ impl Damage {
   }
 }
 
+/// A stable, non-cryptographic digest used for deterministic regression evidence.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct StateDigest(u64);
+
+impl StateDigest {
+  /// Returns the numeric digest value.
+  #[must_use]
+  pub const fn value(self) -> u64 {
+    self.0
+  }
+}
+
+const FNV_OFFSET_BASIS: u64 = 14_695_981_039_346_656_037;
+const FNV_PRIME: u64 = 1_099_511_628_211;
+
+struct StableHasher {
+  state: u64,
+}
+
+impl StableHasher {
+  const fn new() -> Self {
+    Self {
+      state: FNV_OFFSET_BASIS,
+    }
+  }
+
+  fn write_bytes(&mut self, bytes: &[u8]) {
+    for byte in bytes {
+      self.state ^= u64::from(*byte);
+      self.state = self.state.wrapping_mul(FNV_PRIME);
+    }
+  }
+
+  fn write_u8(&mut self, value: u8) {
+    self.write_bytes(&[value]);
+  }
+
+  fn write_u16(&mut self, value: u16) {
+    self.write_bytes(&value.to_le_bytes());
+  }
+
+  fn write_u32(&mut self, value: u32) {
+    self.write_bytes(&value.to_le_bytes());
+  }
+
+  fn write_i32(&mut self, value: i32) {
+    self.write_bytes(&value.to_le_bytes());
+  }
+
+  fn write_u64(&mut self, value: u64) {
+    self.write_bytes(&value.to_le_bytes());
+  }
+
+  const fn finish(self) -> StateDigest {
+    StateDigest(self.state)
+  }
+}
+
 /// An actor with a stable identity, kind, position, hit points, and next ready time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Actor {
@@ -471,6 +529,90 @@ impl Command {
       | Self::Attack { actor, .. }
       | Self::Chase { actor, .. } => actor,
     }
+  }
+}
+
+/// An ordered, seeded command trace for deterministic replay evidence.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReplayTrace {
+  seed: u64,
+  commands: Vec<Command>,
+}
+
+impl ReplayTrace {
+  /// Creates an empty trace with an explicit run seed.
+  #[must_use]
+  pub const fn new(seed: u64) -> Self {
+    Self {
+      seed,
+      commands: Vec::new(),
+    }
+  }
+
+  /// Returns the seed recorded with this trace.
+  #[must_use]
+  pub const fn seed(&self) -> u64 {
+    self.seed
+  }
+
+  /// Appends one semantic command in execution order.
+  pub fn record(&mut self, command: Command) {
+    self.commands.push(command);
+  }
+
+  /// Returns the commands in their recorded order.
+  #[must_use]
+  pub fn commands(&self) -> &[Command] {
+    &self.commands
+  }
+
+  /// Returns a deterministic trace identity based on seed and command order.
+  ///
+  /// This is regression evidence, not a cryptographic integrity check or serialized replay
+  /// format. The explicit FNV-1a byte order remains stable across process invocations.
+  #[must_use]
+  pub fn digest(&self) -> StateDigest {
+    let mut hasher = StableHasher::new();
+    hasher.write_bytes(b"DREADSTEP-REPLAY-V1");
+    hasher.write_u64(self.seed);
+    hasher.write_u64(u64::try_from(self.commands.len()).unwrap_or(u64::MAX));
+    for command in &self.commands {
+      hash_command(&mut hasher, *command);
+    }
+    hasher.finish()
+  }
+}
+
+fn hash_command(hasher: &mut StableHasher, command: Command) {
+  match command {
+    Command::Move { actor, direction } => {
+      hasher.write_u8(1);
+      hasher.write_u32(actor.value());
+      hasher.write_u8(direction_code(direction));
+    }
+    Command::Wait { actor } => {
+      hasher.write_u8(2);
+      hasher.write_u32(actor.value());
+    }
+    Command::Attack { actor, target } => {
+      hasher.write_u8(3);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(target.value());
+    }
+    Command::Chase { actor, target } => {
+      hasher.write_u8(4);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(target.value());
+    }
+  }
+}
+
+const fn direction_code(direction: Direction) -> u8 {
+  match direction {
+    Direction::North => 1,
+    Direction::South => 2,
+    Direction::West => 3,
+    Direction::East => 4,
   }
 }
 
@@ -800,6 +942,39 @@ impl WorldState {
   #[must_use]
   pub const fn current_time(&self) -> ActionTime {
     self.current_time
+  }
+
+  /// Returns a stable digest of all semantic world state.
+  ///
+  /// The digest includes map dimensions and terrain, current action time, and every actor's
+  /// identity, kind, life, position, hit points, and ready time. It is deterministic regression
+  /// evidence, not a cryptographic integrity check or serialized state format.
+  #[must_use]
+  pub fn digest(&self) -> StateDigest {
+    let mut hasher = StableHasher::new();
+    hasher.write_bytes(b"DREADSTEP-STATE-V1");
+    hasher.write_u32(self.map.width());
+    hasher.write_u32(self.map.height());
+    for tile in &self.map.tiles {
+      hasher.write_u8(match tile {
+        Tile::Floor => 1,
+        Tile::Wall => 2,
+      });
+    }
+    hasher.write_u64(self.current_time.value());
+    hasher.write_u64(u64::try_from(self.actors.len()).unwrap_or(u64::MAX));
+    for actor in self.actors.values() {
+      hasher.write_u32(actor.id().value());
+      hasher.write_u8(match actor.kind() {
+        ActorKind::Player => 1,
+        ActorKind::Enemy => 2,
+      });
+      hasher.write_i32(actor.position().x());
+      hasher.write_i32(actor.position().y());
+      hasher.write_u16(actor.hit_points().value());
+      hasher.write_u64(actor.ready_at().value());
+    }
+    hasher.finish()
   }
 
   /// Returns the actor selected by ready time, then stable identity.
@@ -1587,6 +1762,89 @@ mod tests {
       world.actor(ActorId::new(1)).unwrap().ready_at(),
       ActionTime::new(2)
     );
+  }
+
+  #[test]
+  fn replay_trace_digest_is_sensitive_to_seed_and_command_order() {
+    let move_command = Command::Move {
+      actor: ActorId::new(1),
+      direction: Direction::East,
+    };
+    let wait_command = Command::Wait {
+      actor: ActorId::new(1),
+    };
+    let mut first = ReplayTrace::new(7);
+    first.record(move_command);
+    first.record(wait_command);
+
+    let mut reordered = ReplayTrace::new(7);
+    reordered.record(wait_command);
+    reordered.record(move_command);
+
+    let mut reseeded = ReplayTrace::new(8);
+    reseeded.record(move_command);
+    reseeded.record(wait_command);
+
+    let mut identical = ReplayTrace::new(7);
+    identical.record(move_command);
+    identical.record(wait_command);
+
+    assert_eq!(first.seed(), 7);
+    assert_eq!(first.commands(), &[move_command, wait_command]);
+    assert_eq!(first.digest(), identical.digest());
+    assert_ne!(first.digest(), reordered.digest());
+    assert_ne!(first.digest(), reseeded.digest());
+  }
+
+  #[test]
+  fn equivalent_worlds_have_equal_digests_after_identical_combat_transitions() {
+    let actors = vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(1, 0),
+        HitPoints::new(1),
+      ),
+    ];
+    let mut first = WorldState::new(floor_map(2, 1), actors.clone()).unwrap();
+    let mut second = WorldState::new(floor_map(2, 1), actors).unwrap();
+    let initial_digest = first.digest();
+    let commands = [
+      Command::Attack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      },
+      Command::Move {
+        actor: ActorId::new(1),
+        direction: Direction::East,
+      },
+    ];
+    for command in commands {
+      first.execute(command).unwrap();
+      second.execute(command).unwrap();
+    }
+
+    assert_ne!(initial_digest, first.digest());
+    assert_eq!(first.digest(), second.digest());
+  }
+
+  #[test]
+  fn state_digest_changes_when_map_semantics_differ() {
+    let actors = vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )];
+    let floor_world =
+      WorldState::new(GridMap::filled(2, 1, Tile::Floor).unwrap(), actors.clone()).unwrap();
+    let wall_world = WorldState::new(
+      GridMap::from_tiles(2, 1, vec![Tile::Floor, Tile::Wall]).unwrap(),
+      actors,
+    )
+    .unwrap();
+
+    assert_ne!(floor_world.digest(), wall_world.digest());
   }
 
   #[test]

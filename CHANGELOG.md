@@ -16,6 +16,7 @@ All notable contributor- and user-visible project changes are recorded here.
   removed from scheduling and movement occupancy.
 - Deterministic enemy chase commands with explicit axis tie-breaking and shared blocking
   events.
+- Core-owned replay traces and stable state digests for deterministic regression evidence.
 
 ### Changed
 

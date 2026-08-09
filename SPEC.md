@@ -119,8 +119,9 @@ Out of scope:
 
 ### Milestone 1 slice: deterministic enemy chase
 
-- Status: active
+- Status: verified
 - Started: 2026-08-08
+- Completed: 2026-08-08
 
 Add a deterministic chase command for enemy actors. The command selects one cardinal step
 toward a living target using horizontal-axis priority when both axes differ, then reuses the
@@ -150,6 +151,40 @@ Out of scope:
 
 - Pathfinding around obstacles, multiple-step planning, ranged behavior, enemy archetypes,
   seeded randomness, replay schemas, and the developer CLI.
+
+### Milestone 1 slice: deterministic replay evidence
+
+- Status: active
+- Started: 2026-08-08
+
+Add core-owned replay evidence without introducing a wire format or external effects. A replay
+trace records an explicit seed and ordered semantic commands, and a stable state digest covers
+the map, living/dead actor state, positions, hit points, ready times, and current action time.
+The digest and trace identity use a documented deterministic algorithm rather than a
+process-randomized standard hasher.
+
+Acceptance:
+
+- `ReplayTrace` exposes a seed, ordered commands, append behavior, and a deterministic trace
+  digest; command order and seed changes affect the digest.
+- `WorldState::digest` returns the same `StateDigest` for identical initial state and command
+  sequences across independently constructed worlds.
+- The state digest includes terrain, actor identity/kind/life, position, hit points, ready
+  time, and current action time so meaningful state changes alter evidence.
+- Replay evidence remains core-only and does not claim to be a serialized protocol, cryptographic
+  integrity check, or complete replay runner.
+- Core remains independent of Bevy, MCP, filesystem, wall-clock time, and host randomness.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core` covers trace ordering/seed sensitivity and equivalent
+  state digests after movement and combat transitions.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- Serialized replay files, protocol versioning, RNG implementation, replay playback/CLI,
+  scenario storage, and cryptographic hashes.
 
 ## Future
 

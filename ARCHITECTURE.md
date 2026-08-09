@@ -11,8 +11,8 @@ translate semantic events into presentation, files, telemetry, or transport resp
 
 Milestone 1 now exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
 actors, movement, melee, and chase commands, semantic movement/blocking/combat/death events,
-and an integer ready-time scheduler. The API is still headless and does not provide a runnable
-application.
+an integer ready-time scheduler, and core-owned replay traces/state digests. The API is still
+headless and does not provide a runnable application.
 
 ## Package Ownership
 
@@ -60,8 +60,10 @@ living actor occupancy is checked separately so events can distinguish terrain f
 actor. `WorldState::execute` accepts only the living actor at the minimum `ActionTime`, orders
 ties by `ActorId`, applies fixed melee damage to adjacent targets, resolves enemy chase steps
 with horizontal-axis priority, and advances the acting actor by the fixed action cost. Dead
-actor records remain inspectable but are removed from scheduling and movement occupancy. No
-wall-clock time or process-global randomness participates in these transitions.
+actor records remain inspectable but are removed from scheduling and movement occupancy. The
+stable state digest uses an explicit deterministic byte order and does not use a
+process-randomized standard hasher. No wall-clock time or process-global randomness
+participates in these transitions.
 
 ## Constraints
 
