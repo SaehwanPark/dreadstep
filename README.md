@@ -23,12 +23,13 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   CLI, protocol/MCP observation and actions, tester operations, and stdio tools.
 - Verified headless Bevy bridge: shared authored floors, runtime/app projection, keyboard dispatch,
   feedback evidence, focus, scene focus, camera, viewport, tile/actor, ground-item, and
-  inventory-item projections, plus typed `PresentationHud` actor status.
+  inventory-item projections, typed `PresentationHud` actor status, and ordered typed
+  `PresentationMessages` for every current core event.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.
-- Next presentation work: typed event/combat message evidence before any rendered widgets or text
-  policy.
+- Next presentation work: rendered scene metadata and window/rendering boundaries before widgets or
+  text policy.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
   message presentation, audio, fog of war, multiple floors, and gameplay-facing item effects.
 

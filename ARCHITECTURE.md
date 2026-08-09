@@ -237,7 +237,7 @@ controlled actor. It mirrors only typed actor kind, position, hit points, and sc
 unknown actors clear those optional values and missing resources preserve existing status. This is
 future-HUD data, not text, layout, widget, rendering, audio, or gameplay policy.
 
-The active event-message slice adds an optional `PresentationMessages` resource that mirrors the
+The verified event-message slice adds an optional `PresentationMessages` resource that mirrors the
 latest runtime output as ordered typed `PresentationMessage` values. It clears stale evidence when
 runtime output disappears, preserves state when authority is absent, and performs no formatting,
 localization, widget, audio, or gameplay work.

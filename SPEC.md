@@ -1778,19 +1778,11 @@ Out of scope:
 - HUD widgets, text/localization, health-bar styling, inventory panels, event/combat messages,
   sprites, animations, audio, windowing, rendering, persistence, transport, and gameplay rules.
 
-## Present
-
-### Deferred item gameplay semantics
-
-The opaque ownership slice and content catalog foundation intentionally do not define item effects,
-equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
-and pickup are verified separately in their completed slices above; richer player operations still
-require an explicit core contract.
-
 ### Milestone 3 slice: deterministic headless event-message evidence
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Project core semantic events into a typed `PresentationMessages` resource for future HUD and combat
 message systems. The adapter preserves event order and typed payloads without formatting strings,
@@ -1813,11 +1805,27 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test messages --all-features --locked` covers every core
-  event mapping, stale-output clearing, and absent-resource preservation.
+  event mapping, stale-output clearing, and absent-resource preservation; all eight focused tests
+  pass.
 - All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
   and `scripts/verify.sh` pass locally.
-- Exactly one semantic code reviewer reports PASS on the final revision, and the normal CI matrix
-  remains green.
+- Exactly one semantic code reviewer reports PASS on final implementation revision `51424ae`; the
+  docs-only closeout is reviewed separately, and Linux, Apple Silicon macOS, and Windows CI remain
+  green.
+
+Out of scope:
+
+- Text/localization, text layout, widgets, sprites, animation, audio, windowing, rendering,
+  persistence, transport, and gameplay rules.
+
+## Present
+
+### Deferred item gameplay semantics
+
+The opaque ownership slice and content catalog foundation intentionally do not define item effects,
+equipment, identification, capacity, or gameplay-facing item commands. Tester-only transfer, drop,
+and pickup are verified separately in their completed slices above; richer player operations still
+require an explicit core contract.
 
 ## Future
 

@@ -83,6 +83,9 @@ All notable contributor- and user-visible project changes are recorded here.
   policy.
 - A typed headless `PresentationHud` status projection for controlled actor kind, position, hit
   points, and scheduler readiness without adding widgets, text, or rendering policy.
+- A deterministic typed `PresentationMessages` projection for every current core event, preserving
+  event order and clearing stale rejected-command evidence without adding text, audio, or gameplay
+  policy.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
