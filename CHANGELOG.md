@@ -32,6 +32,7 @@ All notable contributor- and user-visible project changes are recorded here.
   deterministic digest without persistence or transport serialization.
 - Read-only player actor inspection over the versioned snapshot, including retained dead actor
   records and an explicit unknown-actor result.
+- Named `get_history` access to the existing protocol-owned accepted-request history projection.
 
 ### Changed
 

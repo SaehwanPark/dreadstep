@@ -9,6 +9,7 @@ fn new_session_has_empty_protocol_history_and_seeded_replay_digest() {
   let session = Session::start_run(7).expect("fixed scenario should be valid");
 
   assert!(session.history().is_empty());
+  assert_eq!(session.get_history(), session.history());
   assert_eq!(
     session.replay_digest(),
     StateDigest::new(ReplayTrace::new(7).digest().value())
@@ -28,6 +29,7 @@ fn accepted_actions_record_once_but_rejected_actions_do_not() {
     .expect("adjacent attack should succeed");
 
   assert_eq!(session.history(), vec![request]);
+  assert_eq!(session.get_history(), session.history());
   assert_ne!(session.replay_digest(), initial_digest);
 
   let mut fresh = Session::start_run(7).expect("fixed scenario should be valid");
@@ -44,6 +46,7 @@ fn accepted_actions_record_once_but_rejected_actions_do_not() {
     ))
   );
   assert!(fresh.history().is_empty());
+  assert!(fresh.get_history().is_empty());
   assert_eq!(fresh.replay_digest(), fresh_digest);
 }
 
@@ -66,6 +69,7 @@ fn equivalent_accepted_sequences_have_equal_history_and_replay_digest() {
   }
 
   assert_eq!(first.history(), second.history());
+  assert_eq!(first.get_history(), second.get_history());
   assert_eq!(first.replay_digest(), second.replay_digest());
   let different_seed = Session::start_run(8).expect("fixed scenario should be valid");
   assert_ne!(first.replay_digest(), different_seed.replay_digest());

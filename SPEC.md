@@ -456,6 +456,37 @@ Out of scope:
 - MCP transport/runtime registration, hidden-information rules, tester tools, authored scenarios,
   interactive input, and replay playback.
 
+### Milestone 2 slice: named session history accessor
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Align the in-memory player session with the proposal's `get_history` operation name. The new
+`Session::get_history` method returns the same protocol-owned accepted request sequence as the
+existing `history` projection, preserving execution order and read-only behavior. It is an API
+naming boundary only: core trace recording, rejection handling, and replay digest semantics do not
+change.
+
+Acceptance:
+
+- `get_history` returns an empty protocol request list for a new session and the exact accepted
+  request order after actions.
+- Rejected requests do not appear in `get_history`, and calling either history accessor leaves the
+  world and replay evidence unchanged.
+- Equivalent sessions expose equal `get_history` values without leaking core `ReplayTrace` types.
+- The existing `history` accessor remains behaviorally identical for current callers.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-mcp --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, tester tools, replay persistence or playback, authored
+  scenarios, interactive input, and changes to command execution.
+
 ## Future
 
 ### Milestone 1: Rules kernel
