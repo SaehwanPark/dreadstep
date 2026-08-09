@@ -17,6 +17,16 @@ fn every_core_world_error_maps_to_protocol_values() {
       WorldError::DuplicateItemId(dreadstep_protocol::ItemId::new(7)),
     ),
     (
+      CoreWorldError::ItemNotOwned {
+        actor: CoreActorId::new(4),
+        item: dreadstep_core::ItemId::new(9),
+      },
+      WorldError::ItemNotOwned {
+        actor: ActorId::new(4),
+        item: dreadstep_protocol::ItemId::new(9),
+      },
+    ),
+    (
       CoreWorldError::DuplicateActorId(CoreActorId::new(1)),
       WorldError::DuplicateActorId(ActorId::new(1)),
     ),

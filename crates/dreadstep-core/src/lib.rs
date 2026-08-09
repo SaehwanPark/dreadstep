@@ -1128,9 +1128,10 @@ impl WorldState {
   /// Gives one opaque item instance to an existing actor for an explicit tester operation.
   ///
   /// Item ownership is recorded in insertion order. The instance identity is global across all
-  /// actor inventories; item effects, transfer, and capacity rules are intentionally outside this
-  /// slice. Dead actor records remain valid ownership targets because the mutation does not alter
-  /// scheduling or occupancy.
+  /// actor inventories; item effects and capacity rules are intentionally outside this slice.
+  /// Explicit tester transfers are handled separately by [`Self::transfer_item`]. Dead actor
+  /// records remain valid ownership targets because the mutation does not alter scheduling or
+  /// occupancy.
   ///
   /// # Errors
   ///

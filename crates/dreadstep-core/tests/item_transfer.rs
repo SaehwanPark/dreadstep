@@ -114,7 +114,19 @@ fn dead_actor_records_remain_valid_transfer_endpoints() {
     .transfer_item(ActorId::new(1), ActorId::new(2), ItemId::new(1))
     .expect("dead actor should remain a valid target");
 
+  let source = world.actor(ActorId::new(1)).expect("source remains");
+  assert_eq!(source.inventory(), &[]);
   let target = world.actor(ActorId::new(2)).expect("dead record remains");
   assert!(!target.is_alive());
   assert_eq!(target.inventory(), &[item]);
+
+  world
+    .transfer_item(ActorId::new(2), ActorId::new(1), ItemId::new(1))
+    .expect("dead actor should remain a valid source");
+
+  let source = world.actor(ActorId::new(1)).expect("source remains");
+  assert_eq!(source.inventory(), &[item]);
+  let target = world.actor(ActorId::new(2)).expect("dead record remains");
+  assert!(!target.is_alive());
+  assert_eq!(target.inventory(), &[]);
 }
