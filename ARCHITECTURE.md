@@ -286,11 +286,12 @@ is present, keeps inventory items unplaced, and preserves retained metadata when
 absent. It does not become another source of simulation truth. Actual windowing, rendering, asset
 loading, and playback remain deferred to later presentation slices.
 
-The active sprite-key slice derives a closed `SceneSpriteKey` from each complete
+The verified sprite-key slice derives a closed `SceneSpriteKey` from each complete
 `SceneRenderEntry` and exposes it through `PresentationSpriteProjection`. Terrain retains its typed
 tile, actors retain player/enemy/dead roles, and item keys retain opaque definition identity; the
 projection preserves retained entities and placement metadata without loading assets or becoming
-another source of simulation truth.
+another source of simulation truth. Actual texture loading, render plugins, transforms, and media
+remain deferred.
 
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
