@@ -654,6 +654,92 @@ impl SceneSpriteRole {
       ActorKind::Enemy => Self::Enemy,
     }
   }
+
+  fn for_scene_actor(actor: SceneActor) -> Self {
+    if !actor.is_alive() {
+      return Self::DeadActor;
+    }
+    match actor.kind() {
+      ActorKind::Player => Self::Player,
+      ActorKind::Enemy => Self::Enemy,
+    }
+  }
+}
+
+/// One deterministic, disposable entry prepared for a future renderer.
+///
+/// The entry copies the complete typed value from its keyed scene mirror and retains that mirror's
+/// Bevy [`Entity`] so a renderer can preserve identity without treating this projection as authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneRenderEntry {
+  /// A terrain mirror with optional logical-pixel placement metadata.
+  Terrain {
+    /// The retained keyed scene entity.
+    entity: Entity,
+    /// The complete typed terrain mirror.
+    tile: SceneTile,
+    /// The typed role consumed by a future sprite renderer.
+    role: SceneSpriteRole,
+    /// The logical-pixel origin, when tile-size configuration is available.
+    pixel_position: Option<ScenePixelPosition>,
+  },
+  /// An actor mirror with optional logical-pixel placement metadata.
+  Actor {
+    /// The retained keyed scene entity.
+    entity: Entity,
+    /// The complete typed actor mirror.
+    actor: SceneActor,
+    /// The typed role consumed by a future sprite renderer.
+    role: SceneSpriteRole,
+    /// The logical-pixel origin, when tile-size configuration is available.
+    pixel_position: Option<ScenePixelPosition>,
+  },
+  /// A ground-item mirror with optional logical-pixel placement metadata.
+  GroundItem {
+    /// The retained keyed scene entity.
+    entity: Entity,
+    /// The complete typed ground-item mirror.
+    item: SceneGroundItem,
+    /// The typed role consumed by a future sprite renderer.
+    role: SceneSpriteRole,
+    /// The logical-pixel origin, when tile-size configuration is available.
+    pixel_position: Option<ScenePixelPosition>,
+  },
+  /// An inventory-item mirror that intentionally has no map-pixel placement.
+  InventoryItem {
+    /// The retained keyed scene entity.
+    entity: Entity,
+    /// The complete typed inventory-item mirror.
+    item: SceneInventoryItem,
+    /// The typed role consumed by a future sprite renderer.
+    role: SceneSpriteRole,
+  },
+}
+
+/// An ordered, read-only projection for a future renderer boundary.
+///
+/// Entries are derived from the current keyed scene mirrors after scene and pixel synchronization.
+/// This resource never mutates or replaces core authority, runtime snapshots, replay history, or
+/// the scene mirrors themselves.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationRenderProjection {
+  entries: Vec<SceneRenderEntry>,
+}
+
+impl PresentationRenderProjection {
+  /// Creates an empty render-boundary projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Returns entries in deterministic terrain/actor/ground/inventory key order.
+  #[must_use]
+  pub fn entries(&self) -> &[SceneRenderEntry] {
+    &self.entries
+  }
 }
 
 /// A disposable logical-pixel origin for a map-backed scene mirror.
@@ -1221,6 +1307,7 @@ fn update_presentation(world: &mut World) {
   dispatch_keyboard_input(world);
   sync_runtime_scene(world);
   sync_scene_pixel_positions(world);
+  sync_render_projection(world);
   sync_focus(world);
   sync_scene_focus(world);
   sync_camera(world);
@@ -1316,6 +1403,115 @@ fn sync_scene_pixel_positions(world: &mut World) {
       entity.remove::<ScenePixelPosition>();
     }
   }
+}
+
+fn sync_render_projection(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none() {
+    return;
+  }
+  let entries = {
+    let tile_size = world.get_resource::<PresentationTileSize>().copied();
+    let mut query = world.query::<(
+      Entity,
+      Option<&SceneTile>,
+      Option<&SceneActor>,
+      Option<&SceneGroundItem>,
+      Option<&SceneInventoryItem>,
+      Option<&ScenePixelPosition>,
+    )>();
+    let mut keyed: BTreeMap<_, (Entity, SceneRenderEntry)> = BTreeMap::new();
+    for (entity, tile, actor, ground_item, inventory_item, pixel_position) in query.iter(world) {
+      for (key, entry) in render_entries(
+        entity,
+        tile.copied(),
+        actor.copied(),
+        ground_item.copied(),
+        inventory_item.copied(),
+        pixel_position.copied(),
+        tile_size,
+      ) {
+        match keyed.entry(key) {
+          std::collections::btree_map::Entry::Occupied(mut retained) => {
+            if entity < retained.get().0 {
+              retained.insert((entity, entry));
+            }
+          }
+          std::collections::btree_map::Entry::Vacant(slot) => {
+            slot.insert((entity, entry));
+          }
+        }
+      }
+    }
+    keyed
+      .into_values()
+      .map(|(_, entry)| entry)
+      .collect::<Vec<_>>()
+  };
+  let Some(mut projection) = world.get_resource_mut::<PresentationRenderProjection>() else {
+    return;
+  };
+  projection.entries = entries;
+}
+
+fn render_entries(
+  entity: Entity,
+  tile: Option<SceneTile>,
+  actor: Option<SceneActor>,
+  ground_item: Option<SceneGroundItem>,
+  inventory_item: Option<SceneInventoryItem>,
+  pixel_position: Option<ScenePixelPosition>,
+  tile_size: Option<PresentationTileSize>,
+) -> Vec<((u8, i32, i32, u32), SceneRenderEntry)> {
+  let pixel_position_for = |position: Position| {
+    tile_size.map_or(pixel_position, |tile_size| {
+      tile_size.pixel_position(position)
+    })
+  };
+  let mut entries = Vec::new();
+  if let Some(tile) = tile {
+    entries.push((
+      (0, tile.position().x(), tile.position().y(), 0),
+      SceneRenderEntry::Terrain {
+        entity,
+        tile,
+        role: SceneSpriteRole::Terrain,
+        pixel_position: pixel_position_for(tile.position()),
+      },
+    ));
+  }
+  if let Some(actor) = actor {
+    entries.push((
+      (1, 0, 0, actor.id().value()),
+      SceneRenderEntry::Actor {
+        entity,
+        actor,
+        role: SceneSpriteRole::for_scene_actor(actor),
+        pixel_position: pixel_position_for(actor.position()),
+      },
+    ));
+  }
+  if let Some(item) = ground_item {
+    entries.push((
+      (2, 0, 0, item.id().value()),
+      SceneRenderEntry::GroundItem {
+        entity,
+        item,
+        role: SceneSpriteRole::GroundItem,
+        pixel_position: pixel_position_for(item.position()),
+      },
+    ));
+  }
+  if let Some(item) = inventory_item {
+    entries.push((
+      (3, 0, 0, item.id().value()),
+      SceneRenderEntry::InventoryItem {
+        entity,
+        item,
+        role: SceneSpriteRole::InventoryItem,
+      },
+    ));
+  }
+  entries
 }
 
 fn sync_focus(world: &mut World) {
