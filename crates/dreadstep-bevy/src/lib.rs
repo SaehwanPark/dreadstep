@@ -8,6 +8,7 @@
 #![forbid(unsafe_code)]
 
 use bevy::input::keyboard::KeyCode;
+use dreadstep_content::{ContentError, starter_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, Command, CommandError, Direction, Event, GridMap, ReplayTrace,
   StateDigest, Tile, WorldState,
@@ -144,6 +145,15 @@ pub struct PresentationState {
 }
 
 impl PresentationState {
+  /// Starts a presentation state from the shared authored starter floor.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] when the authored floor fails core validation.
+  pub fn start_run(seed: u64) -> Result<Self, ContentError> {
+    Ok(Self::new(seed, starter_floor()?))
+  }
+
   /// Creates a presentation state around an already validated core world.
   #[must_use]
   pub fn new(seed: u64, world: WorldState) -> Self {

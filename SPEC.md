@@ -985,6 +985,45 @@ Out of scope:
 - Bevy window creation, desktop platform backends, rendering assets, sprites, animations, camera,
   HUD, combat messages, audio, fog of war, content catalogs, and new gameplay rules.
 
+### Milestone 3 slice: shared authored starter floor
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Move the first authored presentation scenario behind the content boundary so human-facing clients
+can start the same validated floor without copying map or actor setup. `dreadstep-content` will
+construct one deterministic starter floor from typed map and actor definitions, while
+`dreadstep-bevy::PresentationState::start_run` delegates to that content constructor and preserves
+the explicit run seed in presentation replay evidence. This slice establishes scenario ownership;
+it does not add randomness, progression, or rendering.
+
+Acceptance:
+
+- `dreadstep-content` exposes a typed starter-floor constructor that validates its rectangular map
+  and living actor records through `dreadstep-core`, returning structured content errors.
+- The starter floor has one player, three distinct living enemies, stable row-major terrain, and
+  no overlapping or blocked actor placements; equivalent constructions produce equal worlds and
+  digests.
+- `dreadstep-bevy::PresentationState::start_run(seed)` delegates to the content constructor,
+  preserves the supplied seed, and exposes the same deterministic snapshot as direct content
+  construction without depending on MCP or filesystem state.
+- Invalid content construction is surfaced as a typed error before a presentation state exists;
+  no new gameplay rules, random source, or transport contract is introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-content -p dreadstep-bevy --all-targets --all-features --locked`
+  covers content validation, starter-floor shape, deterministic digest, and presentation startup.
+- Focused Clippy for changed crates and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Bevy windowing, rendering assets, sprites, animation, camera, HUD, audio, fog of war, multiple
+  floors, procedural generation, seeded randomness, item content/effects, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics
