@@ -1883,10 +1883,10 @@ replay/snapshot projections. The full equipment loop below remains future work; 
 armor rules, consumables, affixes, rarity, generation, and inventory UX are not implied by that
 preparation slice.
 
-The next bounded preparation slice is active: one scheduled actor may consume one owned,
-unequipped opaque item instance, removing it with a typed event and replay/snapshot evidence. This
-does not select or implement item effects, stat changes, capacity, identification, or inventory UX;
-those remain part of the future equipment loop.
+The next bounded preparation slice is now verified: one scheduled actor may consume one owned,
+unequipped opaque item instance, removing it with a typed event, standard action-time advancement,
+and replay/snapshot evidence. This does not select or implement item effects, stat changes,
+capacity, identification, or inventory UX; those remain part of the future equipment loop.
 
 ### Implement
 

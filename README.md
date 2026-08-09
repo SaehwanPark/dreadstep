@@ -37,9 +37,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   replacement events, digest/replay/snapshot evidence, tester guards against moving equipped items,
   protocol/MCP projections, and a typed Bevy `SceneActor` field. Item effects, modifiers, capacity,
   and additional slots remain deferred.
-- Active deterministic single-item consumption: scheduled `UseItem` removes one owned,
-  unequipped instance and emits typed core/protocol/MCP/Bevy evidence; effects, stat changes,
-  capacity, and richer item semantics remain outside this preparation slice.
+- Verified deterministic single-item consumption: scheduled `UseItem` removes one owned,
+  unequipped instance, advances one standard action, and emits typed core/protocol/MCP/Bevy
+  evidence with atomic ownership/equipment guards; effects, stat changes, capacity, and richer
+  item semantics remain outside this preparation slice.
 - Verified window boundary: validated typed logical dimensions and integer pixel scale for a future
   desktop client without creating an OS window or enabling desktop features.
 - Verified scene placement boundary: caller-selected logical tile extents project checked pixel

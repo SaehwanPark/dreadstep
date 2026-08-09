@@ -2171,14 +2171,13 @@ Out of scope:
 - Item effects, stat modifiers, consumables, capacity, additional slots, rendering, assets,
   windowing, audio playback, persistence, transport, and dependencies.
 
-## Present
-
 ### Milestone 4 preparation slice: deterministic single-item consumption
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
-Define the smallest gameplay-facing item-use boundary: a scheduled living actor may consume one
+The deterministic item-use boundary is now verified: a scheduled living actor may consume one
 owned, unequipped opaque item instance. Consumption removes that instance and emits a typed event;
 it does not infer an effect, alter stats, or introduce a second item store.
 
@@ -2196,21 +2195,36 @@ Acceptance:
 - No item effects, stat modifiers, capacity, identification, additional slots, rendering, assets,
   audio playback, windowing, persistence, transport, or dependencies are introduced.
 
-Verification target:
+Verification:
 
-- Focused core, protocol JSON, MCP, and Bevy consumption suites prove accepted removal, unknown/
-  equipped atomic rejection, legal ordering, replay identity, complete snapshot/history evidence,
-  stale inventory cleanup, retained scene identity, and all three ordered typed cue projections.
-- Workspace checks, warning-denied Clippy/docs, repository checks, `git diff --check`, and full
-  `scripts/verify.sh` pass before the single-reviewer handoff.
+- Focused core consumption tests pass 4/4; protocol command/event/JSON tests pass 2/1/5; MCP
+  consumption tests pass 2/2; and Bevy consumption projection tests pass 1/1. The evidence covers
+  accepted action-time transition, unscheduled/dead/unknown/equipped atomic rejection, legal order,
+  replay identity, consumed-identity reuse, complete snapshot/history evidence, stale inventory
+  cleanup, retained scene identity, and all three ordered typed cue projections.
+- All workspace tests, all-target Clippy with `-D warnings`, warning-denied workspace docs,
+  repository checks, `git diff --check`, and full `scripts/verify.sh` pass.
+- Exactly one semantic reviewer reports PASS on final reviewed evidence revision `148a6b2`
+  (implementation `f270006`, legal-command correction `946afa4`); Linux, Apple Silicon macOS,
+  and Windows CI are green. The docs-only closeout is reviewed separately.
+- The ignored consumption evidence records the initial red compile target, observed Linux stale
+  legal-order failure and correction, focused counts, full verification, reviewer/CI gate, merge,
+  and branch cleanup.
+
+Out of scope:
+
+- Item effects, stat modifiers, capacity, identification, additional slots, rendering, assets,
+  windowing, audio playback, persistence, transport, and dependencies.
+
+## Present
 
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
 identification, capacity, or richer gameplay-facing item commands beyond the completed equipment
-contract and active single-item consumption preparation above. Tester-only transfer, drop, and
-pickup are verified separately in their completed slices above; effects and richer player
-operations still require an explicit core contract.
+and single-item consumption preparations above. Tester-only transfer, drop, and pickup are verified
+separately in their completed slices above; effects and richer player operations still require an
+explicit core contract.
 
 ## Future
 
@@ -2224,8 +2238,8 @@ can move into `Past`:
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
-  active single-item consumption preparation, verified single-slot equipment contract, and tester
-  item operations.
+  verified single-item consumption and single-slot equipment preparations and tester item
+  operations.
 - Milestone 5 — The Living Dungeon: procedural floors, enemy archetypes, environmental state,
   and floor progression.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build
