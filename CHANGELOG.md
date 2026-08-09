@@ -59,6 +59,8 @@ All notable contributor- and user-visible project changes are recorded here.
   rejection omission, and no world, history, or replay mutation.
 - Read-only MCP `get_replay` replay evidence over stdio with typed seed, accepted requests,
   deterministic digest, explicit JSON/JSON Schema, and no persistence or playback semantics.
+- A deterministic Bevy presentation bridge with immutable map/actor snapshots, keyboard intent
+  mapping, core command execution, and replay evidence without enabling desktop platform features.
 
 ### Changed
 

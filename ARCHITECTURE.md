@@ -40,8 +40,8 @@ protocol ----> core <---- content
 ```
 
 The adapter packages may depend on protocol and content as well as core. Core, protocol,
-and content must never depend on Bevy or MCP runtime libraries. Bevy currently enables
-only its `std` feature so headless Linux checks do not require desktop system libraries.
+and content must never depend on Bevy or MCP runtime libraries. Bevy currently enables only its
+`std` and `keyboard` features, so headless Linux checks do not require desktop system libraries.
 
 ## Intended Data Flow
 
@@ -143,6 +143,14 @@ The minimal MCP stdio slice adds a process adapter around the existing session. 
 session and core
 remain authoritative for seeded state and world truth. Stdout is reserved for MCP protocol traffic,
 and tester mutations remain library-only.
+
+The first Milestone 3 Bevy slice is a deterministic presentation bridge. `GridMap::tiles` gives
+the adapter an immutable row-major terrain projection, while `dreadstep-bevy::PresentationState`
+owns a core world and replay trace and exposes map/actor/time/digest snapshots. Its keyboard intent
+mapping produces canonical core movement and wait commands for an explicit actor, and accepted
+commands delegate to `WorldState::execute`; rejected commands are not recorded. The bridge is
+headless-testable and enables only Bevy's keyboard feature, so windowing, rendering, assets, and
+audio remain later presentation slices.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
