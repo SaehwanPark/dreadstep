@@ -938,6 +938,15 @@ impl WorldState {
     self.actors.get(&actor)
   }
 
+  /// Returns all actor records in stable [`ActorId`] order.
+  ///
+  /// Dead actors remain in this read-only projection so adapters can report their final state;
+  /// scheduling and occupancy continue to consider living actors only.
+  #[must_use = "iterate over the actor records"]
+  pub fn actors(&self) -> impl Iterator<Item = &Actor> + '_ {
+    self.actors.values()
+  }
+
   /// Returns the world's minimum ready time.
   #[must_use]
   pub const fn current_time(&self) -> ActionTime {
