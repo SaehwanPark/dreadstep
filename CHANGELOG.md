@@ -75,6 +75,9 @@ All notable contributor- and user-visible project changes are recorded here.
   future camera systems without adding viewport, visibility, or rendering policy.
 - A typed headless `SceneFocus` marker that reuses the stable keyed actor entity for future camera
   or selection systems without copying actor state or adding marker visuals.
+- A deterministic headless `PresentationCamera` resource and `SceneCamera` ECS projection that
+  mirror the selected actor's authoritative center, retain one camera entity, and clear unknown
+  anchors without adding viewport or rendering policy.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while item gameplay semantics remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

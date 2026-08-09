@@ -1338,6 +1338,45 @@ Out of scope:
 
 ## Future
 
+### Milestone 3 slice: deterministic headless camera anchor
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the next human-presentation boundary without enabling a desktop renderer. The Bevy adapter
+projects the selected actor's authoritative position into a typed `PresentationCamera` resource
+and a single disposable `SceneCamera` ECS component. The anchor follows the existing controlled
+actor identity, clears for an unknown actor, and never becomes a second source of world state.
+
+Acceptance:
+
+- `PresentationCamera` exposes one typed controlled `ActorId` and an optional core `Position`;
+  the plugin updates it from the current runtime snapshot after keyboard dispatch.
+- A headless `SceneCamera` mirror contains only the projected center position. Synchronization is
+  deterministic, deduplicates stale camera entities, and preserves the selected camera entity
+  while its key remains valid.
+- Accepted keyboard movement and controlled-actor changes update the resource and scene anchor in
+  the same app update; unknown actors clear the center and scene anchor without mutating runtime,
+  replay evidence, or complete keyed tile/actor/item projections.
+- Missing runtime, input, or camera resources are safe no-ops. The anchor remains presentation-only
+  and adds no windowing, transforms, viewport math, visibility/fog, rendering, transport, or rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test camera --all-features --locked` covers startup,
+  movement, actor changes, unknown actors, duplicate cleanup, and absent-resource no-ops; all eight
+  focused tests pass.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, `git diff --check`,
+  and `scripts/verify.sh` pass locally.
+- Exactly one semantic code reviewer reports PASS on the final revision, and the normal CI matrix
+  remains green.
+
+Out of scope:
+
+- Window or camera plugins, transforms, viewport sizing or clamping, interpolation, smoothing,
+  rendering, sprites, HUD, visibility/fog rules, input rebinding, transport, and new gameplay.
+
 ### Milestone 3 slice: deterministic Bevy starter-item run projection
 
 - Status: verified
