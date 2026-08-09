@@ -18,12 +18,12 @@ not need to care about the testing architecture to enjoy it.
 ## Current Status
 
 Dreadstep is continuing Milestone 3: the human presentation boundary. The latest completed slices
-add deterministic headless Bevy scene synchronization and a `PresentationRuntime`/`App` plugin for
-automatic projection. The active slice adds ordered keyboard dispatch through core, building on the
-shared authored starter floor, `start_run` path, immutable snapshots, and keyboard-to-core command
-translation. The completed Milestone 2 MCP observation, action, history, replay, and tester
-operations remain available. Windowing, rendering assets, animation, HUD, audio, fog of war,
-multiple floors, and gameplay-facing item effects remain deferred.
+add deterministic headless Bevy scene synchronization, a `PresentationRuntime`/`App` plugin for
+automatic projection, and ordered keyboard dispatch through core, building on the shared authored
+starter floor, `start_run` path, immutable snapshots, and keyboard-to-core command translation.
+The completed Milestone 2 MCP observation, action, history, replay, and tester operations remain
+available. Windowing, rendering assets, animation, HUD, audio, fog of war, multiple floors, and
+gameplay-facing item effects remain deferred.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

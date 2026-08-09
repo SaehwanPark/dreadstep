@@ -1103,8 +1103,9 @@ Out of scope:
 
 ### Milestone 3 slice: deterministic headless keyboard dispatch
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add the first interactive input effect without adding a desktop client. `PresentationInput` names
 the controlled actor, and the existing headless `PresentationPlugin` will read optional Bevy
