@@ -206,6 +206,135 @@ fn sprite_projection_refreshes_dead_node_and_retains_identity() {
 }
 
 #[test]
+fn sprite_projection_removes_stale_inventory_and_retains_other_nodes() {
+  let mut app = sprite_app(true);
+  let before = app
+    .world_mut()
+    .resource::<PresentationBevySpriteProjection>()
+    .entries()
+    .to_vec();
+  let stale = before
+    .iter()
+    .find(|entry| {
+      matches!(
+        entry.node().node().placeholder(),
+        SceneRenderPlaceholder::InventoryItem
+      )
+    })
+    .cloned()
+    .expect("inventory Sprite should exist");
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(2),
+    })
+    .expect("inventory item should be consumable");
+  app.update();
+  let after = app
+    .world_mut()
+    .resource::<PresentationBevySpriteProjection>()
+    .entries()
+    .to_vec();
+  assert!(!after.iter().any(|entry| {
+    matches!(
+      entry.node().node().placeholder(),
+      SceneRenderPlaceholder::InventoryItem
+    )
+  }));
+  assert!(app.world().get_entity(stale.node().node_entity()).is_err());
+  for retained in before
+    .iter()
+    .filter(|entry| entry.node().node_entity() != stale.node().node_entity())
+  {
+    let refreshed = after
+      .iter()
+      .find(|entry| entry.node().node_entity() == retained.node().node_entity())
+      .expect("retained Sprite node should remain");
+    assert_eq!(refreshed, retained);
+  }
+}
+
+#[test]
+fn sprite_projection_co_located_source_mirrors_get_distinct_typed_sprites() {
+  let mut app = sprite_app(true);
+  let tile_entity = app
+    .world_mut()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .find_map(|entry| match entry {
+      SceneRenderEntry::Terrain { entity, tile, .. } if tile.position() == Position::new(2, 0) => {
+        Some((*entity, *tile))
+      }
+      _ => None,
+    })
+    .expect("tile mirror should exist");
+  let actor_entity = app
+    .world_mut()
+    .resource::<PresentationRenderProjection>()
+    .entries()
+    .iter()
+    .find_map(|entry| match entry {
+      SceneRenderEntry::Actor { entity, actor, .. } if actor.id() == ActorId::new(3) => {
+        Some(*entity)
+      }
+      _ => None,
+    })
+    .expect("actor mirror should exist");
+  app.world_mut().despawn(tile_entity.0);
+  app
+    .world_mut()
+    .entity_mut(actor_entity)
+    .insert(tile_entity.1);
+  app.update();
+
+  let entries = app
+    .world_mut()
+    .resource::<PresentationBevySpriteProjection>()
+    .entries()
+    .iter()
+    .filter(|entry| entry.node().node().source_entity() == actor_entity)
+    .cloned()
+    .collect::<Vec<_>>();
+  assert_eq!(entries.len(), 2);
+  let tile = entries
+    .iter()
+    .find(|entry| entry.node().node().placeholder() == SceneRenderPlaceholder::Terrain)
+    .expect("co-located terrain Sprite should exist");
+  let actor = entries
+    .iter()
+    .find(|entry| entry.node().node().placeholder() == SceneRenderPlaceholder::Enemy)
+    .expect("co-located actor Sprite should exist");
+  assert_ne!(tile.node().node_entity(), actor.node().node_entity());
+  assert_eq!(tile.node().node().order(), 2);
+  assert_eq!(actor.node().node().order(), 6);
+  assert_eq!(
+    tile.node().node().pixel_position(),
+    actor.node().node().pixel_position()
+  );
+  assert_eq!(
+    tile
+      .node()
+      .node()
+      .pixel_position()
+      .map(|position| (position.x(), position.y())),
+    Some((64, 0))
+  );
+  assert_sprite_shape(tile.sprite(), Some(Vec2::new(32.0, 32.0)));
+  assert_sprite_shape(actor.sprite(), Some(Vec2::new(32.0, 32.0)));
+  assert_eq!(
+    tile.sprite().color,
+    expected_color(SceneRenderPlaceholder::Terrain)
+  );
+  assert_eq!(
+    actor.sprite().color,
+    expected_color(SceneRenderPlaceholder::Enemy)
+  );
+}
+
+#[test]
 fn sprite_projection_without_tile_size_is_unsized_metadata() {
   let mut app = sprite_app(false);
   let entries = app
@@ -276,4 +405,10 @@ fn sprite_projection_has_independent_runtime_source_and_destination_guards() {
     .world_mut()
     .remove_resource::<PresentationBevySpriteProjection>();
   missing_destination.update();
+  assert!(
+    missing_destination
+      .world()
+      .get_resource::<PresentationBevySpriteProjection>()
+      .is_none()
+  );
 }
