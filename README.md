@@ -25,8 +25,8 @@ systems. These build on the shared authored starter floor, `start_run` path, imm
 and keyboard-to-core command translation. The completed Milestone 2 MCP observation, action,
 history, replay, and tester operations remain available. Windowing, rendering assets, animation,
 HUD, audio, fog of war, multiple floors, and gameplay-facing item effects remain deferred. The
-active slice adds a typed headless `SceneFocus` marker to the existing keyed actor projection;
-camera transforms and marker visuals remain deferred.
+typed headless `SceneFocus` marker reuses the existing keyed actor projection; camera transforms
+and marker visuals remain deferred.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

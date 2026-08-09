@@ -1220,8 +1220,9 @@ Out of scope:
 
 ### Milestone 3 slice: deterministic headless scene-focus marker
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Project the selected actor onto the existing keyed `SceneActor` entity with a typed `SceneFocus`
 marker. The marker is a disposable ECS identity projection for future camera or selection systems;
@@ -1243,10 +1244,13 @@ Acceptance:
 Verification:
 
 - Focused `cargo test -p dreadstep-bevy --test scene_focus --all-features --locked` covers startup,
-  accepted movement, actor changes, unknown actors, stable identity, and absent-resource no-ops.
+  accepted movement, actor changes, unknown actors, stable identity, and independent
+  absent-resource no-ops; all seven focused tests pass.
+- `cargo test -p dreadstep-bevy --all-targets --all-features --locked` passes all Bevy targets,
+  and Linux, Apple Silicon macOS, and Windows CI are green for the reviewed revision.
 - Focused Clippy and `scripts/verify.sh` pass before handoff.
 - `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
-  revision.
+  revision (`c8ba7a1`).
 
 Out of scope:
 

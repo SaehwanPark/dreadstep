@@ -186,7 +186,7 @@ The focus-projection slice adds an optional `PresentationFocus` resource keyed b
 core position or `None` when unknown. It is a camera-facing projection only: no viewport policy,
 visibility rule, interpolation, or alternate actor record is introduced.
 
-The active scene-focus-marker slice adds a marker-only `SceneFocus` component to the existing keyed
+The scene-focus-marker slice adds a marker-only `SceneFocus` component to the existing keyed
 `SceneActor` entity after that focus projection. It reuses stable actor identity without copying
 position or gameplay state; unknown actors clear stale markers only when an authoritative runtime
 snapshot exists, while missing resources leave the disposable scene unchanged.
