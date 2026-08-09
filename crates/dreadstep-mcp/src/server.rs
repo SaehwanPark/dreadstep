@@ -1,4 +1,5 @@
-//! Minimal local stdio MCP server for versioned observation and typed player actions.
+//! Minimal local stdio MCP server for versioned observation, legal-action discovery, and typed
+//! player actions.
 
 use std::{
   error::Error,
@@ -98,6 +99,15 @@ impl DreadstepMcpServer {
   )]
   pub async fn observe(&self) -> Result<Json<WorldSnapshot>, McpError> {
     Ok(Json(self.lock_session()?.observe()))
+  }
+
+  /// Returns the deterministic typed commands currently accepted by the core scheduler.
+  #[tool(
+    name = "legal_actions",
+    description = "List deterministic typed player actions currently accepted by the core."
+  )]
+  pub async fn legal_actions(&self) -> Result<Json<Vec<CommandRequest>>, McpError> {
+    Ok(Json(self.lock_session()?.legal_actions()))
   }
 
   /// Executes one typed player action and returns semantic evidence.

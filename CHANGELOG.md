@@ -49,6 +49,8 @@ All notable contributor- and user-visible project changes are recorded here.
   `observe` tools.
 - Typed MCP player `act` requests with explicit command/event JSON and schemas, structured action
   evidence over stdio, and invalid-params rejection that leaves state and replay unchanged.
+- Read-only MCP `legal_actions` discovery over stdio with core-defined deterministic ordering and
+  no world, history, or replay mutation.
 
 ### Changed
 

@@ -11,7 +11,7 @@ use rmcp::handler::server::wrapper::Parameters;
 use serde_json::{Value, json};
 
 #[tokio::test]
-async fn in_memory_tools_return_structured_versioned_snapshots() {
+async fn in_memory_tools_return_structured_versioned_outputs() {
   let server = DreadstepMcpServer::new(7).expect("fixed scenario should be valid");
   let observe = server.observe().await.expect("observe should succeed");
   assert_eq!(observe.0.protocol_version(), 1);
@@ -21,6 +21,23 @@ async fn in_memory_tools_return_structured_versioned_snapshots() {
     .expect("start_run should succeed");
   assert_eq!(
     restarted.0,
+    server.observe().await.expect("observe should succeed").0
+  );
+  let before_legal_actions = server.observe().await.expect("observe should succeed");
+  let legal_actions = server
+    .legal_actions()
+    .await
+    .expect("legal_actions should succeed");
+  assert_eq!(legal_actions.0.len(), 6);
+  assert_eq!(
+    legal_actions.0[0],
+    CommandRequest::Move {
+      actor: ActorId::new(1),
+      direction: dreadstep_protocol::Direction::North,
+    }
+  );
+  assert_eq!(
+    before_legal_actions.0,
     server.observe().await.expect("observe should succeed").0
   );
   let acted = server
@@ -45,6 +62,10 @@ async fn in_memory_tools_return_structured_versioned_snapshots() {
   );
   assert_eq!(DreadstepMcpServer::observe_tool_attr().name, "observe");
   assert_eq!(DreadstepMcpServer::start_run_tool_attr().name, "start_run");
+  assert_eq!(
+    DreadstepMcpServer::legal_actions_tool_attr().name,
+    "legal_actions"
+  );
   assert_eq!(DreadstepMcpServer::act_tool_attr().name, "act");
 }
 
@@ -110,10 +131,20 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     &mut input,
     &mut output,
   );
-  let observed = round_trip(
+  let legal = round_trip(
     &json!({
       "jsonrpc": "2.0",
       "id": 4,
+      "method": "tools/call",
+      "params": {"name": "legal_actions", "arguments": {}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let observed = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 5,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -123,7 +154,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let acted = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 5,
+      "id": 6,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
     }),
@@ -133,7 +164,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let rejected = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 6,
+      "id": 7,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
     }),
@@ -143,7 +174,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let after_rejection = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 7,
+      "id": 8,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -167,7 +198,15 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     .map(|tool| tool["name"].as_str().expect("tool name should be text"))
     .collect::<Vec<_>>();
   tools.sort_unstable();
-  assert_eq!(tools, ["act", "observe", "start_run"]);
+  assert_eq!(tools, ["act", "legal_actions", "observe", "start_run"]);
+  let legal_actions_tool = tools_list["result"]["tools"]
+    .as_array()
+    .expect("tools/list should return tools")
+    .iter()
+    .find(|tool| tool["name"] == "legal_actions")
+    .expect("legal_actions tool should be present");
+  assert_eq!(legal_actions_tool["inputSchema"]["type"], "object");
+  assert_eq!(legal_actions_tool["outputSchema"]["type"], "array");
   let act_tool = tools_list["result"]["tools"]
     .as_array()
     .expect("tools/list should return tools")
@@ -178,11 +217,27 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   assert!(act_tool["inputSchema"]["properties"]["request"].is_object());
   assert_eq!(act_tool["outputSchema"]["type"], "object");
   let started_snapshot = &started["result"]["structuredContent"];
+  let legal_actions_output = &legal["result"]["structuredContent"];
   let observed_snapshot = &observed["result"]["structuredContent"];
   let acted_output = &acted["result"]["structuredContent"];
   let after_rejection_snapshot = &after_rejection["result"]["structuredContent"];
   assert_eq!(started_snapshot["protocol_version"], 1);
   assert_eq!(started_snapshot, observed_snapshot);
+  assert_eq!(
+    legal_actions_output
+      .as_array()
+      .expect("actions should be an array")
+      .len(),
+    6
+  );
+  assert_eq!(
+    legal_actions_output[0],
+    json!({"move": {"actor": 1, "direction": "north"}})
+  );
+  assert_eq!(
+    legal_actions_output[5],
+    json!({"attack": {"actor": 1, "target": 2}})
+  );
   assert_eq!(acted_output["seed"], 17);
   assert_eq!(acted_output["events"][0]["waited"]["actor"], 1);
   assert_eq!(&acted_output["snapshot"], after_rejection_snapshot);
