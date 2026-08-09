@@ -61,8 +61,12 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     orthographic camera components to the retained disposable camera projection entity while
     retaining runtime/PresentationCamera authority and leaving window creation, camera
     transform/viewport policy, render plugins, visibility, production assets/audio, and media deferred.
+- Active headless ECS Window configuration attachment
+  - The next window boundary will mirror validated logical/physical dimensions and pixel scale onto
+    a disposable Bevy `Window` component while keeping OS/window plugins, render backends, camera
+    policy, visibility, production assets/audio, and media deferred.
 - Still deferred
-  - Windowing, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
+  - OS window creation, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
     camera transform/viewport policy,
     animation playback, HUD widgets, event/combat message presentation, audio assets/
     playback, fog of war, multiple floors, and richer gameplay item semantics such as effects,

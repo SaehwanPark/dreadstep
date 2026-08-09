@@ -23,6 +23,7 @@ use bevy::input::{ButtonInput, keyboard::KeyCode};
 use bevy::math::Vec2;
 use bevy::sprite::Sprite;
 use bevy::transform::components::Transform;
+use bevy::window::{Window, WindowResolution};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
@@ -1832,6 +1833,65 @@ struct SceneCameraState {
   entity: Option<Entity>,
 }
 
+/// A disposable ECS mirror of one validated window configuration request.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneWindow {
+  logical_width: u32,
+  logical_height: u32,
+  pixel_scale: u32,
+  physical_width: u32,
+  physical_height: u32,
+}
+
+impl SceneWindow {
+  /// Creates a disposable window projection from a validated request.
+  #[must_use]
+  pub const fn new(request: PresentationWindow) -> Self {
+    Self {
+      logical_width: request.logical_width(),
+      logical_height: request.logical_height(),
+      pixel_scale: request.pixel_scale(),
+      physical_width: request.physical_width(),
+      physical_height: request.physical_height(),
+    }
+  }
+
+  /// Returns the requested logical width.
+  #[must_use]
+  pub const fn logical_width(self) -> u32 {
+    self.logical_width
+  }
+
+  /// Returns the requested logical height.
+  #[must_use]
+  pub const fn logical_height(self) -> u32 {
+    self.logical_height
+  }
+
+  /// Returns the requested integer pixel scale.
+  #[must_use]
+  pub const fn pixel_scale(self) -> u32 {
+    self.pixel_scale
+  }
+
+  /// Returns the checked physical width.
+  #[must_use]
+  pub const fn physical_width(self) -> u32 {
+    self.physical_width
+  }
+
+  /// Returns the checked physical height.
+  #[must_use]
+  pub const fn physical_height(self) -> u32 {
+    self.physical_height
+  }
+}
+
+#[derive(Default, Resource)]
+struct SceneWindowState {
+  entity: Option<Entity>,
+}
+
 /// A disposable ECS mirror of one effective in-map viewport rectangle.
 #[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SceneViewport {
@@ -2185,6 +2245,7 @@ fn update_presentation(world: &mut World) {
   sync_camera(world);
   sync_scene_camera(world);
   sync_scene_camera_components(world);
+  sync_scene_window_components(world);
   sync_viewport(world);
   sync_scene_viewport(world);
   sync_hud(world);
@@ -2839,6 +2900,49 @@ fn sync_scene_camera_components(world: &mut World) {
     };
     entity.insert(Camera2d);
   }
+}
+
+fn sync_scene_window_components(world: &mut World) {
+  let Some(request) = world.get_resource::<PresentationWindow>().copied() else {
+    return;
+  };
+  let existing = {
+    let mut query = world.query::<(Entity, &SceneWindow)>();
+    let mut entities = query
+      .iter(world)
+      .map(|(entity, _)| entity)
+      .collect::<Vec<_>>();
+    entities.sort_unstable();
+    entities
+  };
+  let state_entity = world
+    .get_resource::<SceneWindowState>()
+    .and_then(|state| state.entity)
+    .filter(|entity| world.get::<SceneWindow>(*entity).is_some());
+  let retained = state_entity.or_else(|| existing.first().copied());
+  let retained = retained.unwrap_or_else(|| world.spawn_empty().id());
+  for entity in existing {
+    if entity != retained {
+      world.despawn(entity);
+    }
+  }
+  let window = Window {
+    resolution: WindowResolution::new(request.physical_width(), request.physical_height())
+      .with_scale_factor_override(window_scale_factor(request.pixel_scale())),
+    ..Default::default()
+  };
+  world
+    .entity_mut(retained)
+    .insert((SceneWindow::new(request), window));
+  world.insert_resource(SceneWindowState {
+    entity: Some(retained),
+  });
+}
+
+// Bevy's WindowResolution API accepts an f32 scale; SceneWindow retains the exact integer request.
+#[allow(clippy::cast_precision_loss)]
+fn window_scale_factor(pixel_scale: u32) -> f32 {
+  pixel_scale as f32
 }
 
 fn sync_viewport(world: &mut World) {

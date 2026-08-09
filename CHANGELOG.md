@@ -142,6 +142,9 @@ All notable contributor- and user-visible project changes are recorded here.
   orthographic components to the retained disposable camera projection entity while deferring
   windows, camera transform/viewport policy, render plugins, visibility, playback, and production
   media.
+- An active headless ECS Window configuration boundary is being prepared; it will mirror validated
+  logical/physical dimensions and pixel scale onto a disposable Bevy `Window` component while
+  deferring OS/window plugins, render backends, camera policy, visibility, playback, and media.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

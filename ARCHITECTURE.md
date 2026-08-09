@@ -338,6 +338,11 @@ camera components to the retained disposable `SceneCamera` projection entity. `P
 and runtime remain the source of camera center/origin truth; window creation, camera
 transform/viewport/visibility policy, render plugins, and production media remain deferred.
 
+The active headless ECS Window configuration attachment will enable only Bevy's `bevy_window` API
+feature and mirror validated `PresentationWindow` dimensions onto a disposable `SceneWindow` entity
+with a `Window` component. It will not create OS windows or enable WindowPlugin/winit/default-platform,
+render backends, camera policy, visibility, or production media.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does

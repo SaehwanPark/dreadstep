@@ -2748,6 +2748,39 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: headless ECS Window configuration attachment
+
+- Status: active
+- Started: 2026-08-09
+
+Enable only Bevy's `bevy_window` API feature and mirror the validated `PresentationWindow` request
+onto one retained disposable `SceneWindow` projection entity carrying Bevy's `Window` component.
+The checked logical dimensions, physical dimensions, and pixel-scale override remain request data;
+no OS window or platform plugin is created.
+
+Acceptance:
+
+- Startup mirrors one valid request into one `SceneWindow` + `Window`; `WindowResolution` carries
+  the checked physical dimensions and scale override while default window policy remains untouched.
+- A changed request refreshes the same projection entity and exact resolution; duplicates reduce
+  deterministically to one retained entity.
+- Missing `PresentationWindow` is a safe no-op preserving the prior complete window projection;
+  runtime snapshots and replay digests remain unchanged.
+- No `WindowPlugin`, OS/winit/default-platform feature, render backend, camera transform/viewport,
+  visibility/fog, asset/audio, animation, gameplay, persistence, transport, or committed media
+  behavior is introduced.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test window_attachment --locked` proves request mapping,
+  refresh/identity, duplicate cleanup, missing-request preservation, and authority.
+
+Out of scope:
+
+- OS window creation, winit/default-platform integration, render plugins/backends, camera policy,
+  transforms, visibility/fog, asset/audio loading or playback, animation, gameplay, persistence,
+  transport, and committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
