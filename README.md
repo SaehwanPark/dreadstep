@@ -32,7 +32,9 @@ and tester-only deterministic item transfer, item drop, and item pickup are now 
 Ground-item projection through protocol/MCP is stable and tester-only; the headless Bevy
 `SceneGroundItem` projection is verified. Player pickup and item gameplay semantics remain deferred.
 The headless `SceneInventoryItem` projection is verified; inventory ownership and gameplay semantics
-remain core/tester-only.
+remain core/tester-only. Authored starter floors now accept optional ordered opaque item placements
+that delegate identity and inventory validation to core; the default starter floor remains
+item-free.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

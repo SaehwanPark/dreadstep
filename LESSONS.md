@@ -115,6 +115,12 @@ Update an existing lesson instead of adding a duplicate.
 - Prevention: Treat catalogs as authoring data, use typed opaque IDs and deterministic declaration
   order, and require a later core contract before adding gameplay semantics or richer operations.
 
+Authored item instances now follow the same boundary: `StarterFloorDefinition` may carry ordered
+`StarterItemPlacement` values, but construction delegates each one to `WorldState::give_item`.
+This preserves core-owned actor/ItemId validation and inventory/digest updates without coupling
+the independent definition catalog to runtime item behavior; keep the default starter floor empty
+until a content decision explicitly adds instances.
+
 ## Keep tester item transfer atomic and outside player replay
 
 - Context: Opaque item ownership now needs a deterministic tester operation to move an existing item
