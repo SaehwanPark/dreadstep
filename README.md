@@ -44,11 +44,16 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - The current slice attaches those typed `Sprite` values to retained render-node ECS entities,
     preserving node identity and default required components without enabling a render plugin,
     transform placement, texture loading, or production media.
+- Verified typed Sprite-transform projection
+  - The headless boundary derives ordered map-space translations from checked pixel origins while
+    keeping inventory unplaced and ECS transforms unchanged; fresh missing tile size starts
+    unplaced while later removal preserves checked translations. Camera, visibility, window,
+    renderer, and production media remain deferred.
 - Still deferred
-  - Windowing, Sprite/render plugins, production textures/assets, transforms/cameras, animation
-    playback, HUD widgets, event/combat message presentation, audio assets/playback, fog of war,
-    multiple floors, and richer gameplay item semantics such as effects, modifiers, capacity, and
-    additional slots.
+  - Windowing, Sprite/render plugins, production textures/assets, ECS transform attachment/placement
+    and cameras, animation playback, HUD widgets, event/combat message presentation, audio
+    assets/playback, fog of war, multiple floors, and richer gameplay item semantics such as effects,
+    modifiers, capacity, and additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

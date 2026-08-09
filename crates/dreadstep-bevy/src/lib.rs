@@ -1484,6 +1484,49 @@ impl PresentationBevySpriteProjection {
   }
 }
 
+/// One optional map-space translation joined to a stable render-node entry.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SceneBevySpriteTransformEntry {
+  node: SceneRenderNodeEntry,
+  translation: Option<ScenePixelPosition>,
+}
+
+impl SceneBevySpriteTransformEntry {
+  /// Returns the stable render-node metadata retained by this translation.
+  #[must_use]
+  pub const fn node(self) -> SceneRenderNodeEntry {
+    self.node
+  }
+
+  /// Returns the map-space translation, or `None` for unplaced entries.
+  #[must_use]
+  pub const fn translation(self) -> Option<ScenePixelPosition> {
+    self.translation
+  }
+}
+
+/// An ordered, read-only headless transform projection for placeholder Sprite values.
+#[derive(Clone, Debug, Default, PartialEq, Resource)]
+pub struct PresentationBevySpriteTransformProjection {
+  entries: Vec<SceneBevySpriteTransformEntry>,
+}
+
+impl PresentationBevySpriteTransformProjection {
+  /// Creates an empty headless Sprite-transform projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Returns transform values in deterministic render-node order.
+  #[must_use]
+  pub fn entries(&self) -> &[SceneBevySpriteTransformEntry] {
+    &self.entries
+  }
+}
+
 /// One render-node entry joined with its validated local-only asset reference.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SceneRenderAssetEntry {
@@ -2131,6 +2174,7 @@ fn update_presentation(world: &mut World) {
   sync_render_command_plan(world);
   sync_render_nodes(world);
   sync_bevy_sprite_projection(world);
+  sync_bevy_sprite_transform_projection(world);
   sync_sprite_node_components(world);
   sync_render_asset_projection(world);
   sync_focus(world);
@@ -2401,6 +2445,32 @@ fn sync_bevy_sprite_projection(world: &mut World) {
     .collect::<Vec<_>>();
   world
     .resource_mut::<PresentationBevySpriteProjection>()
+    .entries = entries;
+}
+
+fn sync_bevy_sprite_transform_projection(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world
+      .get_resource::<PresentationRenderNodeProjection>()
+      .is_none()
+    || world
+      .get_resource::<PresentationBevySpriteTransformProjection>()
+      .is_none()
+  {
+    return;
+  }
+  let entries = world
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .iter()
+    .copied()
+    .map(|node| SceneBevySpriteTransformEntry {
+      translation: node.node().pixel_position(),
+      node,
+    })
+    .collect::<Vec<_>>();
+  world
+    .resource_mut::<PresentationBevySpriteTransformProjection>()
     .entries = entries;
 }
 

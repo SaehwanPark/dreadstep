@@ -315,6 +315,13 @@ remain defaults; no Sprite/render plugin, texture loading, transform placement, 
 production media policy is introduced. Missing runtime, node source, projection destination, or node
 entities preserve existing components safely, and the wrapped core runtime remains authoritative.
 
+The verified Sprite-transform projection adds `PresentationBevySpriteTransformProjection`, an ordered
+read-only join from each retained node to a map-space translation derived from checked
+`ScenePixelPosition` metadata. Inventory entries remain unplaced; a fresh missing tile-size request
+starts unplaced while later removal preserves previously checked translations. This boundary does not
+attach or mutate ECS Transform/Visibility/Sprite components; camera, window, renderer, and production
+media remain deferred.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does
