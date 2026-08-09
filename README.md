@@ -56,13 +56,14 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified deterministic ECS Sprite depth
   - The presentation boundary derives terrain/ground/actor z-layer values from the existing typed
     render layer while preserving centered x/y placement and inventory default state.
-- Active headless ECS Camera2d attachment
-  - The next camera boundary attaches Bevy's typed `Camera2d` marker to the retained camera anchor
-    entity while leaving window creation, camera transform/viewport policy, render plugins, visibility,
-    production assets/audio, and media deferred.
+- Verified headless ECS Camera2d attachment
+  - The presentation boundary attaches Bevy's typed `Camera2d` marker and required default
+    orthographic camera components to the retained disposable camera projection entity while
+    leaving runtime/PresentationCamera authority, window creation, camera transform/viewport policy,
+    render plugins, visibility, production assets/audio, and media deferred.
 - Still deferred
   - Windowing, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
-    cameras,
+    camera transform/viewport policy,
     animation playback, HUD widgets, event/combat message presentation, audio assets/
     playback, fog of war, multiple floors, and richer gameplay item semantics such as effects,
     modifiers, capacity, and additional slots.
