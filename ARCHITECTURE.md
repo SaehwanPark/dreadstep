@@ -139,10 +139,10 @@ opaque `ItemDefinitionId` references and exposes read-only lookup without changi
 The catalog is authoring support rather than a second item store; core remains authoritative for
 item instances, ownership, digests, and snapshots, and gameplay semantics remain deferred.
 
-The active tester item-drop extension keeps ground-item records in core, keyed by stable map
-position with deterministic stack order. Protocol projects those records as read-only snapshot
-values and MCP delegates the mutation; neither boundary adds pickup, effects, equipment, capacity,
-player commands, or replay/history entries.
+The tester item-drop extension keeps ground-item records in core, keyed by stable map position with
+deterministic stack order. Protocol projects those records as read-only snapshot values and MCP
+delegates the mutation; neither boundary adds pickup, effects, equipment, capacity, player commands,
+or replay/history entries.
 
 Validated tester teleport crosses the boundary as a typed actor identity and destination position.
 Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only

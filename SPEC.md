@@ -1347,8 +1347,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic tester item drop
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Add an in-memory tester mutation that drops one owned opaque item instance at its actor's current
 map position. Core owns the ground-item records and deterministic stack ordering; protocol and MCP
@@ -1374,8 +1375,12 @@ Verification target:
 - Focused core drop tests cover ordered stacks, source-order preservation, dead sources, typed
   rejection/atomicity, and digest changes; protocol snapshot tests cover row-major projection and
   complete item data; MCP tests cover accepted/rejected history and replay invariants.
+- `cargo test -p dreadstep-core --test item_drop --all-features --locked`,
+  `cargo test -p dreadstep-protocol --test item_drop --all-features --locked`, and
+  `cargo test -p dreadstep-mcp --test tester_item_drop --all-features --locked` pass.
 - Focused Clippy, Cargo docs, `git diff --check`, and `scripts/verify.sh` pass; exactly one
-  semantic code reviewer reports pass; Linux, Apple Silicon macOS, and Windows CI are green.
+  semantic code reviewer reports pass on implementation revision `4255a58`; Linux, Apple Silicon
+  macOS, and Windows CI are green for that revision.
 
 Out of scope:
 
