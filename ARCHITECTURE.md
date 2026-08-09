@@ -129,8 +129,13 @@ successful replacement preserves the seed and starts a fresh in-memory replay tr
 
 Opaque tester item ownership crosses the boundary as typed `ItemId` and `ItemDefinitionId` values.
 Core owns global identity uniqueness, ordered actor inventories, digest inclusion, and snapshot
-projection; MCP only converts the request to `WorldState::give_item`. Effects, equipment, capacity,
-transfer, and content catalogs remain outside this slice so no adapter invents item truth.
+projection; MCP only converts the request to `WorldState::give_item`. Effects, equipment, and
+capacity remain outside this ownership slice so no adapter invents item truth.
+
+The item-catalog foundation keeps definition membership on the content side: it validates ordered,
+opaque `ItemDefinitionId` references and exposes read-only lookup without changing core world state.
+The catalog is authoring support rather than a second item store; core remains authoritative for
+item instances, ownership, digests, and snapshots, and gameplay semantics remain deferred.
 
 Validated tester teleport crosses the boundary as a typed actor identity and destination position.
 Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only

@@ -6,10 +6,11 @@
 
 #![forbid(unsafe_code)]
 
-use std::{error::Error, fmt};
+use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HitPoints, MapError, Position, Tile, WorldError, WorldState,
+  Actor, ActorId, ActorKind, GridMap, HitPoints, ItemDefinitionId, MapError, Position, Tile,
+  WorldError, WorldState,
 };
 
 /// Errors raised while converting authored content into a validated core world.
@@ -19,6 +20,8 @@ pub enum ContentError {
   Map(MapError),
   /// The authored actor set violates a core world invariant.
   World(WorldError),
+  /// The authored item catalog repeats one opaque definition identity.
+  DuplicateItemDefinitionId(ItemDefinitionId),
 }
 
 impl fmt::Display for ContentError {
@@ -26,6 +29,11 @@ impl fmt::Display for ContentError {
     match self {
       Self::Map(error) => write!(formatter, "content map error: {error}"),
       Self::World(error) => write!(formatter, "content world error: {error}"),
+      Self::DuplicateItemDefinitionId(definition) => write!(
+        formatter,
+        "content item definition id {} is duplicated",
+        definition.value()
+      ),
     }
   }
 }
@@ -35,6 +43,7 @@ impl Error for ContentError {
     match self {
       Self::Map(error) => Some(error),
       Self::World(error) => Some(error),
+      Self::DuplicateItemDefinitionId(_) => None,
     }
   }
 }
@@ -48,6 +57,60 @@ impl From<MapError> for ContentError {
 impl From<WorldError> for ContentError {
   fn from(error: WorldError) -> Self {
     Self::World(error)
+  }
+}
+
+/// Typed authored input for one ordered catalog of opaque item-definition identities.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ItemCatalogDefinition {
+  definitions: Vec<ItemDefinitionId>,
+}
+
+impl ItemCatalogDefinition {
+  /// Creates authored item-definition references; validation runs in [`Self::build`].
+  #[must_use]
+  pub const fn new(definitions: Vec<ItemDefinitionId>) -> Self {
+    Self { definitions }
+  }
+
+  /// Converts authored references into an immutable, validated content catalog.
+  ///
+  /// Declaration order is preserved. Core remains the owner of item instances and ownership;
+  /// this catalog only answers which opaque definition identities the content names.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError::DuplicateItemDefinitionId`] when one identity occurs more than once.
+  pub fn build(&self) -> Result<ItemCatalog, ContentError> {
+    let mut seen = BTreeSet::new();
+    for definition in &self.definitions {
+      if !seen.insert(*definition) {
+        return Err(ContentError::DuplicateItemDefinitionId(*definition));
+      }
+    }
+    Ok(ItemCatalog {
+      definitions: self.definitions.clone(),
+    })
+  }
+}
+
+/// An immutable deterministic catalog of content-known opaque item-definition identities.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ItemCatalog {
+  definitions: Vec<ItemDefinitionId>,
+}
+
+impl ItemCatalog {
+  /// Returns definitions in their authored declaration order.
+  #[must_use]
+  pub fn definitions(&self) -> &[ItemDefinitionId] {
+    &self.definitions
+  }
+
+  /// Returns whether content declares the supplied opaque definition identity.
+  #[must_use]
+  pub fn contains(&self, definition: ItemDefinitionId) -> bool {
+    self.definitions.contains(&definition)
   }
 }
 
@@ -168,4 +231,24 @@ pub fn starter_floor_definition() -> StarterFloorDefinition {
 /// Returns [`ContentError`] when the authored definition fails core map or world validation.
 pub fn starter_floor() -> Result<WorldState, ContentError> {
   starter_floor_definition().build()
+}
+
+/// Returns the deterministic authored starter item-definition references.
+#[must_use]
+pub fn starter_item_catalog_definition() -> ItemCatalogDefinition {
+  ItemCatalogDefinition::new(vec![
+    ItemDefinitionId::new(1),
+    ItemDefinitionId::new(2),
+    ItemDefinitionId::new(3),
+  ])
+}
+
+/// Builds the validated deterministic starter item-definition catalog.
+///
+/// # Errors
+///
+/// Returns [`ContentError::DuplicateItemDefinitionId`] if the authored starter references are
+/// accidentally repeated.
+pub fn starter_item_catalog() -> Result<ItemCatalog, ContentError> {
+  starter_item_catalog_definition().build()
 }

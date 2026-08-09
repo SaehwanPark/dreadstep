@@ -1259,11 +1259,46 @@ Out of scope:
 
 ## Future
 
+### Milestone 4 slice: deterministic content item-definition catalog
+
+- Status: active
+- Started: 2026-08-09
+
+Add a content-owned catalog of opaque `ItemDefinitionId` values as the smallest foundation for
+future item authoring. `ItemCatalogDefinition` preserves authored order and validates globally
+duplicate definition identities before producing an immutable `ItemCatalog`; core still treats
+those IDs as opaque references and no catalog data enters `WorldState` automatically.
+
+Acceptance:
+
+- A valid catalog preserves declaration order, exposes read-only deterministic definitions, and
+  answers known/unknown membership without hash iteration or mutation.
+- Duplicate definition IDs return a typed `ContentError` before a catalog is constructed; repeated
+  construction of the starter catalog produces equal ordered values.
+- Content owns only definition membership. Item instances, ownership, digests, and snapshots remain
+  core-owned; no effects, equipment, identification, capacity, transfer, or player commands are
+  introduced.
+- The catalog remains independent of Bevy, MCP, transport, filesystem authoring, serialization,
+  procedural generation, and presentation policy.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-content --test item_catalog --all-features --locked` covers
+  stable starter order, known/unknown lookup, repeatability, and duplicate rejection.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Item effects, equipment, consumables, affixes, rarity, identification, transfer, capacity,
+  pickup/drop/use commands, protocol/MCP operations, persistence, serialization, and UI.
+
 ### Deferred item gameplay semantics
 
-The opaque ownership slice intentionally does not define item effects, equipment, identification,
-capacity, transfer, or content catalogs. These contracts must be specified in core before adding
-gameplay-facing item commands or richer tester operations.
+The opaque ownership slice and content catalog foundation intentionally do not define item effects,
+equipment, identification, capacity, transfer, or gameplay-facing item commands. Those contracts
+must be specified in core before adding richer tester or player operations.
 
 ### Milestone 1: Rules kernel
 
