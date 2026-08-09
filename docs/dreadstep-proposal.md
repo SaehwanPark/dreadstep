@@ -1780,6 +1780,11 @@ Current exploratory gate (2026-08-09):
   orthographic components to the retained disposable camera projection entity; runtime/
   `PresentationCamera` remain authoritative, while window creation, camera transform/viewport policy,
   render plugins, visibility, playback, and production media remain deferred.
+- A verified headless ECS Window configuration boundary mirrors the exact validated integer
+  logical/physical dimensions and scale onto a disposable `SceneWindow`, exposes a deterministic
+  `f32` scale adapter on Bevy's `WindowResolution`, and defers OS/window plugins,
+  winit/default-platform integration, render backends, camera policy, visibility, playback, and
+  production media.
 
 ### Content
 
