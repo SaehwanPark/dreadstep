@@ -9,6 +9,10 @@ use dreadstep_protocol::{ActorId, Position, WorldError};
 fn every_core_world_error_maps_to_protocol_values() {
   let errors = [
     (
+      CoreWorldError::UnknownActor(CoreActorId::new(9)),
+      WorldError::UnknownActor(ActorId::new(9)),
+    ),
+    (
       CoreWorldError::DuplicateActorId(CoreActorId::new(1)),
       WorldError::DuplicateActorId(ActorId::new(1)),
     ),

@@ -37,6 +37,8 @@ All notable contributor- and user-visible project changes are recorded here.
   persistence or transport effects.
 - Named tester `inspect_world` access to the existing complete protocol world snapshot.
 - Validated tester actor spawning through core with protocol-owned world error projections.
+- Validated tester hit-point mutation through core, including dead-record retention and
+  scheduler-safe reanimation, with typed protocol error projection.
 
 ### Changed
 

@@ -585,6 +585,44 @@ Out of scope:
 - set-HP, item, teleport, scenario-authoring, restore changes, MCP transport/runtime, persistent
   storage, wire serialization, interactive input, and replay playback.
 
+### Milestone 2 slice: validated tester hit-point mutation
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the next explicit tester mutation through the functional core. `WorldState::set_hit_points`
+updates one existing actor's typed hit points, retains dead actor records for inspection, and
+re-anchors an actor revived from zero hit points at the world's current action time so the tester
+cannot rewind scheduling. `dreadstep-mcp::Session::set_hp` translates protocol values and maps an
+unknown actor to a protocol-owned world error. The mutation is in-memory only and does not record
+an accepted player command or alter replay evidence.
+
+Acceptance:
+
+- An existing actor can have its hit points set to any typed `u16` value, including zero; zero
+  removes the actor from scheduling and living occupancy while preserving its record and position.
+- Reviving a dead actor makes it living at the current world action time without rewinding the
+  scheduler. Setting the earliest actor to zero may advance current time to the next surviving
+  actor's readiness, but never rewinds it; identity, kind, and position remain unchanged.
+- Unknown actor identities and revivals onto tiles occupied by living actors are rejected with
+  typed world errors and leave world, history, and replay evidence unchanged.
+- Successful tester hit-point mutations leave accepted request history and replay evidence
+  unchanged; core remains authoritative for life and scheduling semantics.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-protocol -p dreadstep-mcp --all-targets
+  --all-features --locked` passes.
+- Focused Clippy for the core, protocol, and MCP crates passes with `-D warnings`.
+- `scripts/verify.sh` passes before handoff.
+- `git diff --check` passes, and the single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- spawn, item, teleport, scenario-authoring, restore changes, MCP transport/runtime, persistent
+  storage, wire serialization, interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel
