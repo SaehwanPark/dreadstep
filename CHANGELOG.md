@@ -53,6 +53,8 @@ All notable contributor- and user-visible project changes are recorded here.
   no world, history, or replay mutation.
 - Read-only MCP actor inspection over stdio with typed IDs, structured snapshot-or-null results, and
   no world, history, or replay mutation.
+- Read-only MCP `get_history` accepted-request evidence over stdio with deterministic ordering,
+  rejection omission, and no world, history, or replay mutation.
 
 ### Changed
 

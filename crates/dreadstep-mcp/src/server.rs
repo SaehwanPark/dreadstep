@@ -1,5 +1,5 @@
 //! Minimal local stdio MCP server for versioned observation, actor inspection, legal-action
-//! discovery, and typed player actions.
+//! discovery, accepted history, and typed player actions.
 
 use std::{
   error::Error,
@@ -127,6 +127,15 @@ impl DreadstepMcpServer {
   )]
   pub async fn legal_actions(&self) -> Result<Json<Vec<CommandRequest>>, McpError> {
     Ok(Json(self.lock_session()?.legal_actions()))
+  }
+
+  /// Returns accepted typed player requests in execution order without mutating the session.
+  #[tool(
+    name = "get_history",
+    description = "Return accepted typed player requests in deterministic execution order."
+  )]
+  pub async fn get_history(&self) -> Result<Json<Vec<CommandRequest>>, McpError> {
+    Ok(Json(self.lock_session()?.get_history()))
   }
 
   /// Executes one typed player action and returns semantic evidence.

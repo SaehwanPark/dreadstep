@@ -14,8 +14,8 @@ actors, movement, melee, and chase commands, semantic movement/blocking/combat/d
 an integer ready-time scheduler, and core-owned replay traces/state digests. The
 `dreadstep-headless` adapter now provides a fixed-scenario developer CLI that translates text
 arguments into those core commands; it owns parsing and stdout only. `dreadstep-mcp` also provides
-a minimal local stdio server for start, observe, and typed player actions; no graphical client exists
-yet.
+a minimal local stdio server for the bounded player tools `start_run`, `observe`, `legal_actions`,
+`inspect`, `get_history`, and typed `act`; no graphical client exists yet.
 
 ## Package Ownership
 
@@ -83,8 +83,8 @@ execution remain owned by `dreadstep-core::WorldState`.
 
 The first MCP player slice is an in-memory session over those protocol values. It owns session
 seed/scenario setup and response shaping only; the minimal stdio server wraps its `start_run`,
-`observe`, `legal_actions`, `inspect`, and typed `act` operations without duplicating core
-transition rules. Additional transports and tester operations remain future slices.
+`observe`, `legal_actions`, `inspect`, `get_history`, and typed `act` operations without duplicating
+core transition rules. Additional transports and tester operations remain future slices.
 
 Legal-action discovery is a core query, not an MCP policy: `WorldState::legal_commands` decides
 which typed commands are currently valid, and the session only maps those commands into protocol
@@ -138,9 +138,10 @@ converts the request and projects typed world errors. Dead actor records remain 
 the mutation does not enter player history or replay evidence.
 
 The minimal MCP stdio slice adds a process adapter around the existing session. The adapter owns
-`rmcp` transport setup, tool schemas, and versioned JSON serialization for `start_run`, read-only
-`observe`, and typed `act`; session and core remain authoritative for seeded state and world truth.
-Stdout is reserved for MCP protocol traffic, and tester mutations remain library-only.
+`rmcp` transport setup, tool schemas, and versioned JSON serialization for the bounded player tools
+`start_run`, `observe`, `legal_actions`, `inspect`, `get_history`, and typed `act`; session and core
+remain authoritative for seeded state and world truth. Stdout is reserved for MCP protocol traffic,
+and tester mutations remain library-only.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
@@ -154,6 +155,10 @@ typed protocol request array. A legal-action call cannot mutate world, history, 
 The actor-inspection MCP slice exposes `Session::inspect` through a typed actor-ID parameter. The
 session performs the existing snapshot lookup and returns an `ActorSnapshot` or `None`; MCP only
 serializes that visible projection and does not invent hidden-information or visibility rules.
+
+The accepted-history MCP slice exposes `Session::get_history` as a no-argument, read-only array of
+protocol requests. The session remains the adapter-owned view over core replay recording; MCP does
+not expose `ReplayTrace` internals or add a second history source.
 
 ## Constraints
 
