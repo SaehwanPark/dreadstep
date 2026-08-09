@@ -62,9 +62,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     retaining runtime/PresentationCamera authority and leaving window creation, camera
     transform/viewport policy, render plugins, visibility, production assets/audio, and media deferred.
 - Active headless ECS Window configuration attachment
-  - The next window boundary will mirror validated logical/physical dimensions and pixel scale onto
-    a disposable Bevy `Window` component while keeping OS/window plugins, render backends, camera
-    policy, visibility, production assets/audio, and media deferred.
+  - The next window boundary will mirror validated logical/physical dimensions plus the exact
+    integer scale onto a disposable `SceneWindow`, and expose a deterministic `f32` scale adapter
+    on Bevy's `WindowResolution`, while keeping OS/window plugins, render backends, camera policy,
+    visibility, production assets/audio, and media deferred.
 - Still deferred
   - OS window creation, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
     camera transform/viewport policy,

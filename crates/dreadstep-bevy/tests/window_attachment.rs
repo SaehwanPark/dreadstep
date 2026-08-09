@@ -43,11 +43,12 @@ fn window_projection(app: &mut App) -> Vec<WindowEvidence> {
 }
 
 #[test]
-fn startup_attaches_one_window_with_checked_resolution_and_scale() {
+fn startup_without_runtime_attaches_one_window_with_checked_resolution_and_scale() {
   let request = PresentationWindow::new(320, 240, 2).expect("request should validate");
   let mut app = window_app(request);
   app.update();
 
+  assert!(app.world().get_resource::<PresentationRuntime>().is_none());
   let entries = window_projection(&mut app);
   assert_eq!(entries.len(), 1);
   let entry = entries[0];
@@ -69,6 +70,34 @@ fn startup_attaches_one_window_with_checked_resolution_and_scale() {
   assert!(!window.transparent);
   assert!(window.visible);
   assert_eq!(window.name, None);
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn projected_scale(pixel_scale: u32) -> f32 {
+  pixel_scale as f32
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn projected_logical_width(request: PresentationWindow, scale: f32) -> f32 {
+  request.physical_width() as f32 / scale
+}
+
+#[test]
+fn large_valid_scale_uses_deterministic_f32_window_adapter() {
+  let request = PresentationWindow::new(3, 1, 16_777_217).unwrap();
+  let mut app = window_app(request);
+  app.update();
+
+  let entry = window_projection(&mut app)[0];
+  let scale = projected_scale(request.pixel_scale());
+  assert_eq!(entry.scene.pixel_scale(), 16_777_217);
+  assert_eq!(scale.to_bits(), 16_777_216.0f32.to_bits());
+  assert_eq!(entry.scale_bits, scale.to_bits());
+  assert_eq!(
+    entry.logical_width_bits,
+    projected_logical_width(request, scale).to_bits()
+  );
+  assert_eq!(entry.logical_height_bits, 1.0f32.to_bits());
 }
 
 #[test]
@@ -117,6 +146,7 @@ fn duplicate_window_cleanup_retains_one_projection_entity() {
   let entries = window_projection(&mut app);
   assert_eq!(entries.len(), 1);
   assert_eq!(entries[0].entity, stable);
+  assert!(app.world().get_entity(duplicate).is_err());
 }
 
 #[test]

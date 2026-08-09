@@ -2201,10 +2201,12 @@ impl PresentationRuntime {
 
 /// A headless Bevy plugin that keeps disposable scene mirrors synchronized with runtime state.
 ///
-/// The plugin expects [`PresentationRuntime`] to be inserted by the application. Until a runtime
-/// is present, its update system is a safe no-op so app construction can install plugins before
-/// selecting or restoring a run. Keyboard dispatch is also optional: it runs only when the app
-/// provides [`PresentationInput`] and `ButtonInput<KeyCode>` resources.
+/// Runtime-backed scene projections are a safe no-op until [`PresentationRuntime`] is inserted by
+/// the application, so app construction can install plugins before selecting or restoring a run.
+/// Typed configuration projections, including [`PresentationWindow`] to [`SceneWindow`], remain
+/// independently authoritative and synchronize whenever their resources are present. Keyboard
+/// dispatch is also optional: it runs only when the app provides [`PresentationInput`] and
+/// `ButtonInput<KeyCode>` resources.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct PresentationPlugin;
 
