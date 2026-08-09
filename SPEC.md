@@ -487,6 +487,38 @@ Out of scope:
 - MCP transport/runtime registration, tester tools, replay persistence or playback, authored
   scenarios, interactive input, and changes to command execution.
 
+### Milestone 2 slice: in-memory tester snapshot and restore
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Add the first explicit tester savepoint operation without introducing transport or persistence.
+`dreadstep-mcp::Session::snapshot` clones the complete valid session state into a
+`SessionSnapshot`, including the fixed seed, world state, and core `ReplayTrace` evidence.
+`Session::restore` replaces the current session with that savepoint so subsequent observations,
+accepted history, and replay digest continue from the captured point.
+
+Acceptance:
+
+- A savepoint captures the current world and replay state without mutating the session.
+- Restoring a savepoint restores the seed, world snapshot, accepted request history, and replay
+  digest exactly as they were when captured.
+- Executing the same accepted request after restore produces the same protocol output and resulting
+  snapshot as the original execution from that savepoint.
+- Savepoint and restore remain in-memory tester operations; no filesystem, serialization, transport,
+  new gameplay rules, or arbitrary state mutation is introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-mcp --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- MCP transport/runtime registration, persistent replay files, wire serialization, scenario
+  authoring, spawn/item/HP mutators, interactive input, and replay playback.
+
 ## Future
 
 ### Milestone 1: Rules kernel
