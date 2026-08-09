@@ -510,27 +510,22 @@ fn sync_focus(world: &mut World) {
   else {
     return;
   };
-  let Some(position) = world
+  let Some(snapshot) = world
     .get_resource::<PresentationRuntime>()
     .map(PresentationRuntime::snapshot)
-    .and_then(|snapshot| {
-      snapshot
-        .actors()
-        .iter()
-        .find(|record| record.id() == actor)
-        .map(Actor::position)
-    })
   else {
-    if let Some(mut focus) = world.get_resource_mut::<PresentationFocus>() {
-      focus.actor = actor;
-      focus.position = None;
-    }
     return;
   };
-  if let Some(mut focus) = world.get_resource_mut::<PresentationFocus>() {
-    focus.actor = actor;
-    focus.position = Some(position);
-  }
+  let position = snapshot
+    .actors()
+    .iter()
+    .find(|record| record.id() == actor)
+    .map(Actor::position);
+  let Some(mut focus) = world.get_resource_mut::<PresentationFocus>() else {
+    return;
+  };
+  focus.actor = actor;
+  focus.position = position;
 }
 
 fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {
