@@ -1981,6 +1981,50 @@ Out of scope:
 - OS windows, platform event loops, desktop backends, rendering, transforms, textures, assets,
   audio, timers, persistence, transport, and gameplay rules.
 
+### Milestone 3 slice: deterministic scene pixel placement
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Define a typed, headless placement boundary between core map coordinates and a future renderer.
+`PresentationTileSize` accepts a caller-selected logical tile extent without choosing between the
+proposal's 24×24 and 32×32 candidates. When present, the Bevy presentation plugin projects checked
+logical-pixel origins through `ScenePixelPosition` on existing terrain, actor, and ground-item
+mirrors. The projection remains disposable metadata and never becomes a second source of scene or
+simulation truth.
+
+Acceptance:
+
+- `PresentationTileSize::new` rejects zero width or height and exposes validated dimensions.
+- Coordinate conversion rejects negative positions and checked multiplication overflow; valid
+  positions map deterministically to logical-pixel origins on both axes.
+- Terrain, actor, and ground-item mirrors receive refreshed `ScenePixelPosition` values after
+  synchronization, and retained keyed actor entities keep their identity after accepted movement.
+- Missing tile-size configuration leaves the existing headless scene unchanged and adds no pixel
+  metadata; inventory items remain unplaced because they have no map coordinate.
+- Missing runtime authority preserves complete existing keyed scene values and pixel metadata
+  without deriving a new scene state.
+- The boundary adds no Bevy `Transform`, textures, asset handles, window/render plugins, audio,
+  timers, interpolation, visibility policy, persistence, transport, or gameplay rules.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test tile_layout --all-features --locked` passes all six
+  tests covering valid/invalid configuration, both arithmetic axes, all terrain origins,
+  actor/ground placement, inventory exclusion, retained identity, and authority/resource absence.
+- All Bevy targets, focused Clippy with `-D warnings`, Cargo docs, formatting, repository checks,
+  `git diff --check`, and `scripts/verify.sh` pass locally.
+- Exactly one semantic reviewer reports PASS on final reviewed revision `c38e6a9`; the initial
+  implementation commit is `d877179`, and the test-only evidence correction is the final reviewed
+  revision. Linux, Apple Silicon macOS, and Windows CI are green.
+
+Out of scope:
+
+- Tile-size/asset selection, OS windows, platform event loops, desktop backends, rendering,
+  transforms, textures, asset handles, audio, timers, interpolation, persistence, transport, and
+  gameplay rules.
+
 ## Present
 
 ### Deferred item gameplay semantics

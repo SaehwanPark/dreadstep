@@ -262,6 +262,15 @@ dimensions, integer pixel scale, and checked physical dimensions. It is configur
 desktop client only; no OS window, platform event loop, desktop feature, or rendering state is
 created here.
 
+The verified scene-pixel-placement slice adds an optional `PresentationTileSize` resource and a
+`ScenePixelPosition` component. The adapter converts valid core map coordinates to checked logical
+pixel origins on the already keyed terrain, actor, and ground-item mirrors. Tile-size selection
+remains a caller/asset-experiment decision; the component is disposable placement metadata, not a
+Bevy transform or a new source of simulation truth. Missing configuration preserves the existing
+scene, and inventory items remain unplaced because they have no map coordinate. Textures, assets,
+window/render plugins, audio, timers, interpolation, visibility, persistence, and gameplay remain
+outside this boundary.
+
 The ground-item scene-projection slice extends the same disposable snapshot boundary with
 core-owned ground stacks. `PresentationSnapshot` preserves row-major stack and item order, while
 `SceneGroundItem` carries only the typed item identity, opaque definition reference, position, and
