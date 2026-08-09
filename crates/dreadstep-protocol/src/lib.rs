@@ -413,7 +413,7 @@ impl StateDigest {
 }
 
 /// In-memory replay evidence exposed to an agent without claiming a serialized replay format.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
 pub struct ReplayEvidence {
   seed: u64,
   commands: Vec<CommandRequest>,

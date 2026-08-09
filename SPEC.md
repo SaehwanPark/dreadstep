@@ -908,6 +908,41 @@ Out of scope:
 - replay evidence transport, tester mutations over MCP, replay persistence, alternate transports,
   hidden information, interactive input, map editing, and gameplay item semantics.
 
+### Milestone 2 slice: MCP replay evidence
+
+- Status: verified
+- Started: 2026-08-08
+- Completed: 2026-08-08
+
+Expose the existing typed `Session::get_replay` projection through the local stdio MCP server as a
+read-only `get_replay` tool. `ReplayEvidence` gains explicit JSON/JSON Schema serialization for the
+transport, carrying the seed, accepted protocol requests, and deterministic digest without exposing
+core `ReplayTrace`, persistence, or playback.
+
+Acceptance:
+
+- A stdio MCP client can call `get_replay` without arguments and receive structured seed, commands,
+  and digest evidence.
+- A new run returns its explicit seed, an empty command array, and a numeric seeded digest; accepted
+  commands appear once in order, while rejected commands do not change replay evidence.
+- The tool has explicit object input and output schemas using protocol-owned command requests and
+  digest values; equivalent seed/request sequences produce equal JSON evidence.
+- The process exposes exactly `start_run`, `observe`, `legal_actions`, `inspect`, `get_history`,
+  `get_replay`, and `act`; tester mutations, persistence, and playback remain outside this slice.
+
+Verification:
+
+- Focused protocol JSON/schema and ordered MCP subprocess tests pass.
+- Direct session and stdio tests cover empty, accepted, rejected, deterministic, and read-only
+  replay evidence behavior.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- The single semantic review reports pass at revision 1.
+
+Out of scope:
+
+- replay files, playback, tester mutations over MCP, alternate transports, hidden information,
+  interactive input, map editing, and gameplay item semantics.
+
 ## Future
 
 ### Deferred item gameplay semantics

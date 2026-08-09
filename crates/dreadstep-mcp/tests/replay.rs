@@ -22,6 +22,28 @@ fn new_session_exposes_seeded_empty_replay_evidence() {
 }
 
 #[test]
+fn get_replay_is_read_only_before_and_after_an_accepted_action() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  let initial_snapshot = session.observe();
+  let initial_history = session.history();
+  let initial_replay = session.get_replay();
+  assert_eq!(session.get_replay(), initial_replay);
+  assert_eq!(session.observe(), initial_snapshot);
+  assert_eq!(session.history(), initial_history);
+
+  let request = CommandRequest::Wait {
+    actor: ActorId::new(1),
+  };
+  session.act(request).expect("wait should be accepted");
+  let accepted_snapshot = session.observe();
+  let accepted_history = session.history();
+  let accepted_replay = session.get_replay();
+  assert_eq!(session.get_replay(), accepted_replay);
+  assert_eq!(session.observe(), accepted_snapshot);
+  assert_eq!(session.history(), accepted_history);
+}
+
+#[test]
 fn replay_evidence_keeps_accepted_order_and_ignores_rejection() {
   let mut session = Session::start_run(7).expect("fixed scenario should be valid");
   let attack = CommandRequest::Attack {
@@ -101,6 +123,10 @@ fn equivalent_replay_evidence_matches_but_seed_and_order_change_digest() {
     .expect("player wait should be accepted");
 
   assert_eq!(first.get_replay(), equivalent.get_replay());
+  assert_eq!(
+    serde_json::to_vec(&first.get_replay()).expect("first replay should serialize"),
+    serde_json::to_vec(&equivalent.get_replay()).expect("equivalent replay should serialize")
+  );
   assert_ne!(
     first.get_replay().digest(),
     different_seed.get_replay().digest()
