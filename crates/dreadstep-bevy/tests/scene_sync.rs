@@ -3,7 +3,9 @@
 use std::collections::BTreeMap;
 
 use bevy::ecs::world::World;
-use dreadstep_bevy::{PresentationState, SceneActor, SceneGroundItem, SceneTile, sync_scene};
+use dreadstep_bevy::{
+  PresentationState, SceneActor, SceneGroundItem, SceneInventoryItem, SceneTile, sync_scene,
+};
 use dreadstep_content::starter_floor;
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId,
@@ -85,6 +87,29 @@ fn ground_world() -> WorldState {
   world
 }
 
+fn inventory_world() -> WorldState {
+  let mut world = ground_world();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(4), ItemDefinitionId::new(104)),
+    )
+    .expect("fourth item should be given");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(5), ItemDefinitionId::new(105)),
+    )
+    .expect("fifth item should be given");
+  world
+    .give_item(
+      ActorId::new(2),
+      Item::new(ItemId::new(6), ItemDefinitionId::new(106)),
+    )
+    .expect("sixth item should be given");
+  world
+}
+
 fn keyed_tiles(scene: &mut World) -> BTreeMap<(i32, i32), (bevy::ecs::entity::Entity, SceneTile)> {
   scene
     .query::<(bevy::ecs::entity::Entity, &SceneTile)>()
@@ -121,6 +146,67 @@ fn keyed_ground_items(
     .collect()
 }
 
+fn keyed_inventory_items(
+  scene: &mut World,
+) -> BTreeMap<ItemId, (bevy::ecs::entity::Entity, ActorId, ItemDefinitionId, usize)> {
+  scene
+    .query::<(bevy::ecs::entity::Entity, &SceneInventoryItem)>()
+    .iter(scene)
+    .map(|(entity, item)| {
+      (
+        item.id(),
+        (
+          entity,
+          item.owner(),
+          item.definition(),
+          item.inventory_index(),
+        ),
+      )
+    })
+    .collect()
+}
+
+fn inventory_data(scene: &mut World) -> BTreeMap<ItemId, (ActorId, ItemDefinitionId, usize)> {
+  keyed_inventory_items(scene)
+    .into_iter()
+    .map(|(item_id, (_, owner, definition, index))| (item_id, (owner, definition, index)))
+    .collect()
+}
+
+fn initial_inventory_data() -> BTreeMap<ItemId, (ActorId, ItemDefinitionId, usize)> {
+  BTreeMap::from([
+    (
+      ItemId::new(4),
+      (ActorId::new(1), ItemDefinitionId::new(104), 0),
+    ),
+    (
+      ItemId::new(5),
+      (ActorId::new(1), ItemDefinitionId::new(105), 1),
+    ),
+    (
+      ItemId::new(6),
+      (ActorId::new(2), ItemDefinitionId::new(106), 0),
+    ),
+  ])
+}
+
+fn transferred_inventory_data() -> BTreeMap<ItemId, (ActorId, ItemDefinitionId, usize)> {
+  BTreeMap::from([
+    (
+      ItemId::new(4),
+      (ActorId::new(2), ItemDefinitionId::new(104), 1),
+    ),
+    (
+      ItemId::new(5),
+      (ActorId::new(1), ItemDefinitionId::new(105), 0),
+    ),
+    (
+      ItemId::new(6),
+      (ActorId::new(2), ItemDefinitionId::new(106), 0),
+    ),
+  ])
+}
+
 #[test]
 fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
   let mut state = PresentationState::start_run(7).expect("content should validate");
@@ -132,6 +218,7 @@ fn sync_creates_scene_entities_and_preserves_keys_across_updates() {
   assert_eq!(scene.query::<&SceneActor>().iter(&scene).count(), 4);
   assert!(initial.ground_items().is_empty());
   assert_eq!(scene.query::<&SceneGroundItem>().iter(&scene).count(), 0);
+  assert_eq!(scene.query::<&SceneInventoryItem>().iter(&scene).count(), 0);
   let player_entity = scene
     .query::<(bevy::ecs::entity::Entity, &SceneActor)>()
     .iter(&scene)
@@ -260,6 +347,76 @@ fn sync_projects_complete_ground_items_and_preserves_item_identity() {
     ),
     (Position::new(1, 1), ItemDefinitionId::new(102), 0)
   );
+}
+
+#[test]
+fn sync_projects_complete_inventory_items_and_updates_owner_and_order() {
+  let full = PresentationState::new(7, inventory_world()).snapshot();
+  let mut scene = World::new();
+  sync_scene(&mut scene, &full);
+  let before_tiles = keyed_tiles(&mut scene);
+  let before_actors = keyed_actors(&mut scene);
+  let before_ground = keyed_ground_items(&mut scene);
+  let before_inventory = keyed_inventory_items(&mut scene);
+  assert_eq!(inventory_data(&mut scene), initial_inventory_data());
+
+  let mut updated_world = inventory_world();
+  updated_world
+    .transfer_item(ActorId::new(1), ActorId::new(2), ItemId::new(4))
+    .expect("transfer should update owner and order");
+  let updated = PresentationState::new(7, updated_world).snapshot();
+  sync_scene(&mut scene, &updated);
+
+  let updated_inventory = keyed_inventory_items(&mut scene);
+  assert_eq!(inventory_data(&mut scene), transferred_inventory_data());
+  for item_id in [ItemId::new(4), ItemId::new(5), ItemId::new(6)] {
+    assert_eq!(updated_inventory[&item_id].0, before_inventory[&item_id].0);
+  }
+  assert_eq!(keyed_tiles(&mut scene), before_tiles);
+  assert_eq!(keyed_actors(&mut scene), before_actors);
+  assert_eq!(keyed_ground_items(&mut scene), before_ground);
+
+  let reduced = PresentationState::new(7, ground_world()).snapshot();
+  sync_scene(&mut scene, &reduced);
+  assert_eq!(scene.query::<&SceneInventoryItem>().iter(&scene).count(), 0);
+  for (entity, _, _, _) in before_inventory.values() {
+    assert!(scene.get_entity(*entity).is_err());
+  }
+  assert_eq!(keyed_tiles(&mut scene), before_tiles);
+  assert_eq!(keyed_actors(&mut scene), before_actors);
+  assert_eq!(keyed_ground_items(&mut scene), before_ground);
+}
+
+#[test]
+fn sync_deduplicates_inventory_items_by_deterministic_lowest_entity() {
+  let snapshot = PresentationState::new(7, inventory_world()).snapshot();
+  let mut scene = World::new();
+  sync_scene(&mut scene, &snapshot);
+  let (original_entity, duplicate_item) = scene
+    .query::<(bevy::ecs::entity::Entity, &SceneInventoryItem)>()
+    .iter(&scene)
+    .find(|(_, item)| item.id() == ItemId::new(4))
+    .map(|(entity, item)| (entity, *item))
+    .expect("inventory item should exist");
+  let duplicate_entity = scene.spawn(duplicate_item).id();
+
+  assert_eq!(scene.query::<&SceneInventoryItem>().iter(&scene).count(), 4);
+  sync_scene(&mut scene, &snapshot);
+
+  let inventory_items = keyed_inventory_items(&mut scene);
+  let expected_survivor = std::cmp::min(original_entity, duplicate_entity);
+  let expected_stale = std::cmp::max(original_entity, duplicate_entity);
+  assert_eq!(inventory_items[&ItemId::new(4)].0, expected_survivor);
+  assert!(scene.get_entity(expected_stale).is_err());
+  assert_eq!(
+    (
+      inventory_items[&ItemId::new(4)].1,
+      inventory_items[&ItemId::new(4)].2,
+      inventory_items[&ItemId::new(4)].3,
+    ),
+    (ActorId::new(1), ItemDefinitionId::new(104), 0)
+  );
+  assert_eq!(inventory_items.len(), 3);
 }
 
 #[test]

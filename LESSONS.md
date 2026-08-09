@@ -140,10 +140,11 @@ Update an existing lesson instead of adding a duplicate.
 - Resolution: Keep stacks in core, order positions row-major and items by append order, validate
   ownership before both mutations, remove empty stacks, include ground items in the world digest, and
   project them read-only through protocol/MCP without player replay/history. For the headless Bevy
-  mirror, snapshot the complete stacks before ECS mutation, key scene entities by globally unique
-  `ItemId`, preserve typed definition/position data, and remove stale items before updating retained
-  identities.
+  mirror, snapshot complete stacks and actor inventories before ECS mutation, key scene entities by
+  globally unique `ItemId`, preserve typed definition/position/owner/order data, update retained
+  identities after core-authoritative transfers, and remove stale items before spawning new keys.
 - Prevention: Test source/stack order, round-trip item data, empty-stack cleanup, row-major
   projection, duplicate give-after-drop, dead-source behavior, typed ground misses, accepted/rejected
   tester replay invariants, complete Bevy item data, retained scene identities, duplicate cleanup,
-  and picked-up stale removal alongside tile/actor projections.
+  picked-up stale removal, inventory owner/order updates, and inventory stale removal alongside
+  complete tile/actor/ground projections.

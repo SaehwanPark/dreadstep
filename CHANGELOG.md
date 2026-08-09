@@ -85,6 +85,8 @@ All notable contributor- and user-visible project changes are recorded here.
   inventories, and projects typed ground-miss errors without player replay/history effects.
 - A deterministic headless Bevy ground-item scene projection that preserves complete typed item
   data, stable item-identity entities, stack order, and stale cleanup without rendering policy.
+- A deterministic headless Bevy inventory-item scene projection that preserves global item identity,
+  owner/order updates, and stale cleanup without adding inventory gameplay or HUD policy.
 
 ### Changed
 

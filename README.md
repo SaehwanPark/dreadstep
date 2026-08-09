@@ -31,6 +31,8 @@ and marker visuals remain deferred. The deterministic content-owned opaque item-
 and tester-only deterministic item transfer, item drop, and item pickup are now verified.
 Ground-item projection through protocol/MCP is stable and tester-only; the headless Bevy
 `SceneGroundItem` projection is verified. Player pickup and item gameplay semantics remain deferred.
+The headless `SceneInventoryItem` projection is verified; inventory ownership and gameplay semantics
+remain core/tester-only.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

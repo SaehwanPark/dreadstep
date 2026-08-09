@@ -215,6 +215,12 @@ stack index; `sync_scene` keys those entities by globally unique `ItemId` and re
 items. Bevy does not own item data, effects, or pickup/drop rules, and this projection adds no
 rendering or camera policy.
 
+The inventory-item scene-projection slice mirrors core-owned actor inventories through the
+same boundary. `SceneInventoryItem` carries only global item identity, owner actor, opaque definition
+reference, and insertion order; `sync_scene` updates retained item entities after core-authoritative
+owner/order changes and removes stale records. Bevy does not own inventory or item gameplay rules,
+and no HUD or rendering policy is introduced.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.
