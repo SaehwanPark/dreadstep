@@ -2343,6 +2343,50 @@ Out of scope:
   transforms, audio playback, animation, gameplay rules, persistence, transport, dependencies, and
   committed media binaries.
 
+### Milestone 3 slice: validated local-only presentation asset manifest
+
+- Status: verified
+- Started: 2026-08-10
+- Completed: 2026-08-10
+
+Define a metadata-only asset boundary for the verified placeholder render nodes. The manifest uses
+validated paths rooted in ignored root or crate-local media directories, covers every typed
+placeholder family exactly once, and joins references to the ordered node projection without
+reading files or creating Bevy asset handles. Pixel-art and audio binaries remain local-only and
+ignored by Git; tracked provenance and licensing records remain outside ignored media directories.
+
+Acceptance:
+
+- `PresentationAssetReference` accepts non-empty paths rooted in the repository's root or
+  crate-local `assets/`, `art/`, or `audio/` directories and rejects traversal, empty segments,
+  absolute paths, platform prefixes, backslashes, and NUL bytes without filesystem I/O.
+- `PresentationAssetManifest` requires exactly one reference for each terrain, player, enemy,
+  dead-actor, ground-item, and inventory-item placeholder family.
+- `PresentationRenderAssetProjection` joins every ordered `SceneRenderNodeEntry` to its typed
+  reference while retaining node identity, command metadata, and inventory-unplaced semantics.
+- Manifest refresh changes only references; missing runtime, node projection, manifest, or
+  destination resources preserve the prior asset projection as a safe no-op.
+- No asset handles, file loading, render/audio plugins, transforms, windows, gameplay rules,
+  dependencies, or committed media binaries are introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test presentation_asset_manifest --locked` passes all
+  five tests covering complete joins, path/manifest validation, identity-preserving refresh,
+  living-to-dead family replacement, and independent missing-resource guards.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally; anchored media ignore checks keep local binaries ignored
+  while the tracked concept-art and future screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 2 at `a374aab` (initial implementation
+  `a99b294`, boundary correction `e6e9fe8`); Linux, Apple Silicon macOS, and Windows CI are green
+  on PR #69. This docs-only closeout is reviewed separately.
+
+Out of scope:
+
+- Production Sprite components, texture handles, file loading, render/audio plugins, OS windows,
+  transforms, playback, animation, gameplay rules, persistence, transport, dependencies, and
+  committed media binaries.
+
 ## Present
 
 ### Deferred item gameplay semantics

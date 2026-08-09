@@ -1751,6 +1751,10 @@ Current exploratory gate (2026-08-09):
 - The verified placeholder ECS render-node boundary reconciles stable nodes from those commands,
   preserving deterministic identity while keeping actual Sprite components, render plugins, windows,
   texture loading, animation, audio, and media deferred to a later renderer slice.
+- The verified local-only asset-manifest boundary validates one anchored reference for each typed
+  placeholder family and joins those references to stable node metadata without filesystem reads,
+  asset handles, or committed pixel-art/audio binaries. Provenance remains in tracked documents;
+  production loading and rendering remain a later slice.
 
 ### Content
 

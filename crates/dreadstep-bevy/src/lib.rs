@@ -1002,6 +1002,118 @@ pub enum SceneRenderPlaceholder {
   InventoryItem,
 }
 
+/// A validated relative path to a local-only presentation asset.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PresentationAssetReference {
+  path: String,
+}
+
+impl PresentationAssetReference {
+  /// Creates a non-empty path rooted in an ignored local-media directory, without traversal or
+  /// platform prefixes.
+  #[must_use]
+  pub fn new(path: impl Into<String>) -> Option<Self> {
+    let path = path.into();
+    if path.is_empty()
+      || path.contains('\\')
+      || path.contains('\0')
+      || path.starts_with('/')
+      || path.starts_with(':')
+      || path
+        .split('/')
+        .any(|segment| segment.is_empty() || segment == ".." || segment == ".")
+      || path.split_once(':').is_some()
+      || (!path.starts_with("assets/")
+        && !path.starts_with("art/")
+        && !path.starts_with("audio/")
+        && !is_crate_local_media_path(&path))
+    {
+      return None;
+    }
+    Some(Self { path })
+  }
+
+  /// Returns the validated relative path without reading or loading it.
+  #[must_use]
+  pub fn path(&self) -> &str {
+    &self.path
+  }
+}
+
+/// A deterministic complete mapping from typed placeholder families to local asset references.
+#[derive(Clone, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationAssetManifest {
+  bindings: Vec<(SceneRenderPlaceholder, PresentationAssetReference)>,
+}
+
+impl PresentationAssetManifest {
+  /// Creates a complete six-family manifest, rejecting duplicates or missing families.
+  #[must_use]
+  pub fn new(bindings: Vec<(SceneRenderPlaceholder, PresentationAssetReference)>) -> Option<Self> {
+    if bindings.len() != 6 {
+      return None;
+    }
+    let mut seen = [false; 6];
+    for (family, _) in &bindings {
+      let slot = family.index();
+      if seen[slot] {
+        return None;
+      }
+      seen[slot] = true;
+    }
+    Some(Self { bindings })
+  }
+
+  /// Returns bindings in authored deterministic order.
+  #[must_use]
+  pub fn bindings(&self) -> &[(SceneRenderPlaceholder, PresentationAssetReference)] {
+    &self.bindings
+  }
+
+  /// Returns the local-only reference for one placeholder family.
+  ///
+  /// # Panics
+  ///
+  /// Panics only if the private complete-manifest invariant has been violated. Every manifest
+  /// constructed through [`Self::new`] contains all six families, so valid callers cannot trigger
+  /// this panic.
+  #[must_use]
+  pub fn reference(&self, family: SceneRenderPlaceholder) -> &PresentationAssetReference {
+    self
+      .bindings
+      .iter()
+      .find(|(candidate, _)| *candidate == family)
+      .map(|(_, reference)| reference)
+      .expect("validated asset manifests contain every placeholder family")
+  }
+}
+
+fn is_crate_local_media_path(path: &str) -> bool {
+  let Some(crate_relative) = path.strip_prefix("crates/") else {
+    return false;
+  };
+  let mut segments = crate_relative.split('/');
+  let crate_name = segments.next();
+  let media_directory = segments.next();
+  let asset_path = segments.next();
+  crate_name.is_some()
+    && matches!(media_directory, Some("assets" | "art" | "audio"))
+    && asset_path.is_some()
+}
+
+impl SceneRenderPlaceholder {
+  const fn index(self) -> usize {
+    match self {
+      Self::Terrain => 0,
+      Self::Player => 1,
+      Self::Enemy => 2,
+      Self::DeadActor => 3,
+      Self::GroundItem => 4,
+      Self::InventoryItem => 5,
+    }
+  }
+}
+
 impl SceneRenderPlaceholder {
   fn from_key(key: SceneSpriteKey) -> Self {
     match key {
@@ -1115,6 +1227,49 @@ impl PresentationRenderNodeProjection {
   /// Returns placeholder nodes in layer/source-order command order.
   #[must_use]
   pub fn entries(&self) -> &[SceneRenderNodeEntry] {
+    &self.entries
+  }
+}
+
+/// One render-node entry joined with its validated local-only asset reference.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SceneRenderAssetEntry {
+  node: SceneRenderNodeEntry,
+  reference: PresentationAssetReference,
+}
+
+impl SceneRenderAssetEntry {
+  /// Returns the reconciled placeholder node.
+  #[must_use]
+  pub const fn node(&self) -> SceneRenderNodeEntry {
+    self.node
+  }
+
+  /// Returns the validated local-only reference for this node's placeholder family.
+  #[must_use]
+  pub fn reference(&self) -> &PresentationAssetReference {
+    &self.reference
+  }
+}
+
+/// An ordered, read-only projection joining placeholder nodes to local-only asset metadata.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationRenderAssetProjection {
+  entries: Vec<SceneRenderAssetEntry>,
+}
+
+impl PresentationRenderAssetProjection {
+  /// Creates an empty asset-reference projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      entries: Vec::new(),
+    }
+  }
+
+  /// Returns joined entries in node order without loading any referenced file.
+  #[must_use]
+  pub fn entries(&self) -> &[SceneRenderAssetEntry] {
     &self.entries
   }
 }
@@ -1722,6 +1877,7 @@ fn update_presentation(world: &mut World) {
   sync_sprite_projection(world);
   sync_render_command_plan(world);
   sync_render_nodes(world);
+  sync_render_asset_projection(world);
   sync_focus(world);
   sync_scene_focus(world);
   sync_camera(world);
@@ -1963,6 +2119,33 @@ fn sync_render_nodes(world: &mut World) {
   world
     .resource_mut::<PresentationRenderNodeProjection>()
     .entries = entries;
+}
+
+fn sync_render_asset_projection(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world
+      .get_resource::<PresentationRenderNodeProjection>()
+      .is_none()
+    || world.get_resource::<PresentationAssetManifest>().is_none()
+  {
+    return;
+  }
+  let nodes = world
+    .resource::<PresentationRenderNodeProjection>()
+    .entries()
+    .to_vec();
+  let manifest = world.resource::<PresentationAssetManifest>();
+  let entries = nodes
+    .into_iter()
+    .map(|node| SceneRenderAssetEntry {
+      reference: manifest.reference(node.node().placeholder()).clone(),
+      node,
+    })
+    .collect::<Vec<_>>();
+  let Some(mut projection) = world.get_resource_mut::<PresentationRenderAssetProjection>() else {
+    return;
+  };
+  projection.entries = entries;
 }
 
 fn render_entries(
