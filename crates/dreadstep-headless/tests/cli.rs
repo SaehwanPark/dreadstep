@@ -1,0 +1,46 @@
+//! Subprocess smoke tests for the headless developer CLI.
+
+use std::process::{Command, Output};
+
+fn run_binary(commands: &str) -> Output {
+  let binary = std::env::var("CARGO_BIN_EXE_dreadstep-headless")
+    .expect("Cargo should provide the headless binary path");
+  Command::new(binary)
+    .args(["--seed", "7", "--commands", commands])
+    .output()
+    .expect("headless binary should launch")
+}
+
+#[test]
+fn binary_smoke_test_runs_a_valid_scenario() {
+  let output = run_binary("attack:1:2,wait:2");
+
+  assert!(output.status.success());
+  let stdout = String::from_utf8(output.stdout).expect("CLI output should be UTF-8");
+  assert!(stdout.contains("seed=7"));
+  assert!(stdout.contains("digest="));
+}
+
+#[test]
+fn binary_reports_malformed_input_with_structured_process_error() {
+  let output = run_binary("bad");
+
+  assert_eq!(output.status.code(), Some(2));
+  assert!(output.stdout.is_empty());
+  assert_eq!(
+    String::from_utf8(output.stderr).expect("CLI errors should be UTF-8"),
+    "error: invalid command token bad\n"
+  );
+}
+
+#[test]
+fn binary_reports_core_rejection_with_structured_process_error() {
+  let output = run_binary("move:2:east");
+
+  assert_eq!(output.status.code(), Some(2));
+  assert!(output.stdout.is_empty());
+  assert_eq!(
+    String::from_utf8(output.stderr).expect("CLI errors should be UTF-8"),
+    "error: command 0 rejected: actor 2 is not scheduled; actor 1 must act next\n"
+  );
+}

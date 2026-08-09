@@ -11,8 +11,10 @@ translate semantic events into presentation, files, telemetry, or transport resp
 
 Milestone 1 now exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
 actors, movement, melee, and chase commands, semantic movement/blocking/combat/death events,
-an integer ready-time scheduler, and core-owned replay traces/state digests. The API is still
-headless and does not provide a runnable application.
+an integer ready-time scheduler, and core-owned replay traces/state digests. The
+`dreadstep-headless` adapter now provides a fixed-scenario developer CLI that translates text
+arguments into those core commands; it owns parsing and stdout only. No graphical client or
+MCP server is provided yet.
 
 ## Package Ownership
 
@@ -64,6 +66,10 @@ actor records remain inspectable but are removed from scheduling and movement oc
 stable state digest uses an explicit deterministic byte order and does not use a
 process-randomized standard hasher. No wall-clock time or process-global randomness
 participates in these transitions.
+
+The headless CLI must not duplicate movement, combat, chase, scheduling, or digest logic. Its
+fixed scenario is test data at the adapter boundary; every outcome still comes from
+`dreadstep-core::WorldState::execute`.
 
 ## Constraints
 

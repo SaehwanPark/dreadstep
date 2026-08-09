@@ -13,10 +13,10 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is implementing Milestone 1: the rules kernel. The active slice adds core-owned
-replay traces and stable state digests to the deterministic health, melee, death, grid,
-blocking, scheduling, and enemy-chase API in `dreadstep-core`; there is still no playable
-graphical client, MCP server, or replay CLI.
+Dreadstep is implementing Milestone 1: the rules kernel. The active slice adds a minimal
+deterministic `dreadstep-headless` CLI over the core-owned replay traces and stable state
+digests; there is still no graphical client, MCP server, interactive input, or authored
+scenario system.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
@@ -66,6 +66,12 @@ Run the complete local verification suite:
 
 ```sh
 scripts/verify.sh
+```
+
+Run the developer scenario directly after building the headless package:
+
+```sh
+cargo run -p dreadstep-headless -- --seed 7 --commands 'move:1:east,wait:2'
 ```
 
 The first build downloads and checks Bevy's minimal dependency set and can take longer than
