@@ -1,9 +1,28 @@
 /target
 /_workspace
 
-# Presentation media is kept locally and synchronized through external asset storage. Keep
-# source, creator, license, attribution, and modification records in tracked documentation.
-assets/
-art/
-audio/
-/dreadstep-concept-art.png
+# Presentation art and audio binaries are kept locally and synchronized through external asset
+# storage. Keep source, creator, license, attribution, and modification records in tracked docs.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tga
+*.ase
+*.aseprite
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.m4a
+*.aac
+*.opus
+*.mid
+*.midi
+
+# The concept-art reference and future README screenshots are intentional tracked exceptions.
+!/dreadstep-concept-art.png
+!/screenshots/
+!/screenshots/**
