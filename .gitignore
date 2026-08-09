@@ -1,2 +1,9 @@
 /target
 /_workspace
+
+# Presentation media is kept locally and synchronized through external asset storage. Keep
+# source, creator, license, attribution, and modification records in tracked documentation.
+assets/
+art/
+audio/
+/dreadstep-concept-art.png

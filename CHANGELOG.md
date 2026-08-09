@@ -104,5 +104,7 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Changed
 
+- Presentation art and audio binaries are now explicitly local-only under ignored asset
+  directories, with tracked licensing and attribution records kept in project documentation.
 - Replaced the root Bevy starter binary with package shells for Milestone 0.
 - Limited Bevy to the presentation package and its minimal standard-library feature set.

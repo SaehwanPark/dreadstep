@@ -1,8 +1,6 @@
 # Dreadstep
 
-![Concept Art](./dreadstep-concept-art.png)
-
-_Concept art only—not a screenshot of the current game. It illustrates an aspirational direction and is subject to change._
+_Optional concept art is kept as a local-only asset; it is not distributed through this repository._
 
 > Every step is a decision.
 
@@ -47,6 +45,15 @@ item-run startup path that projects that fixture's typed inventory items headles
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
 work lives in [`SPEC.md`](SPEC.md).
+
+## Local Presentation Assets
+
+Pixel-art and audio binaries are intentionally excluded from GitHub. Keep local copies under
+`assets/`, `art/`, or `audio/` (including crate-local directories); the repository ignore rules
+keep those files available in a working tree without allowing accidental commits. Store or sync
+the files manually through the project’s external asset service. Keep source, creator, license,
+attribution, and modification records in tracked documentation such as [`CREDITS.md`](CREDITS.md)
+and the proposal; do not commit service credentials.
 
 ## Design Principles
 

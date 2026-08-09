@@ -756,10 +756,12 @@ Later MCP agents can test higher-order questions that graph validation cannot an
 
 # 15. Visual Direction
 
-![Aspirational Dreadstep concept art](../dreadstep-concept-art.png)
+> **Local-only concept art:** the optional reference image is kept outside GitHub with the
+> project’s presentation assets. It is an aspirational visual reference, not a required or
+> distributed project artifact.
 
-> **Concept-art note:** This image is an aspirational visual reference, not a screenshot of
-> the current game, an implemented feature set, or a final asset direction. It is subject to
+> **Concept-art note:** The local reference is an aspirational visual reference, not a screenshot
+> of the current game, an implemented feature set, or a final asset direction. It is subject to
 > change.
 
 Presentation should reference the readability of JHC rather than imitate it directly.

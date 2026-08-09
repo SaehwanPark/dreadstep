@@ -49,6 +49,14 @@ For behavior changes:
 Do not create artificial tests for empty scaffolding. Tests should specify behavior or a
 real structural invariant.
 
+## Presentation Assets
+
+Pixel-art and audio binaries are local-only project inputs. Put them in `assets/`, `art/`, or
+`audio/` (including a crate-local directory); `.gitignore` excludes those paths so contributors
+can keep and use the files without publishing them to GitHub. Synchronize the binaries manually
+through the project’s external asset service. Record each asset’s source, creator, license,
+attribution, and modifications in tracked documentation, and never commit credentials.
+
 ## Code and Documentation Style
 
 - Use spaces only. Indentation and tab display width are both 2 throughout human-authored
