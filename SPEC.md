@@ -2663,6 +2663,41 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: centered ECS Sprite transforms
+
+- Status: active
+- Started: 2026-08-09
+
+Choose the first explicit transform placement policy by centering map-backed Sprite nodes inside
+their caller-selected tile rectangles. The checked integer `ScenePixelPosition` remains the source
+origin; ECS `Transform` receives `(pixel_x + tile_width/2, pixel_y + tile_height/2, layer_depth)`.
+Inventory remains default/unplaced and anchor/camera/visibility policy stays separate.
+
+Acceptance:
+
+- Terrain, ground-item, and living/dead-actor nodes receive centered x/y values using independent
+  tile width and height halves while preserving their existing deterministic layer depth. The
+  integer `ScenePixelPosition` projection remains unchanged; inventory receives no center.
+- Rectangular and odd tile sizes use deterministic f32 half extents. Fresh missing tile size leaves
+  map nodes default/unplaced; later removal preserves previously checked centered transforms.
+- Accepted movement/dead refreshes preserve node identity and update centered values; stale removal
+  and co-located mirrors preserve complete centered transforms and layer order.
+- Missing runtime, node/projection resources, and node entities are independent safe no-ops that
+  preserve existing components and authority. No camera, visibility, window, render plugin/backend,
+  asset/audio, animation, gameplay, persistence, transport, or committed media behavior is added.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_centering --locked` proves
+  rectangular/odd centering, origin preservation, refresh/stale/co-location, runtime/resource
+  guards, and authority; the existing 9/9 component suite retains the missing-node-entity guard.
+
+Out of scope:
+
+- Anchor policy beyond centering, cameras, visibility/fog, windows, render plugins/backends, texture
+  or production asset loading, audio playback, animation, gameplay rules, persistence, transport,
+  and committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

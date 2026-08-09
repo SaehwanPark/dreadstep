@@ -1776,6 +1776,9 @@ Current exploratory gate (2026-08-09):
 - The verified ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values
   from typed render layer while preserving checked x/y placement and inventory default state;
   centering, cameras, visibility, rendering, playback, and production media remain deferred.
+- The active centered ECS Sprite-transform boundary adds half the caller-selected tile width/height
+  to checked map origins while preserving layer depth and inventory default state; anchor variants,
+  cameras, visibility, rendering, playback, and production media remain deferred.
 
 ### Content
 

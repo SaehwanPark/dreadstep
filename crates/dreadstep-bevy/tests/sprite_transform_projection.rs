@@ -408,8 +408,8 @@ fn plugin_attaches_transform_without_sprite_projection() {
         assert_eq!(
           *actual,
           Transform::from_xyz(
-            position.x() as f32,
-            position.y() as f32,
+            position.x() as f32 + 16.0,
+            position.y() as f32 + 16.0,
             actual.translation.z
           )
         );

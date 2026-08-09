@@ -2510,6 +2510,7 @@ fn sync_sprite_transform_components(world: &mut World) {
   {
     return;
   }
+  let tile_size = world.get_resource::<PresentationTileSize>().copied();
   let entries = world
     .resource::<PresentationBevySpriteTransformProjection>()
     .entries()
@@ -2518,25 +2519,38 @@ fn sync_sprite_transform_components(world: &mut World) {
     let Ok(mut entity) = world.get_entity_mut(entry.node().node_entity()) else {
       continue;
     };
-    entity.insert(
-      entry
-        .translation()
-        .map_or_else(Transform::default, |position| {
-          transform_from_pixel_position(position, entry.node().node().layer())
-        }),
-    );
+    let Some(position) = entry.translation() else {
+      entity.insert(Transform::default());
+      continue;
+    };
+    let Some(tile_size) = tile_size else {
+      // A later tile-size removal retains the last checked ECS placement. Fresh unplaced entries
+      // have no translation and take the default path above.
+      continue;
+    };
+    entity.insert(transform_from_pixel_position(
+      position,
+      entry.node().node().layer(),
+      tile_size,
+    ));
   }
 }
 
 fn transform_from_pixel_position(
   position: ScenePixelPosition,
   layer: SceneRenderLayer,
+  tile_size: PresentationTileSize,
 ) -> Transform {
   // Bevy's Transform API stores f32 values; the checked integer pixel origin remains available in
-  // ScenePixelPosition and this is the deliberate adapter conversion at the ECS boundary.
+  // ScenePixelPosition and the half-extents are a deliberate adapter conversion at the ECS
+  // boundary. Odd dimensions intentionally produce deterministic half-pixel centers.
   #[allow(clippy::cast_precision_loss)]
   {
-    Transform::from_xyz(position.x() as f32, position.y() as f32, layer_depth(layer))
+    Transform::from_xyz(
+      position.x() as f32 + tile_size.width() as f32 / 2.0,
+      position.y() as f32 + tile_size.height() as f32 / 2.0,
+      layer_depth(layer),
+    )
   }
 }
 

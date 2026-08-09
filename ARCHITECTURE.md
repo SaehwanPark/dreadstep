@@ -332,6 +332,11 @@ terrain `0.0`, ground items `1.0`, actors `2.0`, and inventory default/unplaced 
 the existing checked x/y values, source/order/identity semantics, and authority guards without adding
 centering, cameras, visibility, render plugins, windows, or production media.
 
+The active centered ECS Sprite-transform boundary adds only the placement offset from the caller's
+tile size: map-backed nodes use checked origin plus half-width/half-height, while inventory remains
+default/unplaced. Anchor variants, cameras, visibility, render plugins, windows, and production media
+remain deferred.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does

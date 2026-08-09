@@ -57,9 +57,13 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - The presentation boundary derives terrain/ground/actor z-layer values from the existing typed
     render layer while preserving checked x/y placement and inventory default state; centering,
     anchors, cameras, visibility, rendering, and production media remain deferred.
+- Active centered ECS Sprite transforms
+  - This placement boundary centers map-backed nodes inside caller-selected tile rectangles while
+    preserving checked origins, layer depth, and inventory default state; anchors, cameras, visibility,
+    rendering, and production media remain deferred.
 - Still deferred
-  - Windowing, Sprite/render plugins, production textures/assets, centering/anchor policy and
-    cameras, animation playback, HUD widgets, event/combat message presentation, audio assets/
+  - Windowing, Sprite/render plugins, production textures/assets, anchor policy and cameras,
+    animation playback, HUD widgets, event/combat message presentation, audio assets/
     playback, fog of war, multiple floors, and richer gameplay item semantics such as effects,
     modifiers, capacity, and additional slots.
 

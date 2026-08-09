@@ -1,4 +1,4 @@
-//! Contract tests for ECS attachment of checked Sprite-transform translations.
+//! Contract tests for ECS attachment of centered Sprite-transform placements.
 
 use bevy::app::App;
 use bevy::math::Vec3;
@@ -125,9 +125,13 @@ fn transform(entry: dreadstep_bevy::SceneBevySpriteTransformEntry) -> Option<Vec
     | SceneRenderPlaceholder::DeadActor => 2.0,
     SceneRenderPlaceholder::Terrain | SceneRenderPlaceholder::InventoryItem => 0.0,
   };
-  entry
-    .translation()
-    .map(|position| Vec3::new(position.x() as f32, position.y() as f32, depth))
+  entry.translation().map(|position| {
+    Vec3::new(
+      position.x() as f32 + 16.0,
+      position.y() as f32 + 16.0,
+      depth,
+    )
+  })
 }
 
 fn node_transform(app: &App, entity: bevy::ecs::entity::Entity) -> Option<Transform> {
@@ -204,11 +208,11 @@ fn attaches_nonzero_y_transform_in_logical_pixels() {
     .expect("nonzero-y actor node should exist");
   assert_eq!(
     node_transform(&app, tile_node.node_entity()),
-    Some(Transform::from_xyz(0.0, 24.0, 0.0))
+    Some(Transform::from_xyz(16.0, 36.0, 0.0))
   );
   assert_eq!(
     node_transform(&app, actor_node.node_entity()),
-    Some(Transform::from_xyz(32.0, 24.0, 2.0))
+    Some(Transform::from_xyz(48.0, 36.0, 2.0))
   );
 }
 
@@ -287,7 +291,7 @@ fn refreshes_same_node_transform_on_dead_and_accepted_movement() {
     .expect("moving actor transform entry should exist");
   assert_eq!(
     node_transform(&app, before.node().node_entity()),
-    Some(Transform::from_xyz(64.0, 0.0, 2.0))
+    Some(Transform::from_xyz(80.0, 16.0, 2.0))
   );
   app
     .world_mut()
@@ -312,7 +316,7 @@ fn refreshes_same_node_transform_on_dead_and_accepted_movement() {
   assert_eq!(dead.node().node_entity(), dead_before.node().node_entity());
   assert_eq!(
     node_transform(&app, dead.node().node_entity()),
-    Some(Transform::from_xyz(32.0, 0.0, 2.0))
+    Some(Transform::from_xyz(48.0, 16.0, 2.0))
   );
   app
     .world_mut()
@@ -337,7 +341,7 @@ fn refreshes_same_node_transform_on_dead_and_accepted_movement() {
   assert_eq!(moved.node().node_entity(), before.node().node_entity());
   assert_eq!(
     node_transform(&app, moved.node().node_entity()),
-    Some(Transform::from_xyz(32.0, 0.0, 2.0))
+    Some(Transform::from_xyz(48.0, 16.0, 2.0))
   );
 }
 
@@ -493,7 +497,7 @@ fn colocated_nodes_receive_independent_transform_components() {
     };
     assert_eq!(
       node_transform(&app, entry.node().node_entity()),
-      Some(Transform::from_xyz(64.0, 0.0, expected_z))
+      Some(Transform::from_xyz(80.0, 16.0, expected_z))
     );
   }
 }
