@@ -25,13 +25,16 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   feedback evidence, focus, scene focus, camera, viewport, tile/actor, ground-item, and
   inventory-item projections, typed `PresentationHud` actor status, and ordered typed
   `PresentationMessages` for every current core event.
+- Active headless audio placeholder: typed `PresentationAudioCues` preserves current event order
+  without loading assets, enabling playback, or adding an audio backend.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.
 - Next presentation work: rendered scene metadata and window/rendering boundaries before widgets or
   text policy.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
-  message presentation, audio, fog of war, multiple floors, and gameplay-facing item effects.
+  message presentation, audio assets/playback, fog of war, multiple floors, and gameplay-facing
+  item effects.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

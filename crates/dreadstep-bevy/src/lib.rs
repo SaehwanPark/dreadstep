@@ -345,6 +345,74 @@ impl PresentationMessages {
   }
 }
 
+/// A typed placeholder cue derived from one core semantic event.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PresentationAudioCue {
+  /// An actor entered a new map position.
+  Moved {
+    /// The actor that moved.
+    actor: ActorId,
+  },
+  /// An actor attempted movement but remained in place.
+  MovementBlocked {
+    /// The actor that attempted movement.
+    actor: ActorId,
+    /// Why the destination could not be entered.
+    reason: BlockReason,
+  },
+  /// An actor spent a standard action without moving.
+  Waited {
+    /// The actor that waited.
+    actor: ActorId,
+  },
+  /// A melee attack reduced a target's hit points.
+  Attacked {
+    /// The actor that attacked.
+    attacker: ActorId,
+    /// The actor that was hit.
+    target: ActorId,
+  },
+  /// An actor reached zero hit points.
+  Died {
+    /// The actor that died.
+    actor: ActorId,
+  },
+}
+
+impl PresentationAudioCue {
+  fn from_event(event: Event) -> Self {
+    match event {
+      Event::Moved { actor, .. } => Self::Moved { actor },
+      Event::MovementBlocked { actor, reason, .. } => Self::MovementBlocked { actor, reason },
+      Event::Waited { actor, .. } => Self::Waited { actor },
+      Event::Attacked {
+        attacker, target, ..
+      } => Self::Attacked { attacker, target },
+      Event::Died { actor } => Self::Died { actor },
+    }
+  }
+}
+
+/// A disposable ordered buffer of typed audio placeholders derived from the latest runtime output.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationAudioCues {
+  cues: Vec<PresentationAudioCue>,
+}
+
+impl PresentationAudioCues {
+  /// Creates an empty audio-cue projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self { cues: Vec::new() }
+  }
+
+  /// Returns cues in the core event order of the latest runtime output.
+  #[must_use]
+  pub fn cues(&self) -> &[PresentationAudioCue] {
+    &self.cues
+  }
+}
+
 /// A disposable ECS mirror of one projected map tile.
 #[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SceneTile {
@@ -893,6 +961,7 @@ fn update_presentation(world: &mut World) {
   sync_scene_viewport(world);
   sync_hud(world);
   sync_messages(world);
+  sync_audio_cues(world);
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
@@ -1244,6 +1313,28 @@ fn sync_messages(world: &mut World) {
     return;
   };
   messages.messages = projected;
+}
+
+fn sync_audio_cues(world: &mut World) {
+  let Some(projected) = world.get_resource::<PresentationRuntime>().map(|runtime| {
+    runtime
+      .output()
+      .map(|output| {
+        output
+          .events()
+          .iter()
+          .copied()
+          .map(PresentationAudioCue::from_event)
+          .collect()
+      })
+      .unwrap_or_default()
+  }) else {
+    return;
+  };
+  let Some(mut cues) = world.get_resource_mut::<PresentationAudioCues>() else {
+    return;
+  };
+  cues.cues = projected;
 }
 
 fn tile_key(position: dreadstep_core::Position) -> (i32, i32) {
