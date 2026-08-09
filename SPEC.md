@@ -943,6 +943,48 @@ Out of scope:
 - replay files, playback, tester mutations over MCP, alternate transports, hidden information,
   interactive input, map editing, and gameplay item semantics.
 
+### Milestone 3 slice: deterministic Bevy presentation bridge
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Establish the first human-client boundary without making Bevy presentation state authoritative.
+`dreadstep-bevy` will project the core map and actor records into a stable, read-only
+`PresentationSnapshot`, translate keyboard intent into canonical core commands for an explicitly
+selected actor, and execute those commands through `WorldState`. The bridge remains usable in
+headless tests, so adding Bevy windowing or desktop platform features is not required for this
+slice.
+
+Acceptance:
+
+- `GridMap` exposes its validated row-major tiles through an immutable accessor; callers cannot
+  mutate core map storage.
+- `dreadstep-bevy` exposes a typed `PresentationState` that owns a core `WorldState` and explicit
+  replay trace, returns deterministic map/actor/time/digest projections, and reports core events
+  after accepted commands.
+- Keyboard intent maps only the supported cardinal movement and wait keys to canonical
+  `dreadstep_core::Command` values for a caller-supplied actor identity; unmapped keys produce no
+  command and never mutate state.
+- Accepted presentation commands delegate to core scheduling and validation; rejected commands
+  leave the bridge world and replay trace unchanged.
+- The bridge remains independent of MCP, filesystem, wall-clock time, host randomness, and
+  desktop window/audio features.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-core -p dreadstep-bevy --all-targets --all-features --locked`
+  covers immutable map projection, deterministic presentation snapshots, keyboard mapping,
+  accepted execution, and rejection atomicity.
+- Focused Clippy for the changed crates and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Bevy window creation, desktop platform backends, rendering assets, sprites, animations, camera,
+  HUD, combat messages, audio, fog of war, content catalogs, and new gameplay rules.
+
 ## Future
 
 ### Deferred item gameplay semantics

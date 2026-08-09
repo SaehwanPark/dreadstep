@@ -17,12 +17,11 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is continuing Milestone 2: the agent interface. The latest completed slice adds
-read-only replay evidence to the local MCP stdio server; accepted history, actor inspection,
-legal-action discovery, typed player actions, minimal observation, and the validated tester
-operations remain available. Item effects, equipment, capacity, and gameplay-facing item
-commands are still deferred, as are broader MCP tools, the graphical client, and interactive
-input.
+Dreadstep has begun Milestone 3: the human presentation boundary. The latest completed slice adds
+a deterministic, headless-testable Bevy presentation bridge with immutable map/actor snapshots
+and keyboard-to-core command translation; the completed Milestone 2 MCP observation, action,
+history, replay, and tester operations remain available. Windowing, rendering assets, animation,
+HUD, audio, fog of war, and gameplay-facing item effects remain deferred.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

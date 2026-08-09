@@ -11,7 +11,7 @@ repository = "https://github.com/SaehwanPark/dreadstep"
 publish = false
 
 [workspace.dependencies]
-bevy = { version = "=0.19.0", default-features = false, features = ["std"] }
+bevy = { version = "=0.19.0", default-features = false, features = ["keyboard", "std"] }
 dreadstep-bevy = { path = "crates/dreadstep-bevy" }
 dreadstep-content = { path = "crates/dreadstep-content" }
 dreadstep-core = { path = "crates/dreadstep-core" }

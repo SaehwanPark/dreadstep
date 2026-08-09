@@ -278,6 +278,15 @@ impl GridMap {
     self.height
   }
 
+  /// Returns the validated terrain tiles in row-major order.
+  ///
+  /// The returned slice is immutable, so presentation and content adapters can inspect map
+  /// terrain without bypassing the map's construction invariants or mutating core state.
+  #[must_use]
+  pub fn tiles(&self) -> &[Tile] {
+    &self.tiles
+  }
+
   /// Returns whether a position is inside the map bounds.
   #[must_use]
   pub fn in_bounds(&self, position: Position) -> bool {
