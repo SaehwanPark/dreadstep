@@ -1304,6 +1304,41 @@ The opaque ownership slice and content catalog foundation intentionally do not d
 equipment, identification, capacity, transfer, or gameplay-facing item commands. Those contracts
 must be specified in core before adding richer tester or player operations.
 
+### Milestone 4 slice: deterministic tester item transfer
+
+- Status: active
+- Started: 2026-08-09
+
+Add an in-memory tester mutation that transfers one existing opaque item instance between actor
+inventories. Core validates source ownership and actor identities, preserves item identity and
+relative ordering, appends to the target, and treats same-actor transfer as an idempotent no-op.
+Protocol maps the typed world error and MCP exposes the operation through `Session`; it remains
+outside player history/replay and has no stdio tool or gameplay effects.
+
+Acceptance:
+
+- A successful cross-actor transfer changes the deterministic world digest, removes the item from
+  the source without reordering its remaining items, and appends the unchanged item to the target.
+- Unknown source/target actors and a source that does not own the item return typed errors before
+  mutation; same-actor transfer of an owned item succeeds without changing world state.
+- Dead actor records remain valid transfer endpoints; accepted tester transfers do not enter player
+  history or replay evidence, while rejected transfers preserve world, history, and replay exactly.
+- Core remains authoritative for ownership and item data; protocol/MCP only convert and expose the
+  tester operation, with no player command, stdio registration, or item gameplay semantics.
+
+Verification:
+
+- Focused core, protocol, and MCP item-transfer tests cover success/order/digest, same-actor
+  idempotence, dead records, typed rejection/atomicity, and replay/history preservation.
+- Focused Clippy and `scripts/verify.sh` pass before handoff.
+- `git diff --check` passes, and exactly one semantic code reviewer reports pass at the final
+  revision.
+
+Out of scope:
+
+- Item effects, equipment, consumables, affixes, rarity, identification, capacity, pickup/drop/use,
+  player commands, stdio/MCP transport registration, persistence, and UI.
+
 ### Milestone 1: Rules kernel
 
 Implement the deterministic headless simulation described in the proposal: typed world

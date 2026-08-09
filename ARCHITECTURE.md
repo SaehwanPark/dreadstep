@@ -130,7 +130,9 @@ successful replacement preserves the seed and starts a fresh in-memory replay tr
 Opaque tester item ownership crosses the boundary as typed `ItemId` and `ItemDefinitionId` values.
 Core owns global identity uniqueness, ordered actor inventories, digest inclusion, and snapshot
 projection; MCP only converts the request to `WorldState::give_item`. Effects, equipment, and
-capacity remain outside this ownership slice so no adapter invents item truth.
+capacity remain outside this ownership slice so no adapter invents item truth. The tester transfer
+extension delegates source ownership, ordering, dead-record validity, and atomic errors to core;
+MCP only projects the result and does not record player history or replay evidence.
 
 The item-catalog foundation keeps definition membership on the content side: it validates ordered,
 opaque `ItemDefinitionId` references and exposes read-only lookup without changing core world state.
