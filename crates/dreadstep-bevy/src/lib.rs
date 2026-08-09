@@ -278,7 +278,8 @@ impl SceneInventoryItem {
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SceneFocus;
 
-/// A deterministic read-only projection consumed by future map, actor, and ground-item renderers.
+/// A deterministic read-only projection consumed by future map, actor, ground-item, and inventory
+/// renderers.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PresentationSnapshot {
   width: u32,
