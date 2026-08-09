@@ -89,6 +89,8 @@ All notable contributor- and user-visible project changes are recorded here.
   owner/order updates, and stale cleanup without adding inventory gameplay or HUD policy.
 - Optional ordered opaque item placements for authored starter floors, delegated to core's existing
   item-identity and inventory validation while preserving the item-free default scenario.
+- Explicit starter-floor catalog binding that rejects duplicate catalog IDs and unknown placement
+  definitions before core world construction without leaking catalog data into runtime state.
 
 ### Changed
 

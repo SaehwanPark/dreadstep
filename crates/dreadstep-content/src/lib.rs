@@ -22,6 +22,8 @@ pub enum ContentError {
   World(WorldError),
   /// The authored item catalog repeats one opaque definition identity.
   DuplicateItemDefinitionId(ItemDefinitionId),
+  /// An authored item placement references a definition absent from its catalog.
+  UnknownItemDefinitionId(ItemDefinitionId),
 }
 
 impl fmt::Display for ContentError {
@@ -34,6 +36,11 @@ impl fmt::Display for ContentError {
         "content item definition id {} is duplicated",
         definition.value()
       ),
+      Self::UnknownItemDefinitionId(definition) => write!(
+        formatter,
+        "content item definition id {} is not in the catalog",
+        definition.value()
+      ),
     }
   }
 }
@@ -43,7 +50,7 @@ impl Error for ContentError {
     match self {
       Self::Map(error) => Some(error),
       Self::World(error) => Some(error),
-      Self::DuplicateItemDefinitionId(_) => None,
+      Self::DuplicateItemDefinitionId(_) | Self::UnknownItemDefinitionId(_) => None,
     }
   }
 }
@@ -148,6 +155,7 @@ pub struct StarterFloorDefinition {
   height: u32,
   tiles: Vec<Tile>,
   actors: Vec<Actor>,
+  item_catalog: ItemCatalogDefinition,
   items: Vec<StarterItemPlacement>,
 }
 
@@ -160,14 +168,27 @@ impl StarterFloorDefinition {
       height,
       tiles,
       actors,
+      item_catalog: ItemCatalogDefinition::new(Vec::new()),
       items: Vec::new(),
     }
   }
 
+  /// Binds an authored item-definition catalog to this floor.
+  ///
+  /// The catalog is validated during [`Self::build`], remains content-owned, and is not copied
+  /// into the resulting core world.
+  #[must_use]
+  pub fn with_item_catalog(mut self, catalog: ItemCatalogDefinition) -> Self {
+    self.item_catalog = catalog;
+    self
+  }
+
   /// Adds ordered opaque item placements to this authored floor.
   ///
-  /// Declaration order is preserved within each target actor's inventory. Core validates actor
-  /// identities and global item identity when [`Self::build`] delegates the placements.
+  /// Declaration order is preserved within each target actor's inventory. Every placement
+  /// definition must be present in the catalog bound by [`Self::with_item_catalog`]; the default
+  /// empty catalog therefore accepts no item placements. Core validates actor identities and
+  /// global item identity when [`Self::build`] delegates valid placements.
   #[must_use]
   pub fn with_items(mut self, items: Vec<StarterItemPlacement>) -> Self {
     self.items = items;
@@ -179,8 +200,18 @@ impl StarterFloorDefinition {
   /// # Errors
   ///
   /// Returns [`ContentError::Map`] or [`ContentError::World`] when authored dimensions, tiles,
-  /// actor records, or item placements violate core validation rules.
+  /// actor records, or item placements violate core validation rules. Returns
+  /// [`ContentError::DuplicateItemDefinitionId`] for a duplicate catalog entry or
+  /// [`ContentError::UnknownItemDefinitionId`] when a placement references a definition absent
+  /// from the catalog.
   pub fn build(&self) -> Result<WorldState, ContentError> {
+    let catalog = self.item_catalog.build()?;
+    for placement in &self.items {
+      let definition = placement.item().definition();
+      if !catalog.contains(definition) {
+        return Err(ContentError::UnknownItemDefinitionId(definition));
+      }
+    }
     let map = GridMap::from_tiles(self.width, self.height, self.tiles.clone())?;
     let mut world = WorldState::new(map, self.actors.clone())?;
     for placement in &self.items {
