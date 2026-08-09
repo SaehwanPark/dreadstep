@@ -2492,8 +2492,8 @@ explicit core contract.
 ### Remaining roadmap milestones
 
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
-headless presentation boundary currently implemented in the repository; the active Present slice
-extends that boundary toward Bevy's Sprite API. The proposal still
+headless presentation boundary currently implemented in the repository, including the verified
+Bevy Sprite API boundary. The remaining renderer work in the proposal still
 defines these future product milestones; each needs its own bounded acceptance slice before it
 can move into `Past`:
 
