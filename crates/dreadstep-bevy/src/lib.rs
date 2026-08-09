@@ -413,6 +413,35 @@ impl PresentationAudioCues {
   }
 }
 
+/// A typed role for an existing scene mirror, consumed by a future sprite renderer.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneSpriteRole {
+  /// A projected map tile, whose terrain remains in [`SceneTile`].
+  Terrain,
+  /// A living player actor, whose typed data remains in [`SceneActor`].
+  Player,
+  /// A living enemy actor, whose typed data remains in [`SceneActor`].
+  Enemy,
+  /// A retained dead actor record, whose typed data remains in [`SceneActor`].
+  DeadActor,
+  /// A ground item, whose typed data remains in [`SceneGroundItem`].
+  GroundItem,
+  /// An inventory item, whose typed data remains in [`SceneInventoryItem`].
+  InventoryItem,
+}
+
+impl SceneSpriteRole {
+  fn for_actor(actor: &Actor) -> Self {
+    if !actor.is_alive() {
+      return Self::DeadActor;
+    }
+    match actor.kind() {
+      ActorKind::Player => Self::Player,
+      ActorKind::Enemy => Self::Enemy,
+    }
+  }
+}
+
 /// A disposable ECS mirror of one projected map tile.
 #[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SceneTile {
@@ -1408,9 +1437,9 @@ pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
     {
       scene
         .entity_mut(*entity)
-        .insert(SceneTile::new(position, terrain));
+        .insert((SceneTile::new(position, terrain), SceneSpriteRole::Terrain));
     } else {
-      scene.spawn(SceneTile::new(position, terrain));
+      scene.spawn((SceneTile::new(position, terrain), SceneSpriteRole::Terrain));
     }
   }
 
@@ -1440,13 +1469,14 @@ pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
   }
   for actor in snapshot.actors() {
     let scene_actor = SceneActor::from_core(actor);
+    let sprite_role = SceneSpriteRole::for_actor(actor);
     if let Some(entity) = existing_actors
       .get(&actor.id())
       .and_then(|entities| entities.first())
     {
-      scene.entity_mut(*entity).insert(scene_actor);
+      scene.entity_mut(*entity).insert((scene_actor, sprite_role));
     } else {
-      scene.spawn(scene_actor);
+      scene.spawn((scene_actor, sprite_role));
     }
   }
 
@@ -1491,9 +1521,11 @@ fn sync_ground_items(scene: &mut World, snapshot: &PresentationSnapshot) {
         .get(&item.id())
         .and_then(|entities| entities.first())
       {
-        scene.entity_mut(*entity).insert(scene_item);
+        scene
+          .entity_mut(*entity)
+          .insert((scene_item, SceneSpriteRole::GroundItem));
       } else {
-        scene.spawn(scene_item);
+        scene.spawn((scene_item, SceneSpriteRole::GroundItem));
       }
     }
   }
@@ -1536,9 +1568,11 @@ fn sync_inventory_items(scene: &mut World, snapshot: &PresentationSnapshot) {
         .get(&item.id())
         .and_then(|entities| entities.first())
       {
-        scene.entity_mut(*entity).insert(scene_item);
+        scene
+          .entity_mut(*entity)
+          .insert((scene_item, SceneSpriteRole::InventoryItem));
       } else {
-        scene.spawn(scene_item);
+        scene.spawn((scene_item, SceneSpriteRole::InventoryItem));
       }
     }
   }
