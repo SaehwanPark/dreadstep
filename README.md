@@ -35,9 +35,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   startup. The default `start_run` remains item-free.
 - Verified window boundary: validated typed logical dimensions and integer pixel scale for a future
   desktop client without creating an OS window or enabling desktop features.
-- Active presentation boundary: caller-selected logical tile extents now project checked pixel
-  origins onto terrain, actor, and ground-item mirrors without choosing a tile size or enabling
-  rendering.
+- Verified scene placement boundary: caller-selected logical tile extents project checked pixel
+  origins onto terrain, actor, and ground-item mirrors while inventory items remain unplaced; no
+  tile size is chosen and no rendering is enabled.
 - Next presentation work: asset/tile experiments and then window/rendering boundaries before
   widgets or text policy.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat

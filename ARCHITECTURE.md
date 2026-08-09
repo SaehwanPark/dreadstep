@@ -262,7 +262,7 @@ dimensions, integer pixel scale, and checked physical dimensions. It is configur
 desktop client only; no OS window, platform event loop, desktop feature, or rendering state is
 created here.
 
-The active scene-pixel-placement slice adds an optional `PresentationTileSize` resource and a
+The verified scene-pixel-placement slice adds an optional `PresentationTileSize` resource and a
 `ScenePixelPosition` component. The adapter converts valid core map coordinates to checked logical
 pixel origins on the already keyed terrain, actor, and ground-item mirrors. Tile-size selection
 remains a caller/asset-experiment decision; the component is disposable placement metadata, not a
