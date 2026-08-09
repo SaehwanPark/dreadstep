@@ -892,6 +892,99 @@ impl PresentationSpriteProjection {
   }
 }
 
+/// The deterministic draw layer assigned to one typed render command.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum SceneRenderLayer {
+  /// Map terrain, drawn below all entity and inventory commands.
+  Terrain,
+  /// Ground items, drawn above terrain and below actors.
+  GroundItem,
+  /// Living or dead actors, drawn above map items.
+  Actor,
+  /// Inventory entries, which remain unplaced metadata for a future inventory view.
+  InventoryItem,
+}
+
+impl SceneRenderLayer {
+  fn from_key(key: SceneSpriteKey) -> Self {
+    match key {
+      SceneSpriteKey::Terrain(_) => Self::Terrain,
+      SceneSpriteKey::GroundItem(_) => Self::GroundItem,
+      SceneSpriteKey::Player | SceneSpriteKey::Enemy | SceneSpriteKey::DeadActor => Self::Actor,
+      SceneSpriteKey::InventoryItem(_) => Self::InventoryItem,
+    }
+  }
+}
+
+/// One deterministic draw command prepared from a complete sprite projection entry.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneRenderCommand {
+  sprite: SceneSpriteEntry,
+  layer: SceneRenderLayer,
+  order: usize,
+}
+
+impl SceneRenderCommand {
+  fn from_sprite_entry(sprite: SceneSpriteEntry, order: usize) -> Self {
+    Self {
+      layer: SceneRenderLayer::from_key(sprite.key()),
+      sprite,
+      order,
+    }
+  }
+
+  /// Returns the complete sprite projection entry retained by this command.
+  #[must_use]
+  pub const fn sprite_entry(self) -> SceneSpriteEntry {
+    self.sprite
+  }
+
+  /// Returns the typed draw layer for this command.
+  #[must_use]
+  pub const fn layer(self) -> SceneRenderLayer {
+    self.layer
+  }
+
+  /// Returns the source order from the deterministic sprite projection.
+  #[must_use]
+  pub const fn order(self) -> usize {
+    self.order
+  }
+
+  /// Returns the optional map placement, which is absent for inventory entries.
+  #[must_use]
+  pub const fn pixel_position(self) -> Option<ScenePixelPosition> {
+    match self.sprite.render_entry() {
+      SceneRenderEntry::Terrain { pixel_position, .. }
+      | SceneRenderEntry::Actor { pixel_position, .. }
+      | SceneRenderEntry::GroundItem { pixel_position, .. } => pixel_position,
+      SceneRenderEntry::InventoryItem { .. } => None,
+    }
+  }
+}
+
+/// An ordered, read-only plan of typed draw commands for a future renderer.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Resource)]
+pub struct PresentationRenderCommandPlan {
+  commands: Vec<SceneRenderCommand>,
+}
+
+impl PresentationRenderCommandPlan {
+  /// Creates an empty render-command plan.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      commands: Vec::new(),
+    }
+  }
+
+  /// Returns commands in the same deterministic order as the sprite projection.
+  #[must_use]
+  pub fn commands(&self) -> &[SceneRenderCommand] {
+    &self.commands
+  }
+}
+
 /// An ordered, read-only projection for a future renderer boundary.
 ///
 /// Entries are derived from the current keyed scene mirrors after scene and pixel synchronization.
@@ -1493,6 +1586,7 @@ fn update_presentation(world: &mut World) {
   sync_scene_pixel_positions(world);
   sync_render_projection(world);
   sync_sprite_projection(world);
+  sync_render_command_plan(world);
   sync_focus(world);
   sync_scene_focus(world);
   sync_camera(world);
@@ -1659,6 +1753,30 @@ fn sync_sprite_projection(world: &mut World) {
     return;
   };
   projection.entries = entries;
+}
+
+fn sync_render_command_plan(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none() {
+    return;
+  }
+  let commands = world
+    .get_resource::<PresentationSpriteProjection>()
+    .map(|projection| {
+      projection
+        .entries()
+        .iter()
+        .copied()
+        .enumerate()
+        .map(|(order, entry)| SceneRenderCommand::from_sprite_entry(entry, order))
+        .collect::<Vec<_>>()
+    });
+  let Some(commands) = commands else {
+    return;
+  };
+  let Some(mut plan) = world.get_resource_mut::<PresentationRenderCommandPlan>() else {
+    return;
+  };
+  plan.commands = commands;
 }
 
 fn render_entries(

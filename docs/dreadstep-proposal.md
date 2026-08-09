@@ -1745,6 +1745,9 @@ Current exploratory gate (2026-08-09):
 - The verified sprite-key presentation boundary derives typed sprite selectors from those complete
   render entries while keeping actual texture loading, render plugins, transforms, and media
   deferred to a later renderer slice.
+- The next active presentation boundary derives a deterministic typed render-command plan with
+  explicit layer, source-order, and optional placement metadata while keeping actual rendering,
+  texture loading, transforms, windows, and media deferred.
 
 ### Content
 
