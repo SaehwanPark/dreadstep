@@ -154,8 +154,9 @@ Out of scope:
 
 ### Milestone 1 slice: deterministic replay evidence
 
-- Status: active
+- Status: verified
 - Started: 2026-08-08
+- Completed: 2026-08-08
 
 Add core-owned replay evidence without introducing a wire format or external effects. A replay
 trace records an explicit seed and ordered semantic commands, and a stable state digest covers
@@ -185,6 +186,41 @@ Out of scope:
 
 - Serialized replay files, protocol versioning, RNG implementation, replay playback/CLI,
   scenario storage, and cryptographic hashes.
+
+### Milestone 1 slice: deterministic headless CLI
+
+- Status: verified
+- Started: 2026-08-08
+- Completed: 2026-08-08
+
+Add a small `dreadstep-headless` executable that demonstrates the adapter boundary without
+owning game rules. It accepts an explicit seed and ordered semantic command tokens for a fixed
+developer scenario, translates them into `dreadstep-core::Command` values, executes them, and
+prints the seed, event debug output, and final state digest. Invalid arguments and rejected
+core commands return structured errors and a non-success process result.
+
+Acceptance:
+
+- The binary runs without Bevy and accepts `--seed <u64>` plus a comma-separated `--commands`
+  value for movement, waiting, melee, and chase commands.
+- Parsing is deterministic and rejects missing, duplicate, malformed, or unknown arguments and
+  command tokens without panicking.
+- The fixed scenario is explicit in headless code; command execution delegates all outcomes to
+  `dreadstep-core`, and output includes the supplied seed and final `StateDigest` value.
+- Unit tests cover parsing success/failure and an end-to-end command sequence; a subprocess
+  smoke test proves the binary exits successfully for a valid run.
+- The adapter owns process/stdout effects only; it does not add authoritative game behavior or
+  Bevy/MCP dependencies.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-headless --all-targets --all-features --locked` passes.
+- `scripts/verify.sh` passes before handoff.
+
+Out of scope:
+
+- Interactive input, authored scenario files, serialized replay output, CLI subcommands,
+  terminal rendering, and production content configuration.
 
 ## Future
 

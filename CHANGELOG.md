@@ -17,6 +17,8 @@ All notable contributor- and user-visible project changes are recorded here.
 - Deterministic enemy chase commands with explicit axis tie-breaking and shared blocking
   events.
 - Core-owned replay traces and stable state digests for deterministic regression evidence.
+- A deterministic `dreadstep-headless` developer CLI that translates command tokens into the
+  core simulation and prints replay seed, events, and final state digest evidence.
 
 ### Changed
 
