@@ -71,6 +71,22 @@ impl SessionOutput {
   }
 }
 
+/// An in-memory tester savepoint containing the complete deterministic session state.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SessionSnapshot {
+  seed: u64,
+  world: WorldState,
+  trace: ReplayTrace,
+}
+
+impl SessionSnapshot {
+  /// Returns the seed captured with this savepoint.
+  #[must_use]
+  pub const fn seed(&self) -> u64 {
+    self.seed
+  }
+}
+
 /// A deterministic in-memory player session around one fixed developer scenario.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Session {
@@ -143,6 +159,24 @@ impl Session {
   #[must_use]
   pub fn get_history(&self) -> Vec<CommandRequest> {
     self.history()
+  }
+
+  /// Captures an in-memory tester savepoint without changing the session.
+  #[must_use]
+  pub fn snapshot(&self) -> SessionSnapshot {
+    SessionSnapshot {
+      seed: self.seed,
+      world: self.world.clone(),
+      trace: self.trace.clone(),
+    }
+  }
+
+  /// Restores the session to a previously captured in-memory tester savepoint.
+  pub fn restore(&mut self, snapshot: SessionSnapshot) {
+    let SessionSnapshot { seed, world, trace } = snapshot;
+    self.seed = seed;
+    self.world = world;
+    self.trace = trace;
   }
 
   /// Returns the deterministic core replay digest for accepted actions.

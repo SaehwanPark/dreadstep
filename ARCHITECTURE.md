@@ -103,6 +103,10 @@ The proposal's `get_history` name maps to the same adapter-owned protocol reques
 `Session::history`; the alias does not create a second source of truth or alter core trace
 recording.
 
+Tester savepoints are explicit in-memory `SessionSnapshot` values containing the session seed,
+core world, and core replay trace. `restore` replaces that owned state, so branching and rollback
+remain deterministic without exposing arbitrary mutation or adding storage effects.
+
 ## Constraints
 
 - Core owns canonical semantic commands, events, and domain errors.
