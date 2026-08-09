@@ -86,7 +86,7 @@ fn expected_depth(layer: SceneRenderLayer) -> f32 {
 }
 
 #[test]
-fn complete_nodes_receive_layer_depth_without_changing_xy_or_order() {
+fn complete_nodes_receive_layer_depth_without_changing_centered_xy_or_order() {
   let app = depth_app();
   let nodes = app
     .world()
@@ -112,14 +112,14 @@ fn complete_nodes_receive_layer_depth_without_changing_xy_or_order() {
     ]
   );
   let expected_xy = [
-    Some((0.0, 0.0)),
-    Some((32.0, 0.0)),
-    Some((64.0, 0.0)),
-    Some((96.0, 0.0)),
-    Some((0.0, 0.0)),
-    Some((0.0, 0.0)),
-    Some((32.0, 0.0)),
-    Some((64.0, 0.0)),
+    Some((16.0, 16.0)),
+    Some((48.0, 16.0)),
+    Some((80.0, 16.0)),
+    Some((112.0, 16.0)),
+    Some((16.0, 16.0)),
+    Some((16.0, 16.0)),
+    Some((48.0, 16.0)),
+    Some((80.0, 16.0)),
     None,
   ];
   for (entry, expected) in nodes.iter().zip(expected_xy) {
@@ -178,7 +178,7 @@ fn dead_refresh_keeps_actor_depth_and_node_identity() {
   assert_eq!(after.node().layer(), SceneRenderLayer::Actor);
   assert_eq!(
     node_transform(&app, after.node_entity()),
-    Transform::from_xyz(32.0, 0.0, 2.0)
+    Transform::from_xyz(48.0, 16.0, 2.0)
   );
 }
 
@@ -273,11 +273,11 @@ fn colocated_tile_and_actor_keep_distinct_layer_depths() {
   assert_eq!(nodes[1].node().layer(), SceneRenderLayer::Actor);
   assert_eq!(
     node_transform(&app, nodes[0].node_entity()),
-    Transform::from_xyz(64.0, 0.0, 0.0)
+    Transform::from_xyz(80.0, 16.0, 0.0)
   );
   assert_eq!(
     node_transform(&app, nodes[1].node_entity()),
-    Transform::from_xyz(64.0, 0.0, 2.0)
+    Transform::from_xyz(80.0, 16.0, 2.0)
   );
 }
 
