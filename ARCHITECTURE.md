@@ -13,8 +13,8 @@ Milestone 1 now exposes the first gameplay API in `dreadstep-core`: a typed rect
 actors, movement, melee, and chase commands, semantic movement/blocking/combat/death events,
 an integer ready-time scheduler, and core-owned replay traces/state digests. The
 `dreadstep-headless` adapter now provides a fixed-scenario developer CLI that translates text
-arguments into those core commands; it owns parsing and stdout only. No graphical client or
-MCP server is provided yet.
+arguments into those core commands; it owns parsing and stdout only. `dreadstep-mcp` also provides
+a minimal local stdio observation server; no graphical client exists yet.
 
 ## Package Ownership
 
@@ -73,15 +73,17 @@ fixed scenario is test data at the adapter boundary; every outcome still comes f
 
 The first Milestone 2 protocol slice is a read-only `WorldSnapshot` projection. It may expose
 stable actor data and core digest evidence, but it must not decide legal actions or mutate the
-world; MCP transport and session effects remain later adapter work.
+world; the minimal MCP stdio observation server now packages this projection, while broader
+transport and session effects remain later adapter work.
 
 The protocol action envelope is likewise only a typed conversion boundary: it can translate
 external request values into canonical core commands and back, but command validation and
 execution remain owned by `dreadstep-core::WorldState`.
 
 The first MCP player slice is an in-memory session over those protocol values. It owns session
-seed/scenario setup and response shaping only; it must not register a transport, enumerate
-legal actions, or duplicate core transition rules.
+seed/scenario setup and response shaping only; the minimal stdio server wraps its `start_run` and
+`observe` operations without duplicating core transition rules. Broader transport tools remain
+future slices.
 
 Legal-action discovery is a core query, not an MCP policy: `WorldState::legal_commands` decides
 which typed commands are currently valid, and the session only maps those commands into protocol
@@ -133,6 +135,12 @@ Validated tester teleport crosses the boundary as a typed actor identity and des
 Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only
 converts the request and projects typed world errors. Dead actor records remain non-occupying, and
 the mutation does not enter player history or replay evidence.
+
+The minimal MCP stdio slice adds a process adapter around the existing session. The adapter owns
+`rmcp` transport setup, tool schemas, and versioned JSON snapshot serialization for `start_run` and
+read-only `observe`; session and core remain authoritative for seeded state and world truth. Stdout
+is reserved for MCP protocol traffic, and tester mutations/player actions remain library-only until
+their wire contracts are specified.
 
 ## Constraints
 

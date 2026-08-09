@@ -45,6 +45,8 @@ All notable contributor- and user-visible project changes are recorded here.
   identity validation; gameplay effects and inventory capacity remain deferred.
 - Validated tester teleport with typed destination validation, dead-record occupancy semantics, and
   no player-trace effects.
+- Minimal local MCP stdio observation with versioned snapshot JSON, `start_run`, and read-only
+  `observe` tools; broader actions and tester mutations remain library-only.
 
 ### Changed
 

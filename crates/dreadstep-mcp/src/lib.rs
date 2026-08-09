@@ -1,10 +1,14 @@
 //! Model Context Protocol adapter boundary for Dreadstep.
 //!
-//! This crate will translate explicit player and tester operations into project-owned
-//! semantic commands. It must not become a generic shell, filesystem escape hatch, or
-//! hidden source of game truth. Milestone 0 intentionally adds no MCP runtime dependency.
+//! The in-memory [`Session`] remains the semantic adapter boundary. The [`server`] module adds
+//! only a narrow local stdio process wrapper around its read-only observation and start operations;
+//! it must not become a generic shell, filesystem escape hatch, or hidden source of game truth.
 
 #![forbid(unsafe_code)]
+
+pub mod server;
+
+pub use server::{DreadstepMcpServer, StartRunParams};
 
 use std::{error::Error, fmt};
 

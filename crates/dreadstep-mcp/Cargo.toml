@@ -12,6 +12,13 @@ publish.workspace = true
 dreadstep-content.workspace = true
 dreadstep-core.workspace = true
 dreadstep-protocol.workspace = true
+rmcp.workspace = true
+schemars.workspace = true
+serde.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true

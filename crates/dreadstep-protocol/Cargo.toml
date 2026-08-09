@@ -10,6 +10,11 @@ publish.workspace = true
 
 [dependencies]
 dreadstep-core.workspace = true
+schemars.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true
