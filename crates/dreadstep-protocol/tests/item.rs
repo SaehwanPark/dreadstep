@@ -7,7 +7,8 @@ use dreadstep_core::{
   WorldState as CoreWorldState,
 };
 use dreadstep_protocol::{
-  ActorId, ActorSnapshot, ItemDefinitionId, ItemId, Position, WorldError, WorldSnapshot,
+  ActorId, ActorSnapshot, CommandError, ItemDefinitionId, ItemId, Position, WorldError,
+  WorldSnapshot,
 };
 
 fn item_world() -> CoreWorldState {
@@ -36,6 +37,32 @@ fn item_ids_are_typed_and_duplicate_identity_maps_to_protocol_world_error() {
     WorldError::from(CoreWorldError::UnknownActor(CoreActorId::new(9))),
     WorldError::UnknownActor(ActorId::new(9))
   );
+  assert_eq!(
+    WorldError::from(CoreWorldError::ItemEquipped {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(7),
+    }),
+    WorldError::ItemEquipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(7),
+    }
+  );
+  assert_eq!(
+    CommandError::from(dreadstep_core::CommandError::ItemAlreadyEquipped {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(7),
+    }),
+    CommandError::ItemAlreadyEquipped {
+      actor: ActorId::new(1),
+      item: ItemId::new(7),
+    }
+  );
+  assert_eq!(
+    CommandError::from(dreadstep_core::CommandError::NothingEquipped(
+      CoreActorId::new(1),
+    )),
+    CommandError::NothingEquipped(ActorId::new(1))
+  );
 }
 
 #[test]
@@ -47,6 +74,12 @@ fn actor_snapshot_projects_owned_items_in_insertion_order() {
       CoreItem::new(CoreItemId::new(1), CoreItemDefinitionId::new(10)),
     )
     .expect("item should be accepted");
+  world
+    .execute(dreadstep_core::Command::Equip {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(1),
+    })
+    .expect("item should equip");
 
   let snapshot = WorldSnapshot::from_world(&world);
   let actor: &ActorSnapshot = &snapshot.actors()[0];
@@ -54,6 +87,7 @@ fn actor_snapshot_projects_owned_items_in_insertion_order() {
   assert_eq!(actor.inventory().len(), 1);
   assert_eq!(actor.inventory()[0].id(), ItemId::new(1));
   assert_eq!(actor.inventory()[0].definition(), ItemDefinitionId::new(10));
+  assert_eq!(actor.equipped_item(), Some(ItemId::new(1)));
   assert_eq!(actor.position(), Position::new(0, 0));
 }
 

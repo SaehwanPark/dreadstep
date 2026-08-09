@@ -33,6 +33,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified item authoring boundaries: opaque item ownership, catalog binding, authored starter
   placements, deterministic starter-item content, tester transfer/drop/pickup, and Bevy item-run
   startup. The default `start_run` remains item-free.
+- Verified deterministic single-slot equipment: scheduled typed equip/unequip commands, ordered
+  replacement events, digest/replay/snapshot evidence, tester guards against moving equipped items,
+  protocol/MCP projections, and a typed Bevy `SceneActor` field. Item effects, modifiers, capacity,
+  and additional slots remain deferred.
 - Verified window boundary: validated typed logical dimensions and integer pixel scale for a future
   desktop client without creating an OS window or enabling desktop features.
 - Verified scene placement boundary: caller-selected logical tile extents project checked pixel
@@ -49,8 +53,8 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   per-kind 32×32 placement, and inventory-unplaced semantics without render plugins, textures,
   asset loading, or playback.
 - Still deferred: windowing, rendering assets, sprites, animation, HUD widgets, event/combat
-  message presentation, audio assets/playback, fog of war, multiple floors, and gameplay-facing
-  item effects.
+  message presentation, audio assets/playback, fog of war, multiple floors, and richer gameplay
+  item semantics such as effects, modifiers, capacity, and additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

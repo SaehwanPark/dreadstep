@@ -105,13 +105,18 @@ All notable contributor- and user-visible project changes are recorded here.
   unplaced inventory items; no render features, textures, transforms, asset loading, or playback
   are added.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
-  validation, while item gameplay semantics remain deferred.
+  validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
-  effects, equipment, and player commands remain deferred.
+  effects, capacity, and player-facing item commands remain deferred alongside the separate
+  equipment contract below.
 - A deterministic tester-only item drop with core-owned row-major ground-item stacks and complete
   protocol/MCP snapshot projection; pickup and item gameplay semantics remain deferred.
 - A deterministic tester-only item pickup that removes from ordered ground stacks, appends to actor
   inventories, and projects typed ground-miss errors without player replay/history effects.
+- A deterministic single-slot equipment contract with scheduled typed equip/unequip commands,
+  ordered replacement events, versioned digest/replay state, protocol/MCP snapshot evidence, and a
+  typed Bevy `SceneActor` projection; item effects, modifiers, capacity, and extra slots remain
+  deferred.
 - A deterministic headless Bevy ground-item scene projection that preserves complete typed item
   data, stable item-identity entities, stack order, and stale cleanup without rendering policy.
 - A deterministic headless Bevy inventory-item scene projection that preserves global item identity,

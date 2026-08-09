@@ -403,6 +403,20 @@ pub enum PresentationMessage {
     /// The actor that died.
     actor: ActorId,
   },
+  /// An actor equipped an owned item.
+  ItemEquipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item now equipped.
+    item: ItemId,
+  },
+  /// An actor removed its equipped item reference.
+  ItemUnequipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item that was unequipped.
+    item: ItemId,
+  },
 }
 
 impl PresentationMessage {
@@ -433,6 +447,8 @@ impl PresentationMessage {
         remaining_hit_points,
       },
       Event::Died { actor } => Self::Died { actor },
+      Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
+      Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
     }
   }
 }
@@ -491,6 +507,20 @@ pub enum PresentationAudioCue {
     /// The actor that died.
     actor: ActorId,
   },
+  /// An actor equipped an owned item.
+  ItemEquipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item now equipped.
+    item: ItemId,
+  },
+  /// An actor removed its equipped item reference.
+  ItemUnequipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item that was unequipped.
+    item: ItemId,
+  },
 }
 
 impl PresentationAudioCue {
@@ -503,6 +533,8 @@ impl PresentationAudioCue {
         attacker, target, ..
       } => Self::Attacked { attacker, target },
       Event::Died { actor } => Self::Died { actor },
+      Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
+      Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
     }
   }
 }
@@ -573,6 +605,20 @@ pub enum PresentationAnimationCue {
     /// The actor that died.
     actor: ActorId,
   },
+  /// An actor equipped an owned item.
+  ItemEquipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item now equipped.
+    item: ItemId,
+  },
+  /// An actor removed its equipped item reference.
+  ItemUnequipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item that was unequipped.
+    item: ItemId,
+  },
 }
 
 impl PresentationAnimationCue {
@@ -603,6 +649,8 @@ impl PresentationAnimationCue {
         remaining_hit_points,
       },
       Event::Died { actor } => Self::Died { actor },
+      Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
+      Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
     }
   }
 }
@@ -799,6 +847,7 @@ pub struct SceneActor {
   position: dreadstep_core::Position,
   hit_points: dreadstep_core::HitPoints,
   ready_at: dreadstep_core::ActionTime,
+  equipped_item: Option<ItemId>,
   alive: bool,
 }
 
@@ -810,6 +859,7 @@ impl SceneActor {
       position: actor.position(),
       hit_points: actor.hit_points(),
       ready_at: actor.ready_at(),
+      equipped_item: actor.equipped_item(),
       alive: actor.is_alive(),
     }
   }
@@ -842,6 +892,12 @@ impl SceneActor {
   #[must_use]
   pub const fn ready_at(self) -> dreadstep_core::ActionTime {
     self.ready_at
+  }
+
+  /// Returns the optional equipped item identity, which remains in the actor inventory mirror.
+  #[must_use]
+  pub const fn equipped_item(self) -> Option<ItemId> {
+    self.equipped_item
   }
 
   /// Returns whether the projected actor is living.

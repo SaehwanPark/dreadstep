@@ -18,7 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 2;
+pub const PROTOCOL_VERSION: u16 = 3;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -64,6 +64,18 @@ pub enum CommandRequest {
     /// The actor being pursued.
     target: ActorId,
   },
+  /// Equip one owned item, replacing any previous equipment.
+  Equip {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The owned item instance to equip.
+    item: ItemId,
+  },
+  /// Unequip the actor's current item reference.
+  Unequip {
+    /// The actor issuing the request.
+    actor: ActorId,
+  },
 }
 
 impl From<CommandRequest> for CoreCommand {
@@ -88,6 +100,13 @@ impl From<CommandRequest> for CoreCommand {
       CommandRequest::Chase { actor, target } => Self::Chase {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
+      },
+      CommandRequest::Equip { actor, item } => Self::Equip {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        item: dreadstep_core::ItemId::new(item.value()),
+      },
+      CommandRequest::Unequip { actor } => Self::Unequip {
+        actor: dreadstep_core::ActorId::new(actor.value()),
       },
     }
   }
@@ -115,6 +134,13 @@ impl From<CoreCommand> for CommandRequest {
       CoreCommand::Chase { actor, target } => Self::Chase {
         actor: ActorId::new(actor.value()),
         target: ActorId::new(target.value()),
+      },
+      CoreCommand::Equip { actor, item } => Self::Equip {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommand::Unequip { actor } => Self::Unequip {
+        actor: ActorId::new(actor.value()),
       },
     }
   }
@@ -196,7 +222,9 @@ impl HitPoints {
 }
 
 /// A stable item instance identity in the protocol projection.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize)]
+#[derive(
+  Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize,
+)]
 pub struct ItemId(u32);
 
 impl ItemId {
@@ -604,6 +632,13 @@ pub enum WorldError {
     /// The item identity that was not found.
     item: ItemId,
   },
+  /// A tester mutation attempted to move an equipped item.
+  ItemEquipped {
+    /// The actor whose equipment references the item.
+    actor: ActorId,
+    /// The equipped item identity.
+    item: ItemId,
+  },
   /// A tester pickup source has no matching item in its current ground stack.
   ItemNotOnGround {
     /// The actor whose current ground stack was searched.
@@ -675,6 +710,10 @@ impl From<CoreWorldError> for WorldError {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreWorldError::ItemEquipped { actor, item } => Self::ItemEquipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
       CoreWorldError::ItemNotOnGround { actor, item } => Self::ItemNotOnGround {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
@@ -733,6 +772,12 @@ impl fmt::Display for WorldError {
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
         "actor {} does not own item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemEquipped { actor, item } => write!(
+        formatter,
+        "actor {} cannot move equipped item {}",
         actor.value(),
         item.value()
       ),
@@ -885,6 +930,20 @@ pub enum Event {
     /// The actor that died.
     actor: ActorId,
   },
+  /// An actor equipped an owned item.
+  ItemEquipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item now equipped.
+    item: ItemId,
+  },
+  /// An actor removed its equipped item reference.
+  ItemUnequipped {
+    /// The actor whose equipment changed.
+    actor: ActorId,
+    /// The item that was unequipped.
+    item: ItemId,
+  },
 }
 
 impl From<CoreBlockReason> for BlockReason {
@@ -933,6 +992,14 @@ impl From<CoreEvent> for Event {
       CoreEvent::Died { actor } => Self::Died {
         actor: ActorId::new(actor.value()),
       },
+      CoreEvent::ItemEquipped { actor, item } => Self::ItemEquipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreEvent::ItemUnequipped { actor, item } => Self::ItemUnequipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
     }
   }
 }
@@ -970,6 +1037,22 @@ pub enum CommandError {
     /// The actor outside melee range.
     target: ActorId,
   },
+  /// The actor does not own the requested equipment item.
+  ItemNotOwned {
+    /// The actor whose inventory was searched.
+    actor: ActorId,
+    /// The requested item identity.
+    item: ItemId,
+  },
+  /// The requested item is already equipped.
+  ItemAlreadyEquipped {
+    /// The actor whose equipment was queried.
+    actor: ActorId,
+    /// The already equipped item identity.
+    item: ItemId,
+  },
+  /// The actor has no equipment to remove.
+  NothingEquipped(ActorId),
 }
 
 impl From<CoreCommandError> for CommandError {
@@ -1002,6 +1085,17 @@ impl From<CoreCommandError> for CommandError {
         attacker: ActorId::new(attacker.value()),
         target: ActorId::new(target.value()),
       },
+      CoreCommandError::ItemNotOwned { actor, item } => Self::ItemNotOwned {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommandError::ItemAlreadyEquipped { actor, item } => Self::ItemAlreadyEquipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommandError::NothingEquipped(actor) => {
+        Self::NothingEquipped(ActorId::new(actor.value()))
+      }
     }
   }
 }
@@ -1050,6 +1144,21 @@ impl fmt::Display for CommandError {
         attacker.value(),
         target.value()
       ),
+      Self::ItemNotOwned { actor, item } => write!(
+        formatter,
+        "actor {} does not own item {} for equipment",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemAlreadyEquipped { actor, item } => write!(
+        formatter,
+        "actor {} already equips item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::NothingEquipped(actor) => {
+        write!(formatter, "actor {} has no equipped item", actor.value())
+      }
     }
   }
 }
@@ -1066,6 +1175,7 @@ pub struct ActorSnapshot {
   life: LifeState,
   ready_at: ActionTime,
   inventory: Vec<ItemSnapshot>,
+  equipped_item: Option<ItemId>,
 }
 
 impl ActorSnapshot {
@@ -1090,6 +1200,7 @@ impl ActorSnapshot {
         .copied()
         .map(ItemSnapshot::from_item)
         .collect(),
+      equipped_item: actor.equipped_item().map(|item| ItemId::new(item.value())),
     }
   }
 
@@ -1139,6 +1250,12 @@ impl ActorSnapshot {
   #[must_use]
   pub fn inventory(&self) -> &[ItemSnapshot] {
     &self.inventory
+  }
+
+  /// Returns the optional equipped item identity, which points into [`Self::inventory`].
+  #[must_use]
+  pub const fn equipped_item(&self) -> Option<ItemId> {
+    self.equipped_item
   }
 }
 

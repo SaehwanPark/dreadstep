@@ -129,10 +129,12 @@ successful replacement preserves the seed and starts a fresh in-memory replay tr
 
 Opaque tester item ownership crosses the boundary as typed `ItemId` and `ItemDefinitionId` values.
 Core owns global identity uniqueness, ordered actor inventories, digest inclusion, and snapshot
-projection; MCP only converts the request to `WorldState::give_item`. Effects, equipment, and
-capacity remain outside this ownership slice so no adapter invents item truth. The tester transfer
-extension delegates source ownership, ordering, dead-record validity, and atomic errors to core;
-MCP only projects the result and does not record player history or replay evidence.
+projection; MCP only converts the request to `WorldState::give_item`. The verified equipment
+extension adds one optional core-owned `ItemId` reference per actor, scheduled equip/unequip
+commands, ordered replacement events, and typed protocol/MCP projections; it does not create a
+second item store or apply effects. Capacity and richer item semantics remain deferred. The tester
+transfer extension delegates source ownership, ordering, dead-record validity, and atomic errors
+to core; MCP only projects the result and does not record player history or replay evidence.
 
 The item-catalog foundation keeps definition membership on the content side: it validates ordered,
 opaque `ItemDefinitionId` references and exposes read-only lookup without changing core world state.
@@ -141,12 +143,13 @@ item instances, ownership, digests, and snapshots, and gameplay semantics remain
 
 The tester item-drop extension keeps ground-item records in core, keyed by stable map position with
 deterministic stack order. Protocol projects those records as read-only snapshot values and MCP
-delegates the mutation; neither boundary adds a player-facing pickup command, effects, equipment,
-capacity, or replay/history entries.
+delegates the mutation; neither boundary adds a player-facing pickup command, effects, capacity, or
+replay/history entries. An equipped item is rejected before this tester mutation can invalidate the
+actor's optional equipment reference.
 
 The tester item-pickup extension moves an item from the actor's current core-owned ground stack back
 into that actor's ordered inventory. Protocol/MCP only convert the typed ground-miss error and
-project the existing version-2 snapshot; pickup remains outside player commands, replay/history, and
+project the existing version-3 snapshot; pickup remains outside player commands, replay/history, and
 gameplay effects.
 
 Validated tester teleport crosses the boundary as a typed actor identity and destination position.
@@ -295,6 +298,14 @@ same boundary. `SceneInventoryItem` carries only global item identity, owner act
 reference, and insertion order; `sync_scene` updates retained item entities after core-authoritative
 owner/order changes and removes stale records. Bevy does not own inventory or item gameplay rules,
 and no HUD or rendering policy is introduced.
+
+The deterministic single-slot equipment slice extends the same core authority with an optional
+`Actor::equipped_item` identity that must point into that actor's ordered inventory. `Equip` and
+`Unequip` are scheduled player commands; replacement emits `ItemUnequipped` before
+`ItemEquipped`, accepted commands advance time and replay evidence, and rejected commands preserve
+world, snapshot, and digest state. Protocol/MCP expose the typed field and events, while Bevy
+`SceneActor` mirrors the field without owning item storage. Effects, modifiers, capacity, and
+additional slots remain outside this boundary.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

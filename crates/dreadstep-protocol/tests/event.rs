@@ -2,9 +2,12 @@
 
 use dreadstep_core::{
   ActionTime as CoreActionTime, ActorId as CoreActorId, BlockReason as CoreBlockReason,
-  Damage as CoreDamage, Event as CoreEvent, HitPoints as CoreHitPoints, Position as CorePosition,
+  Damage as CoreDamage, Event as CoreEvent, HitPoints as CoreHitPoints, ItemId as CoreItemId,
+  Position as CorePosition,
 };
-use dreadstep_protocol::{ActionTime, ActorId, BlockReason, Damage, Event, HitPoints, Position};
+use dreadstep_protocol::{
+  ActionTime, ActorId, BlockReason, Damage, Event, HitPoints, ItemId, Position,
+};
 
 #[test]
 fn maps_every_core_event_variant_to_protocol_values() {
@@ -38,6 +41,14 @@ fn maps_every_core_event_variant_to_protocol_values() {
     },
     CoreEvent::Died {
       actor: CoreActorId::new(2),
+    },
+    CoreEvent::ItemUnequipped {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(4),
+    },
+    CoreEvent::ItemEquipped {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(5),
     },
   ];
 
@@ -74,6 +85,14 @@ fn maps_every_core_event_variant_to_protocol_values() {
       },
       Event::Died {
         actor: ActorId::new(2),
+      },
+      Event::ItemUnequipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(4),
+      },
+      Event::ItemEquipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(5),
       },
     ]
   );

@@ -1675,7 +1675,8 @@ Acceptance:
 - Unknown actors and source items not owned return typed errors before mutation. Duplicate item
   identity checks for `give_item` include ground items, so the global instance invariant remains
   atomic and explicit.
-- Protocol version 2 exposes ground-item snapshots without inventing rules, and MCP delegates the
+- Protocol version 3 exposes ground-item snapshots and optional equipped-item identity without
+  inventing rules, and MCP delegates the
   tester drop without recording player history or replay evidence. Core remains authoritative.
 
 Verification:
@@ -1704,7 +1705,7 @@ Out of scope:
 Add the inverse tester mutation for an opaque item on the ground. Core validates an existing actor
 and the requested item in that actor's current ground stack, removes the item while preserving the
 remaining stack order, and appends it unchanged to the actor's ordered inventory. Protocol maps a
-typed ground-miss error and reuses the version-2 ground snapshot; MCP exposes only the in-memory
+typed ground-miss error and reuses the version-3 ground snapshot; MCP exposes only the in-memory
 tester mutation. No player command or gameplay effect is introduced.
 
 Acceptance:
@@ -2128,6 +2129,38 @@ Out of scope:
 
 ## Present
 
+### Milestone 4 preparation slice: deterministic single-slot item equipment
+
+- Status: active
+- Started: 2026-08-09
+
+Define the first gameplay-facing item semantic without defining item effects: a scheduled living
+actor may equip one owned opaque item instance or unequip its current reference. Equipment remains
+an optional `ItemId` pointing into the actor's ordered inventory, so core owns one item store and
+content catalogs remain authoring-only.
+
+Acceptance:
+
+- Typed `Command::Equip` and `Command::Unequip` validate actor scheduling, life, ownership, and
+  current equipment; replacement emits deterministic unequip-before-equip events, while unequip
+  clears only the optional reference.
+- Accepted equipment actions consume one standard action and enter replay history; world digests and
+  snapshots include the optional equipped identity. Rejected commands preserve complete world,
+  replay, digest, and snapshot state.
+- Tester drop/transfer reject equipped items atomically rather than silently clearing the slot.
+- Protocol command/event/error/snapshot mappings and MCP action/history/replay evidence preserve the
+  typed optional equipment field; Bevy `SceneActor` mirrors the same field without a second store.
+- No item effects, stat modifiers, consumables, capacity, additional slots, rendering, assets,
+  windowing, audio, persistence, transport, or dependencies are introduced.
+
+Verification target:
+
+- Focused core equipment tests prove accepted/rejected command behavior, replacement ordering,
+  scheduler/replay/digest transitions, tester mutation guards, and atomicity; protocol/MCP tests
+  prove round-trip and JSON/session evidence; Bevy scene tests prove complete retained actor data.
+- All workspace targets, Clippy, docs, repository checks, and `scripts/verify.sh` must pass, with
+  one semantic reviewer and fresh Linux/macOS/Windows CI before moving the slice into Past.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -2146,8 +2179,8 @@ can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
   widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
-- Milestone 4 — Tactical Combat: richer player verbs, item use/equipment, and systemic combat
-  interactions beyond the currently verified tester-only item operations.
+- Milestone 4 — Tactical Combat: richer player verbs, item use, and systemic combat interactions
+  beyond the currently verified single-slot equipment contract and tester item operations.
 - Milestone 5 — The Living Dungeon: procedural floors, enemy archetypes, environmental state,
   and floor progression.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build

@@ -31,7 +31,7 @@ fn snapshot() -> WorldSnapshot {
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
-  assert_eq!(value["protocol_version"], 2);
+  assert_eq!(value["protocol_version"], 3);
   assert_eq!(value["current_time"], 0);
   assert_eq!(value["next_actor"], 1);
   assert!(value["digest"].is_number());
@@ -41,6 +41,7 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["life"], "alive");
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
+  assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
 }
 
 #[test]
@@ -81,6 +82,15 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     request
   );
 
+  let equipment = CommandRequest::Equip {
+    actor: ActorId::new(3),
+    item: dreadstep_protocol::ItemId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(equipment).expect("equipment request should serialize"),
+    serde_json::json!({"equip": {"actor": 3, "item": 4}})
+  );
+
   let event = Event::Waited {
     actor: ActorId::new(3),
     at: ActionTime::new(7),
@@ -88,6 +98,14 @@ fn command_and_event_json_use_explicit_tagged_variants() {
   assert_eq!(
     serde_json::to_value(event).expect("event should serialize"),
     serde_json::json!({"waited": {"actor": 3, "at": 7}})
+  );
+  let equipment_event = Event::ItemEquipped {
+    actor: ActorId::new(3),
+    item: dreadstep_protocol::ItemId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(equipment_event).expect("equipment event should serialize"),
+    serde_json::json!({"item_equipped": {"actor": 3, "item": 4}})
   );
   let command_schema = serde_json::to_value(schemars::schema_for!(CommandRequest))
     .expect("command schema should serialize");
