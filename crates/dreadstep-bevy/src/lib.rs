@@ -21,6 +21,7 @@ use bevy::ecs::{
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use bevy::math::Vec2;
 use bevy::sprite::Sprite;
+use bevy::transform::components::Transform;
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
@@ -2176,6 +2177,7 @@ fn update_presentation(world: &mut World) {
   sync_bevy_sprite_projection(world);
   sync_bevy_sprite_transform_projection(world);
   sync_sprite_node_components(world);
+  sync_sprite_transform_components(world);
   sync_render_asset_projection(world);
   sync_focus(world);
   sync_scene_focus(world);
@@ -2494,6 +2496,42 @@ fn sync_sprite_node_components(world: &mut World) {
       continue;
     };
     entity.insert(entry.sprite().clone());
+  }
+}
+
+fn sync_sprite_transform_components(world: &mut World) {
+  if world.get_resource::<PresentationRuntime>().is_none()
+    || world
+      .get_resource::<PresentationRenderNodeProjection>()
+      .is_none()
+    || world
+      .get_resource::<PresentationBevySpriteTransformProjection>()
+      .is_none()
+  {
+    return;
+  }
+  let entries = world
+    .resource::<PresentationBevySpriteTransformProjection>()
+    .entries()
+    .to_vec();
+  for entry in entries {
+    let Ok(mut entity) = world.get_entity_mut(entry.node().node_entity()) else {
+      continue;
+    };
+    entity.insert(
+      entry
+        .translation()
+        .map_or_else(Transform::default, transform_from_pixel_position),
+    );
+  }
+}
+
+fn transform_from_pixel_position(position: ScenePixelPosition) -> Transform {
+  // Bevy's Transform API stores f32 values; the checked integer pixel origin remains available in
+  // ScenePixelPosition and this is the deliberate adapter conversion at the ECS boundary.
+  #[allow(clippy::cast_precision_loss)]
+  {
+    Transform::from_xyz(position.x() as f32, position.y() as f32, 0.0)
   }
 }
 

@@ -2569,6 +2569,52 @@ Out of scope:
   render plugins/backends, texture or production asset loading, audio playback, animation, gameplay
   rules, persistence, transport, and committed media binaries.
 
+### Milestone 3 slice: ECS Sprite-transform attachment
+
+- Status: verified
+- Started: 2026-08-09
+- Completed: 2026-08-09
+
+Attach the verified checked Sprite-transform projection to retained render-node ECS entities as
+logical-pixel `Transform` translations. This slice chooses only the explicit map-space origin
+mapping `(pixel_x, pixel_y, 0)`; inventory remains unplaced/default and centering, anchors, depth,
+cameras, and visibility remain separate decisions.
+
+Acceptance:
+
+- Each retained map-backed render node with a checked `ScenePixelPosition` receives or refreshes
+  `Transform::from_xyz(pixel_x as f32, pixel_y as f32, 0.0)` on the same node Entity. Inventory
+  nodes receive no invented translation and retain their default/unplaced transform state.
+- Fresh absence of `PresentationTileSize` leaves map nodes unplaced; later removal preserves the
+  previously checked transform translations, matching the retained projection rule. Accepted
+  movement and dead/stale/co-located refreshes preserve node identity and update only the expected
+  transforms.
+- Missing runtime, node projection, transform projection, or node entity are independent safe
+  no-ops that preserve existing ECS components. Runtime snapshots, replay history, digests, and
+  scene authority remain unchanged.
+- No centering/anchor or z-layer policy, camera, visibility, window, render plugin/backend,
+  texture/asset loading, audio, animation, gameplay, persistence, transport, or committed media
+  behavior is introduced.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-bevy --test sprite_transform_components --locked` passes 9/9 and
+  proves exact map translations, inventory exclusion, fresh/retained tile-size behavior, accepted
+  movement, nonzero-Y mapping, dead/stale/co-located identity, independent guards, and runtime/replay
+  preservation.
+- All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
+  and `scripts/verify.sh` pass locally; media checks keep local binaries ignored while concept art
+  and root screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `3f646b1` (implementation `c6a5b49`,
+  bounded evidence/docs correction `3f646b1`); Linux, Apple Silicon macOS, and Windows CI are green
+  on PR #74 (run `31335902308`). This docs-only closeout is reviewed separately.
+
+Out of scope:
+
+- Centering/anchor or z-layer policy, cameras, visibility/fog, windows, render plugins/backends,
+  texture or production asset loading, audio playback, animation, gameplay rules, persistence,
+  transport, and committed media binaries.
+
 ## Present
 
 ### Deferred item gameplay semantics
@@ -2585,8 +2631,9 @@ explicit core contract.
 
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
-Bevy Sprite API, ECS Sprite attachment, and typed Sprite-transform projection boundaries. The
-remaining renderer work in the proposal still defines these future product milestones; each needs
+Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, and ECS Sprite-transform
+attachment boundaries. The remaining renderer work in the proposal still defines these future
+product milestones; each needs
 its own bounded acceptance slice before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD

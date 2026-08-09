@@ -384,7 +384,7 @@ fn accepted_movement_refreshes_the_same_node_translation() {
 }
 
 #[test]
-fn transform_projection_does_not_attach_ecs_components() {
+fn plugin_attaches_transform_without_sprite_projection() {
   let app = transform_only_app();
   let entries = app
     .world()
@@ -398,8 +398,20 @@ fn transform_projection_does_not_attach_ecs_components() {
       .get_entity(entry.node().node_entity())
       .expect("node entity should exist");
     assert!(entity.get::<Sprite>().is_none());
-    assert!(entity.get::<Transform>().is_none());
     assert!(entity.get::<Visibility>().is_none());
+    assert_eq!(
+      entity.get::<Transform>().copied(),
+      Some(
+        entry
+          .translation()
+          .map_or_else(Transform::default, |position| {
+            #[allow(clippy::cast_precision_loss)]
+            {
+              Transform::from_xyz(position.x() as f32, position.y() as f32, 0.0)
+            }
+          })
+      )
+    );
   }
 }
 

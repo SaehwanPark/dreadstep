@@ -132,6 +132,9 @@ All notable contributor- and user-visible project changes are recorded here.
   pixel origins while keeping inventory unplaced and ECS transforms unchanged; fresh missing tile size
   starts unplaced while later removal preserves checked translations. Cameras, windows, rendering,
   playback, and production media remain deferred.
+- A verified ECS Sprite-transform attachment boundary applies checked logical-pixel `(x, y, 0)`
+  translations to retained map-node `Transform` components while leaving inventory unplaced and
+  deferring centering, depth, cameras, visibility, rendering, playback, and production media.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;
