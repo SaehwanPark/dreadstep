@@ -62,7 +62,7 @@ impl ItemDefinitionId {
   }
 }
 
-/// One opaque item instance owned by an actor.
+/// One opaque item instance in world state, either in an actor inventory or on the ground.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Item {
   id: ItemId,
@@ -86,6 +86,34 @@ impl Item {
   #[must_use]
   pub const fn definition(self) -> ItemDefinitionId {
     self.definition
+  }
+}
+
+/// One deterministic stack of opaque items at a map position.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GroundItemStack {
+  position: Position,
+  items: Vec<Item>,
+}
+
+impl GroundItemStack {
+  fn new(position: Position, item: Item) -> Self {
+    Self {
+      position,
+      items: vec![item],
+    }
+  }
+
+  /// Returns the map position of this stack.
+  #[must_use]
+  pub const fn position(&self) -> Position {
+    self.position
+  }
+
+  /// Returns items in deterministic insertion order.
+  #[must_use]
+  pub fn items(&self) -> &[Item] {
+    &self.items
   }
 }
 
@@ -1019,6 +1047,7 @@ impl ActionResult {
 pub struct WorldState {
   map: GridMap,
   actors: BTreeMap<ActorId, Actor>,
+  ground_items: Vec<GroundItemStack>,
   current_time: ActionTime,
 }
 
@@ -1072,6 +1101,7 @@ impl WorldState {
     Ok(Self {
       map,
       actors: indexed_actors,
+      ground_items: Vec::new(),
       current_time,
     })
   }
@@ -1136,8 +1166,8 @@ impl WorldState {
   /// # Errors
   ///
   /// Returns [`WorldError::UnknownActor`] when the target identity is absent or
-  /// [`WorldError::DuplicateItemId`] when another actor already owns the item identity. A
-  /// rejected item is not inserted.
+  /// [`WorldError::DuplicateItemId`] when any actor inventory or ground stack already owns the
+  /// item identity. A rejected item is not inserted.
   pub fn give_item(&mut self, actor_id: ActorId, item: Item) -> Result<(), WorldError> {
     if !self.actors.contains_key(&actor_id) {
       return Err(WorldError::UnknownActor(actor_id));
@@ -1147,7 +1177,11 @@ impl WorldState {
         .inventory()
         .iter()
         .any(|owned| owned.id() == item.id())
-    }) {
+    }) || self
+      .ground_items
+      .iter()
+      .any(|stack| stack.items().iter().any(|owned| owned.id() == item.id()))
+    {
       return Err(WorldError::DuplicateItemId(item.id()));
     }
     self
@@ -1156,6 +1190,57 @@ impl WorldState {
       .ok_or(WorldError::UnknownActor(actor_id))?
       .inventory
       .push(item);
+    Ok(())
+  }
+
+  /// Drops one opaque item at an actor's current position for an explicit tester operation.
+  ///
+  /// The item is removed from the actor's ordered inventory and appended unchanged to the
+  /// position's ground stack. Dead actor records remain valid sources because their retained
+  /// positions remain part of the inspectable world state.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`WorldError::UnknownActor`] when the actor identity is absent or
+  /// [`WorldError::ItemNotOwned`] when the actor does not own the requested item. Rejected drops
+  /// leave the world unchanged.
+  pub fn drop_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<(), WorldError> {
+    if !self.actors.contains_key(&actor_id) {
+      return Err(WorldError::UnknownActor(actor_id));
+    }
+    let Some(item_index) = self
+      .actors
+      .get(&actor_id)
+      .and_then(|actor| actor.inventory.iter().position(|item| item.id() == item_id))
+    else {
+      return Err(WorldError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      });
+    };
+    let position = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(WorldError::UnknownActor(actor_id))?;
+    let mut actor = self
+      .actors
+      .remove(&actor_id)
+      .ok_or(WorldError::UnknownActor(actor_id))?;
+    let item = actor.inventory.remove(item_index);
+    self.actors.insert(actor_id, actor);
+
+    let position_key = (position.y(), position.x());
+    match self
+      .ground_items
+      .binary_search_by_key(&position_key, |stack| {
+        (stack.position().y(), stack.position().x())
+      }) {
+      Ok(index) => self.ground_items[index].items.push(item),
+      Err(index) => self
+        .ground_items
+        .insert(index, GroundItemStack::new(position, item)),
+    }
     Ok(())
   }
 
@@ -1333,6 +1418,12 @@ impl WorldState {
     self.actors.values()
   }
 
+  /// Returns ground-item stacks in deterministic row-major position order.
+  #[must_use = "inspect the ground-item stacks"]
+  pub fn ground_items(&self) -> &[GroundItemStack] {
+    &self.ground_items
+  }
+
   /// Returns the world's minimum ready time.
   #[must_use]
   pub const fn current_time(&self) -> ActionTime {
@@ -1342,9 +1433,9 @@ impl WorldState {
   /// Returns a stable digest of all semantic world state.
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
-  /// identity, kind, life, position, hit points, ready time, and ordered inventory item
-  /// identities and definition references. It is deterministic regression evidence, not a
-  /// cryptographic integrity check or serialized state format.
+  /// identity, kind, life, position, hit points, ready time, ordered inventory item identities and
+  /// definition references, and ordered ground-item stacks. It is deterministic regression
+  /// evidence, not a cryptographic integrity check or serialized state format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
@@ -1373,6 +1464,18 @@ impl WorldState {
       for item in actor.inventory() {
         hasher.write_u32(item.id().value());
         hasher.write_u32(item.definition().value());
+      }
+    }
+    if !self.ground_items.is_empty() {
+      hasher.write_u64(u64::try_from(self.ground_items.len()).unwrap_or(u64::MAX));
+      for stack in &self.ground_items {
+        hasher.write_i32(stack.position().x());
+        hasher.write_i32(stack.position().y());
+        hasher.write_u64(u64::try_from(stack.items().len()).unwrap_or(u64::MAX));
+        for item in stack.items() {
+          hasher.write_u32(item.id().value());
+          hasher.write_u32(item.definition().value());
+        }
       }
     }
     hasher.finish()

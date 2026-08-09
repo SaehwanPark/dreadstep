@@ -128,3 +128,17 @@ Update an existing lesson instead of adding a duplicate.
   and keep the operation outside `ReplayTrace`; map only the typed core error at adapter boundaries.
 - Prevention: Test digest/order and complete rejection snapshots at core, map every new world error in
   protocol, and assert MCP history/replay invariants for both accepted and rejected transfers.
+
+## Keep ground item identity and projection ordered
+
+- Context: Tester item drop now moves opaque instances from actor inventories to stable map-position
+  ground stacks without defining pickup or gameplay effects.
+- Symptom: A separate unordered ground store or position iteration could permit duplicate identities,
+  make snapshots/digests vary by process, or lose item order when multiple items share a tile.
+- Cause: Core owns one global item-identity invariant across inventories and ground stacks, while
+  adapters need a complete deterministic projection for inspection.
+- Resolution: Keep stacks in core, order positions row-major and items by append order, validate actor
+  ownership before mutation, include ground items in the world digest, and project them read-only
+  through protocol/MCP without player replay/history.
+- Prevention: Test source-order preservation, same-position stack order, row-major projection,
+  duplicate give-after-drop, dead-source behavior, and accepted/rejected tester replay invariants.

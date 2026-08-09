@@ -31,10 +31,11 @@ fn snapshot() -> WorldSnapshot {
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
-  assert_eq!(value["protocol_version"], 1);
+  assert_eq!(value["protocol_version"], 2);
   assert_eq!(value["current_time"], 0);
   assert_eq!(value["next_actor"], 1);
   assert!(value["digest"].is_number());
+  assert_eq!(value["ground_items"], serde_json::json!([]));
   assert_eq!(value["actors"][0]["id"], 1);
   assert_eq!(value["actors"][0]["kind"], "player");
   assert_eq!(value["actors"][0]["life"], "alive");
@@ -59,6 +60,7 @@ fn snapshot_schema_exposes_the_versioned_projection_shape() {
   assert!(properties["next_actor"].is_object());
   assert!(properties["digest"].is_object());
   assert!(properties["actors"].is_object());
+  assert!(properties["ground_items"].is_object());
 }
 
 #[test]
