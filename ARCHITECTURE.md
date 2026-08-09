@@ -333,6 +333,11 @@ terrain `0.0`, ground items `1.0`, actors `2.0`, and inventory default/unplaced 
 the existing centered x/y values, source/order/identity semantics, and authority guards without adding
 anchor variants, cameras, visibility, render plugins, windows, or production media.
 
+The active headless ECS Camera2d attachment adds Bevy's typed `Camera2d` marker and required default
+camera components to the retained authoritative `SceneCamera` entity. Camera center/origin remain
+owned by the existing projections; window creation, camera transform/viewport/visibility policy,
+render plugins, and production media remain deferred.
+
 The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does

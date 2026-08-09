@@ -2707,6 +2707,37 @@ Out of scope:
 
 ## Present
 
+### Milestone 3 slice: headless ECS Camera2d attachment
+
+- Status: active
+- Started: 2026-08-09
+
+Attach Bevy's typed `Camera2d` marker to the already retained authoritative `SceneCamera` entity.
+The existing camera anchor and viewport projections remain the source of center/origin truth; this
+slice adds only Bevy's required camera components at their defaults.
+
+Acceptance:
+
+- Startup, accepted movement, and controlled-actor changes retain one SceneCamera entity and attach
+  one `Camera2d` marker with Bevy's required default camera components; no custom transform,
+  viewport, or visibility policy is added.
+- Duplicate/recycled camera cleanup preserves the retained identity and Camera2d; unknown actors
+  remove stale camera entities without mutating runtime snapshot/replay digest.
+- Missing runtime, input, camera, or SceneCamera state are independent safe no-ops. No window,
+  render plugin/backend, texture/asset loading, audio, animation, gameplay, persistence, transport,
+  or committed media behavior is introduced.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test camera_attachment --locked` proves startup/defaults,
+  refresh/identity, unknown clearing, duplicate cleanup, guards, and authority.
+
+Out of scope:
+
+- Window creation, render plugins/backends, camera transform/viewport/visibility policy, fog of war,
+  texture or production asset loading, audio playback, animation, gameplay rules, persistence,
+  transport, and committed media binaries.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,

@@ -138,6 +138,9 @@ All notable contributor- and user-visible project changes are recorded here.
   rendering, playback, and production media.
 - A verified ECS Sprite-depth boundary derives deterministic terrain/ground/actor z-layer values from
   typed render layer while preserving centered x/y placement and inventory default state.
+- An active headless ECS Camera2d attachment boundary is being prepared; it adds only Bevy's typed
+  camera marker/default components to the retained camera entity while deferring windows, camera
+  policy, render plugins, visibility, playback, and production media.
 - A deterministic content-owned catalog of opaque item-definition identities with duplicate
   validation, while effects, capacity, and richer item gameplay remain deferred.
 - A deterministic tester-only item transfer across core, protocol, and in-memory MCP boundaries;

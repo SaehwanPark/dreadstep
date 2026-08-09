@@ -10,6 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::app::{App, Plugin, Update};
+use bevy::camera::Camera2d;
 use bevy::color::Color;
 use bevy::ecs::{
   component::Component,
@@ -2183,6 +2184,7 @@ fn update_presentation(world: &mut World) {
   sync_scene_focus(world);
   sync_camera(world);
   sync_scene_camera(world);
+  sync_scene_camera_components(world);
   sync_viewport(world);
   sync_scene_viewport(world);
   sync_hud(world);
@@ -2816,6 +2818,26 @@ fn sync_scene_camera(world: &mut World) {
     world.insert_resource(SceneCameraState {
       entity: Some(entity),
     });
+  }
+}
+
+fn sync_scene_camera_components(world: &mut World) {
+  if world.get_resource::<PresentationInput>().is_none()
+    || world.get_resource::<PresentationRuntime>().is_none()
+    || world.get_resource::<PresentationCamera>().is_none()
+  {
+    return;
+  }
+  let mut query = world.query::<(Entity, &SceneCamera)>();
+  let entities = query
+    .iter(world)
+    .map(|(entity, _)| entity)
+    .collect::<Vec<_>>();
+  for entity in entities {
+    let Ok(mut entity) = world.get_entity_mut(entity) else {
+      continue;
+    };
+    entity.insert(Camera2d);
   }
 }
 
