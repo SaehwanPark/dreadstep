@@ -1338,6 +1338,43 @@ Out of scope:
 
 ## Future
 
+### Milestone 4 slice: deterministic catalog-bound starter item placements
+
+- Status: active
+- Started: 2026-08-09
+
+Bind authored starter-floor item placements to an explicit content-owned
+`ItemCatalogDefinition`. `StarterFloorDefinition` will validate the catalog and every placement's
+opaque `ItemDefinitionId` before constructing the core world, while the catalog remains content
+authoring data and never enters `WorldState`.
+
+Acceptance:
+
+- `StarterFloorDefinition::with_item_catalog` binds an explicit authored catalog, and `build`
+  rejects duplicate definition IDs with the existing typed catalog error.
+- Every authored placement must reference a catalog member; an unknown definition returns a typed
+  content error before map/world construction, while valid placement order and complete item data
+  remain unchanged.
+- The default item-free starter floor remains deterministic and valid with its empty catalog, and
+  the catalog is not copied into core snapshots, digests, protocol, MCP, or Bevy state.
+- Core remains authoritative for actor/item identity, inventory order, digest state, and mutation;
+  no item effects, capacity, equipment, commands, persistence, or transport behavior is added.
+
+Verification:
+
+- Focused `cargo test -p dreadstep-content --test starter_items --all-features --locked` covers
+  catalog-bound success/order, duplicate catalog IDs, unknown definitions, and default stability.
+- `cargo test -p dreadstep-content --all-targets --all-features --locked`, focused Clippy, Cargo
+  docs, `git diff --check`, and `scripts/verify.sh` pass before handoff.
+- Exactly one semantic code reviewer must review the content/catalog boundary, and Linux, Apple
+  Silicon macOS, and Windows CI must be green for the reviewed revision before closeout.
+
+Out of scope:
+
+- Changing default starter-floor contents, core/protocol/MCP/Bevy APIs, item effects, capacity,
+  equipment, identification, player/tester commands, ground state, persistence, serialization,
+  rendering, or UI.
+
 ### Milestone 4 slice: deterministic authored starter-floor item placements
 
 - Status: verified
