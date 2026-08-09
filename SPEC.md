@@ -1370,7 +1370,7 @@ Acceptance:
 - Protocol version 2 exposes ground-item snapshots without inventing rules, and MCP delegates the
   tester drop without recording player history or replay evidence. Core remains authoritative.
 
-Verification target:
+Verification:
 
 - Focused core drop tests cover ordered stacks, source-order preservation, dead sources, typed
   rejection/atomicity, and digest changes; protocol snapshot tests cover row-major projection and
