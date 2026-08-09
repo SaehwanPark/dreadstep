@@ -230,6 +230,50 @@ impl SceneGroundItem {
   }
 }
 
+/// A disposable ECS mirror of one opaque item in an actor inventory.
+#[derive(Component, Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneInventoryItem {
+  id: ItemId,
+  owner: ActorId,
+  definition: ItemDefinitionId,
+  inventory_index: usize,
+}
+
+impl SceneInventoryItem {
+  fn from_core(owner: ActorId, inventory_index: usize, item: Item) -> Self {
+    Self {
+      id: item.id(),
+      owner,
+      definition: item.definition(),
+      inventory_index,
+    }
+  }
+
+  /// Returns the globally unique item identity.
+  #[must_use]
+  pub const fn id(self) -> ItemId {
+    self.id
+  }
+
+  /// Returns the actor that currently owns this item instance.
+  #[must_use]
+  pub const fn owner(self) -> ActorId {
+    self.owner
+  }
+
+  /// Returns the opaque content reference carried by this item instance.
+  #[must_use]
+  pub const fn definition(self) -> ItemDefinitionId {
+    self.definition
+  }
+
+  /// Returns this item's zero-based insertion-order index in its owner's inventory.
+  #[must_use]
+  pub const fn inventory_index(self) -> usize {
+    self.inventory_index
+  }
+}
+
 /// A marker for the keyed scene entity representing the selected actor.
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SceneFocus;
@@ -649,10 +693,10 @@ fn scene_position(index: usize, width: usize) -> Option<dreadstep_core::Position
 
 /// Synchronizes a complete core projection into disposable Bevy scene entities.
 ///
-/// Tile entities are keyed by position, actor entities by [`ActorId`], and ground-item entities by
-/// globally unique [`ItemId`]. Existing entities keep their Bevy identity when their key remains in
-/// the snapshot; stale entities are despawned before new keys are spawned. The ECS world is only a
-/// presentation mirror and cannot change core state.
+/// Tile entities are keyed by position, actor entities by [`ActorId`], and ground or inventory-item
+/// entities by globally unique [`ItemId`]. Existing entities keep their Bevy identity when their key
+/// remains in the snapshot; stale entities are despawned before new keys are spawned. The ECS world
+/// is only a presentation mirror and cannot change core state.
 pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
   let mut existing_tiles: BTreeMap<_, Vec<_>> = {
     let mut query = scene.query::<(Entity, &SceneTile)>();
@@ -747,6 +791,7 @@ pub fn sync_scene(scene: &mut World, snapshot: &PresentationSnapshot) {
   }
 
   sync_ground_items(scene, snapshot);
+  sync_inventory_items(scene, snapshot);
 }
 
 fn sync_ground_items(scene: &mut World, snapshot: &PresentationSnapshot) {
@@ -783,6 +828,51 @@ fn sync_ground_items(scene: &mut World, snapshot: &PresentationSnapshot) {
     for (stack_index, item) in stack.items().iter().enumerate() {
       let scene_item = SceneGroundItem::from_core(stack.position(), stack_index, *item);
       if let Some(entity) = existing_ground_items
+        .get(&item.id())
+        .and_then(|entities| entities.first())
+      {
+        scene.entity_mut(*entity).insert(scene_item);
+      } else {
+        scene.spawn(scene_item);
+      }
+    }
+  }
+}
+
+fn sync_inventory_items(scene: &mut World, snapshot: &PresentationSnapshot) {
+  let mut existing_inventory_items: BTreeMap<_, Vec<_>> = {
+    let mut query = scene.query::<(Entity, &SceneInventoryItem)>();
+    query
+      .iter(scene)
+      .fold(BTreeMap::new(), |mut entities, (entity, item)| {
+        entities.entry(item.id()).or_default().push(entity);
+        entities
+      })
+  };
+  for entities in existing_inventory_items.values_mut() {
+    entities.sort_unstable();
+  }
+  let expected_inventory_items: BTreeSet<_> = snapshot
+    .actors()
+    .iter()
+    .flat_map(|actor| actor.inventory().iter())
+    .map(|item| item.id())
+    .collect();
+  for (item_id, entities) in &existing_inventory_items {
+    if expected_inventory_items.contains(item_id) {
+      for entity in entities.iter().skip(1) {
+        let _ = scene.despawn(*entity);
+      }
+    } else {
+      for entity in entities {
+        let _ = scene.despawn(*entity);
+      }
+    }
+  }
+  for actor in snapshot.actors() {
+    for (inventory_index, item) in actor.inventory().iter().enumerate() {
+      let scene_item = SceneInventoryItem::from_core(actor.id(), inventory_index, *item);
+      if let Some(entity) = existing_inventory_items
         .get(&item.id())
         .and_then(|entities| entities.first())
       {
