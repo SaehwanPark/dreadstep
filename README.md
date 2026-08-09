@@ -65,7 +65,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified placeholder render-node bootstrap: `PresentationRenderNodeProjection` reconciles stable
   ECS nodes from typed commands with deterministic placeholder families; actual Sprite components,
   render plugins, windows, texture loading, animation, audio, and media remain deferred.
-- Active local-only asset manifest: `PresentationAssetManifest` validates one relative reference
+- Verified local-only asset manifest: `PresentationAssetManifest` validates one anchored reference
   per placeholder family and `PresentationRenderAssetProjection` joins those references to stable
   node metadata without loading files or creating asset handles; pixel-art/audio binaries remain
   ignored local files with provenance kept in tracked documents.

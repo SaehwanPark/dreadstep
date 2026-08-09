@@ -305,7 +305,7 @@ source/layer identity across role refreshes, typed placeholder families, orderin
 placement without introducing Bevy `Sprite` components, render plugins, windows, transforms, asset
 loading, or audio.
 
-The active local-only asset-manifest slice adds `PresentationAssetManifest` and
+The verified local-only asset-manifest slice adds `PresentationAssetManifest` and
 `PresentationRenderAssetProjection` as another read-only boundary. Validated relative references
 join the ordered placeholder nodes while preserving node identity and metadata; the projection does
 not inspect the filesystem, create asset handles, or load pixel/audio binaries. Missing authority,
