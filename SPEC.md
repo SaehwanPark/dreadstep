@@ -2573,8 +2573,9 @@ Out of scope:
 
 ### Milestone 3 slice: ECS Sprite-transform attachment
 
-- Status: active
+- Status: verified
 - Started: 2026-08-09
+- Completed: 2026-08-09
 
 Attach the verified checked Sprite-transform projection to retained render-node ECS entities as
 logical-pixel `Transform` translations. This slice chooses only the explicit map-space origin
@@ -2605,7 +2606,10 @@ Verification:
   preservation.
 - All Bevy targets, warning-denied Clippy/docs, formatting, repository checks, `git diff --check`,
   and `scripts/verify.sh` pass locally; media checks keep local binaries ignored while concept art
-  and root screenshot exceptions remain visible. Remote PR review and CI remain the handoff gate.
+  and root screenshot exceptions remain visible.
+- Exactly one semantic reviewer reports PASS revision 1 at `3f646b1` (implementation `c6a5b49`,
+  bounded evidence/docs correction `3f646b1`); Linux, Apple Silicon macOS, and Windows CI are green
+  on PR #74 (run `31335902308`). This docs-only closeout is reviewed separately.
 
 Out of scope:
 
@@ -2627,7 +2631,8 @@ explicit core contract.
 
 The completed Past slices cover the rules kernel, agent interfaces, and the deterministic
 headless presentation boundary currently implemented in the repository, including the verified
-Bevy Sprite API, ECS Sprite attachment, and typed Sprite-transform projection boundaries. The
+Bevy Sprite API, ECS Sprite attachment, typed Sprite-transform projection, and ECS Sprite-transform
+attachment boundaries. The
 remaining renderer work in the proposal still defines these future product milestones; each needs
 its own bounded acceptance slice before it can move into `Past`:
 

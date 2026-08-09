@@ -49,11 +49,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     keeping inventory unplaced and ECS transforms unchanged; fresh missing tile size starts
     unplaced while later removal preserves checked translations. Camera, visibility, window,
     renderer, and production media remain deferred.
-- Active ECS Sprite-transform attachment
-  - The next presentation boundary attaches checked `(pixel_x, pixel_y, 0)` logical-pixel
-    translations to retained map-node `Transform` components while keeping inventory unplaced;
-    centering, anchors, depth, cameras, visibility, rendering, and production media remain
-    deferred.
+- Verified ECS Sprite-transform attachment
+  - The presentation boundary attaches checked `(pixel_x, pixel_y, 0)` logical-pixel translations
+    to retained map-node `Transform` components while keeping inventory unplaced; centering, anchors,
+    depth, cameras, visibility, rendering, and production media remain deferred.
 - Still deferred
   - Windowing, Sprite/render plugins, production textures/assets, centering/anchor/depth policy and
     cameras, animation playback, HUD widgets, event/combat message presentation, audio assets/

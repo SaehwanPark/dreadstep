@@ -322,7 +322,7 @@ starts unplaced while later removal preserves previously checked translations. T
 attach or mutate ECS Transform/Visibility/Sprite components; camera, window, renderer, and production
 media remain deferred.
 
-The active ECS Sprite-transform attachment consumes that verified projection and writes only
+The verified ECS Sprite-transform attachment consumes that projection and writes only
 logical-pixel `Transform` translations `(pixel_x, pixel_y, 0)` onto retained map-backed node
 entities. Inventory nodes remain unplaced/default. Centering, anchors, depth, cameras, visibility,
 render plugins, windows, and production media remain separate deferred boundaries.
