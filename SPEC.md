@@ -2712,9 +2712,9 @@ Out of scope:
 - Status: active
 - Started: 2026-08-09
 
-Attach Bevy's typed `Camera2d` marker to the already retained authoritative `SceneCamera` entity.
-The existing camera anchor and viewport projections remain the source of center/origin truth; this
-slice adds only Bevy's required camera components at their defaults.
+Attach Bevy's typed `Camera2d` marker to the already retained disposable `SceneCamera` projection
+entity. `PresentationCamera` and the runtime remain the source of camera-center truth; this slice
+adds only Bevy's required camera components at their defaults.
 
 Acceptance:
 
@@ -2723,7 +2723,8 @@ Acceptance:
   viewport, or visibility policy is added.
 - Duplicate/recycled camera cleanup preserves the retained identity and Camera2d; unknown actors
   remove stale camera entities without mutating runtime snapshot/replay digest.
-- Missing runtime, input, camera, or SceneCamera state are independent safe no-ops. No window,
+- Missing runtime, input, or camera resources are independent safe no-ops. SceneCamera creation,
+  deduplication, and unknown-actor cleanup remain the existing synchronization behavior. No window,
   render plugin/backend, texture/asset loading, audio, animation, gameplay, persistence, transport,
   or committed media behavior is introduced.
 

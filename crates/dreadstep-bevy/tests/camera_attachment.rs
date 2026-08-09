@@ -2,7 +2,7 @@
 
 use bevy::app::App;
 use bevy::camera::visibility::Visibility;
-use bevy::camera::{Camera, Camera2d};
+use bevy::camera::{Camera, Camera2d, OrthographicProjection, Projection, ScalingMode};
 use bevy::ecs::entity::Entity;
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use bevy::transform::components::Transform;
@@ -70,6 +70,36 @@ fn camera2d_entities(app: &mut App) -> Vec<Entity> {
   entities
 }
 
+fn assert_default_camera_components(app: &App, entity: Entity) {
+  let world = app.world();
+  let camera = world
+    .get::<Camera>(entity)
+    .expect("Camera2d requires Camera");
+  assert!(camera.is_active);
+  assert_eq!(camera.order, 0);
+  assert!(camera.viewport.is_none());
+  assert!(!camera.invert_culling);
+  assert_eq!(camera.sub_camera_view, None);
+
+  let projection = world
+    .get::<Projection>(entity)
+    .expect("Camera2d requires Projection");
+  let Projection::Orthographic(projection) = projection else {
+    panic!("Camera2d must use an orthographic projection");
+  };
+  let expected = OrthographicProjection::default_2d();
+  assert_eq!(projection.near.to_bits(), expected.near.to_bits());
+  assert_eq!(projection.far.to_bits(), expected.far.to_bits());
+  assert_eq!(projection.viewport_origin, expected.viewport_origin);
+  assert!(matches!(projection.scaling_mode, ScalingMode::WindowSize));
+  assert_eq!(projection.scale.to_bits(), expected.scale.to_bits());
+  assert_eq!(projection.area, expected.area);
+  assert_eq!(
+    world.get::<Visibility>(entity).copied(),
+    Some(Visibility::default())
+  );
+}
+
 #[test]
 fn startup_attaches_camera2d_and_required_defaults_to_one_scene_camera() {
   let mut app = camera_app(ActorId::new(1));
@@ -84,6 +114,7 @@ fn startup_attaches_camera2d_and_required_defaults_to_one_scene_camera() {
   assert_eq!(transform, Some(Transform::default()));
   assert!(visibility.is_some());
   assert_eq!(camera2d_entities(&mut app), vec![entries[0].0]);
+  assert_default_camera_components(&app, entries[0].0);
 }
 
 #[test]
