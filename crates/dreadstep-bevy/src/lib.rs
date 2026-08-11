@@ -7,7 +7,7 @@
 
 #![forbid(unsafe_code)]
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use bevy::app::{App, Plugin, Update};
 use bevy::camera::Camera2d;
@@ -224,6 +224,64 @@ impl PresentationViewport {
   #[must_use]
   pub const fn effective_height(self) -> u32 {
     self.effective_height
+  }
+}
+
+/// An optional presentation-only field-of-view projection for one controlled actor.
+///
+/// The projection is computed from the current [`PresentationSnapshot`] when the presentation
+/// plugin updates. It is intentionally not part of the snapshot: core and agent-facing adapters
+/// continue to receive complete map and actor state, while a desktop client may choose to hide
+/// out-of-view render nodes without changing simulation authority.
+#[derive(Clone, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationVisibility {
+  actor: ActorId,
+  radius: u32,
+  active: bool,
+  positions: Vec<Position>,
+}
+
+impl PresentationVisibility {
+  /// Creates an inactive field-of-view request for one actor and cardinal step radius.
+  #[must_use]
+  pub const fn new(actor: ActorId, radius: u32) -> Self {
+    Self {
+      actor,
+      radius,
+      active: false,
+      positions: Vec::new(),
+    }
+  }
+
+  /// Returns the actor whose position anchors the projection.
+  #[must_use]
+  pub const fn actor(&self) -> ActorId {
+    self.actor
+  }
+
+  /// Returns the maximum number of cardinal floor steps revealed from the anchor.
+  #[must_use]
+  pub const fn radius(&self) -> u32 {
+    self.radius
+  }
+
+  /// Returns whether a valid runtime/input pair has populated the projection.
+  #[must_use]
+  pub const fn is_active(&self) -> bool {
+    self.active
+  }
+
+  /// Returns visible positions in stable row-major map order.
+  #[must_use]
+  pub fn visible_positions(&self) -> &[Position] {
+    &self.positions
+  }
+
+  /// Returns whether a map position is visible, or treats an inactive optional projection as a
+  /// no-op so headless clients retain the historical fully visible behavior.
+  #[must_use]
+  pub fn is_visible(&self, position: Position) -> bool {
+    !self.active || self.positions.contains(&position)
   }
 }
 
@@ -1375,10 +1433,11 @@ pub struct SceneRenderNode {
   order: usize,
   pixel_position: Option<ScenePixelPosition>,
   placeholder: SceneRenderPlaceholder,
+  visible: bool,
 }
 
 impl SceneRenderNode {
-  fn from_command(command: SceneRenderCommand) -> Self {
+  fn from_command(command: SceneRenderCommand, visible: bool) -> Self {
     let sprite = command.sprite_entry();
     Self {
       source_entity: sprite.entity(),
@@ -1387,6 +1446,7 @@ impl SceneRenderNode {
       order: command.order(),
       pixel_position: command.pixel_position(),
       placeholder: SceneRenderPlaceholder::from_key(sprite.key()),
+      visible,
     }
   }
 
@@ -1424,6 +1484,12 @@ impl SceneRenderNode {
   #[must_use]
   pub const fn placeholder(self) -> SceneRenderPlaceholder {
     self.placeholder
+  }
+
+  /// Returns whether this node is inside the optional presentation field of view.
+  #[must_use]
+  pub const fn is_visible(self) -> bool {
+    self.visible
   }
 }
 
@@ -2291,6 +2357,7 @@ const KEY_PRIORITY: [KeyCode; 10] = [
 fn update_presentation(world: &mut World) {
   dispatch_keyboard_input(world);
   sync_runtime_scene(world);
+  sync_visibility(world);
   sync_scene_pixel_positions(world);
   sync_render_projection(world);
   sync_sprite_projection(world);
@@ -2367,6 +2434,103 @@ fn sync_runtime_scene(world: &mut World) {
     return;
   };
   sync_scene(world, &snapshot);
+}
+
+fn sync_visibility(world: &mut World) {
+  let Some(actor) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    if let Some(mut visibility) = world.get_resource_mut::<PresentationVisibility>() {
+      visibility.active = false;
+      visibility.positions.clear();
+    }
+    return;
+  };
+  let Some(snapshot) = world
+    .get_resource::<PresentationRuntime>()
+    .map(PresentationRuntime::snapshot)
+  else {
+    if let Some(mut visibility) = world.get_resource_mut::<PresentationVisibility>() {
+      visibility.active = false;
+      visibility.positions.clear();
+    }
+    return;
+  };
+  let Some(origin) = snapshot
+    .actors()
+    .iter()
+    .find(|record| record.id() == actor)
+    .map(Actor::position)
+  else {
+    if let Some(mut visibility) = world.get_resource_mut::<PresentationVisibility>() {
+      visibility.active = false;
+      visibility.positions.clear();
+      visibility.actor = actor;
+    }
+    return;
+  };
+  let Some(mut visibility) = world.get_resource_mut::<PresentationVisibility>() else {
+    return;
+  };
+  visibility.actor = actor;
+  visibility.positions = visible_positions(&snapshot, origin, visibility.radius);
+  visibility.active = true;
+}
+
+fn visible_positions(
+  snapshot: &PresentationSnapshot,
+  origin: Position,
+  radius: u32,
+) -> Vec<Position> {
+  if snapshot_tile(snapshot, origin) != Some(Tile::Floor) {
+    return Vec::new();
+  }
+  let mut queue = VecDeque::from([(origin, 0_u32)]);
+  let mut visited_floor = BTreeSet::from([(origin.x(), origin.y())]);
+  let mut visible = BTreeSet::new();
+  while let Some((position, distance)) = queue.pop_front() {
+    visible.insert((position.x(), position.y()));
+    for direction in [
+      Direction::North,
+      Direction::South,
+      Direction::West,
+      Direction::East,
+    ] {
+      let neighbor = position.translated(direction);
+      match snapshot_tile(snapshot, neighbor) {
+        Some(Tile::Wall) => {
+          visible.insert((neighbor.x(), neighbor.y()));
+        }
+        Some(Tile::Floor)
+          if distance < radius && visited_floor.insert((neighbor.x(), neighbor.y())) =>
+        {
+          queue.push_back((neighbor, distance + 1));
+        }
+        Some(Tile::Floor) | None => {}
+      }
+    }
+  }
+  let mut positions = visible
+    .into_iter()
+    .map(|(x, y)| Position::new(x, y))
+    .collect::<Vec<_>>();
+  positions.sort_by_key(|position| (position.y(), position.x()));
+  positions
+}
+
+fn snapshot_tile(snapshot: &PresentationSnapshot, position: Position) -> Option<Tile> {
+  let x = usize::try_from(position.x()).ok()?;
+  let y = usize::try_from(position.y()).ok()?;
+  let width = usize::try_from(snapshot.width()).ok()?;
+  let height = usize::try_from(snapshot.height()).ok()?;
+  if x >= width || y >= height {
+    return None;
+  }
+  snapshot
+    .tiles()
+    .get(y.checked_mul(width)?.checked_add(x)?)
+    .copied()
 }
 
 fn sync_scene_pixel_positions(world: &mut World) {
@@ -2505,10 +2669,9 @@ fn sync_render_command_plan(world: &mut World) {
 }
 
 fn sync_render_nodes(world: &mut World) {
-  if world.get_resource::<PresentationRuntime>().is_none()
-    || world
-      .get_resource::<PresentationRenderCommandPlan>()
-      .is_none()
+  if world
+    .get_resource::<PresentationRenderCommandPlan>()
+    .is_none()
     || world
       .get_resource::<PresentationRenderNodeProjection>()
       .is_none()
@@ -2519,6 +2682,7 @@ fn sync_render_nodes(world: &mut World) {
     .resource::<PresentationRenderCommandPlan>()
     .commands()
     .to_vec();
+  let visibility = world.get_resource::<PresentationVisibility>().cloned();
   let existing = {
     let mut query = world.query::<(Entity, &SceneRenderNode)>();
     query
@@ -2529,7 +2693,11 @@ fn sync_render_nodes(world: &mut World) {
   let mut retained = Vec::new();
   let mut entries = Vec::with_capacity(commands.len());
   for command in commands {
-    let node = SceneRenderNode::from_command(command);
+    let visible = visibility.as_ref().is_none_or(|visibility| {
+      render_entry_position(command.sprite_entry().render_entry())
+        .is_none_or(|position| visibility.is_visible(position))
+    });
+    let node = SceneRenderNode::from_command(command, visible);
     let retained_entity = existing
       .iter()
       .find(|(entity, existing_node)| {
@@ -2553,11 +2721,19 @@ fn sync_render_nodes(world: &mut World) {
     .entries = entries;
 }
 
+fn render_entry_position(entry: SceneRenderEntry) -> Option<Position> {
+  match entry {
+    SceneRenderEntry::Terrain { tile, .. } => Some(tile.position()),
+    SceneRenderEntry::Actor { actor, .. } => Some(actor.position()),
+    SceneRenderEntry::GroundItem { item, .. } => Some(item.position()),
+    SceneRenderEntry::InventoryItem { .. } => None,
+  }
+}
+
 fn sync_bevy_sprite_projection(world: &mut World) {
-  if world.get_resource::<PresentationRuntime>().is_none()
-    || world
-      .get_resource::<PresentationRenderNodeProjection>()
-      .is_none()
+  if world
+    .get_resource::<PresentationRenderNodeProjection>()
+    .is_none()
     || world
       .get_resource::<PresentationBevySpriteProjection>()
       .is_none()
@@ -2607,10 +2783,9 @@ fn sync_bevy_sprite_transform_projection(world: &mut World) {
 }
 
 fn sync_sprite_node_components(world: &mut World) {
-  if world.get_resource::<PresentationRuntime>().is_none()
-    || world
-      .get_resource::<PresentationRenderNodeProjection>()
-      .is_none()
+  if world
+    .get_resource::<PresentationRenderNodeProjection>()
+    .is_none()
     || world
       .get_resource::<PresentationBevySpriteProjection>()
       .is_none()
@@ -2629,8 +2804,9 @@ fn sync_sprite_node_components(world: &mut World) {
       continue;
     };
     entity.insert(entry.sprite().clone());
-    if external_desktop
-      && entry.node().node().placeholder() == SceneRenderPlaceholder::InventoryItem
+    if (external_desktop
+      && entry.node().node().placeholder() == SceneRenderPlaceholder::InventoryItem)
+      || !entry.node().node().is_visible()
     {
       entity.insert(Visibility::Hidden);
     } else {

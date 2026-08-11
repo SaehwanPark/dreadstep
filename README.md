@@ -34,6 +34,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     ordered messages, audio cues, animation cues, and sprite-role metadata.
   - Caller-selected checked pixel placement, native 24×24/32×32 evidence with a provisional 32×32
     working size, and complete ordered render/sprite-key/command/node projections.
+  - Optional deterministic presentation field of view: radius-3 cardinal floor traversal with
+    readable wall boundaries, retained-but-hidden out-of-view render nodes, and complete headless
+    snapshots/MCP visibility unchanged.
   - Local-only pixel-art and audio manifests preserve typed placeholder/cue metadata without file
     loading, asset handles, playback, or render plugins; media binaries remain ignored.
 - Verified Sprite API boundary
@@ -80,7 +83,7 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     recoverable at the process boundary.
 - Still deferred
   - production texture/media adoption, anchor policy beyond centering, animation playback, audio
-    assets/playback, fog of war, multiple floors, and richer gameplay item semantics such as
+    assets/playback, multiple floors, and richer gameplay item semantics such as
     effects, modifiers, capacity, and additional slots.
 
 The long-term design and roadmap are in

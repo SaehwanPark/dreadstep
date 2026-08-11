@@ -108,6 +108,21 @@ untracked duplicates, and test a lower-index recycle explicitly.
   focus, and runtime independently, clear stale markers only with an authoritative snapshot, and
   remove old markers before inserting the new target.
 
+## Carry optional visibility through the render-node boundary
+
+- Context: The desktop showcase applies a later sprite-styling system after the headless projection
+  system, while the same retained render nodes are inspected by headless tests.
+- Symptom: Setting Bevy `Visibility` only in the projection system was overwritten by desktop style
+  initialization, making an apparently correct fog-of-war projection render distant nodes anyway.
+- Cause: ECS component state was being treated as the source of a presentation decision that had to
+  survive multiple downstream systems.
+- Resolution: Compute visibility from typed scene-entry positions, store the derived bit on
+  `SceneRenderNode`, and let both generic attachment and desktop styling consume that node metadata.
+  An inactive optional projection is an explicit no-op, preserving the fully visible headless default.
+- Prevention: Carry cross-system presentation decisions in a typed projection boundary, keep retained
+  node identity independent of visibility, and test both hidden rendering and restoration after the
+  optional authority disappears.
+
 ## Keep opaque item identity separate from content membership
 
 - Context: Tester item ownership now has typed opaque `ItemDefinitionId` references, while future
