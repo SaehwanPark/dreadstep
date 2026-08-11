@@ -135,10 +135,15 @@ where
   let mut seed_seen = false;
   let mut log_dir_seen = false;
   let mut smoke_seen = false;
+  let mut help_seen = false;
   let mut iter = arguments.into_iter();
   while let Some(argument) = iter.next() {
     if argument == "--help" || argument == "-h" {
-      return Ok(ParseResult::Help);
+      if help_seen {
+        return Err("duplicate --help".to_string());
+      }
+      help_seen = true;
+      continue;
     }
     if argument == "--smoke" {
       if smoke_seen {
@@ -156,6 +161,12 @@ where
       let value = iter
         .next()
         .ok_or_else(|| "--seed requires a value".to_string())?;
+      if matches!(
+        value.to_str(),
+        Some("--help" | "-h" | "--seed" | "--log-dir" | "--smoke")
+      ) {
+        return Err("--seed requires a value".to_string());
+      }
       let value = value
         .into_string()
         .map_err(|_| "--seed must be an unsigned integer".to_string())?;
@@ -172,7 +183,12 @@ where
       let value = iter
         .next()
         .ok_or_else(|| "--log-dir requires a path".to_string())?;
-      if value.is_empty() {
+      if value.is_empty()
+        || matches!(
+          value.to_str(),
+          Some("--help" | "-h" | "--seed" | "--log-dir" | "--smoke")
+        )
+      {
         return Err("--log-dir requires a path".to_string());
       }
       options.log_dir = PathBuf::from(value);
@@ -181,7 +197,11 @@ where
     let display = argument.to_string_lossy();
     return Err(format!("unknown argument {display}"));
   }
-  Ok(ParseResult::Options(options))
+  if help_seen {
+    Ok(ParseResult::Help)
+  } else {
+    Ok(ParseResult::Options(options))
+  }
 }
 
 fn run_with_panic_boundary(options: DesktopOptions) -> ExitCode {
@@ -1664,6 +1684,9 @@ mod tests {
     );
     assert!(parse_options([OsString::from("--smoke"), OsString::from("--smoke")]).is_err());
     assert!(parse_options([OsString::from("--seed")]).is_err());
+    assert!(parse_options([OsString::from("--help"), OsString::from("--unknown")]).is_err());
+    assert!(parse_options([OsString::from("--help"), OsString::from("--help")]).is_err());
+    assert!(parse_options([OsString::from("--log-dir"), OsString::from("--smoke")]).is_err());
   }
 
   #[test]
