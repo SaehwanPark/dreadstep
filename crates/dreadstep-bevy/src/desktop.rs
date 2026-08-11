@@ -51,8 +51,8 @@ use crate::{
   PresentationInput, PresentationKeyboardMode, PresentationMessages, PresentationPlugin,
   PresentationRenderAssetProjection, PresentationRenderCommandPlan,
   PresentationRenderNodeProjection, PresentationRenderProjection, PresentationRuntime,
-  PresentationSet, PresentationSpriteProjection, PresentationTileSize, SceneRenderNode,
-  SceneRenderPlaceholder,
+  PresentationSet, PresentationSpriteProjection, PresentationTileSize, PresentationVisibility,
+  SceneRenderNode, SceneRenderPlaceholder,
 };
 
 const PLAYER: ActorId = ActorId::new(1);
@@ -663,7 +663,7 @@ fn desktop_style_sprites(
       #[allow(clippy::cast_precision_loss)]
       Vec2::new(size.width() as f32 * scale, size.height() as f32 * scale)
     });
-    if placeholder == SceneRenderPlaceholder::InventoryItem {
+    if placeholder == SceneRenderPlaceholder::InventoryItem || !node.is_visible() {
       *visibility = bevy::camera::visibility::Visibility::Hidden;
     } else {
       *visibility = bevy::camera::visibility::Visibility::Inherited;
@@ -1106,6 +1106,7 @@ fn run_visible(
   app.insert_resource(PresentationKeyboardMode::External);
   app.insert_resource(PresentationFocus::new(PLAYER));
   app.insert_resource(PresentationCamera::new(PLAYER));
+  app.insert_resource(PresentationVisibility::new(PLAYER, 3));
   app.insert_resource(viewport);
   app.insert_resource(crate::PresentationHud::new(PLAYER));
   app.insert_resource(PresentationMessages::new());

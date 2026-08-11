@@ -74,6 +74,7 @@ Failure to create the log directory or a mid-run write/flush fault is reported a
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume | selected/equipped HUD rows | item events and full inventory snapshots | yes |
 | Terrain and actor blocking | distinct wall/floor/actor pixels | `movement_blocked` reason | yes |
+| Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
 | Optional art fallback | per-family placeholder | warning/outcome records | no display required |
 
@@ -96,6 +97,8 @@ is documented and mapped.
 
 - one non-resizable 640×360 logical (1280×720 physical at scale 2) primary window opens;
 - floor, wall, player, enemy, dead actor, and ground item placeholders are visibly distinct;
+- radius-3 field of view follows the controlled actor, hides distant nodes without removing their
+  typed mirrors, and keeps adjacent wall edges readable;
 - movement, wait, combat, inventory selection, equip/unequip, consume, restart, and enemy delay
   work as documented;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
@@ -107,5 +110,5 @@ is documented and mapped.
 
 Tester-only spawn, teleport, HP, inventory transfer/drop/pickup, and scenario mutation remain in
 MCP/tests. This showcase does not add enemy attacks, player-death loops, item effects, pickup/drop
-commands, canonical victory/loss, audio, animation playback, fog of war, production media,
-installers, signing, save/load, or replay-file compatibility.
+commands, canonical victory/loss, audio, animation playback, persistent exploration memory,
+production media, installers, signing, save/load, or replay-file compatibility.

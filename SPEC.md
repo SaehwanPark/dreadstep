@@ -2889,8 +2889,61 @@ Verification evidence:
 Out of scope:
 
 - Tester/admin UI, TUI, headless CLI redesign, new core combat/death/victory rules, item effects,
-  audio or animation playback, fog of war, production/committed media, installers, and release
-  artifacts.
+  audio or animation playback, persistent exploration memory or advanced visibility policy,
+  production/committed media, installers, and release artifacts.
+
+### Milestone 3 slice: deterministic presentation field of view
+
+- Status: verified
+- Started: 2026-08-11
+- Completed: 2026-08-11
+
+Add an optional presentation-only field-of-view projection for the human desktop client. The
+projection follows the configured controlled actor, expands through cardinally adjacent floor
+tiles for a bounded step radius, and reveals adjacent blocking wall tiles so the visible map edge
+remains legible. Actors and ground items are visible only when their positions are in the
+projection; inventory mirrors remain unplaced and hidden. The core world, protocol/MCP snapshots,
+commands, replay evidence, and diagnostic journal remain complete and unchanged.
+
+Acceptance:
+
+- `PresentationVisibility` exposes a typed actor, radius, deterministic visible-position list, and
+  membership query without owning gameplay state or changing `PresentationSnapshot` contents.
+- A valid controlled actor and map produce a deterministic cardinal floor traversal up to the
+  configured radius; adjacent wall tiles are included as boundary evidence, while unreachable or
+  out-of-radius floor tiles remain hidden.
+- Accepted movement or controlled-actor changes refresh the same visibility resource and retained
+  render-node entities; missing runtime/input/visibility configuration is a safe no-op, and removing
+  the optional resource restores the prior fully visible headless projection.
+- Desktop rendering defaults to a radius-3 field of view, hides out-of-view terrain/actors/ground
+  items without despawning their typed mirrors, preserves the player and readable wall boundary,
+  and keeps inventory nodes hidden.
+- No core rules, protocol schema, MCP visibility policy, journal schema, audio playback, animation,
+  production media, persistence, transport, or new gameplay behavior is introduced.
+
+Verification target:
+
+- Focused `cargo test -p dreadstep-bevy --test visibility --all-features --locked` covers bounded
+  traversal, wall-boundary inclusion, deterministic ordering, actor/ground-item masking, movement
+  refresh, missing-resource guards, and restoration when the optional resource is removed.
+- Desktop boundary tests and the display-free smoke path remain green; `docs/demo.md`, README,
+  architecture notes, changelog, and the ignored task handoff describe the visibility behavior.
+- `scripts/verify.sh`, `git diff --check`, and one semantic `review-dreadstep` pass are required
+  before merge.
+
+Verification evidence:
+
+- `cargo test -p dreadstep-bevy --test visibility --all-features --locked` passes all three focused
+  visibility tests; the complete Bevy adapter target suite passes with the same feature set.
+- The desktop path opts into radius-3 visibility while retaining complete typed scene mirrors and
+  the display-free smoke path; missing optional visibility configuration restores full headless
+  projection.
+
+Out of scope:
+
+- Core or agent-facing hidden-information rules, persistent exploration memory, line-of-sight
+  raycasting beyond the bounded floor traversal, fog shaders, camera/viewport changes, animation,
+  audio playback, production assets, and richer gameplay systems.
 
 ### Deferred item gameplay semantics
 
@@ -2914,7 +2967,8 @@ its own bounded acceptance slice
 before it can move into `Past`:
 
 - Milestone 3 — First Visible Dreadstep polish: production art adoption, animation, audio
-  placeholders/playback, fog of war, and richer HUD presentation around the verified showcase.
+  placeholders/playback, and richer HUD presentation around the verified showcase; the bounded
+  presentation field-of-view slice is now verified.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
   verified single-item consumption and single-slot equipment preparations and tester item
   operations.

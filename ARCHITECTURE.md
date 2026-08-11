@@ -249,6 +249,16 @@ centers it on the camera anchor with integer arithmetic, and mirrors only the ef
 dimensions. Oversized requests use the complete map; unknown or missing authority leaves the
 disposable viewport unchanged or clears it deterministically without adding visibility policy.
 
+The verified presentation field-of-view slice adds an optional `PresentationVisibility` resource.
+When a controlled actor and runtime snapshot are available, it performs a bounded cardinal floor
+traversal from that actor and includes adjacent wall tiles as readable boundary evidence. The
+resource is presentation-only: core snapshots, protocol/MCP observation, commands, replay evidence,
+and the diagnostic journal remain complete. `SceneRenderNode` carries the derived visibility bit so
+retained render-node entities can be hidden without despawning or mutating their typed scene
+mirrors; removing the optional resource or losing its authority restores the fully visible
+headless default. The desktop showcase opts into a radius-3 projection, while inventory nodes
+remain hidden because they have no map placement.
+
 The verified headless HUD-status slice adds an optional `PresentationHud` resource keyed by the
 controlled actor. It mirrors only typed actor kind, position, hit points, and scheduler readiness;
 unknown actors clear those optional values and missing resources preserve existing status. This is

@@ -1789,6 +1789,10 @@ Current exploratory gate (2026-08-09):
   `Transform` values to the retained disposable `SceneCamera` from caller-selected tile extents,
   while deferring viewport policy, OS/window integration, render backends, visibility, playback, and
   production media.
+- The first bounded fog-of-war preparation is now verified as a presentation-only field-of-view
+  projection: radius-limited cardinal floor traversal with adjacent wall boundaries, retained
+  hidden render nodes, and a radius-3 desktop configuration. Core/agent snapshots remain complete;
+  persistent exploration memory and richer visibility policy remain future work.
 
 ### Content
 
