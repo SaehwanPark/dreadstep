@@ -83,12 +83,20 @@ fn visibility_app() -> App {
 }
 
 fn node_visibility(app: &mut App, node: SceneRenderNode) -> Visibility {
-  let node_entity = app
+  let entity = node_entity(app, node);
+  node_visibility_at(app, entity)
+}
+
+fn node_entity(app: &mut App, node: SceneRenderNode) -> bevy::ecs::entity::Entity {
+  app
     .world_mut()
     .query::<(bevy::ecs::entity::Entity, &SceneRenderNode)>()
     .iter(app.world())
     .find_map(|(entity, candidate)| (*candidate == node).then_some(entity))
-    .expect("render node entity should exist");
+    .expect("render node entity should exist")
+}
+
+fn node_visibility_at(app: &mut App, node_entity: bevy::ecs::entity::Entity) -> Visibility {
   *app
     .world_mut()
     .get::<Visibility>(node_entity)
@@ -168,6 +176,9 @@ fn out_of_view_nodes_are_hidden_without_despawning_typed_mirrors() {
   let player = actor_node(&mut app, PLAYER);
   let enemy = actor_node(&mut app, ENEMY);
   let ground = ground_node(&mut app, ItemId::new(11));
+  let player_entity = node_entity(&mut app, player);
+  let enemy_entity = node_entity(&mut app, enemy);
+  let ground_entity = node_entity(&mut app, ground);
 
   assert_eq!(node_visibility(&mut app, player), Visibility::Inherited);
   assert_eq!(node_visibility(&mut app, enemy), Visibility::Hidden);
@@ -187,6 +198,34 @@ fn out_of_view_nodes_are_hidden_without_despawning_typed_mirrors() {
       .iter(app.world())
       .count(),
     1
+  );
+
+  app.world_mut().remove_resource::<PresentationRuntime>();
+  app.update();
+  assert!(
+    app
+      .world()
+      .get::<SceneRenderNode>(player_entity)
+      .expect("player node should be retained")
+      .is_visible()
+  );
+  assert!(
+    app
+      .world()
+      .get::<SceneRenderNode>(enemy_entity)
+      .expect("enemy node should be retained")
+      .is_visible()
+  );
+  assert!(
+    app
+      .world()
+      .get::<SceneRenderNode>(ground_entity)
+      .expect("ground node should be retained")
+      .is_visible()
+  );
+  assert_eq!(
+    node_visibility_at(&mut app, enemy_entity),
+    Visibility::Inherited
   );
 }
 
@@ -219,6 +258,15 @@ fn movement_and_controlled_actor_refresh_projection_and_missing_input_restores_v
       .resource::<PresentationVisibility>()
       .is_visible(Position::new(2, 1))
   );
+  let enemy_node = actor_node(&mut app, ENEMY);
+  let enemy_entity = node_entity(&mut app, enemy_node);
+  assert!(
+    app
+      .world()
+      .get::<SceneRenderNode>(enemy_entity)
+      .expect("enemy node should be retained")
+      .is_visible()
+  );
 
   app
     .world_mut()
@@ -229,12 +277,6 @@ fn movement_and_controlled_actor_refresh_projection_and_missing_input_restores_v
   assert!(visibility.is_visible(Position::new(2, 1)));
   assert!(!visibility.is_visible(Position::new(0, 1)));
 
-  app.world_mut().remove_resource::<PresentationInput>();
-  app.update();
-  assert!(!app.world().resource::<PresentationVisibility>().is_active());
-  let enemy = actor_node(&mut app, ENEMY);
-  assert_eq!(node_visibility(&mut app, enemy), Visibility::Inherited);
-
   app.world_mut().remove_resource::<PresentationVisibility>();
   app.update();
   assert!(
@@ -242,5 +284,27 @@ fn movement_and_controlled_actor_refresh_projection_and_missing_input_restores_v
       .world()
       .get_resource::<PresentationVisibility>()
       .is_none()
+  );
+  assert!(
+    app
+      .world()
+      .get::<SceneRenderNode>(enemy_entity)
+      .expect("enemy node should remain after visibility removal")
+      .is_visible()
+  );
+  assert_eq!(
+    node_visibility_at(&mut app, enemy_entity),
+    Visibility::Inherited
+  );
+
+  app.insert_resource(PresentationVisibility::new(ENEMY, 1));
+  app.update();
+  assert!(app.world().resource::<PresentationVisibility>().is_active());
+  app.world_mut().remove_resource::<PresentationInput>();
+  app.update();
+  assert!(!app.world().resource::<PresentationVisibility>().is_active());
+  assert_eq!(
+    node_visibility_at(&mut app, enemy_entity),
+    Visibility::Inherited
   );
 }

@@ -2669,10 +2669,9 @@ fn sync_render_command_plan(world: &mut World) {
 }
 
 fn sync_render_nodes(world: &mut World) {
-  if world.get_resource::<PresentationRuntime>().is_none()
-    || world
-      .get_resource::<PresentationRenderCommandPlan>()
-      .is_none()
+  if world
+    .get_resource::<PresentationRenderCommandPlan>()
+    .is_none()
     || world
       .get_resource::<PresentationRenderNodeProjection>()
       .is_none()
@@ -2732,10 +2731,9 @@ fn render_entry_position(entry: SceneRenderEntry) -> Option<Position> {
 }
 
 fn sync_bevy_sprite_projection(world: &mut World) {
-  if world.get_resource::<PresentationRuntime>().is_none()
-    || world
-      .get_resource::<PresentationRenderNodeProjection>()
-      .is_none()
+  if world
+    .get_resource::<PresentationRenderNodeProjection>()
+    .is_none()
     || world
       .get_resource::<PresentationBevySpriteProjection>()
       .is_none()
@@ -2785,10 +2783,9 @@ fn sync_bevy_sprite_transform_projection(world: &mut World) {
 }
 
 fn sync_sprite_node_components(world: &mut World) {
-  if world.get_resource::<PresentationRuntime>().is_none()
-    || world
-      .get_resource::<PresentationRenderNodeProjection>()
-      .is_none()
+  if world
+    .get_resource::<PresentationRenderNodeProjection>()
+    .is_none()
     || world
       .get_resource::<PresentationBevySpriteProjection>()
       .is_none()
