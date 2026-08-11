@@ -1,5 +1,6 @@
 /target
 /_workspace
+/dreadstep-logs/
 
 # Presentation art and audio are kept locally and synchronized through external asset storage.
 # These are the only local-media directories; keep source, creator, license, attribution, and

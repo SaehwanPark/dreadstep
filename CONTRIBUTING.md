@@ -23,7 +23,8 @@ Install Rust through `rustup`. The committed toolchain file selects Rust 1.97.1 
 Rustfmt and Clippy automatically.
 
 - Apple Silicon macOS: install Xcode command-line tools with `xcode-select --install`.
-- Linux or WSL2: the Milestone 0 headless workflow needs no Bevy desktop system packages.
+- Linux or WSL2: core/headless checks need no Bevy desktop packages; the full showcase gate uses
+  the reviewed X11/XWayland feature path.
 - Windows: use a Rustup installation with the MSVC host toolchain and Windows build tools.
 
 Verify the repository:
@@ -59,6 +60,28 @@ creator, license, attribution, and modification records outside ignored media pa
 documentation, and never commit credentials. The tracked concept-art reference and future
 screenshots under root `screenshots/` are explicit exceptions because they are outside the ignored
 media paths.
+
+## Runnable showcase maintenance
+
+Player-facing changes must keep the desktop showcase and its evidence current. Run the visible
+client with:
+
+```sh
+cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
+```
+
+Run the display-free gate with:
+
+```sh
+cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
+  --smoke --seed 7 --log-dir target/dreadstep-smoke-logs
+```
+
+When adding a player-visible command, event, state field, or presentation capability, update the
+desktop action selection or exhaustive journal mapping, the smoke sequence/coverage lists, and
+the matrix and manual checklist in `docs/demo.md`. If the feature is intentionally deferred,
+record the explicit exclusion and verification plan in `SPEC.md` instead. Tester-only MCP/test
+operations remain outside the human client.
 
 ## Code and Documentation Style
 

@@ -32,7 +32,10 @@ domain boundaries. Review semantic coherence, not only whether commands pass.
    different Rust, game-development, and agent-tooling backgrounds.
 6. Reconcile `SPEC.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, ADRs, and `LESSONS.md` with the
    behavior supported by evidence. Do not accept speculative lessons or completion claims.
-7. Run the narrowest commands needed to verify findings and classify the result.
+7. For player-facing changes, verify the runnable desktop executable, JSONL state/event mapping,
+   smoke command/event coverage, and `docs/demo.md` matrix; ensure a new visible variant cannot
+   silently bypass those gates.
+8. Run the narrowest commands needed to verify findings and classify the result.
 
 ## Status Contract
 

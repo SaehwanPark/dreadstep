@@ -11,25 +11,30 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::app::{App, Plugin, Update};
 use bevy::camera::Camera2d;
+use bevy::camera::visibility::Visibility;
 use bevy::color::Color;
 use bevy::ecs::{
   component::Component,
   entity::Entity,
   query::{Or, With},
   resource::Resource,
+  schedule::{IntoScheduleConfigs, SystemSet},
   world::World,
 };
 use bevy::input::{ButtonInput, keyboard::KeyCode};
 use bevy::math::Vec2;
 use bevy::sprite::Sprite;
 use bevy::transform::components::Transform;
-use bevy::window::{Window, WindowResolution};
+use bevy::window::{PrimaryWindow, Window, WindowResolution};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
   Event, GridMap, GroundItemStack, HitPoints, Item, ItemDefinitionId, ItemId, Position,
   ReplayTrace, StateDigest, Tile, WorldState,
 };
+
+#[cfg(feature = "desktop")]
+pub mod desktop;
 
 /// A supported keyboard intent before it is addressed to one core actor.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -38,6 +43,27 @@ pub enum KeyboardIntent {
   Move(Direction),
   /// Spend one standard action without moving.
   Wait,
+}
+
+/// Selects which presentation boundary owns keyboard command submission.
+///
+/// The default headless behavior remains active when this resource is absent. A desktop client
+/// inserts [`Self::External`] so it can select item/combat commands and journal every attempt
+/// before the projection plugin runs.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Resource)]
+pub enum PresentationKeyboardMode {
+  /// Preserve the original move/wait dispatcher owned by [`PresentationPlugin`].
+  #[default]
+  BuiltIn,
+  /// Leave keyboard input for an external client driver.
+  External,
+}
+
+/// Orders the presentation plugin relative to external client systems.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, SystemSet)]
+pub enum PresentationSet {
+  /// Synchronize authoritative runtime state into disposable ECS projections.
+  Projection,
 }
 
 impl KeyboardIntent {
@@ -473,6 +499,24 @@ impl PresentationMessage {
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
       Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
     }
+  }
+}
+
+/// Returns the stable diagnostic kind name for one current core event.
+///
+/// This exhaustive adapter is intentionally kept at the presentation boundary so adding a new
+/// core event requires the desktop journal and smoke coverage to be updated in the same change.
+#[must_use]
+pub const fn showcase_event_name(event: Event) -> &'static str {
+  match event {
+    Event::Moved { .. } => "moved",
+    Event::MovementBlocked { .. } => "movement_blocked",
+    Event::Waited { .. } => "waited",
+    Event::Attacked { .. } => "attacked",
+    Event::Died { .. } => "died",
+    Event::ItemEquipped { .. } => "item_equipped",
+    Event::ItemUnequipped { .. } => "item_unequipped",
+    Event::ItemConsumed { .. } => "item_consumed",
   }
 }
 
@@ -2086,6 +2130,12 @@ impl PresentationState {
     self.trace.digest()
   }
 
+  /// Returns core's deterministic legal command projection without mutating the state.
+  #[must_use]
+  pub fn legal_commands(&self) -> Vec<Command> {
+    self.world.legal_commands()
+  }
+
   /// Executes one canonical command through core and projects its semantic outcome.
   ///
   /// Rejected commands are not recorded. Core validates scheduling and gameplay, so this adapter
@@ -2173,6 +2223,12 @@ impl PresentationRuntime {
     self.state.replay_digest()
   }
 
+  /// Returns core's deterministic legal command projection without mutating the state.
+  #[must_use]
+  pub fn legal_commands(&self) -> Vec<Command> {
+    self.state.legal_commands()
+  }
+
   /// Returns the latest accepted command output without consuming it.
   #[must_use]
   pub const fn output(&self) -> Option<&PresentationOutput> {
@@ -2212,7 +2268,10 @@ pub struct PresentationPlugin;
 
 impl Plugin for PresentationPlugin {
   fn build(&self, app: &mut App) {
-    app.add_systems(Update, update_presentation);
+    app.add_systems(
+      Update,
+      update_presentation.in_set(PresentationSet::Projection),
+    );
   }
 }
 
@@ -2258,6 +2317,12 @@ fn update_presentation(world: &mut World) {
 }
 
 fn dispatch_keyboard_input(world: &mut World) {
+  if world
+    .get_resource::<PresentationKeyboardMode>()
+    .is_some_and(|mode| *mode == PresentationKeyboardMode::External)
+  {
+    return;
+  }
   let Some(actor) = world
     .get_resource::<PresentationInput>()
     .map(|input| input.actor())
@@ -2556,11 +2621,21 @@ fn sync_sprite_node_components(world: &mut World) {
     .resource::<PresentationBevySpriteProjection>()
     .entries()
     .to_vec();
+  let external_desktop = world
+    .get_resource::<PresentationKeyboardMode>()
+    .is_some_and(|mode| *mode == PresentationKeyboardMode::External);
   for entry in entries {
     let Ok(mut entity) = world.get_entity_mut(entry.node().node_entity()) else {
       continue;
     };
     entity.insert(entry.sprite().clone());
+    if external_desktop
+      && entry.node().node().placeholder() == SceneRenderPlaceholder::InventoryItem
+    {
+      entity.insert(Visibility::Hidden);
+    } else {
+      entity.insert(Visibility::Inherited);
+    }
   }
 }
 
@@ -2922,6 +2997,15 @@ fn sync_scene_window_components(world: &mut World) {
   let Some(request) = world.get_resource::<PresentationWindow>().copied() else {
     return;
   };
+  let primary = {
+    let mut query = world.query::<(Entity, &PrimaryWindow)>();
+    let mut entities = query
+      .iter(world)
+      .map(|(entity, _)| entity)
+      .collect::<Vec<_>>();
+    entities.sort_unstable();
+    entities.first().copied()
+  };
   let existing = {
     let mut query = world.query::<(Entity, &SceneWindow)>();
     let mut entities = query
@@ -2935,7 +3019,9 @@ fn sync_scene_window_components(world: &mut World) {
     .get_resource::<SceneWindowState>()
     .and_then(|state| state.entity)
     .filter(|entity| world.get::<SceneWindow>(*entity).is_some());
-  let retained = state_entity.or_else(|| existing.first().copied());
+  let retained = primary
+    .or(state_entity)
+    .or_else(|| existing.first().copied());
   let retained = retained.unwrap_or_else(|| world.spawn_empty().id());
   for entity in existing {
     if entity != retained {

@@ -36,7 +36,10 @@ testable, and independent of presentation and transport effects.
    Define project-specific terms for contributors who do not share the author's context.
 8. Re-read `LESSONS.md`, update an existing lesson or add a verified recurring lesson,
    and reconcile affected specs, architecture, ADRs, and changelog entries.
-9. Run `scripts/verify.sh` or a documented proportional subset for a trivial docs-only
+9. For player-facing changes, update the runnable `dreadstep-bevy` desktop path, its JSONL
+   journal mapping, display-free smoke coverage, and `docs/demo.md`; record an explicit
+   `SPEC.md` deferral when the change is intentionally outside the showcase.
+10. Run `scripts/verify.sh` or a documented proportional subset for a trivial docs-only
    change. Review the diff for scope and semantic coherence.
 
 ## Domain Routing

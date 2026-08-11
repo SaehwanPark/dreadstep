@@ -12,6 +12,7 @@ readonly REQUIRED_FILES=(
   "ARCHITECTURE.md"
   "CHANGELOG.md"
   "CONTRIBUTING.md"
+  "docs/demo.md"
   "LESSONS.md"
   "README.md"
   "SPEC.md"
@@ -118,8 +119,14 @@ check_forbidden_dependency "dreadstep-protocol"
 check_forbidden_dependency "dreadstep-content"
 
 if cargo tree --locked -p dreadstep-bevy -e features | grep -Eq \
-  'bevy feature "(audio|default_platform|wayland|x11)"'; then
-  echo "dreadstep-bevy enables desktop features before they are needed" >&2
+  'bevy feature "(audio|default_platform|wayland)"'; then
+  echo "dreadstep-bevy enables forbidden desktop/audio features" >&2
+  exit 1
+fi
+
+if ! cargo tree --locked -p dreadstep-bevy --features desktop -e normal,build \
+  | grep -Fq "bevy_winit v"; then
+  echo "dreadstep-bevy desktop feature must include the winit backend" >&2
   exit 1
 fi
 

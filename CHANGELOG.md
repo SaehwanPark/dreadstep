@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A feature-gated `dreadstep` desktop showcase with one primary 2D window, deterministic human
+  controls, enemy chase driving, inventory/combat/death/HUD presentation, optional per-family art
+  fallback, display-free smoke coverage, and create-new flushed JSONL diagnostic journals.
 - Aspirational concept art reference and a documented pixel-art/audio asset sourcing and
   licensing workflow.
 - A six-package Rust workspace with explicit domain and adapter boundaries.

@@ -70,12 +70,18 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - The presentation boundary attaches checked centered logical-pixel `Transform` values to the
     retained disposable `SceneCamera` when a tile size is present; viewport policy, OS/window
     integration, render backends, visibility, production assets/audio, and media remain deferred.
+- Verified runnable desktop showcase
+  - `cargo run -p dreadstep-bevy --features desktop --bin dreadstep --` opens one non-resizable
+    640×360 logical (2× physical) Bevy window with nearest-neighbor placeholders, camera, HUD,
+    player controls, deterministic enemy chase turns, combat/death, inventory actions, restart,
+    and a presentation-only completion status.
+  - `--smoke` runs the same action-selection, enemy-driver, and JSONL journal path without a
+    display; malformed CLI, startup, asset, input, journal, and caught-panic failures are
+    recoverable at the process boundary.
 - Still deferred
-  - OS window creation, Sprite/render plugins, production textures/assets, anchor policy beyond centering,
-    camera viewport policy,
-    animation playback, HUD widgets, event/combat message presentation, audio assets/
-    playback, fog of war, multiple floors, and richer gameplay item semantics such as effects,
-    modifiers, capacity, and additional slots.
+  - production texture/media adoption, anchor policy beyond centering, animation playback, audio
+    assets/playback, fog of war, multiple floors, and richer gameplay item semantics such as
+    effects, modifiers, capacity, and additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
@@ -129,9 +135,9 @@ On Apple Silicon macOS, first install Xcode command-line tools:
 xcode-select --install
 ```
 
-On Linux and WSL2, Milestone 0 verification is headless and does not require Wayland, X11,
-or audio development packages. Windows contributors should use the MSVC Rust toolchain and
-Windows build tools.
+On Linux and WSL2, core/headless checks remain display-free; the full showcase gate uses the
+reviewed X11/XWayland Bevy feature path. Windows contributors should use the MSVC Rust toolchain
+and Windows build tools.
 
 Run the complete local verification suite:
 
@@ -144,6 +150,16 @@ Run the developer scenario directly after building the headless package:
 ```sh
 cargo run -p dreadstep-headless -- --seed 7 --commands 'move:1:east,wait:2'
 ```
+
+Run the human-testable 2D showcase (optional local images are documented in
+[`docs/demo.md`](docs/demo.md)):
+
+```sh
+cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
+```
+
+Use `--smoke` for the display-free deterministic sequence and inspect the flushed JSONL file in
+`dreadstep-logs/` or the supplied `--log-dir`.
 
 The first build downloads and checks Bevy's minimal dependency set and can take longer than
 later runs.

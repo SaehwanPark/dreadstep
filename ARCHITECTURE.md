@@ -1,6 +1,6 @@
 # Dreadstep Architecture
 
-Last Reviewed: 2026-08-09
+Last Reviewed: 2026-08-11
 Status: Verified
 
 ## Overview
@@ -9,13 +9,16 @@ Dreadstep is organized as a functional domain kernel surrounded by explicit adap
 kernel decides game outcomes; adapters translate external input into semantic commands and
 translate semantic events into presentation, files, telemetry, or transport responses.
 
-Milestone 1 now exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
+The current implementation exposes a runnable desktop showcase alongside the headless and MCP
+adapters. Milestone 1 exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
 actors, movement, melee, and chase commands, semantic movement/blocking/combat/death events,
 an integer ready-time scheduler, and core-owned replay traces/state digests. The
 `dreadstep-headless` adapter now provides a fixed-scenario developer CLI that translates text
 arguments into those core commands; it owns parsing and stdout only. `dreadstep-mcp` also provides
 a minimal local stdio server for the bounded player tools `start_run`, `observe`, `legal_actions`,
-`inspect`, `get_history`, `get_replay`, and typed `act`; no graphical client exists yet.
+`inspect`, `get_history`, `get_replay`, and typed `act`. The feature-gated `dreadstep-bevy`
+desktop binary owns the optional OS window, human input, local art fallback, HUD, and diagnostic
+journal around the same deterministic presentation runtime.
 
 ## Package Ownership
 
@@ -26,7 +29,7 @@ a minimal local stdio server for the bounded player tools `start_run`, `observe`
 | `dreadstep-content` | Validation of authored definitions into domain values | Hidden simulation rules |
 | `dreadstep-headless` | CLI, files, processes, telemetry, batch execution | Authoritative game behavior |
 | `dreadstep-mcp` | Bounded player and tester operations | Arbitrary host access or game truth |
-| `dreadstep-bevy` | Input and presentation | Authoritative state or rules |
+| `dreadstep-bevy` | Headless projection plus optional desktop input, window/render setup, HUD, assets, and journal | Authoritative state or rules |
 
 ## Dependency Direction
 
@@ -40,8 +43,10 @@ protocol ----> core <---- content
 ```
 
 The adapter packages may depend on protocol and content as well as core. Core, protocol,
-and content must never depend on Bevy or MCP runtime libraries. Bevy currently enables only its
-`std` and `keyboard` features, so headless Linux checks do not require desktop system libraries.
+and content must never depend on Bevy or MCP runtime libraries. `dreadstep-bevy` keeps the
+headless feature graph minimal; its opt-in `desktop` feature adds Bevy's winit, X11, 2D render,
+UI/text, nearest-neighbor image, and logging capabilities while continuing to exclude Wayland,
+audio, and `default_platform`.
 
 ## Intended Data Flow
 
@@ -50,6 +55,15 @@ external input -> adapter -> core command -> deterministic transition
                                            -> next state + semantic events
 semantic events -> adapter -> output, presentation, telemetry, or protocol response
 ```
+
+The desktop process boundary creates a create-new JSONL journal before opening the window. Its
+timers, HUD text, asset handles, and shutdown status are disposable effects; only the runtime's
+legal-command query and core execution determine simulation outcomes. The display-free `--smoke`
+path calls those same boundary helpers without initializing winit or a renderer.
+
+The earlier headless presentation records below remain valid when the `desktop` feature is absent.
+The runnable showcase is an opt-in process wrapper around those projections: its ECS scene, HUD,
+asset handles, timers, and journal are effects and never a second simulation authority.
 
 State, configuration, seeded randomness, and time inputs should be explicit. Prefer pure
 transformations and returned outcomes; allow tightly scoped mutation when it is clearer or
