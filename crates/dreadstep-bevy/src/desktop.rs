@@ -493,6 +493,7 @@ struct DesktopAssetEntry {
   family: SceneRenderPlaceholder,
   path: String,
   handle: Option<Handle<Image>>,
+  placeholder: Handle<Image>,
   warned: bool,
   outcome_recorded: bool,
 }
@@ -577,6 +578,7 @@ fn desktop_startup(
       family: *family,
       path,
       handle,
+      placeholder: crate::placeholder_sprite(*family, None).image,
       warned: false,
       outcome_recorded: false,
     });
@@ -686,6 +688,11 @@ fn desktop_assets(
     let load_state = asset_server.get_load_state(&handle);
     if matches!(load_state, Some(LoadState::Failed(_))) && !entry.warned {
       entry.warned = true;
+      for (node, mut sprite) in &mut nodes {
+        if node.placeholder() == entry.family {
+          sprite.image = entry.placeholder.clone();
+        }
+      }
       if let Some(session) = &mut session {
         let _ = record_session(
           &mut *session,
