@@ -8,11 +8,32 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[features]
+default = []
+desktop = [
+  "dep:serde",
+  "dep:serde_json",
+  "bevy/default_app",
+  "bevy/2d_bevy_render",
+  "bevy/ui_bevy_render",
+  "bevy/default_font",
+  "bevy/bevy_winit",
+  "bevy/multi_threaded",
+  "bevy/x11",
+]
+
 [dependencies]
 bevy.workspace = true
 dreadstep-content.workspace = true
 dreadstep-core.workspace = true
 dreadstep-protocol.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+[[bin]]
+name = "dreadstep"
+path = "src/bin/dreadstep.rs"
+required-features = ["desktop"]
 
 [lints]
 workspace = true

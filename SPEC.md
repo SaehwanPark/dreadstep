@@ -20,7 +20,8 @@ verification without requiring the long-form proposal to act as operational stat
 
 Verification:
 
-- `scripts/verify.sh` passes on Linux without desktop Wayland, X11, or audio packages.
+- The core/headless portion of repository verification passes without desktop Wayland, X11, or
+  audio packages; the later desktop showcase gate uses the reviewed X11/XWayland feature path.
 - Cargo metadata reports the six declared workspace packages and no root package.
 - `dreadstep-core`, `dreadstep-protocol`, and `dreadstep-content` have no Bevy or MCP
   dependencies.
@@ -2832,6 +2833,65 @@ Verification target:
 
 ## Present
 
+### Runnable 2D showcase and diagnostic journal
+
+- Status: verified
+- Started: 2026-08-11
+- Completed: 2026-08-11
+
+Add a feature-gated `dreadstep` desktop executable to the existing Bevy presentation boundary.
+The executable uses the authored starter-item scenario, renders a self-contained 32×32 pixel
+placeholder scene with optional local art overrides, drives existing enemy chase commands between
+human turns, and exposes the current player-facing command/event surface without adding core game
+rules. A display-free smoke mode must exercise the same action driver and write the same diagnostic
+journal as the visible client.
+
+Acceptance:
+
+- `cargo run -p dreadstep-bevy --features desktop --bin dreadstep --` starts one window with a
+  readable map, actors, camera, HUD, inventory, controls, and ordered event messages; Escape,
+  window close, Ctrl-C, restart, and showcase completion terminate or transition cleanly.
+- Move, wait, attack, enemy chase, equip, unequip, and single-item consumption delegate only to
+  `WorldState::legal_commands` and `WorldState::execute`; presentation victory remains disposable
+  state and tester-only MCP operations remain outside the client.
+- Missing or invalid optional art, invalid commands, invalid content, and logging failures produce
+  typed/recoverable feedback without an uncaught panic. Unexpected unwinding is caught at the process
+  boundary and exits nonzero after journal/stderr evidence when possible.
+- Each run creates a non-overwriting `dreadstep-logs/run-*.jsonl` file. Flushed records include
+  lifecycle, input, command pre/post state, ordered events, state/replay digests, warnings, and
+  termination/fault reasons. The schema is diagnostic-only and versioned independently of protocol.
+- `--smoke` runs without a display, covers every current player-facing command/event kind, and
+  produces semantically deterministic journal evidence. New player-facing commands/events/state
+  fields require desktop, journal, smoke, and `docs/demo.md` updates or an explicit SPEC deferral.
+
+Verification target:
+
+- Focused desktop, journal, and subprocess smoke tests pass with the desktop feature; invalid CLI,
+  unusable log directory, missing/corrupt asset fallback, rejected action atomicity, deterministic
+  enemy driving, and caught-panic paths are covered.
+- `scripts/verify.sh`, `git diff --check`, and Linux, Apple Silicon macOS, and Windows desktop
+  feature builds plus display-free smoke runs pass. One semantic `review-dreadstep` review reports
+  PASS before handoff.
+
+Verification evidence:
+
+- `cargo test --workspace --all-targets --all-features --locked`, default-feature Bevy tests,
+  warning-denied workspace Clippy/Rustdoc, and `scripts/verify.sh` pass on the development host.
+- `cargo test -p dreadstep-bevy --test desktop_boundary --all-features --locked` passes all eight
+  focused boundary/subprocess tests.
+- The smoke journal has monotonic JSONL sequence values and all seven command/eight event kinds.
+- `cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --help` returns 0, malformed
+  CLI returns 2, and an unusable log directory returns 1 without panic text.
+- Independent `review-dreadstep` semantic review PASS (revision 1) is recorded in the ignored
+  `_workspace/runnable-showcase/` handoff artifacts; visible-window/manual interaction remains a
+  host/CI checklist item in `docs/demo.md`.
+
+Out of scope:
+
+- Tester/admin UI, TUI, headless CLI redesign, new core combat/death/victory rules, item effects,
+  audio or animation playback, fog of war, production/committed media, installers, and release
+  artifacts.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -2853,8 +2913,8 @@ remaining renderer work in the proposal still defines these future product miles
 its own bounded acceptance slice
 before it can move into `Past`:
 
-- Milestone 3 — First Visible Dreadstep: windowing, rendering, sprites, animation, simple HUD
-  widgets, event/combat messages, keyboard presentation, audio placeholders, and fog of war.
+- Milestone 3 — First Visible Dreadstep polish: production art adoption, animation, audio
+  placeholders/playback, fog of war, and richer HUD presentation around the verified showcase.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
   verified single-item consumption and single-slot equipment preparations and tester item
   operations.
