@@ -233,3 +233,16 @@ constructor cannot silently alter the default client path or lose owner/order da
   atomically. Adapters translate that error and retain existing attack cues.
 - Prevention: Keep visibility predicates in the functional core, specify diagonal behavior before
   implementation, and test legal filtering plus rejected state/replay evidence together.
+
+## Keep command cost selection in core execution
+
+- Context: The ranged-cost slice makes ranged attacks consume two scheduler ticks while all other
+  commands retain the standard cost.
+- Symptom: Applying a global scheduler increment or changing only the desktop/MCP projection would
+  make ready-time and next-actor evidence disagree across adapters.
+- Cause: Action timing is authoritative core state, while legal discovery has to account for the
+  selected command's overflow independently of standard-cost commands.
+- Resolution: Select `ActionCost::RANGED` from the core command before execution, guard that same
+  cost in legal discovery, and leave protocol command shape and presentation cues unchanged.
+- Prevention: Whenever one command gets a distinct cost, test both accepted ready-time transitions
+  and near-overflow legal filtering; do not encode timing in adapters or replay-only metadata.

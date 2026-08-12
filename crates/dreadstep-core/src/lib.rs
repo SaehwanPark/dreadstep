@@ -396,8 +396,11 @@ impl ActionTime {
 pub struct ActionCost(u64);
 
 impl ActionCost {
-  /// The fixed cost used by movement, waiting, and attacks in this slice.
+  /// The fixed cost used by movement, waiting, melee, chase, and item actions.
   pub const STANDARD: Self = Self(1);
+
+  /// The fixed cost used by the bounded ranged attack.
+  pub const RANGED: Self = Self(2);
 
   /// Creates an action cost from its numeric value.
   #[must_use]
@@ -1876,7 +1879,8 @@ impl WorldState {
         }
         ActorKind::Player
           if Self::is_ranged_distance(actor.position(), target.position())
-            && self.has_ranged_line_of_sight(actor.position(), target.position()) =>
+            && self.has_ranged_line_of_sight(actor.position(), target.position())
+            && actor.ready_at().checked_add(ActionCost::RANGED).is_some() =>
         {
           commands.push(Command::RangedAttack {
             actor: actor_id,
@@ -1920,8 +1924,12 @@ impl WorldState {
         scheduled,
       });
     }
+    let action_cost = match command {
+      Command::RangedAttack { .. } => ActionCost::RANGED,
+      _ => ActionCost::STANDARD,
+    };
     let next_ready_at = ready_at
-      .checked_add(ActionCost::STANDARD)
+      .checked_add(action_cost)
       .ok_or(CommandError::ScheduleOverflow(actor_id))?;
     let events = match command {
       Command::Move { direction, .. } => vec![self.move_actor(actor_id, direction)?],
@@ -2310,6 +2318,62 @@ mod tests {
         to: Position::new(1, 0),
       }]
     );
+  }
+
+  #[test]
+  fn ranged_cost_overflow_is_filtered_and_rejected_atomically() {
+    let mut world = WorldState::new(
+      floor_map(7, 1),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(2, 0)),
+      ],
+    )
+    .expect("test world should be valid");
+    let near_max = ActionTime::new(u64::MAX - 1);
+    world.current_time = near_max;
+    world
+      .actors
+      .get_mut(&ActorId::new(1))
+      .expect("attacker exists")
+      .ready_at = near_max;
+    world
+      .actors
+      .get_mut(&ActorId::new(2))
+      .expect("target exists")
+      .ready_at = ActionTime::new(u64::MAX);
+
+    assert!(world.legal_commands().contains(&Command::Wait {
+      actor: ActorId::new(1),
+    }));
+    assert!(!world.legal_commands().contains(&Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }));
+
+    let result = world
+      .execute(Command::Wait {
+        actor: ActorId::new(1),
+      })
+      .expect("standard cost should reach the maximum timeline value");
+    assert_eq!(
+      world
+        .actor(ActorId::new(1))
+        .expect("attacker exists")
+        .ready_at(),
+      ActionTime::new(u64::MAX)
+    );
+    assert_eq!(result.current_time(), ActionTime::new(u64::MAX));
+
+    let before = world.clone();
+    assert_eq!(
+      world.execute(Command::RangedAttack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }),
+      Err(CommandError::ScheduleOverflow(ActorId::new(1)))
+    );
+    assert_eq!(world, before);
   }
 
   #[test]

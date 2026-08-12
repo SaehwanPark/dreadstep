@@ -6,6 +6,8 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A deterministic two-tick scheduler cost for clear-cardinal ranged attacks, with legal-action
+  overflow filtering and MCP ready-time/replay evidence; other command costs remain unchanged.
 - A deterministic cardinal line-of-sight guard for scheduled ranged attacks, with typed no-line-of-
   sight rejection, legal-action filtering, protocol v5 conversion, and MCP atomicity evidence;
   cover, ammunition, and projectile presentation remain deferred.

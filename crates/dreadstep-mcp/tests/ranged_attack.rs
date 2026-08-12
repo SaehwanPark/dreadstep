@@ -60,6 +60,17 @@ fn legal_actions_and_act_expose_ranged_attack_with_replay_evidence() {
     }]
   );
   assert_eq!(
+    output
+      .snapshot()
+      .actors()
+      .iter()
+      .find(|actor| actor.id() == ActorId::new(1))
+      .expect("attacker remains visible")
+      .ready_at()
+      .value(),
+    2
+  );
+  assert_eq!(
     session.history(),
     vec![CommandRequest::RangedAttack {
       actor: ActorId::new(1),

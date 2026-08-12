@@ -22,7 +22,7 @@ fn world(target: Position, hit_points: u16) -> WorldState {
 }
 
 #[test]
-fn ranged_attack_accepts_distance_two_and_advances_one_action() {
+fn ranged_attack_accepts_distance_two_and_advances_two_ticks() {
   let mut world = world(Position::new(2, 0), 2);
   let before_digest = world.digest();
 
@@ -55,14 +55,55 @@ fn ranged_attack_accepts_distance_two_and_advances_one_action() {
       .expect("attacker exists")
       .ready_at()
       .value(),
-    1
+    2
   );
+  assert_eq!(result.next_actor(), Some(ActorId::new(2)));
+  assert_eq!(result.current_time().value(), 0);
   assert_ne!(world.digest(), before_digest);
+}
+
+#[test]
+fn ranged_attack_reports_current_time_after_two_tick_transition() {
+  let mut world = world(Position::new(2, 0), 2);
+
+  for actor in [1, 2, 1, 2] {
+    world
+      .execute(Command::Wait {
+        actor: ActorId::new(actor),
+      })
+      .expect("both actors should be scheduled in stable order");
+  }
+
+  let result = world
+    .execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("distance-two ranged attack should be accepted");
+
+  assert_eq!(
+    world
+      .actor(ActorId::new(1))
+      .expect("attacker exists")
+      .ready_at()
+      .value(),
+    4
+  );
+  assert_eq!(result.next_actor(), Some(ActorId::new(2)));
+  assert_eq!(result.current_time().value(), 2);
 }
 
 #[test]
 fn ranged_attack_accepts_distance_three_and_emits_death() {
   let mut world = world(Position::new(3, 0), 1);
+
+  for actor in [1, 2, 1, 2] {
+    world
+      .execute(Command::Wait {
+        actor: ActorId::new(actor),
+      })
+      .expect("both actors should be scheduled in stable order");
+  }
 
   let result = world
     .execute(Command::RangedAttack {
@@ -91,6 +132,7 @@ fn ranged_attack_accepts_distance_three_and_emits_death() {
       .expect("dead target retained")
       .is_alive()
   );
+  assert_eq!(result.current_time().value(), 4);
 }
 
 #[test]
