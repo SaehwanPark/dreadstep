@@ -3272,8 +3272,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic melee reach preparation
 
-- Status: active
+- Status: verified
 - Started: 2026-08-12
+- Completed: 2026-08-12
 
 Add a typed `MeleeReach` value to actors, defaulting to one Manhattan tile while allowing an
 explicit authored/test actor to use a larger reach. Core legal-action discovery and `Attack`
@@ -3298,6 +3299,46 @@ Out of scope:
 
 - weapon classes, equipment-derived reach, item effects, damage modifiers, status effects, enemy
   behavior, ranged rules, new commands/events/errors, and production presentation assets.
+
+### Milestone 4 slice: deterministic ranged reload
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Add a scheduled player-facing `Reload` command that restores an actor's ranged ammunition to the
+fixed three-shot capacity. Reloading requires a living scheduled player with fewer than the maximum
+shots, consumes the standard one-tick action cost, emits a typed `Reloaded` event with the restored
+count, and participates in state/replay evidence. Legal-action discovery and execution share the
+same full-ammo guard; protocol version 9 owns the new command/event/error contract. No item, weapon,
+or enemy behavior is introduced.
+
+Verification target:
+
+- Core proves empty/partial reload success, exact capacity restoration, one-tick scheduling,
+  deterministic legal-action ordering, typed full-ammo and wrong-role rejection, digest/replay
+  participation, and atomic rejected-command evidence.
+- Protocol/MCP/headless carry the versioned command/event/error mappings and preserve accepted and
+  rejected action/history/replay/snapshot evidence; the fixed session scenario remains stable.
+- Bevy binds `R` to the legal player reload command and includes reload in exhaustive journal and
+  display-free smoke coverage without changing visual/audio/animation behavior.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Verification evidence:
+
+- Core reload tests pass 6/6, protocol reload mapping/JSON tests pass 2/2, MCP reload session and
+  stdio tests pass 2/2 each, headless CLI tests pass 4/4, and the desktop reload/restart-key units
+  plus exhaustive smoke/journal path pass.
+- `scripts/verify.sh` passes repository checks, formatting, strict workspace Clippy, all workspace
+  targets, warning-denied docs, and display-free desktop smoke.
+- The reviewed branch preserves atomic full/over-capacity, wrong-role, unscheduled, and rejected
+  replay/history evidence; no production media or new audio family is introduced.
+
+Out of scope:
+
+- Ammo pickups, item-derived ammunition, weapon capacities, reload animations, reload audio,
+  ranged enemy AI, projectile effects, and any additional action-cost changes.
 
 ### Milestone 4 slice: deterministic ranged ammunition
 

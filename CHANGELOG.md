@@ -6,9 +6,12 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
-- An active deterministic melee-reach preparation slice: typed actor reach with a one-tile default,
-  explicit extended-reach scenarios, and planned core/protocol/MCP/Bevy parity without weapon
-  classes or new presentation controls.
+- A verified deterministic melee-reach preparation slice: typed actor reach with a one-tile default,
+  explicit extended-reach scenarios, and core/protocol/MCP/Bevy parity without weapon classes or
+  new presentation controls.
+- A verified deterministic player reload action that restores the fixed three-shot ranged-ammo
+  capacity with typed core/protocol/MCP/headless evidence, protocol v9, `R` desktop control, and
+  exhaustive journal/smoke coverage; ammo pickups and weapon capacities remain deferred.
 - An active deterministic enemy-intent presentation slice: the scheduled enemy's exact core
   command is projected into a typed Bevy resource and compact desktop HUD line without changing
   simulation behavior or adding controls/media.

@@ -437,7 +437,13 @@ fn fixed_scenario() -> Result<WorldState, SessionError> {
   WorldState::new(
     map,
     vec![
-      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_ranged_ammo(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(10),
+        2,
+      ),
       Actor::with_hit_points(
         ActorId::new(2),
         ActorKind::Enemy,

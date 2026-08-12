@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 async fn in_memory_tools_return_structured_versioned_outputs() {
   let server = DreadstepMcpServer::new(7).expect("fixed scenario should be valid");
   let observe = server.observe().await.expect("observe should succeed");
-  assert_eq!(observe.0.protocol_version(), 8);
+  assert_eq!(observe.0.protocol_version(), 9);
   assert_eq!(observe.0.protocol_version(), PROTOCOL_VERSION);
   let restarted = server
     .start_run(Parameters(StartRunParams { seed: 11 }))
@@ -33,7 +33,7 @@ async fn in_memory_tools_return_structured_versioned_outputs() {
     .legal_actions()
     .await
     .expect("legal_actions should succeed");
-  assert_eq!(legal_actions.0.len(), 6);
+  assert_eq!(legal_actions.0.len(), 7);
   assert_eq!(
     legal_actions.0[0],
     CommandRequest::Move {
@@ -268,10 +268,30 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
     &mut input,
     &mut output,
   );
-  let acted = round_trip(
+  let reloaded = round_trip(
     &json!({
       "jsonrpc": "2.0",
       "id": 10,
+      "method": "tools/call",
+      "params": {"name": "act", "arguments": {"request": {"reload": {"actor": 1}}}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let enemy_acted = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 11,
+      "method": "tools/call",
+      "params": {"name": "act", "arguments": {"request": {"chase": {"actor": 2, "target": 1}}}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let acted = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 12,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
     }),
@@ -281,7 +301,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let history_after_act = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 11,
+      "id": 13,
       "method": "tools/call",
       "params": {"name": "get_history", "arguments": {}}
     }),
@@ -291,7 +311,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let replay_after_act = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 12,
+      "id": 14,
       "method": "tools/call",
       "params": {"name": "get_replay", "arguments": {}}
     }),
@@ -301,7 +321,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let rejected = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 13,
+      "id": 15,
       "method": "tools/call",
       "params": {"name": "act", "arguments": {"request": {"wait": {"actor": 1}}}}
     }),
@@ -311,7 +331,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let history_after_rejection = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 14,
+      "id": 16,
       "method": "tools/call",
       "params": {"name": "get_history", "arguments": {}}
     }),
@@ -321,7 +341,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let replay_after_rejection = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 15,
+      "id": 17,
       "method": "tools/call",
       "params": {"name": "get_replay", "arguments": {}}
     }),
@@ -331,7 +351,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let after_rejection = round_trip(
     &json!({
       "jsonrpc": "2.0",
-      "id": 16,
+      "id": 18,
       "method": "tools/call",
       "params": {"name": "observe", "arguments": {}}
     }),
@@ -416,13 +436,15 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let history_before_output = &history_before["result"]["structuredContent"];
   let replay_before_output = &replay_before["result"]["structuredContent"];
   let observed_snapshot = &observed["result"]["structuredContent"];
+  let reloaded_output = &reloaded["result"]["structuredContent"];
+  let enemy_acted_output = &enemy_acted["result"]["structuredContent"];
   let acted_output = &acted["result"]["structuredContent"];
   let history_after_act_output = &history_after_act["result"]["structuredContent"];
   let replay_after_act_output = &replay_after_act["result"]["structuredContent"];
   let history_after_rejection_output = &history_after_rejection["result"]["structuredContent"];
   let replay_after_rejection_output = &replay_after_rejection["result"]["structuredContent"];
   let after_rejection_snapshot = &after_rejection["result"]["structuredContent"];
-  assert_eq!(started_snapshot["protocol_version"], 8);
+  assert_eq!(started_snapshot["protocol_version"], 9);
   assert_eq!(started_snapshot["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(started_snapshot["actors"][0]["melee_reach"], 1);
   assert_eq!(started_snapshot, observed_snapshot);
@@ -434,14 +456,14 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
       .as_array()
       .expect("actions should be an array")
       .len(),
-    6
+    7
   );
   assert_eq!(
     legal_actions_output[0],
     json!({"move": {"actor": 1, "direction": "north"}})
   );
   assert_eq!(
-    legal_actions_output[5],
+    legal_actions_output[6],
     json!({"attack": {"actor": 1, "target": 2}})
   );
   assert!(
@@ -458,12 +480,30 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
       .is_empty()
   );
   assert!(replay_before_output["digest"].is_number());
-  assert_eq!(history_after_act_output, &json!([{"wait": {"actor": 1}}]));
+  assert_eq!(reloaded_output["events"][0]["reloaded"]["actor"], 1);
+  assert_eq!(reloaded_output["events"][0]["reloaded"]["ammunition"], 3);
+  assert_eq!(reloaded_output["snapshot"]["actors"][0]["ranged_ammo"], 3);
+  assert_eq!(
+    enemy_acted_output["events"][0]["movement_blocked"]["actor"],
+    2
+  );
+  assert_eq!(
+    history_after_act_output,
+    &json!([
+      {"reload": {"actor": 1}},
+      {"chase": {"actor": 2, "target": 1}},
+      {"wait": {"actor": 1}}
+    ])
+  );
   assert_eq!(history_after_rejection_output, history_after_act_output);
   assert_eq!(replay_after_act_output["seed"], 17);
   assert_eq!(
     replay_after_act_output["commands"],
-    json!([{"wait": {"actor": 1}}])
+    json!([
+      {"reload": {"actor": 1}},
+      {"chase": {"actor": 2, "target": 1}},
+      {"wait": {"actor": 1}}
+    ])
   );
   assert_eq!(replay_after_rejection_output, replay_after_act_output);
   assert_eq!(acted_output["seed"], 17);

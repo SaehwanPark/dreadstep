@@ -1969,10 +1969,16 @@ currently scheduled living enemy's exact core command using the same determinist
 preference as the enemy driver. This exposes intent without reserving commands or changing enemy
 behavior; ranged enemy AI, retreat, status effects, and richer intent policy remain future work.
 
-The next bounded combat-preparation slice adds a typed actor melee reach with a one-tile default
-and explicit extended-reach authored/test actors. Legal discovery and execution share the same
-predicate and preserve fixed damage, action cost, events, replay, and desktop behavior; weapon
-classes and equipment-derived effects remain future work.
+The bounded combat-preparation slice for typed actor melee reach is now verified: actors default to
+one Manhattan tile while authored/test scenarios may opt into an extended reach. Legal discovery and
+execution share the same predicate and preserve fixed damage, action cost, events, replay, and
+desktop behavior; weapon classes and equipment-derived effects remain future work.
+
+The following bounded combat slice is also verified: a scheduled player may reload partial ranged
+ammunition to the fixed three-shot capacity through a typed `Reload` command. It preserves standard
+action timing, replay/snapshot evidence, versioned protocol/MCP/headless mappings, and desktop `R`
+coverage while leaving pickups, weapon-specific capacities, reload media, and ranged enemy behavior
+for later slices.
 
 ### Implement
 

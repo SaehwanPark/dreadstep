@@ -465,9 +465,11 @@ and guarded during legal discovery so adapters cannot advertise an overflowing r
 
 The verified ranged-ammunition slice gives each actor a finite default of three ranged shots. Core
 decrements ammunition only after an accepted ranged attack, omits empty actions from legal discovery,
-and returns typed no-ammunition rejection without mutating scheduler or replay evidence. Protocol
-v6 exposes the remaining count in actor snapshots; ammo pickups, reloads, and weapon capacities
-remain future rules.
+and returns typed no-ammunition rejection without mutating scheduler or replay evidence. The verified
+reload slice adds a scheduled player-only `Reload` command that restores the same fixed capacity,
+uses the standard action cost, and emits typed event evidence; full-ammo rejection remains atomic.
+Protocol v9 carries the command/event/error additions; ammo pickups, item-derived ammunition, and
+weapon capacities remain future rules.
 
 The verified cover slice adds a walkable `Cover` tile that blocks interior ranged rays while
 retaining the existing typed no-line-of-sight rejection. Presentation FOV continues to traverse
@@ -481,7 +483,7 @@ shares the desktop driver's deterministic chase-then-wait preference, changes no
 and renders only a compact HUD summary; new enemy behavior families and intent commitment remain
 future rules.
 
-The active melee-reach preparation slice adds a typed actor reach value with a one-tile default and
+The verified melee-reach preparation slice adds a typed actor reach value with a one-tile default and
 an explicit extended-reach constructor for authored/test scenarios. Core uses the same Manhattan
 reach predicate for `Attack` legal discovery and execution; protocol snapshots and Bevy scene
 mirrors carry the value, while weapon classes, equipment-derived effects, and new presentation
