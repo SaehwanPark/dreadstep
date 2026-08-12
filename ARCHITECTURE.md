@@ -455,19 +455,25 @@ Core discovers stable target IDs at Manhattan distance 2–3, reuses the existin
 and `Died` evidence, and records the command in replay. Protocol/MCP and the headless CLI only
 translate the new typed request; the desktop binds `G` to the lowest-ID legal target and reuses the
 existing attack animation/audio cue families. A follow-up slice now adds a cardinal line-of-sight
-predicate over interior `Floor` cells; blocked and diagonal requests return typed rejection without
-mutating state or replay evidence. Cover, weapon effects, and enemy ranged behavior remain future
-rules.
+predicate over interior cells, where the terrain predicate decides whether `Cover` or `Wall` blocks;
+blocked and diagonal requests return typed rejection without mutating state or replay evidence.
+Weapon effects and enemy ranged behavior remain future rules.
 
 The verified ranged-cost slice gives only `RangedAttack` a two-tick scheduler advance; all other
 player and enemy commands retain the standard one-tick cost. The cost is selected in core execution
 and guarded during legal discovery so adapters cannot advertise an overflowing ranged action.
 
-The active ranged-ammunition slice gives each actor a finite default of three ranged shots. Core
+The verified ranged-ammunition slice gives each actor a finite default of three ranged shots. Core
 decrements ammunition only after an accepted ranged attack, omits empty actions from legal discovery,
 and returns typed no-ammunition rejection without mutating scheduler or replay evidence. Protocol
 v6 exposes the remaining count in actor snapshots; ammo pickups, reloads, and weapon capacities
 remain future rules.
+
+The verified cover slice adds a walkable `Cover` tile that blocks interior ranged rays while
+retaining the existing typed no-line-of-sight rejection. Presentation FOV continues to traverse
+walkable cover and treats only walls as visible boundaries. Protocol v7 carries the tester terrain
+variant; cover damage modifiers, directionality, destruction, and environmental mutation remain
+future rules.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

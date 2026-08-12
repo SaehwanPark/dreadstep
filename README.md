@@ -20,10 +20,11 @@ not need to care about the testing architecture to enjoy it.
 Dreadstep is continuing the transition from Milestone 3's human presentation boundary into
 Milestone 4 tactical combat.
 
-The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, and finite
-ammunition slices are verified across the deterministic core, protocol/MCP/headless adapters, and
-desktop `G` control. Further Milestone 4 work will be taken in bounded slices. Ammo pickups,
-reloads, cover, weapon effects, and enemy ranged AI remain deliberately deferred.
+The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
+ammunition, and walkable-cover slices are verified across the deterministic core,
+protocol/MCP/headless adapters, and desktop `G` control. Cover blocks only interior ranged rays;
+ammo pickups, reloads, cover damage modifiers, weapon effects, and enemy ranged AI remain
+deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
@@ -43,9 +44,9 @@ reloads, cover, weapon effects, and enemy ranged AI remain deliberately deferred
     ordered messages, audio cues, animation cues, and sprite-role metadata.
   - Caller-selected checked pixel placement, native 24×24/32×32 evidence with a provisional 32×32
     working size, and complete ordered render/sprite-key/command/node projections.
-  - Optional deterministic presentation field of view: radius-3 cardinal floor traversal with
-    readable wall boundaries, retained-but-hidden out-of-view render nodes, and complete headless
-    snapshots/MCP visibility unchanged.
+  - Optional deterministic presentation field of view: radius-3 cardinal walkable-terrain
+    traversal with readable wall boundaries, retained-but-hidden out-of-view render nodes, and
+    complete headless snapshots/MCP visibility unchanged.
   - Local-only pixel-art and audio manifests preserve typed placeholder/cue metadata; the desktop
     feature can optionally request existing local audio through Bevy playback while missing media
     remains a safe fallback and binaries remain ignored.

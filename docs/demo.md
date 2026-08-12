@@ -99,7 +99,7 @@ Failure to create the log directory or a mid-run write/flush fault is reported a
 | Move / wait / enemy chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / pickup | selected/equipped HUD rows and ground stack | item events and full inventory snapshots | yes |
-| Terrain and actor blocking | distinct wall/floor/actor pixels | `movement_blocked` reason | yes |
+| Terrain and actor blocking | distinct wall/cover/floor/actor pixels | `movement_blocked` reason | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
 | Optional art fallback | per-family placeholder | warning/outcome records | no display required |
@@ -123,7 +123,7 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 ## Manual checklist
 
 - one non-resizable 640×360 logical (1280×720 physical at scale 2) primary window opens;
-- floor, wall, player, enemy, dead actor, and ground item placeholders are visibly distinct;
+- floor, cover, wall, player, enemy, dead actor, and ground item placeholders are visibly distinct;
 - radius-3 field of view follows the controlled actor, hides distant nodes without removing their
   typed mirrors, and keeps adjacent wall edges readable;
 - movement, wait, combat, inventory selection, equip/unequip, consume, pickup, restart, and enemy delay

@@ -169,6 +169,7 @@ impl Session {
       .copied()
       .map(|tile| match tile {
         ProtocolTile::Floor => Tile::Floor,
+        ProtocolTile::Cover => Tile::Cover,
         ProtocolTile::Wall => Tile::Wall,
       })
       .collect();

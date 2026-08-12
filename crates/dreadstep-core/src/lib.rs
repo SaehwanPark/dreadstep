@@ -183,6 +183,8 @@ impl Direction {
 pub enum Tile {
   /// A cell that actors may enter when it is not occupied.
   Floor,
+  /// A walkable cell that blocks ranged line of sight.
+  Cover,
   /// A cell that blocks movement.
   Wall,
 }
@@ -191,7 +193,13 @@ impl Tile {
   /// Returns whether this tile permits an actor to enter it.
   #[must_use]
   pub const fn is_walkable(self) -> bool {
-    matches!(self, Self::Floor)
+    matches!(self, Self::Floor | Self::Cover)
+  }
+
+  /// Returns whether this tile blocks a ranged line of sight.
+  #[must_use]
+  pub const fn blocks_ranged_line_of_sight(self) -> bool {
+    matches!(self, Self::Cover | Self::Wall)
   }
 }
 
@@ -1774,7 +1782,8 @@ impl WorldState {
     for tile in &self.map.tiles {
       hasher.write_u8(match tile {
         Tile::Floor => 1,
-        Tile::Wall => 2,
+        Tile::Cover => 2,
+        Tile::Wall => 3,
       });
     }
     hasher.write_u64(self.current_time.value());
@@ -2294,7 +2303,11 @@ impl WorldState {
       let step = if first.y() < second.y() { 1 } else { -1 };
       let mut y = first.y() + step;
       while y != second.y() {
-        if !self.map.is_walkable(Position::new(first.x(), y)) {
+        if self
+          .map
+          .tile_at(Position::new(first.x(), y))
+          .is_none_or(Tile::blocks_ranged_line_of_sight)
+        {
           return false;
         }
         y += step;
@@ -2304,7 +2317,11 @@ impl WorldState {
       let step = if first.x() < second.x() { 1 } else { -1 };
       let mut x = first.x() + step;
       while x != second.x() {
-        if !self.map.is_walkable(Position::new(x, first.y())) {
+        if self
+          .map
+          .tile_at(Position::new(x, first.y()))
+          .is_none_or(Tile::blocks_ranged_line_of_sight)
+        {
           return false;
         }
         x += step;

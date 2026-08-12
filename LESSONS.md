@@ -259,3 +259,14 @@ constructor cannot silently alter the default client path or lose owner/order da
   requests with a typed error, and decrement exactly once only after `ranged_attack` succeeds.
 - Prevention: For every finite command resource, assert accepted digest/snapshot changes, empty
   action filtering, and atomic rejection across all preconditions.
+
+## Keep walkability separate from ranged visibility
+
+- Context: Cover is intentionally walkable but blocks an interior ranged ray.
+- Symptom: Reusing `is_walkable` for line-of-sight checks would make cover behave like floor and
+  silently advertise an action that should reject.
+- Cause: Movement occupancy and ranged visibility are different terrain policies.
+- Resolution: Keep `Tile::is_walkable` permissive for floor and cover, and use the explicit
+  `blocks_ranged_line_of_sight` predicate for cardinal ray interiors.
+- Prevention: Test cover placement/movement separately from legal ranged filtering and preserve the
+  existing atomic no-line-of-sight error contract.

@@ -111,6 +111,45 @@ fn ranged_attack_reports_current_time_after_two_tick_transition() {
 }
 
 #[test]
+fn cover_is_walkable_and_part_of_the_map_digest() {
+  let actors = vec![
+    Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+    Actor::with_hit_points(
+      ActorId::new(2),
+      ActorKind::Enemy,
+      Position::new(2, 0),
+      HitPoints::new(2),
+    ),
+  ];
+  let mut with_cover = WorldState::new(
+    GridMap::from_tiles(3, 1, vec![Tile::Floor, Tile::Cover, Tile::Floor])
+      .expect("cover map should be valid"),
+    actors.clone(),
+  )
+  .expect("cover map should accept the actors");
+  let all_floor = WorldState::new(
+    GridMap::filled(3, 1, Tile::Floor).expect("floor map should be valid"),
+    actors,
+  )
+  .expect("floor map should accept the actors");
+
+  assert_ne!(with_cover.digest(), all_floor.digest());
+  with_cover
+    .execute(Command::Move {
+      actor: ActorId::new(1),
+      direction: dreadstep_core::Direction::East,
+    })
+    .expect("cover should be walkable for movement");
+  assert_eq!(
+    with_cover
+      .actor(ActorId::new(1))
+      .expect("actor remains visible")
+      .position(),
+    Position::new(1, 0)
+  );
+}
+
+#[test]
 fn ranged_attack_rejects_empty_ammunition_atomically_and_hides_the_action() {
   let mut world = world_with_ammo(Position::new(2, 0), 2, 0);
   let before = world.clone();
@@ -258,6 +297,99 @@ fn ranged_attack_rejects_wall_blocked_and_diagonal_targets_atomically() {
     })
   );
   assert_eq!(diagonal, before);
+}
+
+#[test]
+fn ranged_attack_rejects_walkable_cover_in_the_interior_ray_atomically() {
+  let mut covered = WorldState::new(
+    GridMap::from_tiles(
+      4,
+      1,
+      vec![Tile::Floor, Tile::Cover, Tile::Floor, Tile::Floor],
+    )
+    .expect("map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(2, 0),
+        HitPoints::new(2),
+      ),
+    ],
+  )
+  .expect("cover should remain walkable for actor placement");
+  let before = covered.clone();
+
+  assert!(!covered.legal_commands().contains(&Command::RangedAttack {
+    actor: ActorId::new(1),
+    target: ActorId::new(2),
+  }));
+  assert_eq!(
+    covered.execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }),
+    Err(CommandError::RangedAttackNoLineOfSight {
+      attacker: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+  );
+  assert_eq!(covered, before);
+}
+
+#[test]
+fn ranged_attack_allows_cover_at_either_endpoint() {
+  for tiles in [
+    vec![Tile::Cover, Tile::Floor, Tile::Floor, Tile::Floor],
+    vec![Tile::Floor, Tile::Floor, Tile::Cover, Tile::Floor],
+  ] {
+    let mut world = WorldState::new(
+      GridMap::from_tiles(4, 1, tiles).expect("endpoint cover map should be valid"),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(2, 0),
+          HitPoints::new(2),
+        ),
+      ],
+    )
+    .expect("cover endpoints should remain walkable for actors");
+
+    let result = world
+      .execute(Command::RangedAttack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .expect("cover at an endpoint is not an interior blocker");
+    assert_eq!(
+      result.events(),
+      &[Event::Attacked {
+        attacker: ActorId::new(1),
+        target: ActorId::new(2),
+        damage: Damage::RANGED,
+        remaining_hit_points: HitPoints::new(1),
+      }]
+    );
+    assert_eq!(result.current_time().value(), 0);
+    assert_eq!(
+      world
+        .actor(ActorId::new(1))
+        .expect("attacker remains visible")
+        .ready_at()
+        .value(),
+      2
+    );
+    assert_eq!(
+      world
+        .actor(ActorId::new(1))
+        .expect("attacker remains visible")
+        .ranged_ammo(),
+      Actor::DEFAULT_RANGED_AMMO - 1
+    );
+  }
 }
 
 #[test]
