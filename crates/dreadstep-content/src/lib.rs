@@ -307,6 +307,87 @@ pub fn starter_floor() -> Result<WorldState, ContentError> {
   starter_floor_definition().build()
 }
 
+/// Returns a deterministic seeded corridor-floor definition.
+///
+/// This is the first procedural-content boundary: it varies only authored terrain and enemy
+/// durability. The returned definition still delegates all map and actor validation to core when
+/// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
+/// remains a valid deterministic fixture value.
+#[must_use]
+pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinition {
+  const WIDTH: u32 = 13;
+  const HEIGHT: u32 = 9;
+
+  let mut tiles = vec![Tile::Floor; (WIDTH * HEIGHT) as usize];
+  for y in 0..HEIGHT {
+    for x in 0..WIDTH {
+      if x == 0 || x + 1 == WIDTH || y == 0 || y + 1 == HEIGHT {
+        let index = (y * WIDTH + x) as usize;
+        tiles[index] = Tile::Wall;
+      }
+    }
+  }
+
+  for partition_x in [3_u32, 6, 9] {
+    let gap_y = procedural_partition_gap(seed, depth, partition_x);
+    for y in 1..(HEIGHT - 1) {
+      if y != gap_y {
+        let index = (y * WIDTH + partition_x) as usize;
+        tiles[index] = Tile::Wall;
+      }
+    }
+  }
+
+  let enemy_hit_points = HitPoints::new(3 + depth.min(5) as u16);
+  StarterFloorDefinition::new(
+    WIDTH,
+    HEIGHT,
+    tiles,
+    vec![
+      Actor::with_hit_points(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(1, 1),
+        HitPoints::new(10),
+      ),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(11, 1),
+        enemy_hit_points,
+      ),
+      Actor::with_hit_points(
+        ActorId::new(3),
+        ActorKind::Enemy,
+        Position::new(11, 7),
+        enemy_hit_points,
+      ),
+      Actor::with_hit_points(
+        ActorId::new(4),
+        ActorKind::Enemy,
+        Position::new(1, 7),
+        enemy_hit_points,
+      ),
+    ],
+  )
+}
+
+fn procedural_partition_gap(seed: u64, depth: u32, partition_x: u32) -> u32 {
+  let mixed = seed
+    .wrapping_add(u64::from(depth).wrapping_mul(0x9E37_79B9_7F4A_7C15))
+    .wrapping_add(u64::from(partition_x).wrapping_mul(0xBF58_476D_1CE4_E5B9));
+  (mixed % 7) as u32 + 1
+}
+
+/// Builds a validated deterministic seeded corridor floor.
+///
+/// # Errors
+///
+/// Returns [`ContentError`] if generated content violates a core map or world invariant.
+pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentError> {
+  procedural_floor_definition(seed, depth).build()
+}
+
 /// Returns the deterministic authored starter-item scenario definition.
 ///
 /// This scenario is separate from [`starter_floor_definition`], which intentionally remains

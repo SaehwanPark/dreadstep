@@ -34,6 +34,11 @@ first healing and ammunition consumables, persistence, save/load, and replay pla
 visible run now also writes a versioned `*.replay.json` evidence artifact beside its JSONL journal;
 the artifact is not a playback-compatible save file.
 
+The content boundary now also exposes a deterministic seeded corridor-floor generator for procedural
+dungeon preparation. Identical seed/depth inputs produce the same validated 13×9 floor and actor
+roster; different inputs vary partition gaps or authored enemy durability. The desktop showcase still
+uses the stable authored starter floor until floor progression and presentation selection are designed.
+
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
     actions, tester operations, and stdio tools.
