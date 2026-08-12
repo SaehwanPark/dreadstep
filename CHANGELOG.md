@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A verified fixed four-item inventory capacity: core, protocol v12, MCP tester operations, and
+  player pickup legal-action discovery reject overflow atomically while actor snapshots expose the
+  capacity; item effects, stacking, and upgrades remain deferred.
 - A verified deterministic desktop replay-evidence export: each smoke or visible run writes a
   create-new version-1 `*.replay.json` artifact with seed, accepted command order, replay digest,
   and canonical outcome, plus a matching journal record; playback and save/load remain deferred.
@@ -20,7 +23,7 @@ All notable contributor- and user-visible project changes are recorded here.
   exhaustive journal/smoke coverage; ammo pickups and weapon capacities remain deferred.
 - A verified scheduled player-facing item drop slice: protocol v10 command/event/error plumbing,
   deterministic inventory-to-ground ordering, MCP item-run setup, headless CLI coverage, and `X`
-  desktop control; item effects and capacity remain deferred.
+  desktop control; item effects and capacity upgrades remain deferred.
 - A verified deterministic enemy melee-intent slice: adjacent scheduled enemies now use the existing
   fixed-damage `Attack` before fallback `Chase`, with core/MCP legal-action evidence and Bevy intent,
   desktop-driver, and smoke coverage; ranged enemy AI remains deferred.

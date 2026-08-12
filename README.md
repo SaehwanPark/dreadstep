@@ -44,9 +44,12 @@ the artifact is not a playback-compatible save file.
     and cue projections.
   - Scheduled player-facing item pickup and drop with deterministic ground-stack ordering, typed
     events/errors, protocol/MCP replay evidence, and desktop `P`/`X` smoke coverage; effects,
-    modifiers, capacity, and richer item semantics remain deferred.
+    modifiers, and richer item semantics remain deferred.
   - Deterministic desktop replay-evidence export with seed, accepted command order, replay digest,
     and canonical outcome; persistence, editing, and playback remain deferred.
+  - Fixed four-item inventory capacity with atomic full-inventory rejection across core, protocol
+    v12 snapshots, MCP, headless command coverage, and Bevy legal-action projections; effects and
+    upgrades remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,
     focus, scene focus, camera, viewport, tile/actor/ground/inventory mirrors, typed HUD status,
@@ -121,7 +124,7 @@ the artifact is not a playback-compatible save file.
 - Still deferred
   - production texture/media adoption, anchor policy beyond centering, animation playback,
     production audio assets/mastering/music, multiple floors, and richer gameplay item semantics such as
-    effects, modifiers, capacity, and additional slots.
+    effects, modifiers, and additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned

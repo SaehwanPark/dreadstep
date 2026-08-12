@@ -93,6 +93,10 @@ unchanged rejected actions, asset outcomes, warnings, terminal victory/fault, sh
 caught unexpected panic payloads. Every record is flushed before the process continues. Existing
 files are never overwritten; a suffix is allocated on filename collision.
 
+Actor snapshots include the fixed four-item inventory capacity. A full player's pickup action is
+omitted from legal actions and rejected atomically if requested directly; item effects and capacity
+upgrades remain outside this showcase slice.
+
 The journal is diagnostic evidence, not a protocol message or a replay playback format. At clean
 smoke or visible-run completion, the desktop boundary also writes a versioned sibling
 `*.replay.json` artifact containing the seed, accepted command order, replay digest, and canonical

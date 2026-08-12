@@ -587,6 +587,9 @@ pub struct Actor {
 }
 
 impl Actor {
+  /// The fixed number of opaque item instances an actor may carry.
+  pub const INVENTORY_CAPACITY: usize = 4;
+
   /// The fixed capacity restored by the deterministic reload command.
   pub const RANGED_AMMO_CAPACITY: u16 = 3;
 
@@ -1049,6 +1052,8 @@ pub enum WorldError {
   UnknownActor(ActorId),
   /// An item identity is already owned by an actor in the world.
   DuplicateItemId(ItemId),
+  /// An actor already carries the fixed maximum number of item instances.
+  InventoryFull(ActorId),
   /// An actor does not own the item requested by a tester transfer.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1131,6 +1136,9 @@ impl fmt::Display for WorldError {
       Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
       Self::DuplicateItemId(item) => {
         write!(formatter, "item id {} is duplicated", item.value())
+      }
+      Self::InventoryFull(actor) => {
+        write!(formatter, "actor {} inventory is full", actor.value())
       }
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
@@ -1282,6 +1290,8 @@ pub enum CommandError {
     /// The item identity that was not found.
     item: ItemId,
   },
+  /// The actor's fixed inventory capacity would be exceeded.
+  InventoryFull(ActorId),
   /// The requested item is already equipped.
   ItemAlreadyEquipped {
     /// The actor whose equipment was queried.
@@ -1402,6 +1412,7 @@ impl fmt::Display for CommandError {
         actor.value(),
         item.value()
       ),
+      Self::InventoryFull(actor) => write!(formatter, "actor {} inventory is full", actor.value()),
       Self::ItemAlreadyEquipped { actor, item } => write!(
         formatter,
         "actor {} already equips item {}",
@@ -1573,16 +1584,18 @@ impl WorldState {
   /// Gives one opaque item instance to an existing actor for an explicit tester operation.
   ///
   /// Item ownership is recorded in insertion order. The instance identity is global across all
-  /// actor inventories; item effects and capacity rules are intentionally outside this slice.
+  /// actor inventories; item effects remain outside this slice and the fixed actor capacity is
+  /// enforced before insertion.
   /// Explicit tester transfers are handled separately by [`Self::transfer_item`]. Dead actor
   /// records remain valid ownership targets because the mutation does not alter scheduling or
   /// occupancy.
   ///
   /// # Errors
   ///
-  /// Returns [`WorldError::UnknownActor`] when the target identity is absent or
+  /// Returns [`WorldError::UnknownActor`] when the target identity is absent,
   /// [`WorldError::DuplicateItemId`] when any actor inventory or ground stack already owns the
-  /// item identity. A rejected item is not inserted.
+  /// item identity, or [`WorldError::InventoryFull`] when the target has no free slot. A rejected
+  /// item is not inserted.
   pub fn give_item(&mut self, actor_id: ActorId, item: Item) -> Result<(), WorldError> {
     if !self.actors.contains_key(&actor_id) {
       return Err(WorldError::UnknownActor(actor_id));
@@ -1598,6 +1611,13 @@ impl WorldState {
       .any(|stack| stack.items().iter().any(|owned| owned.id() == item.id()))
     {
       return Err(WorldError::DuplicateItemId(item.id()));
+    }
+    if self
+      .actors
+      .get(&actor_id)
+      .is_some_and(|actor| actor.inventory().len() >= Actor::INVENTORY_CAPACITY)
+    {
+      return Err(WorldError::InventoryFull(actor_id));
     }
     self
       .actors
@@ -1674,9 +1694,10 @@ impl WorldState {
   ///
   /// # Errors
   ///
-  /// Returns [`WorldError::UnknownActor`] when the actor identity is absent or
-  /// [`WorldError::ItemNotOnGround`] when the actor's current stack does not contain the item.
-  /// Rejected pickups leave the world unchanged.
+  /// Returns [`WorldError::UnknownActor`] when the actor identity is absent,
+  /// [`WorldError::ItemNotOnGround`] when the actor's current stack does not contain the item, or
+  /// [`WorldError::InventoryFull`] when the actor has no free slot. Rejected pickups leave the
+  /// world unchanged.
   pub fn pickup_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<(), WorldError> {
     if !self.actors.contains_key(&actor_id) {
       return Err(WorldError::UnknownActor(actor_id));
@@ -1709,6 +1730,14 @@ impl WorldState {
       });
     };
 
+    if self
+      .actors
+      .get(&actor_id)
+      .is_some_and(|actor| actor.inventory().len() >= Actor::INVENTORY_CAPACITY)
+    {
+      return Err(WorldError::InventoryFull(actor_id));
+    }
+
     let mut actor = self
       .actors
       .remove(&actor_id)
@@ -1734,7 +1763,8 @@ impl WorldState {
   /// Returns [`WorldError::UnknownActor`] when either actor identity is absent,
   /// [`WorldError::ItemNotOwned`] when the source does not own the requested item, or
   /// [`WorldError::ItemEquipped`] when moving the requested item would invalidate the equipment
-  /// reference. Rejected transfers leave the world unchanged.
+  /// reference, or [`WorldError::InventoryFull`] when the target has no free slot. Rejected
+  /// transfers leave the world unchanged.
   pub fn transfer_item(
     &mut self,
     source_actor: ActorId,
@@ -1770,6 +1800,13 @@ impl WorldState {
     }
     if source_actor == target_actor {
       return Ok(());
+    }
+    if self
+      .actors
+      .get(&target_actor)
+      .is_some_and(|actor| actor.inventory().len() >= Actor::INVENTORY_CAPACITY)
+    {
+      return Err(WorldError::InventoryFull(target_actor));
     }
     let Some(mut source) = self.actors.remove(&source_actor) else {
       return Err(WorldError::UnknownActor(source_actor));
@@ -2072,6 +2109,7 @@ impl WorldState {
       commands.push(Command::Reload { actor: actor_id });
     }
     if actor.kind() == ActorKind::Player
+      && actor.inventory().len() < Actor::INVENTORY_CAPACITY
       && let Some(stack) = self
         .ground_items
         .iter()
@@ -2359,6 +2397,7 @@ impl WorldState {
       .pickup_item(actor_id, item_id)
       .map_err(|error| match error {
         WorldError::UnknownActor(actor) => CommandError::UnknownActor(actor),
+        WorldError::InventoryFull(actor) => CommandError::InventoryFull(actor),
         WorldError::ItemNotOnGround { actor, item } => {
           CommandError::ItemNotOnGround { actor, item }
         }

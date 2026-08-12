@@ -25,6 +25,17 @@ Update an existing lesson instead of adding a duplicate.
 - Prevention: Treat replay export as evidence rather than playback, derive command lists only from
   core's accepted trace, preserve order, and test collision suffixes plus journal/artifact parity.
 
+## 2026-08-12 — Enforce inventory capacity at every ownership ingress
+
+- Context: Item ownership enters through tester give/transfer/pickup operations as well as the
+  scheduled player pickup command; checking only one path would let adapters disagree about a full
+  inventory.
+- Resolution: Keep one fixed four-item capacity on the core actor, validate before mutation in all
+  ownership ingress paths, hide full pickup from legal discovery, and carry typed overflow errors
+  plus capacity metadata through protocol/MCP snapshots.
+- Prevention: Whenever inventory limits change, test accepted boundary count, every ingress rejection
+  atomically, and legal-action filtering before updating adapter schemas or UI projections.
+
 ## 2026-08-12 — Player inventory actions need an item-bearing public fixture
 
 - Context: The default MCP/headless fixed scenario is intentionally item-free, so a new player item

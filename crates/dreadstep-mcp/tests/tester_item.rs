@@ -58,3 +58,30 @@ fn duplicate_item_rejection_is_typed_and_atomic() {
   assert_eq!(session.get_history(), history);
   assert_eq!(session.get_replay(), replay);
 }
+
+#[test]
+fn capacity_rejection_is_typed_and_atomic() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  for id in 1..=4 {
+    session
+      .give_item(
+        ActorId::new(1),
+        ItemId::new(id),
+        ItemDefinitionId::new(id + 100),
+      )
+      .expect("capacity-sized inventory should be accepted");
+  }
+  let before = session.inspect_world();
+  let history = session.get_history();
+  let replay = session.get_replay();
+
+  assert_eq!(
+    session.give_item(ActorId::new(1), ItemId::new(99), ItemDefinitionId::new(199)),
+    Err(SessionError::WorldRejected(WorldError::InventoryFull(
+      ActorId::new(1)
+    )))
+  );
+  assert_eq!(session.inspect_world(), before);
+  assert_eq!(session.get_history(), history);
+  assert_eq!(session.get_replay(), replay);
+}

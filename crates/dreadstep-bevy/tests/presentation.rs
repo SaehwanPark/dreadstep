@@ -122,6 +122,45 @@ fn accepted_command_emits_events_and_rejected_command_is_atomic() {
 }
 
 #[test]
+fn full_inventory_hides_player_pickup_from_presentation_legal_commands() {
+  let mut source = world();
+  for id in 1..=u32::try_from(Actor::INVENTORY_CAPACITY).expect("test capacity fits item ids") {
+    source
+      .give_item(
+        ActorId::new(1),
+        dreadstep_core::Item::new(
+          dreadstep_core::ItemId::new(id),
+          dreadstep_core::ItemDefinitionId::new(id + 100),
+        ),
+      )
+      .expect("capacity-sized inventory should be accepted");
+  }
+  source
+    .give_item(
+      ActorId::new(2),
+      dreadstep_core::Item::new(
+        dreadstep_core::ItemId::new(99),
+        dreadstep_core::ItemDefinitionId::new(199),
+      ),
+    )
+    .expect("enemy fixture item should be accepted");
+  source
+    .drop_item(ActorId::new(2), dreadstep_core::ItemId::new(99))
+    .expect("enemy fixture item should drop");
+  source
+    .set_hit_points(ActorId::new(2), HitPoints::new(0))
+    .expect("enemy fixture should become a dead retained record");
+  source
+    .teleport(ActorId::new(1), Position::new(2, 0))
+    .expect("player can use the dead enemy tile");
+
+  let state = PresentationState::new(7, source);
+  assert!(!state.legal_commands().iter().any(|command| {
+    matches!(command, Command::Pickup { actor, item } if *actor == ActorId::new(1) && *item == dreadstep_core::ItemId::new(99))
+  }));
+}
+
+#[test]
 fn replay_commands_expose_only_accepted_commands_in_order() {
   let mut state = PresentationState::new(7, world());
   let move_command = Command::Move {

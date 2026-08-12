@@ -219,8 +219,9 @@ impl Session {
   ///
   /// # Errors
   ///
-  /// Returns [`SessionError::WorldRejected`] when core rejects the target actor or duplicate
-  /// item identity. The mutation does not record a player command or alter replay evidence.
+  /// Returns [`SessionError::WorldRejected`] when core rejects the target actor, duplicate item
+  /// identity, or a full inventory. The mutation does not record a player command or alter replay
+  /// evidence.
   pub fn give_item(
     &mut self,
     actor: ProtocolActorId,
@@ -243,8 +244,9 @@ impl Session {
   ///
   /// # Errors
   ///
-  /// Returns [`SessionError::WorldRejected`] when core rejects either actor or when the source
-  /// does not own the item. The mutation does not record a player command or alter replay evidence.
+  /// Returns [`SessionError::WorldRejected`] when core rejects either actor, when the source does
+  /// not own the item, or when the target inventory is full. The mutation does not record a player
+  /// command or alter replay evidence.
   pub fn transfer_item(
     &mut self,
     source_actor: ProtocolActorId,
@@ -282,8 +284,8 @@ impl Session {
   ///
   /// # Errors
   ///
-  /// Returns [`SessionError::WorldRejected`] when core rejects the actor or ground ownership. The
-  /// mutation does not record a player command or alter replay evidence.
+  /// Returns [`SessionError::WorldRejected`] when core rejects the actor, ground ownership, or a
+  /// full inventory. The mutation does not record a player command or alter replay evidence.
   pub fn pickup_item(
     &mut self,
     actor: ProtocolActorId,

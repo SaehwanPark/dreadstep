@@ -17,6 +17,10 @@ fn every_core_validation_error_maps_to_protocol_values() {
       WorldError::DuplicateItemId(dreadstep_protocol::ItemId::new(7)),
     ),
     (
+      CoreWorldError::InventoryFull(CoreActorId::new(4)),
+      WorldError::InventoryFull(ActorId::new(4)),
+    ),
+    (
       CoreWorldError::ItemNotOwned {
         actor: CoreActorId::new(4),
         item: dreadstep_core::ItemId::new(9),
