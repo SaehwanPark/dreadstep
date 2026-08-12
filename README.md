@@ -81,6 +81,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - `--smoke` runs the same action-selection, enemy-driver, and JSONL journal path without a
     display; malformed CLI, startup, asset, input, journal, and caught-panic failures are
     recoverable at the process boundary.
+- Verified tactical HUD polish
+  - The existing panel now renders a fixed-width health bar, turn/position, remaining-enemy
+    pressure, and radius-3 field-of-view state without changing simulation or smoke behavior.
 - Still deferred
   - production texture/media adoption, anchor policy beyond centering, animation playback, audio
     assets/playback, multiple floors, and richer gameplay item semantics such as

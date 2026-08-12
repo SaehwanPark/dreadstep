@@ -6,6 +6,8 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A deterministic tactical HUD summary for health, turn ownership, enemy pressure, and optional
+  field-of-view state, without simulation or media boundary changes.
 - An optional deterministic presentation field-of-view projection with radius-bounded cardinal
   traversal, readable wall boundaries, retained-but-hidden out-of-view render nodes, and a radius-3
   desktop showcase configuration; core, protocol/MCP snapshots, and journal evidence remain full.

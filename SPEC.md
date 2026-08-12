@@ -2945,6 +2945,46 @@ Out of scope:
   raycasting beyond the bounded floor traversal, fog shaders, camera/viewport changes, animation,
   audio playback, production assets, and richer gameplay systems.
 
+### Milestone 3 slice: deterministic desktop tactical HUD
+
+- Status: verified
+- Started: 2026-08-11
+- Completed: 2026-08-11
+
+Improve the visible showcase's existing status panel with compact deterministic health, turn,
+pressure, and field-of-view summaries. The formatting remains a disposable desktop concern over
+the existing typed runtime/HUD/visibility projections; no core or agent-facing contract changes.
+
+Acceptance:
+
+- The status line renders a fixed-width health bar clamped to the authored ten-hit-point player,
+  current position/time/next actor, remaining enemy count, and active/inactive field-of-view state.
+- Missing player data remains an explicit fallback; missing optional visibility remains a full-map
+  presentation state, and no formatter panics on out-of-range hit points or counts.
+- Existing inventory, message, controls, journal, command, event, smoke, asset, and audio paths are
+  unchanged; the HUD only reads authoritative runtime snapshots and optional presentation resources.
+- Pure formatting helpers are unit-tested at lower/upper bounds and for active/inactive visibility;
+  no text, layout, localization, font, texture, animation, audio, or gameplay dependency is added.
+
+Verification target:
+
+- Desktop-feature unit tests cover health-bar clamping, status fallbacks, enemy counts, and FOV
+  summaries; `scripts/verify.sh`, `git diff --check`, and display-free smoke remain green.
+- Exactly one semantic `review-dreadstep` reviewer reports PASS at the final implementation.
+
+Verification evidence:
+
+- Desktop-feature unit tests pass all seven tests, covering fixed-width health-bar clamping,
+  active/inactive visibility summaries, enemy pressure, and missing-player fallback.
+- `cargo clippy -p dreadstep-bevy --all-targets --all-features --locked -- -D warnings`,
+  `scripts/verify.sh`, and `git diff --check` pass; smoke retains all seven command/eight event
+  kinds and the existing journal behavior.
+
+Out of scope:
+
+- Core/protocol/MCP changes, new commands/events, localization, production media, animation/audio
+  playback, layout redesign, window/camera changes, and richer gameplay item semantics.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -2966,9 +3006,9 @@ remaining renderer work in the proposal still defines these future product miles
 its own bounded acceptance slice
 before it can move into `Past`:
 
-- Milestone 3 — First Visible Dreadstep polish: production art adoption, animation, audio
-  placeholders/playback, and richer HUD presentation around the verified showcase; the bounded
-  presentation field-of-view slice is now verified.
+- Milestone 3 — First Visible Dreadstep polish: production art adoption, animation, and audio
+  placeholders/playback remain around the verified showcase; field-of-view and tactical HUD slices
+  are now verified.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
   verified single-item consumption and single-slot equipment preparations and tester item
   operations.

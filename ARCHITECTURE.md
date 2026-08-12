@@ -61,6 +61,12 @@ timers, HUD text, asset handles, and shutdown status are disposable effects; onl
 legal-command query and core execution determine simulation outcomes. The display-free `--smoke`
 path calls those same boundary helpers without initializing winit or a renderer.
 
+The visible showcase's tactical HUD is a disposable text projection over the authoritative runtime
+snapshot plus optional `PresentationVisibility`: its compact health, turn, enemy-pressure, and
+field-of-view summaries are formatted locally, while inventory, event, controls, and journal lines
+remain existing presentation effects. Missing player data and absent optional visibility use
+explicit safe fallbacks; the HUD cannot issue commands or alter core state.
+
 The earlier headless presentation records below remain valid when the `desktop` feature is absent.
 The runnable showcase is an opt-in process wrapper around those projections: its ECS scene, HUD,
 asset handles, timers, and journal are effects and never a second simulation authority.

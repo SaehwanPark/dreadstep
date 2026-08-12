@@ -10,6 +10,11 @@ The first launch creates `dreadstep-logs/` and a create-new JSONL journal. The d
 ignored by Git. A checkout does not need local art: readable nearest-neighbor placeholder pixels
 are used for every family until an optional image loads.
 
+The HUD keeps the existing panel structure and now includes a fixed-width health bar, remaining-
+enemy count, turn/position summary, and explicit field-of-view state. These are presentation-only
+readings; inventory, messages, controls, journal output, and the smoke command/event matrix remain
+unchanged.
+
 ## Controls
 
 | Key | Action | Core command source |
