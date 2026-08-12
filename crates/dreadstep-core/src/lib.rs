@@ -1792,18 +1792,17 @@ impl WorldState {
       },
       Command::Wait { actor: actor_id },
     ];
-    if actor.kind() == ActorKind::Player {
-      if let Some(stack) = self
+    if actor.kind() == ActorKind::Player
+      && let Some(stack) = self
         .ground_items
         .iter()
         .find(|stack| stack.position() == actor.position())
-      {
-        for item in stack.items() {
-          commands.push(Command::Pickup {
-            actor: actor_id,
-            item: item.id(),
-          });
-        }
+    {
+      for item in stack.items() {
+        commands.push(Command::Pickup {
+          actor: actor_id,
+          item: item.id(),
+        });
       }
     }
     for item in actor.inventory() {
