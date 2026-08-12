@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- An active deterministic enemy-intent presentation slice: the scheduled enemy's exact core
+  command is projected into a typed Bevy resource and compact desktop HUD line without changing
+  simulation behavior or adding controls/media.
 - A deterministic walkable `Cover` terrain variant that blocks interior ranged line of sight,
   with protocol v7 scenario conversion and unchanged damage/presentation behavior.
 - A finite three-shot ranged ammunition resource with typed empty-ammo rejection, legal-action

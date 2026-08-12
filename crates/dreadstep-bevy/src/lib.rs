@@ -412,6 +412,45 @@ pub struct PresentationHud {
   ready_at: Option<ActionTime>,
 }
 
+/// A read-only projection of the currently scheduled enemy's next legal core command.
+///
+/// This is an intent signal for presentation only. It does not reserve the command, alter core
+/// scheduling, or predict a future turn after the current scheduler state changes.
+#[derive(Clone, Debug, Eq, PartialEq, Resource)]
+pub struct PresentationEnemyIntent {
+  actor: Option<ActorId>,
+  command: Option<Command>,
+}
+
+impl PresentationEnemyIntent {
+  /// Creates an empty intent projection.
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      actor: None,
+      command: None,
+    }
+  }
+
+  /// Returns the scheduled enemy identity, when core has one.
+  #[must_use]
+  pub const fn actor(&self) -> Option<ActorId> {
+    self.actor
+  }
+
+  /// Returns the exact legal command selected for presentation from core's current projection.
+  #[must_use]
+  pub const fn command(&self) -> Option<Command> {
+    self.command
+  }
+}
+
+impl Default for PresentationEnemyIntent {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl PresentationHud {
   /// Creates an empty HUD projection for one controlled actor identity.
   #[must_use]
@@ -2421,6 +2460,7 @@ fn update_presentation(world: &mut World) {
   sync_viewport(world);
   sync_scene_viewport(world);
   sync_hud(world);
+  sync_enemy_intent(world);
   sync_messages(world);
   sync_audio_cues(world);
   sync_audio_asset_projection(world);
@@ -3414,6 +3454,92 @@ fn sync_hud(world: &mut World) {
     hud.position = None;
     hud.hit_points = None;
     hud.ready_at = None;
+  }
+}
+
+fn sync_enemy_intent(world: &mut World) {
+  if world.get_resource::<PresentationEnemyIntent>().is_none() {
+    return;
+  }
+  let Some(runtime) = world.get_resource::<PresentationRuntime>() else {
+    if let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() {
+      intent.actor = None;
+      intent.command = None;
+    }
+    return;
+  };
+  let Some(target) = world
+    .get_resource::<PresentationInput>()
+    .map(|input| input.actor())
+  else {
+    if let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() {
+      intent.actor = None;
+      intent.command = None;
+    }
+    return;
+  };
+  let snapshot = runtime.snapshot();
+  let scheduled_enemy = snapshot.next_actor().filter(|actor| {
+    snapshot
+      .actors()
+      .iter()
+      .any(|record| record.id() == *actor && record.kind() == ActorKind::Enemy && record.is_alive())
+  });
+  let command = scheduled_enemy.and_then(|actor| {
+    let legal = runtime.legal_commands();
+    select_enemy_command(&legal, actor, target)
+  });
+  let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() else {
+    return;
+  };
+  intent.actor = scheduled_enemy;
+  intent.command = command;
+}
+
+pub(crate) fn select_enemy_command(
+  legal: &[Command],
+  actor: ActorId,
+  target: ActorId,
+) -> Option<Command> {
+  legal
+    .iter()
+    .find(|command| {
+      matches!(
+        command,
+        Command::Chase {
+          actor: candidate,
+          target: candidate_target,
+        } if *candidate == actor && *candidate_target == target
+      )
+    })
+    .copied()
+    .or_else(|| {
+      legal
+        .iter()
+        .find(
+          |command| matches!(command, Command::Wait { actor: candidate } if *candidate == actor),
+        )
+        .copied()
+    })
+    .or_else(|| {
+      legal
+        .iter()
+        .copied()
+        .find(|command| command_actor(*command) == actor)
+    })
+}
+
+fn command_actor(command: Command) -> ActorId {
+  match command {
+    Command::Move { actor, .. }
+    | Command::Wait { actor }
+    | Command::Attack { actor, .. }
+    | Command::RangedAttack { actor, .. }
+    | Command::Chase { actor, .. }
+    | Command::Equip { actor, .. }
+    | Command::Unequip { actor }
+    | Command::UseItem { actor, .. }
+    | Command::Pickup { actor, .. } => actor,
   }
 }
 
