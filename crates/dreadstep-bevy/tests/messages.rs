@@ -261,6 +261,45 @@ fn breakable_terrain_maps_to_a_typed_message() {
 }
 
 #[test]
+fn kick_noise_maps_to_a_typed_message() {
+  let runtime = custom_runtime(
+    3,
+    vec![Tile::Floor, Tile::Door, Tile::Floor],
+    vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )],
+  );
+  let mut app = message_app(runtime, ActorId::new(1));
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Kick {
+      actor: ActorId::new(1),
+      position: Position::new(1, 0),
+    })
+    .expect("closed door should be kickable");
+  app.update();
+
+  assert_eq!(
+    messages(&app),
+    vec![
+      PresentationMessage::DoorOpened {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
+      },
+      PresentationMessage::NoiseCreated {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
+        radius: 3,
+      },
+    ]
+  );
+}
+
+#[test]
 fn rejected_command_clears_stale_messages_without_mutating_core() {
   let mut app = message_app(
     PresentationRuntime::start_run(7).expect("content should validate"),

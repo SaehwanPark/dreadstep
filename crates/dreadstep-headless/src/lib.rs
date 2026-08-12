@@ -262,6 +262,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
     }),
+    ["kick", actor, x, y] => Ok(Command::Kick {
+      actor: parse_actor(Some(actor))?,
+      position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
+    }),
     ["break", actor, x, y] => Ok(Command::Break {
       actor: parse_actor(Some(actor))?,
       position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
@@ -487,6 +491,25 @@ mod tests {
     assert_eq!(
       input.commands(),
       &[Command::Break {
+        actor: ActorId::new(1),
+        position: Position::new(2, -3),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_kick_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "kick:1:2:-3".to_owned(),
+    ])
+    .expect("kick command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Kick {
         actor: ActorId::new(1),
         position: Position::new(2, -3),
       }]

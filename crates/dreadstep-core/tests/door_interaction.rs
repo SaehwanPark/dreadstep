@@ -99,6 +99,10 @@ fn legal_interact_and_replay_digest_are_deterministic() {
         actor: ActorId::new(1),
         position: Position::new(1, 0),
       },
+      Command::Kick {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
+      },
     ]
   );
   let mut first = ReplayTrace::new(7);

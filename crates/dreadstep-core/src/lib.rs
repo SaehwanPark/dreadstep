@@ -935,6 +935,13 @@ pub enum Command {
     /// The adjacent closed door to open.
     position: Position,
   },
+  /// Kick one adjacent closed door open and create a deterministic noise event.
+  Kick {
+    /// The actor issuing the kick.
+    actor: ActorId,
+    /// The adjacent closed door to kick open.
+    position: Position,
+  },
   /// Break one adjacent breakable terrain cell into floor.
   Break {
     /// The actor issuing the break command.
@@ -1009,6 +1016,7 @@ impl Command {
       Self::Move { actor, .. }
       | Self::Wait { actor }
       | Self::Interact { actor, .. }
+      | Self::Kick { actor, .. }
       | Self::Break { actor, .. }
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
@@ -1087,6 +1095,12 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
     }
     Command::Interact { actor, position } => {
       hasher.write_u8(12);
+      hasher.write_u32(actor.value());
+      hasher.write_i32(position.x());
+      hasher.write_i32(position.y());
+    }
+    Command::Kick { actor, position } => {
+      hasher.write_u8(14);
       hasher.write_u32(actor.value());
       hasher.write_i32(position.x());
       hasher.write_i32(position.y());
@@ -1211,6 +1225,15 @@ pub enum Event {
     actor: ActorId,
     /// The door position that changed to floor.
     position: Position,
+  },
+  /// A kick opened a door and created a fixed-radius noise source.
+  NoiseCreated {
+    /// The actor whose action created the noise.
+    actor: ActorId,
+    /// The position where the noise originated.
+    position: Position,
+    /// The fixed radius carried as future propagation evidence.
+    radius: u8,
   },
   /// An actor broke one adjacent breakable terrain cell into floor.
   BreakableBroken {
@@ -1512,6 +1535,13 @@ pub enum CommandError {
     /// The requested interaction position.
     position: Position,
   },
+  /// A kick did not target an adjacent closed door.
+  KickTargetInvalid {
+    /// The actor issuing the kick.
+    actor: ActorId,
+    /// The requested door position.
+    position: Position,
+  },
   /// A break command did not target an adjacent breakable terrain cell.
   BreakTargetInvalid {
     /// The actor issuing the break command.
@@ -1641,6 +1671,13 @@ impl fmt::Display for CommandError {
       Self::InteractTargetInvalid { actor, position } => write!(
         formatter,
         "actor {} cannot interact with ({}, {}): target is not an adjacent closed door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::KickTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot kick ({}, {}): target is not an adjacent closed door",
         actor.value(),
         position.x(),
         position.y()
@@ -2408,6 +2445,10 @@ impl WorldState {
           actor: actor_id,
           position,
         });
+        commands.push(Command::Kick {
+          actor: actor_id,
+          position,
+        });
       }
       if self.map.tile_at(position) == Some(Tile::Breakable) {
         commands.push(Command::Break {
@@ -2554,6 +2595,7 @@ impl WorldState {
         at: self.current_time,
       }],
       Command::Interact { position, .. } => vec![self.interact(actor_id, position)?],
+      Command::Kick { position, .. } => self.kick_door(actor_id, position)?,
       Command::Break { position, .. } => vec![self.break_terrain(actor_id, position)?],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
@@ -2929,6 +2971,47 @@ impl WorldState {
       actor: actor_id,
       position,
     })
+  }
+
+  fn kick_door(
+    &mut self,
+    actor_id: ActorId,
+    position: Position,
+  ) -> Result<Vec<Event>, CommandError> {
+    let actor_position = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let adjacent = actor_position
+      .x()
+      .abs_diff(position.x())
+      .checked_add(actor_position.y().abs_diff(position.y()))
+      == Some(1);
+    if !adjacent || self.map.tile_at(position) != Some(Tile::Door) {
+      return Err(CommandError::KickTargetInvalid {
+        actor: actor_id,
+        position,
+      });
+    }
+    self
+      .map
+      .set_tile(position, Tile::Floor)
+      .ok_or(CommandError::KickTargetInvalid {
+        actor: actor_id,
+        position,
+      })?;
+    Ok(vec![
+      Event::DoorOpened {
+        actor: actor_id,
+        position,
+      },
+      Event::NoiseCreated {
+        actor: actor_id,
+        position,
+        radius: 3,
+      },
+    ])
   }
 
   fn chase_direction(&self, actor: ActorId, target: ActorId) -> Result<Direction, CommandError> {

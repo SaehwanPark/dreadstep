@@ -32,6 +32,7 @@ display-free smoke path.
 | Arrow keys / WASD | Move | `Command::Move` selected from `legal_commands` |
 | Space / Enter | Wait | `Command::Wait` |
 | I | Open the first legal adjacent closed door | `Command::Interact` |
+| K | Kick the first legal adjacent closed door | `Command::Kick` |
 | B | Break the first legal adjacent breakable tile | `Command::Break` |
 | F | Attack the lowest-ID adjacent target | `Command::Attack` |
 | G | Ranged attack the lowest-ID clear-cardinal target at distance 2–3 (2 ticks; 3 shots) | `Command::RangedAttack` |
@@ -114,7 +115,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | Move / wait / enemy attack/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, healing/ammo results, and ground stack | item/reload events, optional healing/ammo evidence, and full actor snapshots | yes |
-| Terrain, door, trap, breakable, and actor blocking | distinct wall/cover/floor/door/trap/breakable/actor pixels | `movement_blocked`, `door_opened`, ordered `trap_triggered`, and `breakable_broken` evidence | yes |
+| Terrain, door, trap, breakable, noise, and actor blocking | distinct wall/cover/floor/door/trap/breakable/actor pixels | `movement_blocked`, `door_opened`, ordered `noise_created`/`trap_triggered`, and `breakable_broken` evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
 | Optional art fallback | per-family placeholder | warning/outcome records | no display required |
@@ -130,8 +131,9 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 
 The deterministic sequence first places a trap in the first enemy's chase path and uses `RangedAttack`
 against the distance-two authored enemy so the chase emits `TrapTriggered`, then adds a breakable-terrain
-smoke fixture and breaks it with `Break`, then adds a closed-door fixture and opens it with `Interact`,
-then reloads the player's partial ammunition,
+smoke fixture and breaks it with `Break`, then adds a closed-door fixture and kicks it with `Kick`
+(including noise evidence), re-adds a door and opens it with `Interact`, then reloads the player's
+partial ammunition,
 drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
 `Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,
 consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between

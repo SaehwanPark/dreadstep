@@ -71,10 +71,11 @@ const HEALTH_BAR_WIDTH: usize = 10;
 const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 13] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 14] = [
   "move",
   "wait",
   "interact",
+  "kick",
   "break",
   "attack",
   "ranged_attack",
@@ -88,11 +89,12 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 13] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 14] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 15] = [
   "moved",
   "movement_blocked",
   "waited",
   "door_opened",
+  "noise_created",
   "breakable_broken",
   "trap_triggered",
   "attacked",
@@ -1292,6 +1294,10 @@ fn command_for_key(
       .iter()
       .copied()
       .find(|command| matches!(command, Command::Interact { actor: PLAYER, .. })),
+    KeyCode::KeyK => legal
+      .iter()
+      .copied()
+      .find(|command| matches!(command, Command::Kick { actor: PLAYER, .. })),
     KeyCode::KeyB => legal
       .iter()
       .copied()
@@ -1564,6 +1570,24 @@ fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCo
       &mut session,
       "smoke_fault",
       json!({ "reason": "door_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Kick {
+      actor: PLAYER,
+      position: Position::new(2, 1),
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_door(Position::new(2, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "interact_door_fixture_setup", "error": error.to_string() }),
     );
   }
   failed |= !submit_command(
@@ -1932,6 +1956,7 @@ fn command_name(command: Command) -> &'static str {
     Command::Wait { .. } => "wait",
     Command::Interact { .. } => "interact",
     Command::Break { .. } => "break",
+    Command::Kick { .. } => "kick",
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
     Command::Chase { .. } => "chase",
@@ -1957,6 +1982,11 @@ fn command_value(command: Command) -> Value {
     }),
     Command::Break { actor, position } => json!({
       "kind": "break",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
+    Command::Kick { actor, position } => json!({
+      "kind": "kick",
       "actor": actor.value(),
       "position": position_value(position),
     }),
@@ -2024,6 +2054,16 @@ fn event_value(event: Event) -> Value {
       "kind": "breakable_broken",
       "actor": actor.value(),
       "position": position_value(position),
+    }),
+    Event::NoiseCreated {
+      actor,
+      position,
+      radius,
+    } => json!({
+      "kind": "noise_created",
+      "actor": actor.value(),
+      "position": position_value(position),
+      "radius": radius,
     }),
     Event::TrapTriggered {
       actor,
@@ -2115,6 +2155,17 @@ fn event_message(event: Event) -> String {
       actor.value(),
       position.x(),
       position.y()
+    ),
+    Event::NoiseCreated {
+      actor,
+      position,
+      radius,
+    } => format!(
+      "Actor {} created noise at ({}, {}) with radius {}.",
+      actor.value(),
+      position.x(),
+      position.y(),
+      radius
     ),
     Event::TrapTriggered {
       actor,
@@ -2560,6 +2611,31 @@ mod tests {
     assert_eq!(
       command_for_key(KeyCode::KeyB, &runtime, &session),
       Some(Command::Break {
+        actor: PLAYER,
+        position: Position::new(1, 0),
+      })
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn kick_key_selects_the_adjacent_legal_closed_door() {
+    let directory = test_directory("kick-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::from_tiles(3, 1, vec![Tile::Floor, Tile::Door, Tile::Floor])
+        .expect("test map should be valid"),
+      vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+    )
+    .expect("test world should be valid");
+    let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let session = DesktopSession::new(7, journal);
+    assert_eq!(
+      command_for_key(KeyCode::KeyK, &runtime, &session),
+      Some(Command::Kick {
         actor: PLAYER,
         position: Position::new(1, 0),
       })
