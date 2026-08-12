@@ -19,6 +19,10 @@ New typed event-cue batches now add only a short pulse to visible living actor p
 runtime replay digest keeps distinct accepted events observable even when their cue values match.
 The pulse does not move nodes, alter field-of-view masking, or change the smoke/journal path.
 
+Typed audio-cue batches also route through the validated local audio manifest. Existing files are
+requested as short non-looping effects; absent files are recorded as optional-media warnings and do
+not affect the simulation or display-free smoke path.
+
 ## Controls
 
 | Key | Action | Core command source |
@@ -119,5 +123,5 @@ is documented and mapped.
 
 Tester-only spawn, teleport, HP, inventory transfer/drop/pickup, and scenario mutation remain in
 MCP/tests. This showcase does not add enemy attacks, player-death loops, item effects, pickup/drop
-commands, canonical victory/loss, audio, animation playback, persistent exploration memory,
+commands, canonical victory/loss, production audio design/music, persistent exploration memory,
 production media, installers, signing, save/load, or replay-file compatibility.

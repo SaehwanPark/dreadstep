@@ -22,6 +22,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use bevy::app::{AppExit, PanicHandlerPlugin, Plugin, PluginGroup, Startup, Update};
 use bevy::asset::{AssetServer, Handle, LoadState};
+use bevy::audio::{AudioPlayer, AudioSource, PlaybackSettings};
 use bevy::color::Color;
 use bevy::ecs::component::Component;
 use bevy::ecs::entity::Entity;
@@ -48,10 +49,11 @@ use serde_json::{Value, json};
 
 use crate::{
   PresentationAnimationCue, PresentationAnimationCues, PresentationAssetManifest,
-  PresentationAssetReference, PresentationBevySpriteProjection,
-  PresentationBevySpriteTransformProjection, PresentationCamera, PresentationFocus,
-  PresentationInput, PresentationKeyboardMode, PresentationMessages, PresentationPlugin,
-  PresentationRenderAssetProjection, PresentationRenderCommandPlan,
+  PresentationAssetReference, PresentationAudioAssetManifest, PresentationAudioAssetProjection,
+  PresentationAudioCue, PresentationAudioCueKind, PresentationAudioCues,
+  PresentationBevySpriteProjection, PresentationBevySpriteTransformProjection, PresentationCamera,
+  PresentationFocus, PresentationInput, PresentationKeyboardMode, PresentationMessages,
+  PresentationPlugin, PresentationRenderAssetProjection, PresentationRenderCommandPlan,
   PresentationRenderNodeProjection, PresentationRenderProjection, PresentationRuntime,
   PresentationSet, PresentationSnapshot, PresentationSpriteProjection, PresentationTileSize,
   PresentationVisibility, SceneRenderNode, SceneRenderPlaceholder,
@@ -465,6 +467,7 @@ impl Plugin for DesktopPresentationPlugin {
       (
         configure_primary_window,
         desktop_update_animation,
+        desktop_play_audio,
         desktop_style_sprites,
         desktop_assets,
         desktop_update_hud,
@@ -567,6 +570,81 @@ fn desktop_update_animation(
   );
 }
 
+#[derive(Default, Resource)]
+struct DesktopAudioState {
+  previous_cues: Vec<PresentationAudioCue>,
+  previous_token: Option<StateDigest>,
+}
+
+impl DesktopAudioState {
+  fn observe(&mut self, token: Option<StateDigest>, cues: &[PresentationAudioCue]) -> bool {
+    if self.previous_token == token && self.previous_cues == cues {
+      return false;
+    }
+    self.previous_token = token;
+    self.previous_cues = cues.to_vec();
+    !cues.is_empty()
+  }
+}
+
+fn audio_asset_path(path: &str) -> &str {
+  path.strip_prefix("assets/").unwrap_or(path)
+}
+
+fn audio_cue_name(cue: PresentationAudioCue) -> &'static str {
+  match cue {
+    PresentationAudioCue::Moved { .. } => "moved",
+    PresentationAudioCue::MovementBlocked { .. } => "movement_blocked",
+    PresentationAudioCue::Waited { .. } => "waited",
+    PresentationAudioCue::Attacked { .. } => "attacked",
+    PresentationAudioCue::Died { .. } => "died",
+    PresentationAudioCue::ItemEquipped { .. } => "item_equipped",
+    PresentationAudioCue::ItemUnequipped { .. } => "item_unequipped",
+    PresentationAudioCue::ItemConsumed { .. } => "item_consumed",
+  }
+}
+
+fn desktop_play_audio(
+  runtime: Option<Res<PresentationRuntime>>,
+  cues: Option<Res<PresentationAudioCues>>,
+  projection: Option<Res<PresentationAudioAssetProjection>>,
+  asset_server: Option<Res<AssetServer>>,
+  state: Option<ResMut<DesktopAudioState>>,
+  mut commands: Commands,
+  mut session: Option<ResMut<DesktopSession>>,
+) {
+  let (Some(runtime), Some(cues), Some(projection), Some(asset_server), Some(mut state)) =
+    (runtime, cues, projection, asset_server, state)
+  else {
+    return;
+  };
+  if !state.observe(Some(runtime.replay_digest()), cues.cues()) {
+    return;
+  }
+  for entry in projection.entries() {
+    let path = entry.reference().path();
+    if !Path::new(path).is_file() {
+      if let Some(session) = &mut session {
+        let _ = record_session(
+          &mut *session,
+          "audio_outcome",
+          json!({ "cue": audio_cue_name(entry.cue()), "path": path, "outcome": "missing_optional_audio" }),
+        );
+      }
+      continue;
+    }
+    let handle: Handle<AudioSource> = asset_server.load(audio_asset_path(path).to_string());
+    commands.spawn((AudioPlayer::new(handle), PlaybackSettings::DESPAWN));
+    if let Some(session) = &mut session {
+      let _ = record_session(
+        &mut *session,
+        "audio_outcome",
+        json!({ "cue": audio_cue_name(entry.cue()), "path": path, "outcome": "requested" }),
+      );
+    }
+  }
+}
+
 fn build_manifest() -> Result<PresentationAssetManifest, String> {
   let paths = [
     (
@@ -601,6 +679,51 @@ fn build_manifest() -> Result<PresentationAssetManifest, String> {
     .ok_or_else(|| "asset manifest does not contain all six families".to_string())
 }
 
+fn build_audio_manifest() -> Result<PresentationAudioAssetManifest, String> {
+  let paths = [
+    (
+      PresentationAudioCueKind::Moved,
+      "assets/audio/dreadstep/moved.ogg",
+    ),
+    (
+      PresentationAudioCueKind::MovementBlocked,
+      "assets/audio/dreadstep/movement-blocked.ogg",
+    ),
+    (
+      PresentationAudioCueKind::Waited,
+      "assets/audio/dreadstep/waited.ogg",
+    ),
+    (
+      PresentationAudioCueKind::Attacked,
+      "assets/audio/dreadstep/attacked.ogg",
+    ),
+    (
+      PresentationAudioCueKind::Died,
+      "assets/audio/dreadstep/died.ogg",
+    ),
+    (
+      PresentationAudioCueKind::ItemEquipped,
+      "assets/audio/dreadstep/item-equipped.ogg",
+    ),
+    (
+      PresentationAudioCueKind::ItemUnequipped,
+      "assets/audio/dreadstep/item-unequipped.ogg",
+    ),
+    (
+      PresentationAudioCueKind::ItemConsumed,
+      "assets/audio/dreadstep/item-consumed.ogg",
+    ),
+  ];
+  let mut bindings = Vec::with_capacity(paths.len());
+  for (family, path) in paths {
+    let reference = PresentationAssetReference::new(path)
+      .ok_or_else(|| format!("invalid presentation audio path {path}"))?;
+    bindings.push((family, reference));
+  }
+  PresentationAudioAssetManifest::new(bindings)
+    .ok_or_else(|| "audio manifest does not contain all eight cue families".to_string())
+}
+
 fn desktop_startup(
   mut commands: Commands,
   asset_server: Res<AssetServer>,
@@ -608,6 +731,14 @@ fn desktop_startup(
   mut exit: bevy::ecs::message::MessageWriter<AppExit>,
 ) {
   let manifest = match build_manifest() {
+    Ok(manifest) => manifest,
+    Err(error) => {
+      session.fault(error);
+      exit.write(AppExit::error());
+      return;
+    }
+  };
+  let audio_manifest = match build_audio_manifest() {
     Ok(manifest) => manifest,
     Err(error) => {
       session.fault(error);
@@ -653,6 +784,7 @@ fn desktop_startup(
     });
   }
   commands.insert_resource(DesktopAssets { entries });
+  commands.insert_resource(audio_manifest);
 
   commands
     .spawn((
@@ -1199,6 +1331,9 @@ fn run_visible(
   app.insert_resource(PresentationMessages::new());
   app.insert_resource(PresentationAnimationCues::new());
   app.insert_resource(DesktopAnimationState::default());
+  app.insert_resource(PresentationAudioCues::new());
+  app.insert_resource(PresentationAudioAssetProjection::new());
+  app.insert_resource(DesktopAudioState::default());
   app.insert_resource(tile_size);
   app.insert_resource(window);
   app.insert_resource(PresentationRenderProjection::default());
@@ -1973,6 +2108,46 @@ mod tests {
     assert_ne!(first_token, second_token);
     state.observe(Some(second_token), &cue);
     assert_near(state.pulse(), 1.0);
+  }
+
+  #[test]
+  fn audio_batch_identity_retriggers_only_for_a_new_replay_token() {
+    let mut runtime = PresentationRuntime::start_run(7).expect("starter run");
+    let first_token = runtime.replay_digest();
+    let cue = [PresentationAudioCue::Moved { actor: PLAYER }];
+    let mut state = DesktopAudioState::default();
+    assert!(state.observe(Some(first_token), &cue));
+    assert!(!state.observe(Some(first_token), &cue));
+    runtime
+      .execute(Command::Move {
+        actor: PLAYER,
+        direction: Direction::East,
+      })
+      .expect("starter move accepted");
+    let second_token = runtime.replay_digest();
+    assert_ne!(first_token, second_token);
+    assert!(state.observe(Some(second_token), &cue));
+    assert!(!state.observe(Some(second_token), &[]));
+  }
+
+  #[test]
+  fn audio_manifest_and_asset_paths_are_complete_and_normalized() {
+    let manifest = build_audio_manifest().expect("audio manifest validates");
+    assert_eq!(manifest.bindings().len(), 8);
+    for (_, reference) in manifest.bindings() {
+      assert!(reference.path().starts_with("assets/audio/dreadstep/"));
+      assert_eq!(
+        audio_asset_path(reference.path()),
+        reference.path().trim_start_matches("assets/")
+      );
+    }
+  }
+
+  #[test]
+  fn audio_playback_system_is_safe_without_desktop_resources() {
+    let mut app = App::new();
+    app.add_systems(Update, desktop_play_audio);
+    app.update();
   }
 
   #[test]

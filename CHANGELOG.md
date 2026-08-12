@@ -8,6 +8,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 - A bounded desktop animation pulse driven by new typed event-cue batches, with no movement
   interpolation, production media, audio playback, or simulation timing changes.
+- An optional desktop audio-cue adapter that routes distinct typed batches through the validated
+  local manifest and requests non-looping playback only for existing local files; missing media stays
+  a safe fallback and no production audio is committed.
 - A deterministic tactical HUD summary for health, turn ownership, enemy pressure, and optional
   field-of-view state, without simulation or media boundary changes.
 - An optional deterministic presentation field-of-view projection with radius-bounded cardinal

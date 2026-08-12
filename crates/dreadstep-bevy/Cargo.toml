@@ -17,6 +17,7 @@ desktop = [
   "bevy/2d_bevy_render",
   "bevy/ui_bevy_render",
   "bevy/default_font",
+  "bevy/audio",
   "bevy/bevy_winit",
   "bevy/multi_threaded",
   "bevy/x11",

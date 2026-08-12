@@ -1322,10 +1322,12 @@ impl PresentationAssetReference {
     &self.path
   }
 
-  /// Returns whether this reference is rooted in a root or crate-local `audio/` directory.
+  /// Returns whether this reference is rooted in a root, `assets/audio/`, or crate-local `audio/`
+  /// directory.
   #[must_use]
   pub fn is_audio_path(&self) -> bool {
     self.path.starts_with("audio/")
+      || self.path.starts_with("assets/audio/")
       || matches!(crate_local_media_directory(&self.path), Some("audio"))
   }
 }

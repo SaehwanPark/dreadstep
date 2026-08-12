@@ -147,6 +147,12 @@ fn manifest_requires_exact_audio_families_and_rejects_non_audio_paths() {
     reference("crates/dreadstep-bevy/audio/move.ogg"),
   );
   assert!(PresentationAudioAssetManifest::new(crate_local_audio).is_some());
+  let mut assets_audio = valid.bindings().to_vec();
+  assets_audio[0] = (
+    PresentationAudioCueKind::Moved,
+    reference("assets/audio/move.ogg"),
+  );
+  assert!(PresentationAudioAssetManifest::new(assets_audio).is_some());
   for path in [
     "assets/not-audio.wav",
     "art/not-audio.png",
