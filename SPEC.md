@@ -3379,6 +3379,48 @@ Verification evidence:
   targets, warning-denied docs, and display-free desktop smoke; no new visual/audio/animation family
   is introduced.
 
+### Milestone 4 slice: deterministic enemy melee intent
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Allow a scheduled living enemy to issue the existing fixed-damage `Attack` command when a living
+target is within its melee reach. Enemy legal-action discovery prefers adjacent attacks before
+fallback chase commands, while direct execution retains the existing typed scheduling, target,
+damage, death-event, action-cost, digest, and replay contracts. The presentation enemy driver and
+intent projection use the same attack-before-chase selection policy. No new command, event, error,
+damage value, or presentation media family is introduced.
+
+Verification target:
+
+- Core proves adjacent enemy attack discovery and execution, exact fixed melee damage/death events,
+  one-tick scheduling, deterministic ordering, and atomic out-of-range/dead-target rejection
+  evidence; `Attack` intentionally remains legal for both actor roles.
+- Protocol/MCP preserve the existing `Attack` request/event/snapshot/history/replay contract for
+  enemy actors; public legal-action discovery exposes attack before chase when adjacent.
+- Bevy enemy intent and desktop driver select the adjacent `Attack` before `Chase`, while smoke and
+  journals remain exhaustive and deterministic without new visual, audio, or animation families.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Verification evidence:
+
+- Core enemy-melee tests pass 6/6, including adjacent legal attack ordering, fixed damage and
+  standard scheduling, death-event retention, and atomic out-of-range rejection; legal-action
+  coverage also proves distant targets retain deterministic chase fallback.
+- MCP legal-action/action coverage proves an adjacent enemy `Attack` uses the existing protocol
+  event, snapshot, and history contract; Bevy enemy-intent tests pass 6/6 with adjacent
+  attack-before-chase selection, and desktop boundary/smoke tests remain green.
+- `scripts/verify.sh` passes repository checks, formatting, strict workspace Clippy, all workspace
+  targets, warning-denied docs, and display-free desktop smoke; no new command/event/error or media
+  family is introduced.
+
+Out of scope:
+
+- New damage or status rules, enemy ranged AI, enemy-specific weapons, pursuit policy changes beyond
+  adjacent attack preference, death/victory terminal UI, new command/event/error variants, and media.
+
 ### Milestone 4 slice: deterministic ranged ammunition
 
 - Status: verified

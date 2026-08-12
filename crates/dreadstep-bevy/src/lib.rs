@@ -3534,13 +3534,27 @@ pub(crate) fn select_enemy_command(
     .find(|command| {
       matches!(
         command,
-        Command::Chase {
+        Command::Attack {
           actor: candidate,
           target: candidate_target,
         } if *candidate == actor && *candidate_target == target
       )
     })
     .copied()
+    .or_else(|| {
+      legal
+        .iter()
+        .find(|command| {
+          matches!(
+            command,
+            Command::Chase {
+              actor: candidate,
+              target: candidate_target,
+            } if *candidate == actor && *candidate_target == target
+          )
+        })
+        .copied()
+    })
     .or_else(|| {
       legal
         .iter()

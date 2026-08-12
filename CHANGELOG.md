@@ -15,9 +15,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - A verified scheduled player-facing item drop slice: protocol v10 command/event/error plumbing,
   deterministic inventory-to-ground ordering, MCP item-run setup, headless CLI coverage, and `X`
   desktop control; item effects and capacity remain deferred.
-- An active deterministic enemy-intent presentation slice: the scheduled enemy's exact core
-  command is projected into a typed Bevy resource and compact desktop HUD line without changing
-  simulation behavior or adding controls/media.
+- A verified deterministic enemy melee-intent slice: adjacent scheduled enemies now use the existing
+  fixed-damage `Attack` before fallback `Chase`, with core/MCP legal-action evidence and Bevy intent,
+  desktop-driver, and smoke coverage; ranged enemy AI remains deferred.
 - A deterministic walkable `Cover` terrain variant that blocks interior ranged line of sight,
   with protocol v7 scenario conversion and unchanged damage/presentation behavior.
 - A finite three-shot ranged ammunition resource with typed empty-ammo rejection, legal-action

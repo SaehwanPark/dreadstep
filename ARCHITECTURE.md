@@ -448,7 +448,9 @@ stack. Core discovers item identities in stable stack order, moves only the requ
 the ordered inventory, advances the standard action, emits `ItemPickedUp`, and records replay
 evidence. Protocol/MCP convert the request, event, and typed ground-miss error; the desktop binds
 `P` to the lowest-ID available ground item and covers the transition in its journal and display-free
-smoke path. No drop command, capacity, item effects, enemy pickup, or new media policy is inferred.
+smoke path. The verified player-drop follow-up moves one owned unequipped item back to the current
+ground stack with the same standard timing; capacity, item effects, enemy pickup, and new media
+policy remain outside this boundary.
 
 The verified Milestone 4 ranged-combat slice adds `RangedAttack` as a second player combat command.
 Core discovers stable target IDs at Manhattan distance 2–3, reuses the existing typed `Attacked`
@@ -480,10 +482,10 @@ variant; cover damage modifiers, directionality, destruction, and environmental 
 future rules.
 
 The verified enemy-intent presentation slice reads core's current legal command projection for the
-scheduled living enemy and exposes the selected exact command as a disposable Bevy resource. It
-shares the desktop driver's deterministic chase-then-wait preference, changes no simulation truth,
-and renders only a compact HUD summary; new enemy behavior families and intent commitment remain
-future rules.
+scheduled living enemy and exposes the selected exact command as a disposable Bevy resource. The
+follow-up enemy-melee slice makes adjacent `Attack` legal before fallback `Chase`, and the Bevy
+intent/desktop drivers share that attack-before-chase policy while retaining core-owned damage,
+events, scheduling, and replay truth. Ranged enemy AI and new status behavior remain future rules.
 
 The verified melee-reach preparation slice adds a typed actor reach value with a one-tile default and
 an explicit extended-reach constructor for authored/test scenarios. Core uses the same Manhattan
