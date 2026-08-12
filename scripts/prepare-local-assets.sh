@@ -108,6 +108,10 @@ validate_destination() {
       echo "destination output is not ignored by Git: $path" >&2
       return 5
     fi
+    if [[ -L "$path" || ( -e "$path" && ! -f "$path" ) ]]; then
+      echo "destination output must be absent or a regular file: $path" >&2
+      return 5
+    fi
   done
 }
 

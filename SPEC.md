@@ -3096,9 +3096,9 @@ Acceptance:
 
 - `--check` rejects a missing or unexpected archive and validates every selected source member.
 - `--install` writes only six PNGs under the caller-selected ignored destination after validating
-  PNG signatures; exact media-root grammar, destination traversal, symlink components, and
-  non-ignored output paths are rejected. The default mapping covers terrain, player, enemy, dead,
-  ground-item, and inventory-item families.
+  PNG signatures; exact media-root grammar, destination traversal, symlink components, symlink
+  output leaves, non-regular output paths, and non-ignored output paths are rejected. The default
+  mapping covers terrain, player, enemy, dead, ground-item, and inventory-item families.
 - The desktop showcase loads each family independently at the provisional 32×32 logical size,
   while absent or corrupt local files remain journaled safe fallbacks.
 - Tracked provenance records the source, creator, CC0 license, archive hash, source mapping, and
@@ -3108,7 +3108,8 @@ Verification evidence:
 
 - `scripts/prepare-local-assets.sh --check` and `--install` pass against the recorded archive;
   all six installed files have valid PNG signatures and are ignored by Git. Focused rejection
-  checks cover extra crate segments, non-media roots, and symlink destinations.
+  checks cover extra crate segments, non-media roots, parent/leaf symlink destinations, and existing
+  output directories.
 - Focused desktop tests, display-free smoke, `scripts/verify.sh`, and `git diff --check` pass.
 
 Out of scope:
