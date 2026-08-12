@@ -61,6 +61,7 @@ use crate::{
 
 const PLAYER: ActorId = ActorId::new(1);
 const ATTACK_TARGET: ActorId = ActorId::new(2);
+const RANGED_TARGET: ActorId = ActorId::new(3);
 const EQUIP_ITEM: ItemId = ItemId::new(101);
 const PICKUP_ITEM: ItemId = ItemId::new(102);
 const SMOKE_ENEMY_ATTACK_LIMIT: usize = 32;
@@ -69,8 +70,16 @@ const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 const HEALTH_BAR_WIDTH: usize = 10;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 8] = [
-  "move", "wait", "attack", "chase", "equip", "unequip", "use_item", "pickup",
+pub const SHOWCASE_COMMAND_KINDS: [&str; 9] = [
+  "move",
+  "wait",
+  "attack",
+  "ranged_attack",
+  "chase",
+  "equip",
+  "unequip",
+  "use_item",
+  "pickup",
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
@@ -1073,6 +1082,7 @@ fn desktop_input(
 
   let key = [
     KeyCode::KeyF,
+    KeyCode::KeyG,
     KeyCode::KeyE,
     KeyCode::KeyQ,
     KeyCode::KeyU,
@@ -1158,6 +1168,14 @@ fn command_for_key(
       .iter()
       .filter_map(|command| match command {
         Command::Attack { target, .. } => Some((*target, *command)),
+        _ => None,
+      })
+      .min_by_key(|(target, _)| *target)
+      .map(|(_, command)| command),
+    KeyCode::KeyG => legal
+      .iter()
+      .filter_map(|command| match command {
+        Command::RangedAttack { target, .. } => Some((*target, *command)),
         _ => None,
       })
       .min_by_key(|(target, _)| *target)
@@ -1403,6 +1421,16 @@ fn run_visible(
 fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCode {
   let mut session = DesktopSession::new(runtime.seed(), journal.clone());
   let mut failed = false;
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::RangedAttack {
+      actor: PLAYER,
+      target: RANGED_TARGET,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
   if let Err(error) = runtime.prepare_smoke_pickup(PLAYER, PICKUP_ITEM) {
     failed = true;
     let _ = record_session(
@@ -1722,6 +1750,7 @@ fn command_name(command: Command) -> &'static str {
     Command::Move { .. } => "move",
     Command::Wait { .. } => "wait",
     Command::Attack { .. } => "attack",
+    Command::RangedAttack { .. } => "ranged_attack",
     Command::Chase { .. } => "chase",
     Command::Equip { .. } => "equip",
     Command::Unequip { .. } => "unequip",
@@ -1738,6 +1767,9 @@ fn command_value(command: Command) -> Value {
     Command::Wait { actor } => json!({ "kind": "wait", "actor": actor.value() }),
     Command::Attack { actor, target } => {
       json!({ "kind": "attack", "actor": actor.value(), "target": target.value() })
+    }
+    Command::RangedAttack { actor, target } => {
+      json!({ "kind": "ranged_attack", "actor": actor.value(), "target": target.value() })
     }
     Command::Chase { actor, target } => {
       json!({ "kind": "chase", "actor": actor.value(), "target": target.value() })
@@ -1974,7 +2006,7 @@ fn desktop_update_hud(
       .collect::<Vec<_>>()
       .join("\n")
   };
-  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  Tab select  E equip  P pickup\nQ unequip  U consume  R restart\nEsc/close quit";
+  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup\nQ unequip  U consume  R restart\nEsc/close quit";
   let journal = format!(
     "{}\nseed {}",
     journal_path(&session.journal).display(),
@@ -2007,6 +2039,7 @@ mod tests {
   use bevy::audio::PlaybackMode;
   use bevy::camera::visibility::Visibility;
   use bevy::transform::components::Transform;
+  use dreadstep_core::{GridMap, WorldState};
 
   fn test_directory(label: &str) -> PathBuf {
     std::env::temp_dir().join(format!(
@@ -2064,6 +2097,34 @@ mod tests {
       Some(Command::Pickup {
         actor: PLAYER,
         item: EQUIP_ITEM,
+      })
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn ranged_key_selects_the_lowest_id_legal_target() {
+    let directory = test_directory("ranged-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::filled(5, 1, Tile::Floor).expect("test map should be valid"),
+      vec![
+        Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0)),
+        Actor::new(ActorId::new(5), ActorKind::Enemy, Position::new(2, 0)),
+        Actor::new(RANGED_TARGET, ActorKind::Enemy, Position::new(3, 0)),
+      ],
+    )
+    .expect("test world should be valid");
+    let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let session = DesktopSession::new(7, journal);
+    assert_eq!(
+      command_for_key(KeyCode::KeyG, &runtime, &session),
+      Some(Command::RangedAttack {
+        actor: PLAYER,
+        target: RANGED_TARGET,
       })
     );
     let _ = fs::remove_dir_all(directory);

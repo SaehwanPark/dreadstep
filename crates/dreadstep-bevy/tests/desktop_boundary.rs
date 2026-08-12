@@ -193,7 +193,15 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
     .find(|record| record["kind"] == "smoke_complete")
     .expect("smoke completion record");
   for kind in [
-    "move", "wait", "attack", "chase", "equip", "unequip", "use_item",
+    "move",
+    "wait",
+    "attack",
+    "ranged_attack",
+    "chase",
+    "equip",
+    "unequip",
+    "use_item",
+    "pickup",
   ] {
     assert!(
       complete["payload"]["extra"]["commands_observed"]

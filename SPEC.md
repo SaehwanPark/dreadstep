@@ -1676,8 +1676,8 @@ Acceptance:
 - Unknown actors and source items not owned return typed errors before mutation. Duplicate item
   identity checks for `give_item` include ground items, so the global instance invariant remains
   atomic and explicit.
-- Protocol version 3 exposes ground-item snapshots and optional equipped-item identity without
-  inventing rules, and MCP delegates the
+- At the time this slice shipped, protocol version 3 exposed ground-item snapshots and optional
+  equipped-item identity without inventing rules, and MCP delegated the
   tester drop without recording player history or replay evidence. Core remains authoritative.
 
 Verification:
@@ -3153,6 +3153,37 @@ Out of scope:
 - Item effects, inventory capacity, drop command, new item definitions, enemy pickup behavior,
   persistent loot progression, rendering/audio changes, and new core timing rules beyond the standard
   action cost.
+
+### Milestone 4 slice: deterministic scheduled ranged attack
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Add the first ranged-combat verb at the simulation boundary. A scheduled living actor may issue
+`RangedAttack` against another living actor at Manhattan distance 2 or 3; the target loses one
+fixed damage, the action advances one standard scheduler step, and the existing typed attack/death
+events and replay/state digest evidence remain authoritative. The command is carried unchanged
+through protocol version 4, MCP, headless CLI, and the desktop showcase (`G` selects the lowest-ID legal
+ranged target). Line of sight, cover, ammunition, weapon/item effects, varied action costs, enemy
+ranged AI, and new presentation assets remain out of scope.
+
+Verification target:
+
+- Core legal-action and execution tests prove deterministic distance bounds and target-ID ordering,
+  exact accepted damage/death events, deterministic replay hashing, and atomic unknown/self/dead/
+  unscheduled/out-of-range rejection evidence.
+- Protocol/MCP round-trip, JSON/error conversion, and legal-action/action tests preserve the public
+  command/event/error contract and player replay evidence, including rejected-action stability; the
+  headless CLI parses `ranged_attack:<actor>:<target>`.
+- Desktop input, journal command/event naming, and display-free smoke cover the new command while
+  preserving existing visual, animation, and optional-audio fallback behavior.
+- `scripts/verify.sh` and `git diff --check` pass, and one semantic reviewer reports PASS.
+
+Out of scope:
+
+- line of sight, cover, ammunition, weapon/item effects, varied action costs, enemy ranged AI,
+  new map rules, production art/audio, animation changes, and tester operations.
 
 ## Future
 

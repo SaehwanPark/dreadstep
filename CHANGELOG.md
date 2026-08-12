@@ -6,6 +6,11 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A deterministic scheduled `RangedAttack` command for living actors at Manhattan distance 2–3,
+  with typed core/protocol/MCP/headless evidence, replay participation, desktop `G` targeting,
+  and display-free smoke coverage; line of sight, cover, ammunition, weapon effects, varied action
+  costs, and enemy ranged AI remain deferred.
+
 - A scheduled player-facing `Pickup` command that preserves deterministic ground-stack and inventory
   order, emits typed protocol/MCP evidence, and binds the desktop `P` control plus display-free smoke
   coverage; effects, capacity, and the drop command remain deferred.

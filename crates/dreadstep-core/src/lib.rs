@@ -396,7 +396,7 @@ impl ActionTime {
 pub struct ActionCost(u64);
 
 impl ActionCost {
-  /// The fixed cost used by movement, waiting, and basic melee attacks in this slice.
+  /// The fixed cost used by movement, waiting, and attacks in this slice.
   pub const STANDARD: Self = Self(1);
 
   /// Creates an action cost from its numeric value.
@@ -447,6 +447,9 @@ pub struct Damage(u16);
 impl Damage {
   /// The fixed damage dealt by the basic melee command.
   pub const MELEE: Self = Self(1);
+
+  /// The fixed damage dealt by the bounded ranged command.
+  pub const RANGED: Self = Self(1);
 
   /// Creates damage from a numeric value.
   #[must_use]
@@ -629,6 +632,13 @@ pub enum Command {
     /// The adjacent actor being targeted.
     target: ActorId,
   },
+  /// Make a fixed ranged attack against a target two or three tiles away.
+  RangedAttack {
+    /// The actor issuing the attack.
+    actor: ActorId,
+    /// The living actor being targeted.
+    target: ActorId,
+  },
   /// Move an enemy one deterministic step toward a living target.
   Chase {
     /// The enemy issuing the chase command.
@@ -670,6 +680,7 @@ impl Command {
       Self::Move { actor, .. }
       | Self::Wait { actor }
       | Self::Attack { actor, .. }
+      | Self::RangedAttack { actor, .. }
       | Self::Chase { actor, .. }
       | Self::Equip { actor, .. }
       | Self::Unequip { actor }
@@ -743,6 +754,11 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
     }
     Command::Attack { actor, target } => {
       hasher.write_u8(3);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(target.value());
+    }
+    Command::RangedAttack { actor, target } => {
+      hasher.write_u8(9);
       hasher.write_u32(actor.value());
       hasher.write_u32(target.value());
     }
@@ -821,7 +837,7 @@ pub enum Event {
     /// The action time at which the wait began.
     at: ActionTime,
   },
-  /// A melee attack reduced a living target's hit points.
+  /// An attack reduced a living target's hit points.
   Attacked {
     /// The actor that attacked.
     attacker: ActorId,
@@ -1063,7 +1079,7 @@ pub enum CommandError {
   UnknownTarget(ActorId),
   /// The attack target is already dead.
   TargetDead(ActorId),
-  /// An actor cannot target itself with a melee attack.
+  /// An actor cannot target itself with an attack.
   CannotAttackSelf(ActorId),
   /// A chase command must be issued by an enemy actor.
   ChaseRequiresEnemy(ActorId),
@@ -1076,6 +1092,13 @@ pub enum CommandError {
     /// The actor issuing the attack.
     attacker: ActorId,
     /// The actor outside melee range.
+    target: ActorId,
+  },
+  /// The ranged target is not two or three tiles from the attacker.
+  RangedAttackOutOfRange {
+    /// The actor issuing the ranged attack.
+    attacker: ActorId,
+    /// The actor outside the bounded ranged interval.
     target: ActorId,
   },
   /// The actor does not own the requested item.
@@ -1156,6 +1179,12 @@ impl fmt::Display for CommandError {
       Self::AttackOutOfRange { attacker, target } => write!(
         formatter,
         "actor {} cannot attack non-adjacent target {}",
+        attacker.value(),
+        target.value()
+      ),
+      Self::RangedAttackOutOfRange { attacker, target } => write!(
+        formatter,
+        "actor {} cannot ranged attack target {} outside distance 2..=3",
         attacker.value(),
         target.value()
       ),
@@ -1758,9 +1787,9 @@ impl WorldState {
   /// Cardinal movement and waiting are always listed because blocked movement still produces an
   /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
   /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
-  /// Player attacks are limited to adjacent living targets; enemy chase requests include every
-  /// distinct living target. Results follow the fixed direction, inventory, and then stable actor
-  /// identity order.
+  /// Player attacks include adjacent melee targets and targets two or three tiles away for the
+  /// bounded ranged command; enemy chase requests include every distinct living target. Results
+  /// follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
     let Some(actor_id) = self.next_actor() else {
@@ -1832,6 +1861,12 @@ impl WorldState {
             target: target.id(),
           });
         }
+        ActorKind::Player if Self::is_ranged_distance(actor.position(), target.position()) => {
+          commands.push(Command::RangedAttack {
+            actor: actor_id,
+            target: target.id(),
+          });
+        }
         ActorKind::Enemy => commands.push(Command::Chase {
           actor: actor_id,
           target: target.id(),
@@ -1879,6 +1914,7 @@ impl WorldState {
         at: self.current_time,
       }],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
+      Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
       Command::Chase { target, .. } => {
         let direction = self.chase_direction(actor_id, target)?;
         vec![self.move_actor(actor_id, direction)?]
@@ -2100,6 +2136,37 @@ impl WorldState {
   }
 
   fn attack(&mut self, attacker: ActorId, target: ActorId) -> Result<Vec<Event>, CommandError> {
+    self.attack_with_distance(
+      attacker,
+      target,
+      |distance| distance == 1,
+      Damage::MELEE,
+      false,
+    )
+  }
+
+  fn ranged_attack(
+    &mut self,
+    attacker: ActorId,
+    target: ActorId,
+  ) -> Result<Vec<Event>, CommandError> {
+    self.attack_with_distance(
+      attacker,
+      target,
+      |distance| (2..=3).contains(&distance),
+      Damage::RANGED,
+      true,
+    )
+  }
+
+  fn attack_with_distance(
+    &mut self,
+    attacker: ActorId,
+    target: ActorId,
+    in_range: impl FnOnce(u32) -> bool,
+    damage: Damage,
+    ranged: bool,
+  ) -> Result<Vec<Event>, CommandError> {
     if attacker == target {
       return Err(CommandError::CannotAttackSelf(attacker));
     }
@@ -2120,10 +2187,14 @@ impl WorldState {
       .x()
       .abs_diff(target_position.x())
       .saturating_add(attacker_position.y().abs_diff(target_position.y()));
-    if distance != 1 {
-      return Err(CommandError::AttackOutOfRange { attacker, target });
+    if !in_range(distance) {
+      return Err(if ranged {
+        CommandError::RangedAttackOutOfRange { attacker, target }
+      } else {
+        CommandError::AttackOutOfRange { attacker, target }
+      });
     }
-    let remaining_hit_points = target_actor.hit_points().reduced_by(Damage::MELEE);
+    let remaining_hit_points = target_actor.hit_points().reduced_by(damage);
     self
       .actors
       .get_mut(&target)
@@ -2132,13 +2203,21 @@ impl WorldState {
     let mut events = vec![Event::Attacked {
       attacker,
       target,
-      damage: Damage::MELEE,
+      damage,
       remaining_hit_points,
     }];
     if !remaining_hit_points.is_alive() {
       events.push(Event::Died { actor: target });
     }
     Ok(events)
+  }
+
+  fn is_ranged_distance(first: Position, second: Position) -> bool {
+    let distance = first
+      .x()
+      .abs_diff(second.x())
+      .saturating_add(first.y().abs_diff(second.y()));
+    (2..=3).contains(&distance)
   }
 }
 

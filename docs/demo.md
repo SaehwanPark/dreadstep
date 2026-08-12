@@ -31,6 +31,7 @@ display-free smoke path.
 | Arrow keys / WASD | Move | `Command::Move` selected from `legal_commands` |
 | Space / Enter | Wait | `Command::Wait` |
 | F | Attack the lowest-ID adjacent target | `Command::Attack` |
+| G | Ranged attack the lowest-ID target at distance 2–3 | `Command::RangedAttack` |
 | Tab / Shift-Tab | Select the next/previous owned item | presentation-only selection |
 | E | Equip selected item | `Command::Equip` |
 | Q | Unequip | `Command::Unequip` |
@@ -112,12 +113,12 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
   --smoke --seed 7 --log-dir target/dreadstep-smoke-logs
 ```
 
-The deterministic sequence drops authored item 102 into the player's current ground stack for smoke
-setup, picks it up with `Pickup`, then moves east, drives enemy turns, equips item 101, unequips it,
-attacks enemy 2 until death, consumes item 101, attempts north into terrain, then waits with scheduled
-enemy chase turns between player actions. Exhaustive command/event mappings and the coverage lists
-make a new player-visible core variant fail desktop-feature compilation or smoke coverage until it
-is documented and mapped.
+The deterministic sequence first uses `RangedAttack` against the distance-two authored enemy, then
+drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
+`Pickup`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,
+consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between
+player actions. Exhaustive command/event mappings and the coverage lists make a new player-visible
+core variant fail desktop-feature compilation or smoke coverage until it is documented and mapped.
 
 ## Manual checklist
 

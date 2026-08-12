@@ -236,6 +236,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
     }),
+    ["ranged_attack", actor, target] => Ok(Command::RangedAttack {
+      actor: parse_actor(Some(actor))?,
+      target: parse_actor(Some(target))?,
+    }),
     ["chase", actor, target] => Ok(Command::Chase {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
@@ -337,6 +341,25 @@ mod tests {
           actor: ActorId::new(2),
         },
       ]
+    );
+  }
+
+  #[test]
+  fn parses_ranged_attack_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "ranged_attack:1:2".to_owned(),
+    ])
+    .expect("ranged command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::RangedAttack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }]
     );
   }
 

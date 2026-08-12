@@ -18,7 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 3;
+pub const PROTOCOL_VERSION: u16 = 4;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -52,6 +52,13 @@ pub enum CommandRequest {
   },
   /// Attack an adjacent actor.
   Attack {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The actor being targeted.
+    target: ActorId,
+  },
+  /// Make a bounded ranged attack against an actor two or three tiles away.
+  RangedAttack {
     /// The actor issuing the request.
     actor: ActorId,
     /// The actor being targeted.
@@ -111,6 +118,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
       },
+      CommandRequest::RangedAttack { actor, target } => Self::RangedAttack {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        target: dreadstep_core::ActorId::new(target.value()),
+      },
       CommandRequest::Chase { actor, target } => Self::Chase {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
@@ -150,6 +161,10 @@ impl From<CoreCommand> for CommandRequest {
         actor: ActorId::new(actor.value()),
       },
       CoreCommand::Attack { actor, target } => Self::Attack {
+        actor: ActorId::new(actor.value()),
+        target: ActorId::new(target.value()),
+      },
+      CoreCommand::RangedAttack { actor, target } => Self::RangedAttack {
         actor: ActorId::new(actor.value()),
         target: ActorId::new(target.value()),
       },
@@ -950,7 +965,7 @@ pub enum Event {
     /// The action time at which the wait began.
     at: ActionTime,
   },
-  /// A melee attack reduced a target's hit points.
+  /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
     attacker: ActorId,
@@ -1097,6 +1112,13 @@ pub enum CommandError {
     /// The actor outside melee range.
     target: ActorId,
   },
+  /// The ranged target is not two or three tiles away.
+  RangedAttackOutOfRange {
+    /// The actor issuing the ranged attack.
+    attacker: ActorId,
+    /// The actor outside the bounded ranged interval.
+    target: ActorId,
+  },
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1162,6 +1184,12 @@ impl From<CoreCommandError> for CommandError {
         attacker: ActorId::new(attacker.value()),
         target: ActorId::new(target.value()),
       },
+      CoreCommandError::RangedAttackOutOfRange { attacker, target } => {
+        Self::RangedAttackOutOfRange {
+          attacker: ActorId::new(attacker.value()),
+          target: ActorId::new(target.value()),
+        }
+      }
       CoreCommandError::ItemNotOwned { actor, item } => Self::ItemNotOwned {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
@@ -1233,6 +1261,12 @@ impl fmt::Display for CommandError {
       Self::AttackOutOfRange { attacker, target } => write!(
         formatter,
         "actor {} cannot attack non-adjacent target {}",
+        attacker.value(),
+        target.value()
+      ),
+      Self::RangedAttackOutOfRange { attacker, target } => write!(
+        formatter,
+        "actor {} cannot ranged attack target {} outside distance 2..=3",
         attacker.value(),
         target.value()
       ),
