@@ -1963,6 +1963,7 @@ fn event_value(event: Event) -> Value {
       actor,
       item,
       healing,
+      ammunition,
     } => {
       let healing = healing.map_or(Value::Null, |result| {
         json!({
@@ -1970,7 +1971,13 @@ fn event_value(event: Event) -> Value {
           "remaining_hit_points": result.remaining_hit_points().value(),
         })
       });
-      json!({ "kind": "item_consumed", "actor": actor.value(), "item": item.value(), "healing": healing })
+      let ammunition = ammunition.map_or(Value::Null, |result| {
+        json!({
+          "amount": result.amount(),
+          "remaining_ammunition": result.remaining_ammunition(),
+        })
+      });
+      json!({ "kind": "item_consumed", "actor": actor.value(), "item": item.value(), "healing": healing, "ammunition": ammunition })
     }
     Event::ItemPickedUp { actor, item } => {
       json!({ "kind": "item_picked_up", "actor": actor.value(), "item": item.value() })
@@ -2022,8 +2029,17 @@ fn event_message(event: Event) -> String {
       actor,
       item,
       healing,
+      ammunition,
     } => {
-      if let Some(healing) = healing {
+      if let Some(ammunition) = ammunition {
+        format!(
+          "Actor {} consumed item {} and restored {} ammunition ({} shots).",
+          actor.value(),
+          item.value(),
+          ammunition.amount(),
+          ammunition.remaining_ammunition()
+        )
+      } else if let Some(healing) = healing {
         format!(
           "Actor {} consumed item {} and restored {} HP ({} HP).",
           actor.value(),
@@ -2480,6 +2496,7 @@ mod tests {
         2,
         dreadstep_core::HitPoints::new(10),
       )),
+      ammunition: None,
     };
     assert_eq!(
       event_value(event),
@@ -2488,11 +2505,36 @@ mod tests {
         "actor": 1,
         "item": 101,
         "healing": {"amount": 2, "remaining_hit_points": 10},
+        "ammunition": null,
       })
     );
     assert_eq!(
       event_message(event),
       "Actor 1 consumed item 101 and restored 2 HP (10 HP)."
+    );
+  }
+
+  #[test]
+  fn ammunition_consumption_is_visible_in_desktop_event_evidence() {
+    let event = Event::ItemConsumed {
+      actor: PLAYER,
+      item: ItemId::new(102),
+      healing: None,
+      ammunition: Some(dreadstep_core::AmmunitionResult::new(2, 3)),
+    };
+    assert_eq!(
+      event_value(event),
+      json!({
+        "kind": "item_consumed",
+        "actor": 1,
+        "item": 102,
+        "healing": null,
+        "ammunition": {"amount": 2, "remaining_ammunition": 3},
+      })
+    );
+    assert_eq!(
+      event_message(event),
+      "Actor 1 consumed item 102 and restored 2 ammunition (3 shots)."
     );
   }
 

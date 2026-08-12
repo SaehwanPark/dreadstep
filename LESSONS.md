@@ -373,3 +373,17 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Test full-health, partial, capped, no-effect, and rejected uses at core; assert the
   authored content fixture; map optional evidence through protocol/MCP/Bevy; and search adapter
   JSON/golden tests whenever state-digest or event schemas change.
+
+## Keep mutually exclusive consumable results explicit
+
+- Context: The ammunition consumable extends `UseItem` beyond healing while preserving one typed
+  `ItemConsumed` event and the existing presentation cue families.
+- Symptom: Adding a second effect-specific payload without an explicit shape would force adapters
+  to infer the effect or report contradictory healing and ammunition values.
+- Cause: Core owns the item effect and actor resource limits; the event is the shared semantic
+  boundary for all accepted item uses.
+- Resolution: Add a typed ammunition amount/result, cap restoration in core, and carry optional
+  healing and ammunition results as mutually exclusive event fields. Keep the opaque snapshot and
+  no-effect constructor unchanged while synchronizing protocol v14 and desktop JSON/text output.
+- Prevention: Test authored and hand-built ammunition items at partial and full capacity, assert
+  no-effect/healing compatibility, and keep event/schema constructors exhaustive across all adapters.

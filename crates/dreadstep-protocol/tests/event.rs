@@ -1,9 +1,10 @@
 //! Contract tests for protocol event conversion.
 
 use dreadstep_core::{
-  ActionTime as CoreActionTime, ActorId as CoreActorId, BlockReason as CoreBlockReason,
-  Damage as CoreDamage, Event as CoreEvent, HealingResult as CoreHealingResult,
-  HitPoints as CoreHitPoints, ItemId as CoreItemId, Position as CorePosition,
+  ActionTime as CoreActionTime, ActorId as CoreActorId, AmmunitionResult as CoreAmmunitionResult,
+  BlockReason as CoreBlockReason, Damage as CoreDamage, Event as CoreEvent,
+  HealingResult as CoreHealingResult, HitPoints as CoreHitPoints, ItemId as CoreItemId,
+  Position as CorePosition,
 };
 use dreadstep_protocol::{
   ActionTime, ActorId, BlockReason, Damage, Event, HitPoints, ItemId, Position,
@@ -58,6 +59,7 @@ fn maps_every_core_event_variant_to_protocol_values() {
       actor: CoreActorId::new(1),
       item: CoreItemId::new(6),
       healing: None,
+      ammunition: None,
     },
     CoreEvent::ItemPickedUp {
       actor: CoreActorId::new(1),
@@ -111,6 +113,7 @@ fn maps_every_core_event_variant_to_protocol_values() {
         actor: ActorId::new(1),
         item: ItemId::new(6),
         healing: None,
+        ammunition: None,
       },
       Event::ItemPickedUp {
         actor: ActorId::new(1),
@@ -126,6 +129,7 @@ fn maps_optional_healing_evidence_and_json_shape() {
     actor: CoreActorId::new(1),
     item: CoreItemId::new(6),
     healing: Some(CoreHealingResult::new(2, CoreHitPoints::new(10))),
+    ammunition: None,
   });
 
   let Event::ItemConsumed { healing, .. } = event else {
@@ -140,7 +144,36 @@ fn maps_optional_healing_evidence_and_json_shape() {
       "item_consumed": {
         "actor": 1,
         "item": 6,
-        "healing": {"amount": 2, "remaining_hit_points": 10}
+        "healing": {"amount": 2, "remaining_hit_points": 10},
+        "ammunition": null
+      }
+    })
+  );
+}
+
+#[test]
+fn maps_optional_ammunition_evidence_and_json_shape() {
+  let event = Event::from(CoreEvent::ItemConsumed {
+    actor: CoreActorId::new(1),
+    item: CoreItemId::new(7),
+    healing: None,
+    ammunition: Some(CoreAmmunitionResult::new(2, 3)),
+  });
+
+  let Event::ItemConsumed { ammunition, .. } = event else {
+    panic!("item consumption should preserve its event variant");
+  };
+  let ammunition = ammunition.expect("ammunition evidence should cross the protocol boundary");
+  assert_eq!(ammunition.amount(), 2);
+  assert_eq!(ammunition.remaining_ammunition(), 3);
+  assert_eq!(
+    serde_json::to_value(event).expect("ammunition event should serialize"),
+    serde_json::json!({
+      "item_consumed": {
+        "actor": 1,
+        "item": 7,
+        "healing": null,
+        "ammunition": {"amount": 2, "remaining_ammunition": 3}
       }
     })
   );

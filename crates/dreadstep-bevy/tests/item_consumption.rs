@@ -8,8 +8,8 @@ use dreadstep_bevy::{
   PresentationRuntime, PresentationState, SceneActor, SceneGroundItem, SceneInventoryItem,
 };
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, GridMap, HealingAmount, HitPoints, Item, ItemDefinitionId,
-  ItemEffect, ItemId, Position, Tile, WorldState,
+  Actor, ActorId, ActorKind, AmmunitionAmount, AmmunitionResult, Command, GridMap, HealingAmount,
+  HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, Position, Tile, WorldState,
 };
 
 fn consumption_runtime() -> PresentationRuntime {
@@ -182,6 +182,7 @@ fn consumption_removes_one_inventory_mirror_and_emits_all_typed_cues() {
       actor: ActorId::new(1),
       item: ItemId::new(4),
       healing: None,
+      ammunition: None,
     }]
   );
   assert_eq!(
@@ -292,6 +293,68 @@ fn healing_consumption_preserves_optional_recovery_in_typed_message() {
       actor: ActorId::new(1),
       item: ItemId::new(4),
       healing: Some(dreadstep_core::HealingResult::new(2, HitPoints::new(10))),
+      ammunition: None,
+    }]
+  );
+}
+
+fn ammunition_consumption_app() -> App {
+  let map = GridMap::filled(1, 1, Tile::Floor).expect("map should validate");
+  let mut world = WorldState::new(
+    map,
+    vec![Actor::with_ranged_ammo(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+      HitPoints::new(10),
+      1,
+    )],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_effect(
+        ItemId::new(4),
+        ItemDefinitionId::new(104),
+        ItemEffect::RestoreAmmunition {
+          amount: AmmunitionAmount::TWO,
+        },
+      ),
+    )
+    .expect("item should be accepted");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(ActorId::new(1)));
+  app.insert_resource(PresentationMessages::new());
+  app.insert_resource(PresentationAudioCues::new());
+  app.insert_resource(PresentationAnimationCues::new());
+  app.insert_resource(ButtonInput::<KeyCode>::default());
+  app.add_plugins(PresentationPlugin);
+  app
+}
+
+#[test]
+fn ammunition_consumption_preserves_optional_recovery_in_typed_message() {
+  let mut app = ammunition_consumption_app();
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    })
+    .expect("ammunition item should be consumed");
+  app.update();
+
+  assert_eq!(
+    app.world().resource::<PresentationMessages>().messages(),
+    &[PresentationMessage::ItemConsumed {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+      healing: None,
+      ammunition: Some(AmmunitionResult::new(2, 3)),
     }]
   );
 }

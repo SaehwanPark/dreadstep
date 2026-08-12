@@ -5,7 +5,7 @@ use dreadstep_content::{
   starter_floor_definition, starter_item_floor, starter_item_floor_definition,
 };
 use dreadstep_core::{
-  ActorId, HealingAmount, Item, ItemDefinitionId, ItemEffect, ItemId, WorldState,
+  ActorId, AmmunitionAmount, HealingAmount, Item, ItemDefinitionId, ItemEffect, ItemId, WorldState,
 };
 
 #[test]
@@ -50,7 +50,13 @@ fn starter_item_floor_is_complete_and_repeatable() {
           amount: HealingAmount::new(3).expect("starter healing amount should be positive"),
         },
       ),
-      Item::new(ItemId::new(102), ItemDefinitionId::new(3)),
+      Item::with_effect(
+        ItemId::new(102),
+        ItemDefinitionId::new(3),
+        ItemEffect::RestoreAmmunition {
+          amount: AmmunitionAmount::new(2).expect("starter ammunition amount should be positive"),
+        },
+      ),
     ]
   );
   assert_eq!(

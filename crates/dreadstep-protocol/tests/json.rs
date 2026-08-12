@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 13);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 14);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -265,14 +265,15 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     actor: ActorId::new(3),
     item: ItemId::new(4),
     healing: None,
+    ammunition: None,
   };
   assert_eq!(
     serde_json::to_value(consumed_event).expect("consumed event should serialize"),
-    serde_json::json!({"item_consumed": {"actor": 3, "item": 4, "healing": null}})
+    serde_json::json!({"item_consumed": {"actor": 3, "item": 4, "healing": null, "ammunition": null}})
   );
   assert_eq!(
     serde_json::from_value::<Event>(serde_json::json!({
-      "item_consumed": {"actor": 3, "item": 4, "healing": null}
+      "item_consumed": {"actor": 3, "item": 4, "healing": null, "ammunition": null}
     }))
     .expect("consumed event should deserialize"),
     consumed_event

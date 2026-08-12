@@ -1,9 +1,9 @@
 //! Core single-item consumption contract tests.
 
 use dreadstep_core::{
-  ActionCost, Actor, ActorId, ActorKind, Command, CommandError, Event, GridMap, HealingAmount,
-  HealingResult, HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, Position, ReplayTrace,
-  Tile, WorldState,
+  ActionCost, Actor, ActorId, ActorKind, AmmunitionAmount, AmmunitionResult, Command, CommandError,
+  Event, GridMap, HealingAmount, HealingResult, HitPoints, Item, ItemDefinitionId, ItemEffect,
+  ItemId, Position, ReplayTrace, Tile, WorldState,
 };
 
 fn consumption_world() -> WorldState {
@@ -49,6 +49,7 @@ fn use_item_consumes_one_owned_instance_and_emits_typed_event() {
       actor: ActorId::new(1),
       item: ItemId::new(2),
       healing: None,
+      ammunition: None,
     }]
   );
   assert_eq!(
@@ -257,6 +258,7 @@ fn healing_consumable_is_capped_and_reports_actual_recovery() {
       actor: ActorId::new(1),
       item: ItemId::new(9),
       healing: Some(HealingResult::new(2, HitPoints::new(10))),
+      ammunition: None,
     }]
   );
   assert_eq!(
@@ -289,6 +291,84 @@ fn healing_consumable_is_capped_and_reports_actual_recovery() {
       actor: ActorId::new(1),
       item: ItemId::new(10),
       healing: Some(HealingResult::new(0, HitPoints::new(10))),
+      ammunition: None,
+    }]
+  );
+}
+
+#[test]
+fn ammunition_consumable_is_capped_and_reports_actual_recovery() {
+  let map = GridMap::filled(1, 1, Tile::Floor).expect("map should validate");
+  let mut world = WorldState::new(
+    map,
+    vec![Actor::with_ranged_ammo(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+      HitPoints::new(10),
+      1,
+    )],
+  )
+  .expect("world should validate");
+  let amount = AmmunitionAmount::new(4).expect("positive ammunition should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_effect(
+        ItemId::new(11),
+        ItemDefinitionId::new(911),
+        ItemEffect::RestoreAmmunition { amount },
+      ),
+    )
+    .expect("ammunition item should be accepted");
+
+  let result = world
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(11),
+    })
+    .expect("ammunition item should be consumed");
+
+  assert_eq!(
+    result.events(),
+    &[Event::ItemConsumed {
+      actor: ActorId::new(1),
+      item: ItemId::new(11),
+      healing: None,
+      ammunition: Some(AmmunitionResult::new(2, 3)),
+    }]
+  );
+  assert_eq!(
+    world
+      .actor(ActorId::new(1))
+      .expect("actor should remain")
+      .ranged_ammo(),
+    3
+  );
+
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_effect(
+        ItemId::new(12),
+        ItemDefinitionId::new(912),
+        ItemEffect::RestoreAmmunition { amount },
+      ),
+    )
+    .expect("a second ammunition item should be accepted");
+  let full_ammunition = world
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(12),
+    })
+    .expect("full-ammunition item should still be consumed");
+  assert_eq!(
+    full_ammunition.events(),
+    &[Event::ItemConsumed {
+      actor: ActorId::new(1),
+      item: ItemId::new(12),
+      healing: None,
+      ammunition: Some(AmmunitionResult::new(0, 3)),
     }]
   );
 }

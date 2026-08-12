@@ -3033,8 +3033,8 @@ Out of scope:
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
 identification, capacity, or richer gameplay-facing item commands beyond the completed equipment
-and single-item consumption preparations above. The first healing effect is now a verified explicit
-core contract; damage/status effects, identification, stacking, and richer item families remain
+and single-item consumption preparations above. The first healing and ammunition effects are now
+verified explicit core contracts; damage/status effects, identification, stacking, and richer item families remain
 future work. Tester-only transfer, drop, and pickup are verified separately in their completed
 slices above.
 
@@ -3217,6 +3217,48 @@ Out of scope:
 
 ## Active
 
+### Milestone 6 preparation slice: deterministic ammunition consumable
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Extend the existing scheduled `UseItem` contract with a deterministic ammunition-restoration
+effect. Item `102` in the authored item fixture restores two ranged shots, capped at the existing
+three-shot actor capacity, and `ItemConsumed` reports the actual restored count plus remaining
+ammunition through a second optional result alongside the existing healing evidence. No-effect and
+healing items retain their prior behavior; no new command or presentation cue family is introduced.
+
+Acceptance:
+
+- `dreadstep-core` exposes a typed positive ammunition amount/result and a `RestoreAmmunition`
+  item effect. Core applies it after the existing ownership/equipment/life/scheduling guards,
+  removes the item, advances one standard action, and caps at fixed capacity.
+- `ItemConsumed` carries mutually exclusive optional healing or ammunition evidence. Full-capacity
+  ammunition items are still consumed and report zero actual recovery; rejected actions remain
+  atomic for world, scheduler, digest, history, and replay evidence.
+- The authored item-bearing scenario gives player item `102` a two-round ammunition effect while
+  preserving item `101` healing, the item-free default floor, opaque catalog membership, and stable
+  inventory order.
+- Protocol v14, MCP, headless, Bevy, and desktop JSON/text evidence expose the optional ammunition
+  result without changing command/event names or audio/animation families. Focused tests, full
+  workspace verification, formatting, diff checks, and one semantic review pass are required.
+
+Out of scope:
+
+- Weapon classes, ammunition pickups, capacity upgrades, stacking, generated loot, status/damage
+  effects, persistence, save/load, replay playback, new commands, or production media.
+
+Verification evidence:
+
+- Core capped ammunition recovery and typed optional event evidence pass; the item effect is part
+  of the deterministic state digest and no-effect/healing event payloads remain stable.
+- Content authors item `102` with a two-round restoration; protocol v14, MCP, Bevy, desktop JSON,
+  and text evidence all project the optional ammunition result. Full workspace tests and focused
+  core/content/protocol/MCP/Bevy tests pass.
+- `scripts/verify.sh`, formatting, diff checks, strict lint/docs, and display-free smoke pass; one
+  semantic review is required before merge.
+
 ### Milestone 6 preparation slice: deterministic healing consumable
 
 - Status: verified
@@ -3254,8 +3296,8 @@ Verification evidence:
 - Core healing, capped recovery, no-effect, and atomic rejection tests pass; the state digest is
   versioned with actor maximum hit points and authored item effects.
 - Content, protocol JSON/event, MCP authored-item, Bevy presentation, desktop journal, and display-
-  free smoke coverage all pass. Protocol v13 carries the optional typed healing result; the existing
-  item-consumption audio/animation families remain unchanged.
+  free smoke coverage all pass. Protocol v14 carries the optional typed healing and ammunition
+  results; the existing item-consumption audio/animation families remain unchanged.
 - `cargo test --workspace --all-targets --all-features --locked`, `scripts/verify.sh`, formatting,
   and diff checks pass; one semantic review is required before merge.
 
