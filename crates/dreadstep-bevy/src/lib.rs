@@ -1834,6 +1834,7 @@ pub struct SceneActor {
   kind: dreadstep_core::ActorKind,
   position: dreadstep_core::Position,
   hit_points: dreadstep_core::HitPoints,
+  melee_reach: dreadstep_core::MeleeReach,
   ready_at: dreadstep_core::ActionTime,
   equipped_item: Option<ItemId>,
   alive: bool,
@@ -1846,6 +1847,7 @@ impl SceneActor {
       kind: actor.kind(),
       position: actor.position(),
       hit_points: actor.hit_points(),
+      melee_reach: actor.melee_reach(),
       ready_at: actor.ready_at(),
       equipped_item: actor.equipped_item(),
       alive: actor.is_alive(),
@@ -1874,6 +1876,12 @@ impl SceneActor {
   #[must_use]
   pub const fn hit_points(self) -> dreadstep_core::HitPoints {
     self.hit_points
+  }
+
+  /// Returns the projected actor's non-zero Manhattan melee reach.
+  #[must_use]
+  pub const fn melee_reach(self) -> dreadstep_core::MeleeReach {
+    self.melee_reach
   }
 
   /// Returns the projected core scheduler readiness time.

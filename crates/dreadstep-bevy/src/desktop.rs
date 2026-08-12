@@ -1689,6 +1689,7 @@ fn actor_value(actor: &Actor) -> Value {
     "kind": actor_kind_name(actor.kind()),
     "position": position_value(actor.position()),
     "hit_points": actor.hit_points().value(),
+    "melee_reach": actor.melee_reach().value(),
     "ranged_ammo": actor.ranged_ammo(),
     "alive": actor.is_alive(),
     "ready_at": actor.ready_at().value(),

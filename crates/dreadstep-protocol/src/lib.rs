@@ -14,11 +14,11 @@ use dreadstep_core::{
   Event as CoreEvent, GroundItemStack as CoreGroundItemStack, Item as CoreItem,
   MapError as CoreMapError, WorldError as CoreWorldError, WorldState,
 };
-use schemars::JsonSchema;
+use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 7;
+pub const PROTOCOL_VERSION: u16 = 8;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -268,6 +268,45 @@ impl HitPoints {
   }
 }
 
+/// A protocol actor's non-zero Manhattan melee reach.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct MeleeReach(u8);
+
+impl JsonSchema for MeleeReach {
+  fn schema_name() -> std::borrow::Cow<'static, str> {
+    "MeleeReach".into()
+  }
+
+  fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+    let mut schema = u8::json_schema(generator);
+    schema.insert("minimum".to_owned(), 1u8.into());
+    schema
+  }
+}
+
+impl MeleeReach {
+  /// The default adjacent melee reach.
+  pub const DEFAULT: Self = Self(1);
+
+  /// Creates protocol reach evidence, rejecting zero.
+  #[must_use]
+  pub const fn new(value: u8) -> Option<Self> {
+    if value == 0 { None } else { Some(Self(value)) }
+  }
+
+  /// Returns the numeric Manhattan reach.
+  #[must_use]
+  pub const fn value(self) -> u8 {
+    self.0
+  }
+}
+
+impl Default for MeleeReach {
+  fn default() -> Self {
+    Self::DEFAULT
+  }
+}
+
 /// A stable item instance identity in the protocol projection.
 #[derive(
   Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, JsonSchema, Serialize,
@@ -385,6 +424,7 @@ pub struct ScenarioActor {
   kind: ActorKind,
   position: Position,
   hit_points: HitPoints,
+  melee_reach: MeleeReach,
 }
 
 impl ScenarioActor {
@@ -396,11 +436,24 @@ impl ScenarioActor {
     position: Position,
     hit_points: HitPoints,
   ) -> Self {
+    Self::with_melee_reach(id, kind, position, hit_points, MeleeReach::DEFAULT)
+  }
+
+  /// Creates one initial actor record with an explicit melee reach.
+  #[must_use]
+  pub const fn with_melee_reach(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+    melee_reach: MeleeReach,
+  ) -> Self {
     Self {
       id,
       kind,
       position,
       hit_points,
+      melee_reach,
     }
   }
 
@@ -426,6 +479,12 @@ impl ScenarioActor {
   #[must_use]
   pub const fn hit_points(self) -> HitPoints {
     self.hit_points
+  }
+
+  /// Returns the initial actor's melee reach.
+  #[must_use]
+  pub const fn melee_reach(self) -> MeleeReach {
+    self.melee_reach
   }
 }
 
@@ -1344,6 +1403,7 @@ pub struct ActorSnapshot {
   hit_points: HitPoints,
   life: LifeState,
   ready_at: ActionTime,
+  melee_reach: MeleeReach,
   ranged_ammo: u16,
   inventory: Vec<ItemSnapshot>,
   equipped_item: Option<ItemId>,
@@ -1365,6 +1425,9 @@ impl ActorSnapshot {
         LifeState::Dead
       },
       ready_at: ActionTime::new(actor.ready_at().value()),
+      // Core constructors guarantee a non-zero reach; the fallback keeps this read-only
+      // projection panic-free if that invariant ever changes at the domain boundary.
+      melee_reach: MeleeReach::new(actor.melee_reach().value()).unwrap_or_default(),
       ranged_ammo: actor.ranged_ammo(),
       inventory: actor
         .inventory()
@@ -1416,6 +1479,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn ready_at(&self) -> ActionTime {
     self.ready_at
+  }
+
+  /// Returns the actor's non-zero Manhattan melee reach.
+  #[must_use]
+  pub const fn melee_reach(&self) -> MeleeReach {
+    self.melee_reach
   }
 
   /// Returns the actor's remaining ranged ammunition.

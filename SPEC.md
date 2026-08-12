@@ -3246,8 +3246,9 @@ Out of scope:
 
 ### Milestone 4 slice: deterministic enemy intent presentation
 
-- Status: active
+- Status: verified
 - Started: 2026-08-12
+- Completed: 2026-08-12
 
 Project the currently scheduled living enemy's deterministic next legal command into a typed
 `PresentationEnemyIntent` resource and display a compact intent line in the desktop HUD. The
@@ -3268,6 +3269,35 @@ Out of scope:
 
 - New enemy behavior, ranged enemy AI, retreat, status effects, command/event variants, prediction
   beyond the current scheduled turn, new controls, and new media.
+
+### Milestone 4 slice: deterministic melee reach preparation
+
+- Status: active
+- Started: 2026-08-12
+
+Add a typed `MeleeReach` value to actors, defaulting to one Manhattan tile while allowing an
+explicit authored/test actor to use a larger reach. Core legal-action discovery and `Attack`
+execution share the same reach predicate, so an extended-reach actor can target a two-tile living
+actor without changing fixed melee damage, one-tick cost, `Attacked`/`Died` events, scheduler
+semantics, replay evidence, or desktop controls. Protocol snapshots and the Bevy scene mirror
+carry the value; protocol version 8 owns the shape change.
+
+Verification target:
+
+- Core proves default/explicit reach, extended attack success, stable target-ID ordering, typed
+  self/unknown/dead/out-of-range rejection, digest inclusion, and atomic rejection state,
+  scheduler, and replay evidence.
+- Protocol/MCP prove scenario construction, versioned snapshot JSON/schema, observation/inspection,
+  and accepted/rejected action evidence for explicit reach.
+- Bevy proves scene synchronization mirrors the core reach without changing scene identity or
+  visual/audio/animation/smoke behavior; no new controls or assets are introduced.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- weapon classes, equipment-derived reach, item effects, damage modifiers, status effects, enemy
+  behavior, ranged rules, new commands/events/errors, and production presentation assets.
 
 ### Milestone 4 slice: deterministic ranged ammunition
 
