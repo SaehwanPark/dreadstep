@@ -4,6 +4,17 @@ Read this file before implementation and again before final review. Record only 
 recurring traps that are not already obvious from code, tests, or canonical documentation.
 Update an existing lesson instead of adding a duplicate.
 
+## 2026-08-12 — Test procedural content connectivity at the authored boundary
+
+- Context: A seeded floor generator can look corridor-like while a future partition or gap change
+  silently strands walkable cells, creating unreachable content before core sees a semantic problem.
+- Resolution: Keep generation in `dreadstep-content`, route the result through
+  `StarterFloorDefinition::build`, and exercise a bounded breadth-first reachability check across
+  representative seeds and depths.
+- Prevention: Whenever procedural terrain claims connected play space, test every generated walkable
+  tile from the authored player start; do not move this presentation/content concern into core rules
+  or rely on visual inspection alone.
+
 ## 2026-08-12 — Derive terminal outcomes once at the core boundary
 
 - Context: The desktop showcase inferred victory by counting dead enemies locally while core

@@ -36,7 +36,8 @@ the artifact is not a playback-compatible save file.
 
 The content boundary now also exposes a deterministic seeded corridor-floor generator for procedural
 dungeon preparation. Identical seed/depth inputs produce the same validated 13×9 floor and actor
-roster; different inputs vary partition gaps or authored enemy durability. The desktop showcase still
+roster; every generated walkable tile is reachable from the player; different inputs vary partition
+gaps or authored enemy durability. The desktop showcase still
 uses the stable authored starter floor until floor progression and presentation selection are designed.
 
 - Verified foundations

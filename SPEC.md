@@ -3867,7 +3867,7 @@ Verification target:
 Verification evidence:
 
 - Focused `cargo test -p dreadstep-content --test procedural_floor --locked` passes all four
-  deterministic layout, variation, actor, and core-validation tests.
+  deterministic layout, variation, actor, connectivity, and core-validation tests.
 - `scripts/verify.sh` passes repository structure checks, strict lint/docs, all workspace targets,
   and display-free desktop smoke; no adapter contract or showcase fixture changes are present.
 
