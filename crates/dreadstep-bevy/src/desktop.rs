@@ -51,8 +51,8 @@ use crate::{
   PresentationInput, PresentationKeyboardMode, PresentationMessages, PresentationPlugin,
   PresentationRenderAssetProjection, PresentationRenderCommandPlan,
   PresentationRenderNodeProjection, PresentationRenderProjection, PresentationRuntime,
-  PresentationSet, PresentationSpriteProjection, PresentationTileSize, PresentationVisibility,
-  SceneRenderNode, SceneRenderPlaceholder,
+  PresentationSet, PresentationSnapshot, PresentationSpriteProjection, PresentationTileSize,
+  PresentationVisibility, SceneRenderNode, SceneRenderPlaceholder,
 };
 
 const PLAYER: ActorId = ActorId::new(1);
@@ -60,6 +60,8 @@ const ATTACK_TARGET: ActorId = ActorId::new(2);
 const EQUIP_ITEM: ItemId = ItemId::new(101);
 const SMOKE_ENEMY_ATTACK_LIMIT: usize = 32;
 const ENEMY_DELAY: Duration = Duration::from_millis(150);
+const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
+const HEALTH_BAR_WIDTH: usize = 10;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
 pub const SHOWCASE_COMMAND_KINDS: [&str; 7] = [
@@ -1573,31 +1575,90 @@ fn event_message(event: Event) -> String {
   }
 }
 
+fn health_bar_text(hit_points: i32) -> String {
+  let clamped = usize::try_from(hit_points.clamp(0, SHOWCASE_MAX_HIT_POINTS)).unwrap_or_default();
+  let maximum = usize::try_from(SHOWCASE_MAX_HIT_POINTS).unwrap_or_default();
+  let filled = ((clamped * HEALTH_BAR_WIDTH) + (maximum / 2)) / maximum;
+  format!(
+    "[{}{}]",
+    "#".repeat(filled),
+    "-".repeat(HEALTH_BAR_WIDTH - filled)
+  )
+}
+
+fn visibility_summary_values(active: bool, radius: u32, visible_tiles: usize) -> String {
+  if active {
+    format!("FOV {visible_tiles} tiles (radius {radius})")
+  } else {
+    "FOV full map".to_string()
+  }
+}
+
+fn visibility_summary(visibility: Option<&PresentationVisibility>) -> String {
+  visibility.map_or_else(
+    || visibility_summary_values(false, 0, 0),
+    |visibility| {
+      visibility_summary_values(
+        visibility.is_active(),
+        visibility.radius(),
+        visibility.visible_positions().len(),
+      )
+    },
+  )
+}
+
+fn format_hud_stats(
+  player: Option<&Actor>,
+  snapshot: &PresentationSnapshot,
+  status: &DesktopStatus,
+  visibility: Option<&PresentationVisibility>,
+) -> String {
+  let enemies_remaining = snapshot
+    .actors()
+    .iter()
+    .filter(|actor| actor.kind() == ActorKind::Enemy && actor.is_alive())
+    .count();
+  let Some(player) = player else {
+    return format!(
+      "Player unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\nStatus: {:?}",
+      snapshot.current_time().value(),
+      snapshot
+        .next_actor()
+        .map_or_else(|| "-".to_string(), |id| id.value().to_string()),
+      enemies_remaining,
+      visibility_summary(visibility),
+      status
+    );
+  };
+  let hit_points = i32::from(player.hit_points().value());
+  format!(
+    "HP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\nStatus: {:?}",
+    health_bar_text(hit_points),
+    hit_points.clamp(0, SHOWCASE_MAX_HIT_POINTS),
+    SHOWCASE_MAX_HIT_POINTS,
+    player.position().x(),
+    player.position().y(),
+    snapshot.current_time().value(),
+    snapshot
+      .next_actor()
+      .map_or_else(|| "-".to_string(), |id| id.value().to_string()),
+    enemies_remaining,
+    visibility_summary(visibility),
+    status
+  )
+}
+
 fn desktop_update_hud(
   runtime: Option<Res<PresentationRuntime>>,
   session: Option<Res<DesktopSession>>,
+  visibility: Option<Res<PresentationVisibility>>,
   mut lines: Query<(&mut Text, &HudLine), With<HudLine>>,
 ) {
   let Some(runtime) = runtime else { return };
   let Some(session) = session else { return };
   let snapshot = runtime.snapshot();
   let player = snapshot.actors().iter().find(|actor| actor.id() == PLAYER);
-  let stats = player.map_or_else(
-    || "Player unavailable".to_string(),
-    |player| {
-      format!(
-        "HP {}/10  pos ({},{})\nt={}  next={}\nStatus: {:?}",
-        player.hit_points().value(),
-        player.position().x(),
-        player.position().y(),
-        snapshot.current_time().value(),
-        snapshot
-          .next_actor()
-          .map_or_else(|| "-".to_string(), |id| id.value().to_string()),
-        session.status
-      )
-    },
-  );
+  let stats = format_hud_stats(player, &snapshot, &session.status, visibility.as_deref());
   let inventory = player.map_or_else(
     || "Inventory unavailable".to_string(),
     |player| {
@@ -1660,6 +1721,7 @@ pub fn event_kind(event: Event) -> &'static str {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::PresentationState;
 
   fn test_directory(label: &str) -> PathBuf {
     std::env::temp_dir().join(format!(
@@ -1734,5 +1796,41 @@ mod tests {
     let payload =
       panic::catch_unwind(|| panic!("desktop test panic")).expect_err("test panic is caught");
     assert_eq!(panic_message(payload), "desktop test panic");
+  }
+
+  #[test]
+  fn health_bar_is_fixed_width_and_clamped() {
+    assert_eq!(health_bar_text(-3), "[----------]");
+    assert_eq!(health_bar_text(5), "[#####-----]");
+    assert_eq!(health_bar_text(99), "[##########]");
+  }
+
+  #[test]
+  fn visibility_summary_distinguishes_active_and_full_map() {
+    assert_eq!(visibility_summary_values(false, 0, 0), "FOV full map");
+    assert_eq!(
+      visibility_summary_values(true, 3, 2),
+      "FOV 2 tiles (radius 3)"
+    );
+  }
+
+  #[test]
+  fn hud_stats_report_enemy_pressure_and_missing_player() {
+    let state = PresentationState::start_item_run(7).expect("starter item run");
+    let snapshot = state.snapshot();
+    let status = DesktopStatus::Running;
+    let text = format_hud_stats(None, &snapshot, &status, None);
+    assert!(text.contains("Player unavailable"));
+    assert!(text.contains("Enemies remaining: 3"));
+    assert!(text.contains("FOV full map"));
+
+    let player = snapshot
+      .actors()
+      .iter()
+      .find(|actor| actor.id() == PLAYER)
+      .expect("player exists");
+    let text = format_hud_stats(Some(player), &snapshot, &status, None);
+    assert!(text.contains("HP [##########] 10/10"));
+    assert!(text.contains("enemies 3"));
   }
 }

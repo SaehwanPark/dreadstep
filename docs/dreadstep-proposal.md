@@ -1758,6 +1758,10 @@ Current exploratory gate (2026-08-09):
 - The verified local-only audio cue manifest binds all eight typed cue families to validated root or
   crate-local `audio/` references and preserves ordered payloads without filesystem reads, asset
   handles, playback, or an audio backend. Production audio remains a later slice.
+- The verified desktop tactical HUD polish keeps the existing panel structure while formatting a
+  fixed-width health bar, turn/position, remaining-enemy pressure, and optional field-of-view
+  summary from authoritative runtime/projection data; production media, localization, and playback
+  remain deferred.
 - The verified headless Bevy Sprite API bridge enables only the `bevy_sprite` API feature and joins
   deterministic solid-color Sprite values to stable placeholder nodes with optional 32×32 sizing;
   Sprite/render plugins, texture loading, transforms, windows, playback, and production media remain
