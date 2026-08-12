@@ -12,8 +12,9 @@ are used for every family until an optional image loads.
 
 The HUD keeps the existing panel structure and now includes a fixed-width health bar, remaining-
 enemy count, turn/position summary, and explicit field-of-view state. These are presentation-only
-readings; inventory, messages, controls, journal output, and the smoke command/event matrix remain
-unchanged.
+readings; an accepted player death also changes the disposable status to defeat and writes a
+`terminal_defeat` journal record. Inventory, messages, controls, and the smoke command/event matrix
+remain unchanged.
 
 New typed event-cue batches now add only a short pulse to visible living actor placeholders. The
 runtime replay digest keeps distinct accepted events observable even when their cue values match.
@@ -139,6 +140,6 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 
 Tester-only spawn, teleport, HP, inventory transfer/drop, and scenario mutation remain in MCP/tests;
 tester pickup remains a non-action test operation while player pickup/drop are scheduled commands.
-This showcase does not add player-death loops, item effects, canonical victory/loss, production
+This showcase does not add player-death loops, respawn, item effects, canonical victory/loss, production
 audio design/music, persistent exploration memory, production media, installers, signing, save/load,
 or replay-file compatibility.

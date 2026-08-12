@@ -18,6 +18,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - A verified deterministic enemy melee-intent slice: adjacent scheduled enemies now use the existing
   fixed-damage `Attack` before fallback `Chase`, with core/MCP legal-action evidence and Bevy intent,
   desktop-driver, and smoke coverage; ranged enemy AI remains deferred.
+- A verified desktop player-defeat terminal preparation: existing core death events now have a
+  presentation-only defeat status and `terminal_defeat` journal record, with restart preserved and
+  no new simulation or protocol state.
 - A deterministic walkable `Cover` terrain variant that blocks interior ranged line of sight,
   with protocol v7 scenario conversion and unchanged damage/presentation behavior.
 - A finite three-shot ranged ammunition resource with typed empty-ammo rejection, legal-action

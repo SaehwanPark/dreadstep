@@ -26,8 +26,9 @@ and player-facing reload and item-drop slices are verified across the determinis
 protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
 three-shot capacity with `R` when ammo is partial; `X` drops the selected unequipped item and
 `Shift+R` restarts the same seed. Adjacent scheduled enemies use the existing fixed melee attack
-before falling back to chase; ranged enemy AI, ammo pickups, cover damage modifiers, and weapon
-effects remain deliberately deferred.
+before falling back to chase; the desktop showcase now records player defeat when actor 1 dies and
+keeps restart available. Ranged enemy AI, ammo pickups, cover damage modifiers, and weapon effects
+remain deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
