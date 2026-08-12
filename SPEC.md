@@ -2998,8 +2998,10 @@ unchanged at their existing boundaries.
 
 Acceptance:
 
-- A new non-empty cue batch starts a fixed 180 ms pulse, an unchanged or empty batch does not
-  retrigger it, and elapsed presentation time clamps the pulse to the interval `[0, 1]`.
+- A new non-empty cue batch starts a fixed 180 ms pulse. The adapter also observes the runtime replay
+  digest, so a distinct accepted batch retriggers even when its cue values are identical; an unchanged
+  token-and-batch pair or an empty batch does not retrigger it. Elapsed presentation time clamps the
+  pulse to the interval `[0, 1]`.
 - Only visible living actor placeholders receive the pulse; inventory nodes, hidden FOV nodes,
   terrain, ground items, dead actors, asset handles, base colors, and transforms retain existing
   behavior.
@@ -3015,8 +3017,9 @@ Verification target:
 
 Verification evidence:
 
-- Desktop-feature unit tests pass all eight tests, including pulse bounds, cue-batch transition,
-  expiry, and the existing CLI/journal helpers; desktop boundary/subprocess tests pass all eight.
+- Desktop-feature unit tests pass all eleven tests, including replay-token/cue-batch transitions,
+  large-delta handling, pulse expiry, sprite-scale guards, desktop-system integration, and the
+  existing CLI/journal helpers; desktop boundary/subprocess tests pass all eight.
 - `cargo clippy -p dreadstep-bevy --all-targets --all-features --locked -- -D warnings`,
   `scripts/verify.sh`, and `git diff --check` pass; smoke retains all seven command/eight event
   kinds and deterministic journal evidence.

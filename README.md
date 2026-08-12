@@ -85,8 +85,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - The existing panel now renders a fixed-width health bar, turn/position, remaining-enemy
     pressure, and radius-3 field-of-view state without changing simulation or smoke behavior.
 - Verified animation polish
-  - New typed animation-cue batches now trigger a short pulse on visible living actor placeholders;
-    movement interpolation, production sheets, audio, and simulation timing remain deferred.
+  - New typed animation-cue batches trigger a short pulse on visible living actor placeholders, with
+    the runtime replay digest preserving retriggers for distinct accepted events with identical cue
+    values; movement interpolation, production sheets, audio, and simulation timing remain deferred.
 - Still deferred
   - production texture/media adoption, anchor policy beyond centering, animation playback, audio
     assets/playback, multiple floors, and richer gameplay item semantics such as

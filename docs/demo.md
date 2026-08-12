@@ -16,7 +16,8 @@ readings; inventory, messages, controls, journal output, and the smoke command/e
 unchanged.
 
 New typed event-cue batches now add only a short pulse to visible living actor placeholders. The
-pulse does not move nodes, alter field-of-view masking, or change the smoke/journal path.
+runtime replay digest keeps distinct accepted events observable even when their cue values match.
+The pulse does not move nodes, alter field-of-view masking, or change the smoke/journal path.
 
 ## Controls
 
