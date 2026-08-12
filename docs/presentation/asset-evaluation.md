@@ -69,6 +69,7 @@ source pixels:
 | `ground-item` | `Tiles/tile_0064.png` |
 | `inventory-item` | `Tiles/tile_0065.png` |
 
-The script rejects a missing or unexpected archive, validates PNG signatures, rejects traversal and
-non-media destinations, and never writes outside the caller-selected ignored destination. It does not
-alter the simulation, journal schema, or canonical asset manifest.
+The script rejects a missing or unexpected archive, validates PNG signatures, requires the exact
+media-root grammar, proves each output is Git-ignored, rejects traversal and symlink components, and
+never writes outside the caller-selected ignored destination. It does not alter the simulation,
+journal schema, or canonical asset manifest.

@@ -75,18 +75,40 @@ check_sources() {
 
 validate_destination() {
   local destination="$1"
+  local family
+  local path
+  local component
+  local current
+  local -a components
 
   if [[ "$destination" == /* || "$destination" == *..* ]]; then
     echo "destination must be a relative ignored media path: $destination" >&2
     return 5
   fi
-  case "$destination" in
-    assets/* | art/* | audio/* | crates/*/assets/* | crates/*/art/* | crates/*/audio/*) ;;
-    *)
-      echo "destination must be under assets/, art/, audio/, or a crate-local media directory: $destination" >&2
+  if [[ ! "$destination" =~ ^(assets|art|audio)/[^/]+(/[^/]*)*$ &&
+    ! "$destination" =~ ^crates/[^/]+/(assets|art|audio)/[^/]+(/[^/]*)*$ ]]; then
+    echo "destination must be under assets/, art/, audio/, or a crate-local media directory: $destination" >&2
+    return 5
+  fi
+
+  IFS='/' read -r -a components <<< "$destination"
+  current=""
+  for component in "${components[@]}"; do
+    [[ -z "$component" ]] && continue
+    current="${current:+$current/}$component"
+    if [[ -L "$current" ]]; then
+      echo "destination contains a symlink component: $current" >&2
       return 5
-      ;;
-  esac
+    fi
+  done
+
+  for family in terrain player enemy dead ground-item inventory-item; do
+    path="$destination/$family.png"
+    if ! git check-ignore --no-index -q -- "$path"; then
+      echo "destination output is not ignored by Git: $path" >&2
+      return 5
+    fi
+  done
 }
 
 install_assets() {
