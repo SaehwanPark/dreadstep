@@ -133,6 +133,23 @@ scripts/prepare-local-assets.sh --install
 The script validates the archive hash and source members before writing six ignored PNGs. It is
 optional; the desktop client keeps its readable per-family placeholders when local media is absent.
 
+### Moving a local desktop setup to another Mac
+
+Git intentionally does not carry presentation binaries. To reproduce this environment on a new
+macOS/Apple Silicon checkout, transfer the following ignored files (or transfer the source archive
+and regenerate the derived files):
+
+| Purpose | Transfer | Notes |
+| --- | --- | --- |
+| Selected local art source | `art/kenney-tiny-dungeon.zip` | Preferred; verify its recorded SHA-256 with `scripts/prepare-local-assets.sh --check`, then run `--install` to create the six files below. |
+| Desktop art fallback | `assets/dreadstep/terrain.png`, `player.png`, `enemy.png`, `dead.png`, `ground-item.png`, `inventory-item.png` | Transfer these six generated files only when the archive is unavailable; keep the same relative paths. |
+| Optional desktop audio | `assets/audio/dreadstep/moved.ogg`, `movement-blocked.ogg`, `waited.ogg`, `attacked.ogg`, `died.ogg`, `item-equipped.ogg`, `item-unequipped.ogg`, `item-consumed.ogg` | These are the only audio paths the Bevy desktop loader requests. Missing files are safe fallbacks, but transferring them preserves local playback. |
+
+The evaluation-only files under `art/` and `audio/` (such as generated previews, `audio/generated-cue-click.wav`,
+and `audio/kenney-ui-audio.zip`) are not required to run the game. Do not transfer `target/` or
+`_workspace/`; those are build and agent-work files and are recreated locally. Crate-local media may
+be retained for experiments, but the current desktop playback contract is rooted at `assets/`.
+
 ## Design Principles
 
 - Every movement choice should matter without making routine turns laborious.
