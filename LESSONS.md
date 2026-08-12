@@ -14,10 +14,13 @@ Update an existing lesson instead of adding a duplicate.
 - Resolution: Move Bevy into `dreadstep-bevy`, disable default features, and enable only
   `std` until a presentation milestone needs a reviewed feature set. Later headless Sprite API
   work enabled only Bevy's `bevy_sprite` feature; its image/mesh/camera support remains usable
-  without adding render plugins or desktop backends. A representative Bevy 0.19 package with this
-  configuration passed Clippy on the same environment.
+  without adding render plugins or desktop backends. The later optional audio boundary enables
+  Bevy audio only for desktop and requires `pkg-config` plus `libasound2-dev` on Linux; CI installs
+  that prerequisite before the workspace verification. A representative Bevy 0.19 package with
+  this configuration passed Clippy on the same environment.
 - Prevention: Keep engine dependencies out of core, protocol, and content; inspect enabled
-  features before adding presentation capabilities; verify the headless Linux workflow.
+  features before adding presentation capabilities; document platform packages and install them in
+  CI before verifying the headless Linux workflow.
 
 ## Enable Bevy input modules explicitly when default features are disabled
 

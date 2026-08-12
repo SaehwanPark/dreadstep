@@ -37,8 +37,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
   - Optional deterministic presentation field of view: radius-3 cardinal floor traversal with
     readable wall boundaries, retained-but-hidden out-of-view render nodes, and complete headless
     snapshots/MCP visibility unchanged.
-  - Local-only pixel-art and audio manifests preserve typed placeholder/cue metadata without file
-    loading, asset handles, playback, or render plugins; media binaries remain ignored.
+  - Local-only pixel-art and audio manifests preserve typed placeholder/cue metadata; the desktop
+    feature can optionally request existing local audio through Bevy playback while missing media
+    remains a safe fallback and binaries remain ignored.
 - Verified Sprite API boundary
   - `PresentationBevySpriteProjection` derives deterministic solid-color `Sprite` values with
     optional 32×32 sizing from stable placeholder nodes while preserving inventory-unplaced and
@@ -87,10 +88,16 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
 - Verified animation polish
   - New typed animation-cue batches trigger a short pulse on visible living actor placeholders, with
     the runtime replay digest preserving retriggers for distinct accepted events with identical cue
-    values; movement interpolation, production sheets, audio, and simulation timing remain deferred.
+    values; movement interpolation, production sheets, production audio, and simulation timing remain
+    deferred.
+- Verified audio placeholder playback
+  - Distinct typed audio-cue batches now route through the validated eight-family manifest and request
+    existing `assets/`-rooted files as non-looping Bevy effects; root/crate-local metadata, absent
+    audio, audio resources, and audio devices remain safe fallbacks. Production sound design, music,
+    and mastering remain deferred.
 - Still deferred
-  - production texture/media adoption, anchor policy beyond centering, animation playback, audio
-    assets/playback, multiple floors, and richer gameplay item semantics such as
+  - production texture/media adoption, anchor policy beyond centering, animation playback,
+    production audio assets/mastering/music, multiple floors, and richer gameplay item semantics such as
     effects, modifiers, capacity, and additional slots.
 
 The long-term design and roadmap are in
@@ -146,8 +153,9 @@ xcode-select --install
 ```
 
 On Linux and WSL2, core/headless checks remain display-free; the full showcase gate uses the
-reviewed X11/XWayland Bevy feature path. Windows contributors should use the MSVC Rust toolchain
-and Windows build tools.
+reviewed X11/XWayland Bevy feature path and requires `pkg-config` plus ALSA development headers
+(for example, `sudo apt-get install pkg-config libasound2-dev`). Windows contributors should use
+the MSVC Rust toolchain and Windows build tools.
 
 Run the complete local verification suite:
 

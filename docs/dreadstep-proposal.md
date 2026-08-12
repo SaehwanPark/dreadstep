@@ -1755,9 +1755,11 @@ Current exploratory gate (2026-08-09):
   placeholder family and joins those references to stable node metadata without filesystem reads,
   asset handles, or committed pixel-art/audio binaries. Provenance remains in tracked documents;
   production loading and rendering remain a later slice.
-- The verified local-only audio cue manifest binds all eight typed cue families to validated root or
-  crate-local `audio/` references and preserves ordered payloads without filesystem reads, asset
-  handles, playback, or an audio backend. Production audio remains a later slice.
+- The verified local-only audio cue manifest binds all eight typed cue families to validated root,
+  `assets/audio/`, or crate-local `audio/` references and preserves ordered payloads without
+  filesystem reads at the headless boundary. The verified desktop adapter requests existing local
+  `assets/`-rooted references as non-looping playback effects and records safe missing/unsupported-
+  root fallbacks; production audio selection, mastering, and music remain later work.
 - The verified desktop tactical HUD polish keeps the existing panel structure while formatting a
   fixed-width health bar, turn/position, remaining-enemy pressure, and optional field-of-view
   summary from authoritative runtime/projection data; production media, localization, and playback
@@ -1766,6 +1768,10 @@ Current exploratory gate (2026-08-09):
   placeholders when a new typed animation-cue batch arrives; the runtime replay digest preserves
   distinct accepted events even when cue values match. Movement interpolation, sprite sheets, audio
   playback, and production media remain deferred.
+- The verified optional audio-placeholder slice observes replay-digest cue batches and routes each
+  existing `assets/`-rooted reference through non-looping Bevy playback without changing simulation
+  timing or smoke evidence; other validated roots receive deterministic unsupported-root fallbacks,
+  while production sound design and media selection remain deferred.
 - The verified headless Bevy Sprite API bridge enables only the `bevy_sprite` API feature and joins
   deterministic solid-color Sprite values to stable placeholder nodes with optional 32×32 sizing;
   Sprite/render plugins, texture loading, transforms, windows, playback, and production media remain

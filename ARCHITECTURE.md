@@ -45,8 +45,8 @@ protocol ----> core <---- content
 The adapter packages may depend on protocol and content as well as core. Core, protocol,
 and content must never depend on Bevy or MCP runtime libraries. `dreadstep-bevy` keeps the
 headless feature graph minimal; its opt-in `desktop` feature adds Bevy's winit, X11, 2D render,
-UI/text, nearest-neighbor image, and logging capabilities while continuing to exclude Wayland,
-audio, and `default_platform`.
+UI/text, nearest-neighbor image, optional audio playback, and logging capabilities while continuing
+to exclude Wayland and `default_platform`.
 
 ## Intended Data Flow
 
@@ -72,6 +72,14 @@ effect. Its fixed-duration actor pulse is driven by Bevy presentation time only,
 observed non-empty cue batch, and uses the runtime replay digest to distinguish a later accepted
 batch even when its cue values are identical. It leaves core action time, sprite identity, visibility,
 assets, transforms, and diagnostic journal evidence untouched. Missing cue or pulse state is a no-op.
+
+The visible client may also consume the existing `PresentationAudioCues` and validated
+`PresentationAudioAssetManifest` through an optional desktop playback effect. It observes the replay
+digest plus ordered cue values, requests each existing `assets/`-rooted local reference once per
+distinct batch, and uses non-looping Bevy `AudioPlayer` entities. Root/crate-local references remain
+valid headless metadata but are safe unsupported-root fallbacks at this desktop boundary. Missing
+references or audio resources are safe recorded fallbacks; audio playback never changes core state,
+timing, event payloads, or replay evidence.
 
 The earlier headless presentation records below remain valid when the `desktop` feature is absent.
 The runnable showcase is an opt-in process wrapper around those projections: its ECS scene, HUD,
@@ -319,8 +327,9 @@ production assets or enabling render plugins. `PresentationRenderProjection` is 
 resource over the existing keyed mirrors: it carries complete typed values and per-kind roles,
 derives map-backed pixel positions from each mirror's own typed position when tile-size configuration
 is present, keeps inventory items unplaced, and preserves retained metadata when configuration is
-absent. It does not become another source of simulation truth. Actual windowing, rendering, asset
-loading, and playback remain deferred to later presentation slices.
+absent. It does not become another source of simulation truth. Actual windowing, rendering, and
+production texture loading remain deferred to later presentation slices; optional audio playback is
+implemented separately at the desktop effect boundary.
 
 The verified sprite-key slice derives a closed `SceneSpriteKey` from each complete
 `SceneRenderEntry` and exposes it through `PresentationSpriteProjection`. Terrain retains its typed

@@ -3037,6 +3037,49 @@ and single-item consumption preparations above. Tester-only transfer, drop, and 
 separately in their completed slices above; effects and richer player operations still require an
 explicit core contract.
 
+### Milestone 3 slice: optional desktop audio-cue playback
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Route the existing typed `PresentationAudioCues` and validated
+`PresentationAudioAssetManifest` through an optional desktop playback adapter. The adapter is a
+presentation effect only: it observes a runtime replay digest plus the ordered cue batch, loads local
+audio only when the validated reference exists, and otherwise preserves the current visible client
+with a recorded warning. The display-free smoke path and all core/protocol/MCP evidence remain
+unchanged.
+
+Acceptance:
+
+- Each distinct non-empty accepted cue batch is observed once in source order; unchanged token-and-
+  batch pairs do not retrigger, while distinct accepted batches with equal cue values do.
+- Existing `assets/`-rooted local audio references are loaded through Bevy's default audio asset path
+  and spawned as short, non-looping playback effects; root/crate-local references remain validated
+  headless metadata but are deterministic unsupported-root fallbacks at the desktop boundary.
+- Missing audio resources, asset-server resources, or desktop session resources do not panic or alter
+  runtime state; cue payloads, manifest validation, journal schema, and smoke output remain intact.
+- Focused tests cover batch identity, missing-resource safety, manifest path routing, and playback
+  request construction without requiring an audio device or committed production binary.
+
+Verification target:
+
+- Desktop-feature unit and boundary tests, `scripts/verify.sh`, `git diff --check`, display-free smoke,
+  and exactly one semantic reviewer PASS at final revision.
+
+Verification evidence:
+
+- Desktop-feature unit tests pass all sixteen tests, including audio batch identity, stale-manifest
+  loss/restoration, existing-file ordered playback requests, complete manifest/path routing, and
+  missing-resource safety; the audio manifest boundary tests pass all four.
+- Strict desktop Clippy, `scripts/verify.sh`, and display-free smoke pass with the Bevy audio feature;
+  the desktop adapter remains resource-guarded and no production audio binary is tracked.
+
+Out of scope:
+
+- Production audio selection/mastering, music, spatialization, volume controls, sound design, new
+  core events, new commands, simulation timing, or production art adoption.
+
 ## Future
 
 ### Remaining roadmap milestones
@@ -3050,9 +3093,9 @@ remaining renderer work in the proposal still defines these future product miles
 its own bounded acceptance slice
 before it can move into `Past`:
 
-- Milestone 3 — First Visible Dreadstep polish: production art adoption and audio
-  placeholders/playback remain around the verified showcase; field-of-view, tactical HUD, and
-  event-driven animation pulse slices are now verified.
+- Milestone 3 — First Visible Dreadstep polish: production art adoption remains around the verified
+  showcase; field-of-view, tactical HUD, event-driven animation pulse, and optional audio-cue
+  playback slices are now tracked separately.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
   verified single-item consumption and single-slot equipment preparations and tester item
   operations.

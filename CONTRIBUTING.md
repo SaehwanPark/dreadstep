@@ -24,7 +24,8 @@ Rustfmt and Clippy automatically.
 
 - Apple Silicon macOS: install Xcode command-line tools with `xcode-select --install`.
 - Linux or WSL2: core/headless checks need no Bevy desktop packages; the full showcase gate uses
-  the reviewed X11/XWayland feature path.
+  the reviewed X11/XWayland feature path and requires `pkg-config` plus the ALSA development
+  package (for example, `sudo apt-get install pkg-config libasound2-dev`).
 - Windows: use a Rustup installation with the MSVC host toolchain and Windows build tools.
 
 Verify the repository:
