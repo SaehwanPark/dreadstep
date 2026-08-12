@@ -417,3 +417,18 @@ constructor cannot silently alter the default client path or lose owner/order da
   protocol/MCP/Bevy/desktop boundaries.
 - Prevention: Test chase reuse, one-shot consumption, lethal ordering, standard timing, and atomic
   blocked movement before adding hidden traps, disarming, rearming, or trap archetypes.
+
+## Keep breakable terrain separate from generic interaction
+
+- Context: The next Living Dungeon preparation slice adds one deterministic destructible tile without
+  introducing tool stats, durability, or a generalized interaction framework.
+- Symptom: Letting an adapter flip a breakable tile directly, or routing it through an underspecified
+  `Interact`, would hide action timing and make replay/event evidence ambiguous.
+- Cause: Breaking is a distinct scheduled intent with a narrower target contract than door opening;
+  terrain mutation still belongs to the core transition boundary.
+- Resolution: Keep `Tile::Breakable` blocking and sight-blocking, add a dedicated adjacent `Break`
+  command, validate every target before mutation, emit `BreakableBroken`, and map the command/event/
+  error exhaustively at each boundary. Fixture-only placement remains outside replay history.
+- Prevention: Test movement/sight blocking, legal-action ordering, standard timing, replay/state
+  participation, and atomic same-position/non-adjacent/out-of-bounds/non-breakable/already-broken
+  rejection before adding damage, tools, multi-hit durability, procedural placement, or noise.

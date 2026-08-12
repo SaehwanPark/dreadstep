@@ -335,6 +335,8 @@ pub enum Tile {
   Wall,
   /// A closed door that blocks movement until an adjacent actor opens it.
   Door,
+  /// A blocking terrain cell that an adjacent actor may break into floor.
+  Breakable,
   /// A walkable floor trap that triggers once when an actor enters it.
   Trap,
 }
@@ -349,7 +351,10 @@ impl Tile {
   /// Returns whether this tile blocks a ranged line of sight.
   #[must_use]
   pub const fn blocks_ranged_line_of_sight(self) -> bool {
-    matches!(self, Self::Cover | Self::Wall | Self::Door)
+    matches!(
+      self,
+      Self::Cover | Self::Wall | Self::Door | Self::Breakable
+    )
   }
 }
 
@@ -930,6 +935,13 @@ pub enum Command {
     /// The adjacent closed door to open.
     position: Position,
   },
+  /// Break one adjacent breakable terrain cell into floor.
+  Break {
+    /// The actor issuing the break command.
+    actor: ActorId,
+    /// The adjacent breakable terrain to destroy.
+    position: Position,
+  },
   /// Make a fixed basic melee attack against an actor within melee reach.
   Attack {
     /// The actor issuing the attack.
@@ -997,6 +1009,7 @@ impl Command {
       Self::Move { actor, .. }
       | Self::Wait { actor }
       | Self::Interact { actor, .. }
+      | Self::Break { actor, .. }
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
       | Self::Chase { actor, .. }
@@ -1074,6 +1087,12 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
     }
     Command::Interact { actor, position } => {
       hasher.write_u8(12);
+      hasher.write_u32(actor.value());
+      hasher.write_i32(position.x());
+      hasher.write_i32(position.y());
+    }
+    Command::Break { actor, position } => {
+      hasher.write_u8(13);
       hasher.write_u32(actor.value());
       hasher.write_i32(position.x());
       hasher.write_i32(position.y());
@@ -1191,6 +1210,13 @@ pub enum Event {
     /// The actor that opened the door.
     actor: ActorId,
     /// The door position that changed to floor.
+    position: Position,
+  },
+  /// An actor broke one adjacent breakable terrain cell into floor.
+  BreakableBroken {
+    /// The actor that broke the terrain.
+    actor: ActorId,
+    /// The terrain position that changed to floor.
     position: Position,
   },
   /// An actor entered a one-shot floor trap and took fixed damage.
@@ -1486,6 +1512,13 @@ pub enum CommandError {
     /// The requested interaction position.
     position: Position,
   },
+  /// A break command did not target an adjacent breakable terrain cell.
+  BreakTargetInvalid {
+    /// The actor issuing the break command.
+    actor: ActorId,
+    /// The requested terrain position.
+    position: Position,
+  },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is outside the attacker's melee reach.
@@ -1608,6 +1641,13 @@ impl fmt::Display for CommandError {
       Self::InteractTargetInvalid { actor, position } => write!(
         formatter,
         "actor {} cannot interact with ({}, {}): target is not an adjacent closed door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::BreakTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot break ({}, {}): target is not an adjacent breakable tile",
         actor.value(),
         position.x(),
         position.y()
@@ -2252,7 +2292,8 @@ impl WorldState {
         Tile::Cover => 2,
         Tile::Wall => 3,
         Tile::Door => 4,
-        Tile::Trap => 5,
+        Tile::Breakable => 5,
+        Tile::Trap => 6,
       });
     }
     hasher.write_u64(self.current_time.value());
@@ -2364,6 +2405,12 @@ impl WorldState {
       let position = actor.position().translated(direction);
       if self.map.tile_at(position) == Some(Tile::Door) {
         commands.push(Command::Interact {
+          actor: actor_id,
+          position,
+        });
+      }
+      if self.map.tile_at(position) == Some(Tile::Breakable) {
+        commands.push(Command::Break {
           actor: actor_id,
           position,
         });
@@ -2507,6 +2554,7 @@ impl WorldState {
         at: self.current_time,
       }],
       Command::Interact { position, .. } => vec![self.interact(actor_id, position)?],
+      Command::Break { position, .. } => vec![self.break_terrain(actor_id, position)?],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
       Command::Chase { target, .. } => {
@@ -2844,6 +2892,40 @@ impl WorldState {
         position,
       })?;
     Ok(Event::DoorOpened {
+      actor: actor_id,
+      position,
+    })
+  }
+
+  fn break_terrain(
+    &mut self,
+    actor_id: ActorId,
+    position: Position,
+  ) -> Result<Event, CommandError> {
+    let actor_position = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let adjacent = actor_position
+      .x()
+      .abs_diff(position.x())
+      .checked_add(actor_position.y().abs_diff(position.y()))
+      == Some(1);
+    if !adjacent || self.map.tile_at(position) != Some(Tile::Breakable) {
+      return Err(CommandError::BreakTargetInvalid {
+        actor: actor_id,
+        position,
+      });
+    }
+    self
+      .map
+      .set_tile(position, Tile::Floor)
+      .ok_or(CommandError::BreakTargetInvalid {
+        actor: actor_id,
+        position,
+      })?;
+    Ok(Event::BreakableBroken {
       actor: actor_id,
       position,
     })

@@ -142,7 +142,7 @@ The versioned `WorldSnapshot` also projects core's deterministic `RunOutcome` (`
 `defeat`, or `victory`). Core derives this value from retained actor records, with player defeat
 precedence and no-enemy worlds remaining in progress; protocol and MCP only translate the result.
 
-Protocol v16 projects the fixed four-item inventory capacity on each actor snapshot and carries the
+Protocol v17 projects the fixed four-item inventory capacity on each actor snapshot and carries the
 optional healing or ammunition result on `ItemConsumed`. Core enforces the limit for tester ownership/pickup/
 transfer and scheduled player pickup; adapters only translate the typed rejection, legal-action
 omission, and effect evidence, so stacking, upgrades, and richer item rules do not become hidden
@@ -159,6 +159,13 @@ line of sight. A successful `Move` or enemy `Chase` entering the tile consumes i
 points. The protocol, MCP, headless, and Bevy/desktop layers translate that ordered evidence; smoke
 fixtures may place traps without entering replay history, while discovery, disarming, and rearming
 remain outside this slice.
+
+Breakable terrain is core-owned terrain state: `Tile::Breakable` is non-walkable and blocks ranged
+line of sight until the scheduled actor issues an adjacent `Break`, which changes that one tile to
+`Floor` and emits `BreakableBroken`. This is a dedicated transition rather than a generalized
+interaction engine. Protocol, MCP, headless, and Bevy/desktop layers only translate the typed
+command, event, error, and journal values; fixture-only tile setup never enters replay history, and
+damage/tool stats, durability, procedural placement, and noise propagation remain outside this slice.
 
 The player `inspect` operation is likewise a read-only lookup over the protocol world snapshot.
 It returns one protocol `ActorSnapshot` or no value for an unknown identity, preserves dead actor

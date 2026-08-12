@@ -534,6 +534,13 @@ pub enum PresentationMessage {
     /// The opened door position.
     position: Position,
   },
+  /// An actor broke one adjacent breakable terrain cell into floor.
+  BreakableBroken {
+    /// The actor that broke the terrain.
+    actor: ActorId,
+    /// The terrain position that changed to floor.
+    position: Position,
+  },
   /// An actor entered a one-shot floor trap and took fixed damage.
   TrapTriggered {
     /// The actor that entered the trap.
@@ -626,6 +633,7 @@ impl PresentationMessage {
       },
       Event::Waited { actor, at } => Self::Waited { actor, at },
       Event::DoorOpened { actor, position } => Self::DoorOpened { actor, position },
+      Event::BreakableBroken { actor, position } => Self::BreakableBroken { actor, position },
       Event::TrapTriggered {
         actor,
         position,
@@ -680,6 +688,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::MovementBlocked { .. } => "movement_blocked",
     Event::Waited { .. } => "waited",
     Event::DoorOpened { .. } => "door_opened",
+    Event::BreakableBroken { .. } => "breakable_broken",
     Event::TrapTriggered { .. } => "trap_triggered",
     Event::Attacked { .. } => "attacked",
     Event::Died { .. } => "died",
@@ -793,6 +802,7 @@ impl PresentationAudioCue {
       Event::ItemDropped { .. }
       | Event::Reloaded { .. }
       | Event::DoorOpened { .. }
+      | Event::BreakableBroken { .. }
       | Event::TrapTriggered { .. } => None,
     }
   }
@@ -1098,6 +1108,7 @@ impl PresentationAnimationCue {
       Event::DoorOpened { .. }
       | Event::ItemDropped { .. }
       | Event::Reloaded { .. }
+      | Event::BreakableBroken { .. }
       | Event::TrapTriggered { .. } => None,
     }
   }
@@ -2505,6 +2516,29 @@ impl PresentationRuntime {
     Ok(())
   }
 
+  /// Places one breakable terrain cell for the display-free desktop smoke fixture.
+  ///
+  /// This setup-only mutation does not enter replay evidence; the smoke path then exercises the
+  /// normal scheduled [`Command::Break`] transition through the same runtime as the visible client.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_breakable(
+    &mut self,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self
+      .state
+      .world
+      .set_tile(position, Tile::Breakable)
+      .is_none()
+    {
+      return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
+        actor: ActorId::new(1),
+        position,
+      });
+    }
+    Ok(())
+  }
+
   /// Places one floor trap for the display-free desktop smoke fixture.
   ///
   /// This setup-only mutation does not enter replay evidence; the smoke path then exercises the
@@ -2728,7 +2762,7 @@ fn visible_positions(
     ] {
       let neighbor = position.translated(direction);
       match snapshot_tile(snapshot, neighbor) {
-        Some(Tile::Wall | Tile::Door) => {
+        Some(Tile::Wall | Tile::Door | Tile::Breakable) => {
           visible.insert((neighbor.x(), neighbor.y()));
         }
         Some(Tile::Floor | Tile::Cover | Tile::Trap)
@@ -3691,6 +3725,7 @@ fn command_actor(command: Command) -> ActorId {
     Command::Move { actor, .. }
     | Command::Wait { actor }
     | Command::Interact { actor, .. }
+    | Command::Break { actor, .. }
     | Command::Attack { actor, .. }
     | Command::RangedAttack { actor, .. }
     | Command::Chase { actor, .. }

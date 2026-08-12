@@ -23,7 +23,7 @@ Milestone 4 tactical combat and Milestone 5 environmental state.
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
 ammunition, walkable cover, deterministic scheduled-enemy intent presentation, typed melee reach,
 player-facing reload, item pickup/drop, healing and ammunition consumables, deterministic adjacent
-door interaction, one-shot floor traps, and canonical run-outcome projection are verified across
+door interaction, one-shot floor traps, deterministic breakable terrain, and canonical run-outcome projection are verified across
 the deterministic core, protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
 three-shot capacity with `R` when ammo is partial; `I` opens a legal adjacent closed door; `X` drops the selected unequipped item and
 `Shift+R` restarts the same seed. Adjacent scheduled enemies use the existing fixed melee attack
@@ -48,17 +48,21 @@ the artifact is not a playback-compatible save file.
     events/errors, protocol/MCP replay evidence, and desktop `P`/`X` smoke coverage; damage/status
     effects, modifiers, and richer item semantics remain deferred.
   - Deterministic adjacent closed-door interaction with typed `Door`, `Interact`, and `DoorOpened`
-    values, atomic rejection, protocol v16/MCP/headless/Bevy mappings, desktop `I` control, and
+    values, atomic rejection, protocol v17/MCP/headless/Bevy mappings, desktop `I` control, and
     display-free smoke/journal coverage; lock/key systems, closing doors, and procedural floors
     remain deferred.
   - Deterministic one-shot floor traps with walkable/non-blocking `Trap` terrain, shared `Move`/
     `Chase` trigger semantics, ordered `Moved`/`TrapTriggered`/`Died` evidence, atomic state
-    mutation, protocol v16/MCP/Bevy mappings, and smoke/journal coverage; discovery, disarming,
+    mutation, protocol v17/MCP/Bevy mappings, and smoke/journal coverage; discovery, disarming,
     rearming, archetypes, and procedural placement remain deferred.
+  - Deterministic adjacent breakable terrain with blocking `Breakable` tiles, scheduled `Break`,
+    typed `BreakableBroken` evidence, atomic rejection, protocol v17/MCP/headless/Bevy mappings,
+    desktop `B` control, and smoke/journal coverage; damage/tool stats, durability, procedural
+    placement, and noise propagation remain deferred.
   - Deterministic desktop replay-evidence export with seed, accepted command order, replay digest,
     and canonical outcome; persistence, editing, and playback remain deferred.
   - Fixed four-item inventory capacity with atomic full-inventory rejection across core, protocol
-    v16 snapshots, MCP, headless command coverage, and Bevy legal-action projections; richer effects and
+    v17 snapshots, MCP, headless command coverage, and Bevy legal-action projections; richer effects and
     upgrades remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,

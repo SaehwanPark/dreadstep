@@ -42,6 +42,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       actor: CoreActorId::new(1),
       position: CorePosition::new(1, 0),
     },
+    CoreEvent::BreakableBroken {
+      actor: CoreActorId::new(1),
+      position: CorePosition::new(1, 0),
+    },
     CoreEvent::TrapTriggered {
       actor: CoreActorId::new(1),
       position: CorePosition::new(2, 0),
@@ -103,6 +107,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
         at: ActionTime::new(3),
       },
       Event::DoorOpened {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
+      },
+      Event::BreakableBroken {
         actor: ActorId::new(1),
         position: Position::new(1, 0),
       },
