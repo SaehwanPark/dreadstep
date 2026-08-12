@@ -186,6 +186,7 @@ impl Session {
         ProtocolTile::Cover => Tile::Cover,
         ProtocolTile::Wall => Tile::Wall,
         ProtocolTile::Door => Tile::Door,
+        ProtocolTile::Breakable => Tile::Breakable,
         ProtocolTile::Trap => Tile::Trap,
       })
       .collect();

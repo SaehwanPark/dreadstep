@@ -19,7 +19,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 16;
+pub const PROTOCOL_VERSION: u16 = 17;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -56,6 +56,13 @@ pub enum CommandRequest {
     /// The actor issuing the request.
     actor: ActorId,
     /// The adjacent closed door to open.
+    position: Position,
+  },
+  /// Break one adjacent breakable terrain cell into floor.
+  Break {
+    /// The actor issuing the break command.
+    actor: ActorId,
+    /// The adjacent breakable terrain to destroy.
     position: Position,
   },
   /// Attack an adjacent actor.
@@ -138,6 +145,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         position: dreadstep_core::Position::new(position.x(), position.y()),
       },
+      CommandRequest::Break { actor, position } => Self::Break {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        position: dreadstep_core::Position::new(position.x(), position.y()),
+      },
       CommandRequest::Attack { actor, target } => Self::Attack {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
@@ -192,6 +203,10 @@ impl From<CoreCommand> for CommandRequest {
         actor: ActorId::new(actor.value()),
       },
       CoreCommand::Interact { actor, position } => Self::Interact {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreCommand::Break { actor, position } => Self::Break {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
@@ -515,6 +530,8 @@ pub enum Tile {
   Wall,
   /// A closed door that blocks movement until opened.
   Door,
+  /// A blocking terrain cell that an adjacent actor may break into floor.
+  Breakable,
   /// A walkable floor trap that triggers once when entered.
   Trap,
 }
@@ -1163,6 +1180,13 @@ pub enum Event {
     /// The door position that changed to floor.
     position: Position,
   },
+  /// An actor broke one adjacent breakable terrain cell into floor.
+  BreakableBroken {
+    /// The actor that broke the terrain.
+    actor: ActorId,
+    /// The terrain position that changed to floor.
+    position: Position,
+  },
   /// An actor entered a one-shot floor trap and took fixed damage.
   TrapTriggered {
     /// The actor that entered the trap.
@@ -1274,6 +1298,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
+      CoreEvent::BreakableBroken { actor, position } => Self::BreakableBroken {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
       CoreEvent::TrapTriggered {
         actor,
         position,
@@ -1372,6 +1400,13 @@ pub enum CommandError {
     /// The requested interaction position.
     position: Position,
   },
+  /// The requested target is not an adjacent breakable terrain cell.
+  BreakTargetInvalid {
+    /// The actor issuing the break command.
+    actor: ActorId,
+    /// The requested interaction position.
+    position: Position,
+  },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is not adjacent.
@@ -1466,6 +1501,10 @@ impl From<CoreCommandError> for CommandError {
         Self::ReloadRequiresPlayer(ActorId::new(actor.value()))
       }
       CoreCommandError::InteractTargetInvalid { actor, position } => Self::InteractTargetInvalid {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreCommandError::BreakTargetInvalid { actor, position } => Self::BreakTargetInvalid {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
@@ -1581,6 +1620,13 @@ impl fmt::Display for CommandError {
       Self::InteractTargetInvalid { actor, position } => write!(
         formatter,
         "actor {} cannot interact with ({}, {}): target is not an adjacent closed door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::BreakTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot break ({}, {}): target is not an adjacent breakable tile",
         actor.value(),
         position.x(),
         position.y()

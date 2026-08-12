@@ -229,6 +229,38 @@ fn trap_trigger_preserves_movement_damage_and_consumption_order() {
 }
 
 #[test]
+fn breakable_terrain_maps_to_a_typed_message() {
+  let runtime = custom_runtime(
+    2,
+    vec![Tile::Floor, Tile::Breakable],
+    vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )],
+  );
+  let mut app = message_app(runtime, ActorId::new(1));
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Break {
+      actor: ActorId::new(1),
+      position: Position::new(1, 0),
+    })
+    .expect("breakable terrain should break");
+  app.update();
+
+  assert_eq!(
+    messages(&app),
+    vec![PresentationMessage::BreakableBroken {
+      actor: ActorId::new(1),
+      position: Position::new(1, 0),
+    }]
+  );
+}
+
+#[test]
 fn rejected_command_clears_stale_messages_without_mutating_core() {
   let mut app = message_app(
     PresentationRuntime::start_run(7).expect("content should validate"),

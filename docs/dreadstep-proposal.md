@@ -1885,6 +1885,11 @@ AI agents demonstrate more than one viable encounter strategy.
 
 Establish the NetHack-inspired systemic identity.
 
+Repository status note: the deterministic preparation slices for doors, one-shot traps, and adjacent
+breakable terrain are verified in the core simulation and its protocol, MCP, headless, and Bevy
+boundaries. Procedural generation, damage/tool interactions, and noise propagation remain future
+Milestone 5 work.
+
 ### Introduce a deliberately small interaction set
 
 For example:

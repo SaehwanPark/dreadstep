@@ -71,10 +71,11 @@ const HEALTH_BAR_WIDTH: usize = 10;
 const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 12] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 13] = [
   "move",
   "wait",
   "interact",
+  "break",
   "attack",
   "ranged_attack",
   "chase",
@@ -87,11 +88,12 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 12] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 13] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 14] = [
   "moved",
   "movement_blocked",
   "waited",
   "door_opened",
+  "breakable_broken",
   "trap_triggered",
   "attacked",
   "died",
@@ -953,6 +955,7 @@ fn desktop_style_sprites(
       crate::SceneSpriteKey::Terrain(Tile::Cover) => Color::srgb(0.36, 0.25, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::Wall) => Color::srgb(0.04, 0.06, 0.08),
       crate::SceneSpriteKey::Terrain(Tile::Door) => Color::srgb(0.48, 0.25, 0.08),
+      crate::SceneSpriteKey::Terrain(Tile::Breakable) => Color::srgb(0.36, 0.22, 0.08),
       crate::SceneSpriteKey::Terrain(Tile::Trap) => Color::srgb(0.58, 0.1, 0.12),
       crate::SceneSpriteKey::Player => Color::srgb(0.1, 0.85, 0.35),
       crate::SceneSpriteKey::Enemy => Color::srgb(0.9, 0.2, 0.22),
@@ -1289,6 +1292,10 @@ fn command_for_key(
       .iter()
       .copied()
       .find(|command| matches!(command, Command::Interact { actor: PLAYER, .. })),
+    KeyCode::KeyB => legal
+      .iter()
+      .copied()
+      .find(|command| matches!(command, Command::Break { actor: PLAYER, .. })),
     other => crate::KeyboardIntent::from_key(other).map(|intent| intent.command(PLAYER)),
   }?;
   legal.into_iter().find(|command| *command == candidate)
@@ -1530,6 +1537,24 @@ fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCo
     Command::RangedAttack {
       actor: PLAYER,
       target: RANGED_TARGET,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_breakable(Position::new(2, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "breakable_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Break {
+      actor: PLAYER,
+      position: Position::new(2, 1),
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
@@ -1870,6 +1895,7 @@ fn tile_name(tile: Tile) -> &'static str {
     Tile::Cover => "cover",
     Tile::Wall => "wall",
     Tile::Door => "door",
+    Tile::Breakable => "breakable",
     Tile::Trap => "trap",
   }
 }
@@ -1905,6 +1931,7 @@ fn command_name(command: Command) -> &'static str {
     Command::Move { .. } => "move",
     Command::Wait { .. } => "wait",
     Command::Interact { .. } => "interact",
+    Command::Break { .. } => "break",
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
     Command::Chase { .. } => "chase",
@@ -1925,6 +1952,11 @@ fn command_value(command: Command) -> Value {
     Command::Wait { actor } => json!({ "kind": "wait", "actor": actor.value() }),
     Command::Interact { actor, position } => json!({
       "kind": "interact",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
+    Command::Break { actor, position } => json!({
+      "kind": "break",
       "actor": actor.value(),
       "position": position_value(position),
     }),
@@ -1985,6 +2017,11 @@ fn event_value(event: Event) -> Value {
     }
     Event::DoorOpened { actor, position } => json!({
       "kind": "door_opened",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
+    Event::BreakableBroken { actor, position } => json!({
+      "kind": "breakable_broken",
       "actor": actor.value(),
       "position": position_value(position),
     }),
@@ -2069,6 +2106,12 @@ fn event_message(event: Event) -> String {
     Event::Waited { actor, at } => format!("Actor {} waited at t{}.", actor.value(), at.value()),
     Event::DoorOpened { actor, position } => format!(
       "Actor {} opened the door at ({}, {}).",
+      actor.value(),
+      position.x(),
+      position.y()
+    ),
+    Event::BreakableBroken { actor, position } => format!(
+      "Actor {} broke terrain at ({}, {}).",
       actor.value(),
       position.x(),
       position.y()
@@ -2492,6 +2535,31 @@ mod tests {
     assert_eq!(
       command_for_key(KeyCode::KeyI, &runtime, &session),
       Some(Command::Interact {
+        actor: PLAYER,
+        position: Position::new(1, 0),
+      })
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn break_key_selects_the_adjacent_legal_breakable_terrain() {
+    let directory = test_directory("break-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::from_tiles(3, 1, vec![Tile::Floor, Tile::Breakable, Tile::Floor])
+        .expect("test map should be valid"),
+      vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+    )
+    .expect("test world should be valid");
+    let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let session = DesktopSession::new(7, journal);
+    assert_eq!(
+      command_for_key(KeyCode::KeyB, &runtime, &session),
+      Some(Command::Break {
         actor: PLAYER,
         position: Position::new(1, 0),
       })

@@ -262,6 +262,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
     }),
+    ["break", actor, x, y] => Ok(Command::Break {
+      actor: parse_actor(Some(actor))?,
+      position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
+    }),
     ["attack", actor, target] => Ok(Command::Attack {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
@@ -464,6 +468,25 @@ mod tests {
     assert_eq!(
       input.commands(),
       &[Command::Interact {
+        actor: ActorId::new(1),
+        position: Position::new(2, -3),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_break_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "break:1:2:-3".to_owned(),
+    ])
+    .expect("break command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Break {
         actor: ActorId::new(1),
         position: Position::new(2, -3),
       }]

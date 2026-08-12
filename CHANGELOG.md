@@ -6,21 +6,28 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Verified deterministic adjacent breakable terrain: blocking `Breakable` tiles stop movement and
+  ranged sight until a scheduled `Break` changes one adjacent tile to `Floor` and emits typed
+  `BreakableBroken` evidence with standard action cost and atomic rejection. Protocol v17, MCP,
+  headless, Bevy/desktop mappings, `B` control, and display-free smoke/journal coverage are
+  synchronized; damage/tool stats, durability, procedural placement, and noise propagation remain
+  deferred.
+
 - Verified deterministic one-shot floor traps: walkable `Trap` terrain is consumed when a scheduled
   `Move` or enemy `Chase` enters it, emitting ordered `Moved`, `TrapTriggered`, and lethal `Died`
-  evidence with fixed one-point damage. Protocol v16, MCP, Bevy/desktop mappings, and display-free
+  evidence with fixed one-point damage. Protocol v17, MCP, Bevy/desktop mappings, and display-free
   smoke/journal coverage are synchronized; discovery, disarming, rearming, and procedural placement
   remain deferred.
 
 - Verified deterministic adjacent door interaction: closed `Door` terrain blocks movement and ranged
   sight until a scheduled `Interact` opens it with standard action cost and typed `DoorOpened`
-  evidence. Protocol v16, MCP tester scenarios, headless parsing, Bevy/desktop `I` control, and
+  evidence. Protocol v17, MCP tester scenarios, headless parsing, Bevy/desktop `I` control, and
   display-free smoke/journal coverage are synchronized; lock/key, closing, and procedural floors
   remain deferred.
 
 - Verified deterministic item effects now include authored item `101` as a three-point healing
   consumable and item `102` as a two-round ammunition consumable. Core caps both results at actor
-  limits and reports mutually exclusive optional evidence in `ItemConsumed`; protocol v16, MCP,
+  limits and reports mutually exclusive optional evidence in `ItemConsumed`; protocol v17, MCP,
   Bevy, desktop journal, and smoke evidence preserve the same result while richer item effects
   remain deferred.
 
