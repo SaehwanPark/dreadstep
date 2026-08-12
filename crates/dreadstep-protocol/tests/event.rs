@@ -54,6 +54,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       actor: CoreActorId::new(1),
       item: CoreItemId::new(6),
     },
+    CoreEvent::ItemPickedUp {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(7),
+    },
   ];
 
   let projected: Vec<Event> = events.into_iter().map(Event::from).collect();
@@ -101,6 +105,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       Event::ItemConsumed {
         actor: ActorId::new(1),
         item: ItemId::new(6),
+      },
+      Event::ItemPickedUp {
+        actor: ActorId::new(1),
+        item: ItemId::new(7),
       },
     ]
   );

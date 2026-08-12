@@ -1958,6 +1958,12 @@ unequipped opaque item instance, removing it with a typed event, standard action
 and replay/snapshot evidence. This does not select or implement item effects, stat changes,
 capacity, identification, or inventory UX; those remain part of the future equipment loop.
 
+The following bounded preparation slice is also verified: one scheduled actor may pick up one item
+from its current ordered ground stack through `Pickup`. The transition preserves item identity and
+order, advances one standard action, emits `ItemPickedUp`, and records replay/snapshot evidence;
+protocol/MCP and the desktop showcase expose the same contract. Effects, capacity, drop commands,
+enemy pickup, and richer inventory UX remain future work.
+
 ### Implement
 
 - equipment;

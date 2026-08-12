@@ -27,7 +27,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     item-free.
   - Scheduled single-slot equipment and single-item consumption contracts with digest/replay/
     snapshot evidence, protocol/MCP projections, atomic tester/player guards, and typed Bevy scene
-    and cue projections; effects, modifiers, capacity, and richer item semantics remain deferred.
+    and cue projections.
+  - Scheduled player-facing item pickup with deterministic ground-stack ordering, typed events and
+    errors, protocol/MCP replay evidence, and desktop `P`/smoke coverage; effects, modifiers,
+    capacity, drop commands, and richer item semantics remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,
     focus, scene focus, camera, viewport, tile/actor/ground/inventory mirrors, typed HUD status,

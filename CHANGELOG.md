@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A scheduled player-facing `Pickup` command that preserves deterministic ground-stack and inventory
+  order, emits typed protocol/MCP evidence, and binds the desktop `P` control plus display-free smoke
+  coverage; effects, capacity, and the drop command remain deferred.
 - A bounded desktop animation pulse driven by new typed event-cue batches, with no movement
   interpolation, production media, audio playback, or simulation timing changes.
 - An optional desktop audio-cue adapter that routes distinct typed batches through the validated

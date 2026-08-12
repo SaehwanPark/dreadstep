@@ -62,18 +62,19 @@ use crate::{
 const PLAYER: ActorId = ActorId::new(1);
 const ATTACK_TARGET: ActorId = ActorId::new(2);
 const EQUIP_ITEM: ItemId = ItemId::new(101);
+const PICKUP_ITEM: ItemId = ItemId::new(102);
 const SMOKE_ENEMY_ATTACK_LIMIT: usize = 32;
 const ENEMY_DELAY: Duration = Duration::from_millis(150);
 const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 const HEALTH_BAR_WIDTH: usize = 10;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 7] = [
-  "move", "wait", "attack", "chase", "equip", "unequip", "use_item",
+pub const SHOWCASE_COMMAND_KINDS: [&str; 8] = [
+  "move", "wait", "attack", "chase", "equip", "unequip", "use_item", "pickup",
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 8] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 9] = [
   "moved",
   "movement_blocked",
   "waited",
@@ -82,6 +83,7 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 8] = [
   "item_equipped",
   "item_unequipped",
   "item_consumed",
+  "item_picked_up",
 ];
 
 const USAGE: &str = "Usage: dreadstep [--seed <u64>] [--log-dir <path>] [--smoke] [--help]";
@@ -1073,6 +1075,7 @@ fn desktop_input(
     KeyCode::KeyE,
     KeyCode::KeyQ,
     KeyCode::KeyU,
+    KeyCode::KeyP,
     KeyCode::ArrowUp,
     KeyCode::ArrowDown,
     KeyCode::ArrowLeft,
@@ -1167,6 +1170,14 @@ fn command_for_key(
       actor: PLAYER,
       item,
     }),
+    KeyCode::KeyP => legal
+      .iter()
+      .filter_map(|command| match command {
+        Command::Pickup { item, .. } => Some((*item, *command)),
+        _ => None,
+      })
+      .min_by_key(|(item, _)| *item)
+      .map(|(_, command)| command),
     other => crate::KeyboardIntent::from_key(other).map(|intent| intent.command(PLAYER)),
   }?;
   legal.into_iter().find(|command| *command == candidate)
@@ -1391,6 +1402,24 @@ fn run_visible(
 fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCode {
   let mut session = DesktopSession::new(runtime.seed(), journal.clone());
   let mut failed = false;
+  if let Err(error) = runtime.prepare_smoke_pickup(PLAYER, PICKUP_ITEM) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "pickup_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Pickup {
+      actor: PLAYER,
+      item: PICKUP_ITEM,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
   failed |= !submit_command(
     &mut runtime,
     &mut session,
@@ -1696,6 +1725,7 @@ fn command_name(command: Command) -> &'static str {
     Command::Equip { .. } => "equip",
     Command::Unequip { .. } => "unequip",
     Command::UseItem { .. } => "use_item",
+    Command::Pickup { .. } => "pickup",
   }
 }
 
@@ -1717,6 +1747,9 @@ fn command_value(command: Command) -> Value {
     Command::Unequip { actor } => json!({ "kind": "unequip", "actor": actor.value() }),
     Command::UseItem { actor, item } => {
       json!({ "kind": "use_item", "actor": actor.value(), "item": item.value() })
+    }
+    Command::Pickup { actor, item } => {
+      json!({ "kind": "pickup", "actor": actor.value(), "item": item.value() })
     }
   }
 }
@@ -1772,6 +1805,9 @@ fn event_value(event: Event) -> Value {
     Event::ItemConsumed { actor, item } => {
       json!({ "kind": "item_consumed", "actor": actor.value(), "item": item.value() })
     }
+    Event::ItemPickedUp { actor, item } => {
+      json!({ "kind": "item_picked_up", "actor": actor.value(), "item": item.value() })
+    }
   }
 }
 
@@ -1811,6 +1847,9 @@ fn event_message(event: Event) -> String {
     }
     Event::ItemConsumed { actor, item } => {
       format!("Actor {} consumed item {}.", actor.value(), item.value())
+    }
+    Event::ItemPickedUp { actor, item } => {
+      format!("Actor {} picked up item {}.", actor.value(), item.value())
     }
   }
 }
@@ -1934,7 +1973,7 @@ fn desktop_update_hud(
       .collect::<Vec<_>>()
       .join("\n")
   };
-  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  Tab select  E equip\nQ unequip  U consume  R restart\nEsc/close quit";
+  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  Tab select  E equip  P pickup\nQ unequip  U consume  R restart\nEsc/close quit";
   let journal = format!(
     "{}\nseed {}",
     journal_path(&session.journal).display(),
@@ -2002,6 +2041,31 @@ mod tests {
     assert!(parse_options([OsString::from("--help"), OsString::from("--unknown")]).is_err());
     assert!(parse_options([OsString::from("--help"), OsString::from("--help")]).is_err());
     assert!(parse_options([OsString::from("--log-dir"), OsString::from("--smoke")]).is_err());
+  }
+
+  #[test]
+  fn pickup_key_selects_the_lowest_id_ground_item() {
+    let directory = test_directory("pickup-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut runtime = PresentationRuntime::start_item_run(7).expect("starter item run");
+    runtime
+      .prepare_smoke_pickup(PLAYER, EQUIP_ITEM)
+      .expect("first pickup fixture item drops");
+    runtime
+      .prepare_smoke_pickup(PLAYER, PICKUP_ITEM)
+      .expect("second pickup fixture item drops");
+    let session = DesktopSession::new(7, journal);
+    assert_eq!(
+      command_for_key(KeyCode::KeyP, &runtime, &session),
+      Some(Command::Pickup {
+        actor: PLAYER,
+        item: EQUIP_ITEM,
+      })
+    );
+    let _ = fs::remove_dir_all(directory);
   }
 
   #[test]

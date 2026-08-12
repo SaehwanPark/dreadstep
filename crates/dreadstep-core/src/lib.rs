@@ -655,6 +655,13 @@ pub enum Command {
     /// The owned item instance to consume.
     item: ItemId,
   },
+  /// Pick one item from the actor's current ground stack.
+  Pickup {
+    /// The actor issuing the command.
+    actor: ActorId,
+    /// The ground item instance to pick up.
+    item: ItemId,
+  },
 }
 
 impl Command {
@@ -666,7 +673,8 @@ impl Command {
       | Self::Chase { actor, .. }
       | Self::Equip { actor, .. }
       | Self::Unequip { actor }
-      | Self::UseItem { actor, .. } => actor,
+      | Self::UseItem { actor, .. }
+      | Self::Pickup { actor, .. } => actor,
     }
   }
 }
@@ -757,6 +765,11 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u32(actor.value());
       hasher.write_u32(item.value());
     }
+    Command::Pickup { actor, item } => {
+      hasher.write_u8(8);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(item.value());
+    }
   }
 }
 
@@ -843,6 +856,13 @@ pub enum Event {
     /// The actor whose inventory changed.
     actor: ActorId,
     /// The consumed item identity.
+    item: ItemId,
+  },
+  /// An actor picked one item from its current ground stack.
+  ItemPickedUp {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The picked-up item identity.
     item: ItemId,
   },
 }
@@ -1079,6 +1099,13 @@ pub enum CommandError {
     /// The equipped item identity.
     item: ItemId,
   },
+  /// The requested item is not in the actor's current ground stack.
+  ItemNotOnGround {
+    /// The actor whose current ground stack was searched.
+    actor: ActorId,
+    /// The missing ground item identity.
+    item: ItemId,
+  },
 }
 
 impl fmt::Display for CommandError {
@@ -1141,6 +1168,12 @@ impl fmt::Display for CommandError {
       Self::ItemEquipped { actor, item } => write!(
         formatter,
         "actor {} cannot consume equipped item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotOnGround { actor, item } => write!(
+        formatter,
+        "actor {} does not have item {} on the ground",
         actor.value(),
         item.value()
       ),
@@ -1750,6 +1783,18 @@ impl WorldState {
       },
       Command::Wait { actor: actor_id },
     ];
+    if let Some(stack) = self
+      .ground_items
+      .iter()
+      .find(|stack| stack.position() == actor.position())
+    {
+      for item in stack.items() {
+        commands.push(Command::Pickup {
+          actor: actor_id,
+          item: item.id(),
+        });
+      }
+    }
     for item in actor.inventory() {
       if actor.equipped_item() != Some(item.id()) {
         commands.push(Command::Equip {
@@ -1831,6 +1876,7 @@ impl WorldState {
       Command::Equip { item, .. } => self.equip_item(actor_id, item)?,
       Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
       Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],
+      Command::Pickup { item, .. } => vec![self.pickup_item_command(actor_id, item)?],
     };
     self
       .actors
@@ -1936,6 +1982,29 @@ impl WorldState {
       .inventory
       .remove(item_index);
     Ok(Event::ItemConsumed {
+      actor: actor_id,
+      item: item_id,
+    })
+  }
+
+  fn pickup_item_command(
+    &mut self,
+    actor_id: ActorId,
+    item_id: ItemId,
+  ) -> Result<Event, CommandError> {
+    self
+      .pickup_item(actor_id, item_id)
+      .map_err(|error| match error {
+        WorldError::UnknownActor(actor) => CommandError::UnknownActor(actor),
+        WorldError::ItemNotOnGround { actor, item } => {
+          CommandError::ItemNotOnGround { actor, item }
+        }
+        _ => CommandError::ItemNotOnGround {
+          actor: actor_id,
+          item: item_id,
+        },
+      })?;
+    Ok(Event::ItemPickedUp {
       actor: actor_id,
       item: item_id,
     })
@@ -2863,5 +2932,118 @@ mod tests {
         position: Position::new(0, 0),
       })
     );
+  }
+
+  #[test]
+  fn scheduled_pickup_preserves_ground_order_and_advances_action() {
+    let mut world = WorldState::new(
+      floor_map(1, 1),
+      vec![Actor::new(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+      )],
+    )
+    .expect("test world should be valid");
+    world
+      .give_item(
+        ActorId::new(1),
+        Item::new(ItemId::new(11), ItemDefinitionId::new(101)),
+      )
+      .expect("first item should be added");
+    world
+      .give_item(
+        ActorId::new(1),
+        Item::new(ItemId::new(12), ItemDefinitionId::new(102)),
+      )
+      .expect("second item should be added");
+    world
+      .drop_item(ActorId::new(1), ItemId::new(11))
+      .expect("first item should drop");
+    world
+      .drop_item(ActorId::new(1), ItemId::new(12))
+      .expect("second item should drop");
+
+    assert_eq!(
+      world.legal_commands(),
+      vec![
+        Command::Move {
+          actor: ActorId::new(1),
+          direction: Direction::North,
+        },
+        Command::Move {
+          actor: ActorId::new(1),
+          direction: Direction::South,
+        },
+        Command::Move {
+          actor: ActorId::new(1),
+          direction: Direction::West,
+        },
+        Command::Move {
+          actor: ActorId::new(1),
+          direction: Direction::East,
+        },
+        Command::Wait {
+          actor: ActorId::new(1),
+        },
+        Command::Pickup {
+          actor: ActorId::new(1),
+          item: ItemId::new(11),
+        },
+        Command::Pickup {
+          actor: ActorId::new(1),
+          item: ItemId::new(12),
+        },
+      ]
+    );
+    let before = world.digest();
+    let result = world
+      .execute(Command::Pickup {
+        actor: ActorId::new(1),
+        item: ItemId::new(11),
+      })
+      .expect("ground pickup should be accepted");
+    assert_eq!(
+      result.events(),
+      &[Event::ItemPickedUp {
+        actor: ActorId::new(1),
+        item: ItemId::new(11),
+      }]
+    );
+    assert_eq!(
+      world.actor(ActorId::new(1)).unwrap().ready_at(),
+      ActionTime::new(1)
+    );
+    assert_eq!(
+      world.actor(ActorId::new(1)).unwrap().inventory()[0].id(),
+      ItemId::new(11)
+    );
+    assert_eq!(world.ground_items()[0].items()[0].id(), ItemId::new(12));
+    assert_ne!(world.digest(), before);
+  }
+
+  #[test]
+  fn rejected_pickup_preserves_world_and_replay_evidence() {
+    let mut world = WorldState::new(
+      floor_map(1, 1),
+      vec![Actor::new(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+      )],
+    )
+    .expect("test world should be valid");
+    let before = world.clone();
+    assert_eq!(
+      world.execute(Command::Pickup {
+        actor: ActorId::new(1),
+        item: ItemId::new(99),
+      }),
+      Err(CommandError::ItemNotOnGround {
+        actor: ActorId::new(1),
+        item: ItemId::new(99),
+      })
+    );
+    assert_eq!(world, before);
   }
 }
