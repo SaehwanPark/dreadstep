@@ -3421,6 +3421,43 @@ Out of scope:
 - New damage or status rules, enemy ranged AI, enemy-specific weapons, pursuit policy changes beyond
   adjacent attack preference, death/victory terminal UI, new command/event/error variants, and media.
 
+### Milestone 7 preparation slice: desktop player-defeat terminal
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Record a player death as a terminal outcome in the desktop showcase when the existing core `Died`
+event names actor 1. The visible HUD and diagnostic journal expose a compact defeat status, input
+commands stop while defeated, and `Shift+R` remains available to restart the same seed. Core,
+protocol, MCP, replay, command, damage, and event semantics remain unchanged; this is a presentation
+boundary preparation for the proposal's vertical-slice death milestone.
+
+Verification target:
+
+- Bevy marks a run `Defeat` exactly once after an accepted player-killing command, records
+  `terminal_defeat`, and renders the terminal status without mutating runtime truth.
+- Escape and restart remain safe from the defeated state; ordinary commands are not dispatched
+  after defeat, while victory behavior remains unchanged.
+- Desktop unit/boundary tests, display-free smoke determinism, `scripts/verify.sh`, formatting,
+  `git diff --check`, and one semantic reviewer report PASS.
+
+Verification evidence:
+
+- The focused desktop transition test passes 1/1: an accepted enemy attack that kills actor 1 sets
+  `Defeat`, records exactly one `terminal_defeat`, and rejects later normal command submission.
+- Full Bevy desktop tests pass 27/27; desktop boundary/smoke remains green, and focused defeat
+  tests prove normal command blocking plus safe Escape, window-close, and same-seed restart paths.
+  Existing input handling preserves safe close and
+  restart behavior from the defeated state. `scripts/verify.sh` passes repository checks, strict clippy, all targets,
+  warning-denied docs, and display-free smoke.
+- No core/protocol/replay changes or new command/event/error/media family was introduced.
+
+Out of scope:
+
+- Canonical core victory/loss state, save/load, death animation/audio, respawn, score, menus,
+  player-death loops, new protocol fields, and human-facing balance changes.
+
 ### Milestone 4 slice: deterministic ranged ammunition
 
 - Status: verified

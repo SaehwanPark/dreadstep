@@ -487,6 +487,11 @@ follow-up enemy-melee slice makes adjacent `Attack` legal before fallback `Chase
 intent/desktop drivers share that attack-before-chase policy while retaining core-owned damage,
 events, scheduling, and replay truth. Ranged enemy AI and new status behavior remain future rules.
 
+The verified player-defeat preparation keeps death semantics in core while the desktop boundary marks
+an accepted `Died { actor: PLAYER }` event as a terminal presentation status and records
+`terminal_defeat`. Normal input stops after defeat, while Escape and same-seed restart remain
+available; no protocol, replay, respawn, or canonical run-outcome state is inferred.
+
 The verified melee-reach preparation slice adds a typed actor reach value with a one-tile default and
 an explicit extended-reach constructor for authored/test scenarios. Core uses the same Manhattan
 reach predicate for `Attack` legal discovery and execution; protocol snapshots and Bevy scene

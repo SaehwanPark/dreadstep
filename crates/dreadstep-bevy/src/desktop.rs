@@ -407,6 +407,7 @@ fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
 enum DesktopStatus {
   Running,
   Victory,
+  Defeat,
   Faulted(String),
   Shutdown(String),
 }
@@ -1003,7 +1004,12 @@ fn desktop_observe_close(
   closing_windows: Query<Entity, With<ClosingWindow>>,
   mut session: ResMut<DesktopSession>,
 ) {
-  if closing_windows.is_empty() || !matches!(session.status, DesktopStatus::Running) {
+  if closing_windows.is_empty()
+    || !matches!(
+      session.status,
+      DesktopStatus::Running | DesktopStatus::Defeat
+    )
+  {
     return;
   }
   if record_session(
@@ -1024,7 +1030,7 @@ fn desktop_input(
 ) {
   if !matches!(
     session.status,
-    DesktopStatus::Running | DesktopStatus::Victory
+    DesktopStatus::Running | DesktopStatus::Victory | DesktopStatus::Defeat
   ) {
     return;
   }
@@ -1269,6 +1275,9 @@ fn submit_command(
   source: &str,
   command: Command,
 ) -> bool {
+  if !matches!(session.status, DesktopStatus::Running) {
+    return false;
+  }
   let before = state_payload(
     runtime,
     json!({ "source": source, "command": command_value(command) }),
@@ -1298,7 +1307,15 @@ fn submit_command(
       if !record_session(session, "action_accepted", payload) {
         return false;
       }
-      if all_enemies_dead(runtime) {
+      if output.events().contains(&Event::Died { actor: PLAYER }) {
+        session.status = DesktopStatus::Defeat;
+        session.push_message("Showcase failed — the player is dead.");
+        let _ = record_session(
+          session,
+          "terminal_defeat",
+          state_payload(runtime, json!({ "reason": "player_died" })),
+        );
+      } else if all_enemies_dead(runtime) {
         session.status = DesktopStatus::Victory;
         session.push_message("Showcase complete — every enemy is dead.");
         let _ = record_session(
@@ -1418,6 +1435,8 @@ fn run_visible(
       json!({ "reason": "showcase_complete" }),
     )
     .map_err(|error| error.to_string()),
+    DesktopStatus::Defeat => record(&journal, "shutdown", json!({ "reason": "showcase_defeat" }))
+      .map_err(|error| error.to_string()),
     DesktopStatus::Running => record(
       &journal,
       "shutdown",
@@ -2350,6 +2369,129 @@ mod tests {
     assert!(text.contains("HP [##########] 10/10"));
     assert!(text.contains("enemies 3"));
     assert!(text.contains("Intent: none"));
+  }
+
+  #[test]
+  fn accepted_player_death_sets_defeat_and_records_terminal_once() {
+    let directory = test_directory("player-defeat");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::filled(2, 1, Tile::Floor).expect("test map should be valid"),
+      vec![
+        Actor::with_hit_points(
+          PLAYER,
+          ActorKind::Player,
+          Position::new(1, 0),
+          dreadstep_core::HitPoints::new(1),
+        ),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(0, 0),
+          dreadstep_core::HitPoints::new(4),
+        ),
+      ],
+    )
+    .expect("test world validates");
+    let mut runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let mut session = DesktopSession::new(7, journal.clone());
+
+    assert!(submit_command(
+      &mut runtime,
+      &mut session,
+      "test",
+      Command::Wait { actor: PLAYER },
+    ));
+    assert!(submit_command(
+      &mut runtime,
+      &mut session,
+      "test",
+      Command::Attack {
+        actor: ActorId::new(2),
+        target: PLAYER,
+      },
+    ));
+    assert_eq!(session.status, DesktopStatus::Defeat);
+    let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
+    assert_eq!(
+      journal_text.matches("\"kind\":\"terminal_defeat\"").count(),
+      1
+    );
+    assert!(!submit_command(
+      &mut runtime,
+      &mut session,
+      "test",
+      Command::Wait { actor: PLAYER },
+    ));
+    let journal_text_after = fs::read_to_string(journal_path(&journal)).expect("journal rereads");
+    assert_eq!(
+      journal_text_after
+        .matches("\"kind\":\"terminal_defeat\"")
+        .count(),
+      1
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  fn defeated_input_app(directory_name: &str) -> (App, PathBuf) {
+    let directory = test_directory(directory_name);
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut app = App::new();
+    app.add_message::<AppExit>();
+    app.insert_resource(ButtonInput::<KeyCode>::default());
+    app.insert_resource(PresentationRuntime::start_item_run(7).expect("starter item run"));
+    let mut session = DesktopSession::new(7, journal);
+    session.status = DesktopStatus::Defeat;
+    app.insert_resource(session);
+    app.add_systems(Update, desktop_input);
+    (app, directory)
+  }
+
+  #[test]
+  fn defeated_shift_restart_returns_to_running_same_seed() {
+    let (mut app, directory) = defeated_input_app("defeat-restart");
+    {
+      let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+      keys.press(KeyCode::KeyR);
+      keys.press(KeyCode::ShiftLeft);
+    }
+    app.update();
+    let session = app.world().resource::<DesktopSession>();
+    assert_eq!(session.status, DesktopStatus::Running);
+    assert_eq!(session.seed, 7);
+    assert!(session.messages.is_empty());
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn defeated_escape_and_window_close_preserve_terminal_shutdown() {
+    let (mut app, directory) = defeated_input_app("defeat-escape");
+    app
+      .world_mut()
+      .resource_mut::<ButtonInput<KeyCode>>()
+      .press(KeyCode::Escape);
+    app.update();
+    assert_eq!(
+      app.world().resource::<DesktopSession>().status,
+      DesktopStatus::Shutdown("escape".to_string())
+    );
+    let _ = fs::remove_dir_all(directory);
+
+    let (mut app, directory) = defeated_input_app("defeat-close");
+    app.world_mut().spawn(ClosingWindow);
+    app.add_systems(Update, desktop_observe_close);
+    app.update();
+    assert_eq!(
+      app.world().resource::<DesktopSession>().status,
+      DesktopStatus::Shutdown("window_close".to_string())
+    );
+    let _ = fs::remove_dir_all(directory);
   }
 
   #[test]
