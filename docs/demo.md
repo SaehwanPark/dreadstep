@@ -43,9 +43,9 @@ display-free smoke path.
 | Escape, close button, Ctrl-C | Shut down | process boundary only |
 
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
-150 ms and chooses its legal `Chase` toward actor 1, falling back to legal `Wait`. The delay is
-never simulation time. A presentation-only “showcase complete” status appears after every enemy
-is dead; it does not add a canonical core victory rule.
+150 ms and chooses its legal adjacent `Attack` toward actor 1, otherwise its legal `Chase`, then
+falls back to legal `Wait`. The delay is never simulation time. A presentation-only “showcase
+complete” status appears after every enemy is dead; it does not add a canonical core victory rule.
 
 ## Optional local art
 
@@ -98,7 +98,7 @@ Failure to create the log directory or a mid-run write/flush fault is reported a
 
 | Current player-facing surface | Visible/HUD | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy chase | map, scheduler, messages | command + event + snapshots | yes |
+| Move / wait / enemy attack/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, ammo, and ground stack | item/reload events and full actor snapshots | yes |
 | Terrain and actor blocking | distinct wall/cover/floor/actor pixels | `movement_blocked` reason | yes |
@@ -138,7 +138,7 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 ## Deliberate exclusions
 
 Tester-only spawn, teleport, HP, inventory transfer/drop, and scenario mutation remain in MCP/tests;
-tester pickup remains a non-action test operation while player pickup is scheduled. This showcase does
-not add enemy attacks, player-death loops, item effects, pickup/drop
-commands, canonical victory/loss, production audio design/music, persistent exploration memory,
-production media, installers, signing, save/load, or replay-file compatibility.
+tester pickup remains a non-action test operation while player pickup/drop are scheduled commands.
+This showcase does not add player-death loops, item effects, canonical victory/loss, production
+audio design/music, persistent exploration memory, production media, installers, signing, save/load,
+or replay-file compatibility.

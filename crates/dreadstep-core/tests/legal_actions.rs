@@ -48,8 +48,33 @@ fn player_legal_commands_have_stable_direction_wait_and_attack_order() {
 }
 
 #[test]
-fn enemy_legal_commands_include_chase_after_scheduler_advances() {
+fn enemy_legal_commands_include_adjacent_attack_after_scheduler_advances() {
   let mut world = world();
+  world
+    .execute(Command::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("player should be scheduled first");
+
+  assert_eq!(
+    world.legal_commands().last(),
+    Some(&Command::Attack {
+      actor: ActorId::new(2),
+      target: ActorId::new(1),
+    })
+  );
+}
+
+#[test]
+fn enemy_legal_commands_fall_back_to_chase_when_target_is_not_adjacent() {
+  let mut world = WorldState::new(
+    GridMap::filled(4, 1, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(3, 0)),
+      Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(0, 0)),
+    ],
+  )
+  .expect("test world should be valid");
   world
     .execute(Command::Wait {
       actor: ActorId::new(1),

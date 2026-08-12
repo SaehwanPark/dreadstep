@@ -1650,26 +1650,22 @@ fn drive_smoke_enemies(runtime: &mut PresentationRuntime, session: &mut DesktopS
       return true;
     };
     let legal = runtime.legal_commands();
-    let command = legal
-      .iter()
-      .find(|command| {
-        matches!(
-          command,
-          Command::Chase {
-            actor: candidate,
-            target: PLAYER
-          } if *candidate == actor
-        )
-      })
-      .copied()
-      .or_else(|| {
+    let command = crate::select_enemy_command(&legal, actor, PLAYER).and_then(|command| {
+      let player_is_low = runtime
+        .snapshot()
+        .actors()
+        .iter()
+        .find(|record| record.id() == PLAYER)
+        .is_some_and(|record| record.hit_points().value() <= 3);
+      if player_is_low && matches!(command, Command::Attack { .. }) {
         legal
           .iter()
-          .find(
-            |command| matches!(command, Command::Wait { actor: candidate } if *candidate == actor),
-          )
           .copied()
-      });
+          .find(|candidate| matches!(candidate, Command::Wait { actor: candidate_actor } if *candidate_actor == actor))
+      } else {
+        Some(command)
+      }
+    });
     let Some(command) = command else {
       session.fault(format!(
         "smoke enemy actor {} has no legal command",

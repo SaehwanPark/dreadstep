@@ -25,8 +25,9 @@ ammunition, walkable cover, deterministic scheduled-enemy intent presentation, t
 and player-facing reload and item-drop slices are verified across the deterministic core,
 protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
 three-shot capacity with `R` when ammo is partial; `X` drops the selected unequipped item and
-`Shift+R` restarts the same seed. Cover blocks only interior ranged rays; ammo pickups, cover damage
-modifiers, weapon effects, and enemy AI families remain deliberately deferred.
+`Shift+R` restarts the same seed. Adjacent scheduled enemies use the existing fixed melee attack
+before falling back to chase; ranged enemy AI, ammo pickups, cover damage modifiers, and weapon
+effects remain deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
@@ -37,9 +38,9 @@ modifiers, weapon effects, and enemy AI families remain deliberately deferred.
   - Scheduled single-slot equipment and single-item consumption contracts with digest/replay/
     snapshot evidence, protocol/MCP projections, atomic tester/player guards, and typed Bevy scene
     and cue projections.
-  - Scheduled player-facing item pickup with deterministic ground-stack ordering, typed events and
-    errors, protocol/MCP replay evidence, and desktop `P`/smoke coverage; effects, modifiers,
-    capacity, drop commands, and richer item semantics remain deferred.
+  - Scheduled player-facing item pickup and drop with deterministic ground-stack ordering, typed
+    events/errors, protocol/MCP replay evidence, and desktop `P`/`X` smoke coverage; effects,
+    modifiers, capacity, and richer item semantics remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,
     focus, scene focus, camera, viewport, tile/actor/ground/inventory mirrors, typed HUD status,

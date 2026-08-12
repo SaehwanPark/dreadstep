@@ -310,3 +310,18 @@ constructor cannot silently alter the default client path or lose owner/order da
   `blocks_ranged_line_of_sight` predicate for cardinal ray interiors.
 - Prevention: Test cover placement/movement separately from legal ranged filtering and preserve the
   existing atomic no-line-of-sight error contract.
+
+## Keep enemy legal intent and diagnostic driving bounded
+
+- Context: The enemy-melee slice reuses the existing `Attack` command for adjacent living targets
+  while preserving `Chase` for distant targets and complete desktop smoke coverage.
+- Symptom: Changing only the presentation driver would diverge from MCP/core legal actions; allowing
+  every smoke enemy attack would eventually kill the diagnostic player before later command/event
+  coverage completed.
+- Cause: Core legal discovery is authoritative, while the smoke path is a finite evidence scenario
+  rather than a full player-death loop.
+- Resolution: Share one core adjacent-attack predicate and one Bevy attack-before-chase selector;
+  keep the visible driver fully authoritative, but let the smoke helper choose legal `Wait` after a
+  low-health threshold so its deterministic coverage can finish.
+- Prevention: Test adjacent and distant legal ordering at the core boundary, test the exact Bevy
+  selector, and treat smoke-only safety guards as diagnostic policy rather than simulation rules.

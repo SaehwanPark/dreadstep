@@ -116,6 +116,34 @@ fn intent_uses_the_controlled_actor_as_the_chase_target() {
 }
 
 #[test]
+fn scheduled_adjacent_enemy_intent_prefers_attack_before_chase() {
+  let world = WorldState::new(
+    GridMap::filled(2, 1, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+      Actor::new(ActorId::new(2), ActorKind::Player, Position::new(1, 0)),
+    ],
+  )
+  .expect("adjacent enemy world validates");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(ActorId::new(2)));
+  app.insert_resource(PresentationEnemyIntent::new());
+  app.add_plugins(PresentationPlugin);
+  app.update();
+
+  let intent = app.world().resource::<PresentationEnemyIntent>();
+  assert_eq!(intent.actor(), Some(ActorId::new(1)));
+  assert_eq!(
+    intent.command(),
+    Some(Command::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+  );
+}
+
+#[test]
 fn missing_runtime_clears_enemy_intent_without_panicking() {
   let mut app = intent_app();
   app

@@ -1988,8 +1988,8 @@ impl WorldState {
   /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
   /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
   /// Player attacks include targets within the actor's melee reach and clear cardinal rays two or
-  /// three tiles away for the bounded ranged command; enemy chase requests include every distinct
-  /// living target.
+  /// three tiles away for the bounded ranged command; enemies attack adjacent living targets and
+  /// otherwise chase every distinct living target.
   /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   #[expect(
@@ -2067,36 +2067,45 @@ impl WorldState {
     if actor.equipped_item().is_some() {
       commands.push(Command::Unequip { actor: actor_id });
     }
-    for target in self
+    let living_targets = self
       .actors
       .values()
       .filter(|target| target.is_alive() && target.id() != actor_id)
-    {
-      match actor.kind() {
-        ActorKind::Player
-          if Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach()) =>
-        {
+      .collect::<Vec<_>>();
+    if actor.kind() == ActorKind::Enemy {
+      for target in living_targets.iter().copied().filter(|target| {
+        Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
+      }) {
+        commands.push(Command::Attack {
+          actor: actor_id,
+          target: target.id(),
+        });
+      }
+      for target in living_targets.iter().copied().filter(|target| {
+        !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
+      }) {
+        commands.push(Command::Chase {
+          actor: actor_id,
+          target: target.id(),
+        });
+      }
+    } else {
+      for target in living_targets {
+        if Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach()) {
           commands.push(Command::Attack {
             actor: actor_id,
             target: target.id(),
           });
-        }
-        ActorKind::Player
-          if Self::is_ranged_distance(actor.position(), target.position())
-            && self.has_ranged_line_of_sight(actor.position(), target.position())
-            && actor.ranged_ammo() > 0
-            && actor.ready_at().checked_add(ActionCost::RANGED).is_some() =>
+        } else if Self::is_ranged_distance(actor.position(), target.position())
+          && self.has_ranged_line_of_sight(actor.position(), target.position())
+          && actor.ranged_ammo() > 0
+          && actor.ready_at().checked_add(ActionCost::RANGED).is_some()
         {
           commands.push(Command::RangedAttack {
             actor: actor_id,
             target: target.id(),
           });
         }
-        ActorKind::Enemy => commands.push(Command::Chase {
-          actor: actor_id,
-          target: target.id(),
-        }),
-        ActorKind::Player => {}
       }
     }
     commands
