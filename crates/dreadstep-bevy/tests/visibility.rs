@@ -26,8 +26,8 @@ fn visibility_app() -> App {
       Tile::Wall,
       Tile::Wall,
       Tile::Wall,
-      Tile::Floor,
-      Tile::Floor,
+      Tile::Cover,
+      Tile::Cover,
       Tile::Floor,
       Tile::Wall,
       Tile::Floor,
@@ -140,7 +140,7 @@ fn ground_node(app: &mut App, item_id: ItemId) -> SceneRenderNode {
 }
 
 #[test]
-fn bounded_traversal_is_deterministic_and_reveals_wall_boundary() {
+fn bounded_traversal_keeps_cover_walkable_and_reveals_wall_boundary() {
   let mut app = visibility_app();
   let visibility = app.world().resource::<PresentationVisibility>();
   assert!(visibility.is_active());
@@ -158,6 +158,8 @@ fn bounded_traversal_is_deterministic_and_reveals_wall_boundary() {
     ]
   );
   assert!(visibility.is_visible(Position::new(1, 0)));
+  assert!(visibility.is_visible(Position::new(0, 1)));
+  assert!(visibility.is_visible(Position::new(1, 1)));
   assert!(!visibility.is_visible(Position::new(2, 1)));
 
   let mut positions = app

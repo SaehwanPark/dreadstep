@@ -2527,11 +2527,11 @@ fn visible_positions(
   origin: Position,
   radius: u32,
 ) -> Vec<Position> {
-  if snapshot_tile(snapshot, origin) != Some(Tile::Floor) {
+  if !snapshot_tile(snapshot, origin).is_some_and(Tile::is_walkable) {
     return Vec::new();
   }
   let mut queue = VecDeque::from([(origin, 0_u32)]);
-  let mut visited_floor = BTreeSet::from([(origin.x(), origin.y())]);
+  let mut visited_walkable = BTreeSet::from([(origin.x(), origin.y())]);
   let mut visible = BTreeSet::new();
   while let Some((position, distance)) = queue.pop_front() {
     visible.insert((position.x(), position.y()));
@@ -2546,12 +2546,14 @@ fn visible_positions(
         Some(Tile::Wall) => {
           visible.insert((neighbor.x(), neighbor.y()));
         }
-        Some(Tile::Floor)
-          if distance < radius && visited_floor.insert((neighbor.x(), neighbor.y())) =>
+        Some(tile)
+          if tile.is_walkable()
+            && distance < radius
+            && visited_walkable.insert((neighbor.x(), neighbor.y())) =>
         {
           queue.push_back((neighbor, distance + 1));
         }
-        Some(Tile::Floor) | None => {}
+        Some(Tile::Floor | Tile::Cover) | None => {}
       }
     }
   }

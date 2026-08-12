@@ -3216,6 +3216,34 @@ Out of scope:
 
 ## Active
 
+### Milestone 4 slice: deterministic ranged cover terrain
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Add a walkable `Cover` terrain tile that blocks an interior cardinal ranged ray. Cover uses the
+existing typed `RangedAttackNoLineOfSight` rejection and legal-action predicate; movement, actor
+placement, ranged cost, ammunition, fixed damage/events, replay evidence, desktop `G` control,
+journal, smoke, animation, and optional-audio fallback remain unchanged. Protocol v7 carries the
+typed tester-scenario terrain variant.
+
+Verification target:
+
+- Core proves cover is walkable, participates in map digest evidence, blocks only interior ranged
+  cells, and preserves atomic no-line-of-sight rejection.
+- Protocol/MCP carry `Cover` scenario input and preserve rejection/snapshot/replay evidence;
+  headless parsing remains unchanged.
+- Desktop tile diagnostics, display-free smoke, visual fallback, animation, and optional audio stay
+  exhaustive and deterministic without new controls or assets.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- cover damage reduction, directional/destructible/temporary cover, environmental mutation, ammo
+  pickups/reloads, weapon effects, and enemy ranged AI.
+
 ### Milestone 4 slice: deterministic ranged ammunition
 
 - Status: verified

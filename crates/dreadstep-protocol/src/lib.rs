@@ -18,7 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 6;
+pub const PROTOCOL_VERSION: u16 = 7;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -372,6 +372,8 @@ impl GroundItemSnapshot {
 pub enum Tile {
   /// A walkable cell.
   Floor,
+  /// A walkable cell that blocks ranged line of sight.
+  Cover,
   /// A blocking cell.
   Wall,
 }

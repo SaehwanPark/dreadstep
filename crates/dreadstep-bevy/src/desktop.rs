@@ -880,6 +880,7 @@ fn desktop_style_sprites(
     let placeholder = node.placeholder();
     let color = match node.key() {
       crate::SceneSpriteKey::Terrain(Tile::Floor) => Color::srgb(0.16, 0.2, 0.24),
+      crate::SceneSpriteKey::Terrain(Tile::Cover) => Color::srgb(0.36, 0.25, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::Wall) => Color::srgb(0.04, 0.06, 0.08),
       crate::SceneSpriteKey::Player => Color::srgb(0.1, 0.85, 0.35),
       crate::SceneSpriteKey::Enemy => Color::srgb(0.9, 0.2, 0.22),
@@ -1724,6 +1725,7 @@ fn position_value(position: Position) -> Value {
 fn tile_name(tile: Tile) -> &'static str {
   match tile {
     Tile::Floor => "floor",
+    Tile::Cover => "cover",
     Tile::Wall => "wall",
   }
 }
