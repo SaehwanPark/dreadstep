@@ -81,6 +81,10 @@ fn all_cues() -> Vec<PresentationAudioCue> {
       actor: ActorId::new(1),
       item: ItemId::new(1),
     },
+    PresentationAudioCue::ItemPickedUp {
+      actor: ActorId::new(1),
+      item: ItemId::new(1),
+    },
   ]
 }
 
@@ -124,6 +128,7 @@ fn projection_preserves_all_typed_cues_in_order_without_loading_files() {
     "audio/death-one.ogg",
     "audio/equip-one.ogg",
     "audio/unequip-one.ogg",
+    "audio/consume-one.ogg",
     "audio/consume-one.ogg",
   ];
   assert_eq!(

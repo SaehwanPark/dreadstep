@@ -1,8 +1,8 @@
 //! Deterministic core item-pickup behavior.
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position, Tile,
-  WorldError, WorldState,
+  Actor, ActorId, ActorKind, Command, CommandError, GridMap, HitPoints, Item, ItemDefinitionId,
+  ItemId, Position, Tile, WorldError, WorldState,
 };
 
 fn world() -> WorldState {
@@ -133,4 +133,42 @@ fn pickup_rejections_are_typed_and_atomic() {
     })
   );
   assert_eq!(world, before);
+}
+
+#[test]
+fn scheduled_pickup_rejects_unscheduled_and_dead_actors_atomically() {
+  let mut world = world();
+  let item = Item::new(ItemId::new(1), ItemDefinitionId::new(10));
+  world
+    .give_item(ActorId::new(1), item)
+    .expect("item should be accepted");
+  world
+    .drop_item(ActorId::new(1), item.id())
+    .expect("item should drop");
+  let before = world.clone();
+
+  assert_eq!(
+    world.execute(Command::Pickup {
+      actor: ActorId::new(2),
+      item: item.id(),
+    }),
+    Err(CommandError::ActorNotScheduled {
+      requested: ActorId::new(2),
+      scheduled: ActorId::new(1),
+    })
+  );
+  assert_eq!(world, before);
+
+  world
+    .set_hit_points(ActorId::new(1), HitPoints::new(0))
+    .expect("player should become dead");
+  let dead_before = world.clone();
+  assert_eq!(
+    world.execute(Command::Pickup {
+      actor: ActorId::new(1),
+      item: item.id(),
+    }),
+    Err(CommandError::ActorDead(ActorId::new(1)))
+  );
+  assert_eq!(world, dead_before);
 }

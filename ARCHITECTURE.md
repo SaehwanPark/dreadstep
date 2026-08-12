@@ -177,14 +177,15 @@ item instances, ownership, digests, and snapshots, and gameplay semantics remain
 
 The tester item-drop extension keeps ground-item records in core, keyed by stable map position with
 deterministic stack order. Protocol projects those records as read-only snapshot values and MCP
-delegates the mutation; neither boundary adds a player-facing pickup command, effects, capacity, or
-replay/history entries. An equipped item is rejected before this tester mutation can invalidate the
-actor's optional equipment reference.
+delegates the mutation; the tester mutation remains outside player replay/history. An equipped item
+is rejected before this tester mutation can invalidate the actor's optional equipment reference.
 
 The tester item-pickup extension moves an item from the actor's current core-owned ground stack back
-into that actor's ordered inventory. Protocol/MCP only convert the typed ground-miss error and
-project the existing version-3 snapshot; pickup remains outside player commands, replay/history, and
-gameplay effects.
+into that actor's ordered inventory. Protocol/MCP preserve this tester operation separately from the
+scheduled player command: the player-facing `Pickup` command consumes one standard action, emits
+`ItemPickedUp`, and records replay/history evidence, while the tester operation remains an atomic
+non-action mutation. Both paths preserve stack and inventory order; effects and capacity remain
+deferred.
 
 Validated tester teleport crosses the boundary as a typed actor identity and destination position.
 Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only
@@ -439,6 +440,13 @@ unequipped item. Core removes only that inventory instance, advances the standar
 emits `ItemConsumed`; protocol and MCP preserve the typed action/evidence, while Bevy removes the
 stale inventory mirror and retains the actor and remaining item entities. No effect, stat,
 capacity, identification, or rendering policy is inferred here.
+
+The verified scheduled item-pickup slice adds `Pickup` for the controlled actor's current ground
+stack. Core discovers item identities in stable stack order, moves only the requested identity into
+the ordered inventory, advances the standard action, emits `ItemPickedUp`, and records replay
+evidence. Protocol/MCP convert the request, event, and typed ground-miss error; the desktop binds
+`P` to the lowest-ID available ground item and covers the transition in its journal and display-free
+smoke path. No drop command, capacity, item effects, enemy pickup, or new media policy is inferred.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

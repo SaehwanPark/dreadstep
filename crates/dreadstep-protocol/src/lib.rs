@@ -83,6 +83,13 @@ pub enum CommandRequest {
     /// The owned item instance to consume.
     item: ItemId,
   },
+  /// Pick one item from the actor's current ground stack.
+  Pickup {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The ground item instance to pick up.
+    item: ItemId,
+  },
 }
 
 impl From<CommandRequest> for CoreCommand {
@@ -116,6 +123,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
       },
       CommandRequest::UseItem { actor, item } => Self::UseItem {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        item: dreadstep_core::ItemId::new(item.value()),
+      },
+      CommandRequest::Pickup { actor, item } => Self::Pickup {
         actor: dreadstep_core::ActorId::new(actor.value()),
         item: dreadstep_core::ItemId::new(item.value()),
       },
@@ -154,6 +165,10 @@ impl From<CoreCommand> for CommandRequest {
         actor: ActorId::new(actor.value()),
       },
       CoreCommand::UseItem { actor, item } => Self::UseItem {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommand::Pickup { actor, item } => Self::Pickup {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
@@ -972,6 +987,13 @@ pub enum Event {
     /// The item instance removed from inventory.
     item: ItemId,
   },
+  /// An actor picked one item from its current ground stack.
+  ItemPickedUp {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance removed from the ground stack.
+    item: ItemId,
+  },
 }
 
 impl From<CoreBlockReason> for BlockReason {
@@ -1032,6 +1054,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreEvent::ItemPickedUp { actor, item } => Self::ItemPickedUp {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
     }
   }
 }
@@ -1060,6 +1086,8 @@ pub enum CommandError {
   CannotAttackSelf(ActorId),
   /// A chase request must come from an enemy.
   ChaseRequiresEnemy(ActorId),
+  /// A pickup request must come from a player actor.
+  PickupRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is not adjacent.
@@ -1092,6 +1120,13 @@ pub enum CommandError {
     /// The equipped item identity.
     item: ItemId,
   },
+  /// The requested item is not in the actor's current ground stack.
+  ItemNotOnGround {
+    /// The actor whose current ground stack was searched.
+    actor: ActorId,
+    /// The requested item identity.
+    item: ItemId,
+  },
 }
 
 impl From<CoreCommandError> for CommandError {
@@ -1117,6 +1152,9 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::ChaseRequiresEnemy(actor) => {
         Self::ChaseRequiresEnemy(ActorId::new(actor.value()))
       }
+      CoreCommandError::PickupRequiresPlayer(actor) => {
+        Self::PickupRequiresPlayer(ActorId::new(actor.value()))
+      }
       CoreCommandError::CannotChaseSelf(actor) => {
         Self::CannotChaseSelf(ActorId::new(actor.value()))
       }
@@ -1136,6 +1174,10 @@ impl From<CoreCommandError> for CommandError {
         Self::NothingEquipped(ActorId::new(actor.value()))
       }
       CoreCommandError::ItemEquipped { actor, item } => Self::ItemEquipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommandError::ItemNotOnGround { actor, item } => Self::ItemNotOnGround {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
@@ -1178,6 +1220,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::PickupRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue a player pickup",
+          actor.value()
+        )
+      }
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }
@@ -1205,6 +1254,12 @@ impl fmt::Display for CommandError {
       Self::ItemEquipped { actor, item } => write!(
         formatter,
         "actor {} cannot consume equipped item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotOnGround { actor, item } => write!(
+        formatter,
+        "actor {} does not have item {} on the ground",
         actor.value(),
         item.value()
       ),

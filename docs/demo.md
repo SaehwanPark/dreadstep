@@ -35,6 +35,7 @@ display-free smoke path.
 | E | Equip selected item | `Command::Equip` |
 | Q | Unequip | `Command::Unequip` |
 | U | Consume selected item | `Command::UseItem` |
+| P | Pick up the lowest-ID item at the player's position | `Command::Pickup` |
 | R | Restart the same seed | new presentation runtime, same core scenario |
 | Escape, close button, Ctrl-C | Shut down | process boundary only |
 
@@ -96,7 +97,7 @@ Failure to create the log directory or a mid-run write/flush fault is reported a
 | --- | --- | --- | --- |
 | Move / wait / enemy chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume | selected/equipped HUD rows | item events and full inventory snapshots | yes |
+| Inventory / equip / unequip / consume / pickup | selected/equipped HUD rows and ground stack | item events and full inventory snapshots | yes |
 | Terrain and actor blocking | distinct wall/floor/actor pixels | `movement_blocked` reason | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
@@ -111,8 +112,9 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
   --smoke --seed 7 --log-dir target/dreadstep-smoke-logs
 ```
 
-The deterministic sequence moves east, drives enemy turns, equips item 101, unequips it, attacks
-enemy 2 until death, consumes item 101, attempts north into terrain, then waits with scheduled
+The deterministic sequence drops authored item 102 into the player's current ground stack for smoke
+setup, picks it up with `Pickup`, then moves east, drives enemy turns, equips item 101, unequips it,
+attacks enemy 2 until death, consumes item 101, attempts north into terrain, then waits with scheduled
 enemy chase turns between player actions. Exhaustive command/event mappings and the coverage lists
 make a new player-visible core variant fail desktop-feature compilation or smoke coverage until it
 is documented and mapped.
@@ -123,7 +125,7 @@ is documented and mapped.
 - floor, wall, player, enemy, dead actor, and ground item placeholders are visibly distinct;
 - radius-3 field of view follows the controlled actor, hides distant nodes without removing their
   typed mirrors, and keeps adjacent wall edges readable;
-- movement, wait, combat, inventory selection, equip/unequip, consume, restart, and enemy delay
+- movement, wait, combat, inventory selection, equip/unequip, consume, pickup, restart, and enemy delay
   work as documented;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
   and journal path;
@@ -132,7 +134,8 @@ is documented and mapped.
 
 ## Deliberate exclusions
 
-Tester-only spawn, teleport, HP, inventory transfer/drop/pickup, and scenario mutation remain in
-MCP/tests. This showcase does not add enemy attacks, player-death loops, item effects, pickup/drop
+Tester-only spawn, teleport, HP, inventory transfer/drop, and scenario mutation remain in MCP/tests;
+tester pickup remains a non-action test operation while player pickup is scheduled. This showcase does
+not add enemy attacks, player-death loops, item effects, pickup/drop
 commands, canonical victory/loss, production audio design/music, persistent exploration memory,
 production media, installers, signing, save/load, or replay-file compatibility.

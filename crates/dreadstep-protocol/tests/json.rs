@@ -160,6 +160,21 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     .expect("consumption request should deserialize"),
     consumption
   );
+  let pickup = CommandRequest::Pickup {
+    actor: ActorId::new(3),
+    item: ItemId::new(8),
+  };
+  assert_eq!(
+    serde_json::to_value(pickup).expect("pickup request should serialize"),
+    serde_json::json!({"pickup": {"actor": 3, "item": 8}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "pickup": {"actor": 3, "item": 8}
+    }))
+    .expect("pickup request should deserialize"),
+    pickup
+  );
 
   let event = Event::Waited {
     actor: ActorId::new(3),
@@ -213,6 +228,21 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     }))
     .expect("consumed event should deserialize"),
     consumed_event
+  );
+  let pickup_event = Event::ItemPickedUp {
+    actor: ActorId::new(3),
+    item: ItemId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(pickup_event).expect("pickup event should serialize"),
+    serde_json::json!({"item_picked_up": {"actor": 3, "item": 4}})
+  );
+  assert_eq!(
+    serde_json::from_value::<Event>(serde_json::json!({
+      "item_picked_up": {"actor": 3, "item": 4}
+    }))
+    .expect("pickup event should deserialize"),
+    pickup_event
   );
   let command_schema = serde_json::to_value(schemars::schema_for!(CommandRequest))
     .expect("command schema should serialize");

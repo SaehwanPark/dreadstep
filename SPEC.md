@@ -3117,6 +3117,43 @@ Out of scope:
 - Final palette/art-direction approval, animation sheets, new gameplay art families, production
   audio, tracked media binaries, and any core/protocol/MCP behavior.
 
+### Milestone 4 slice: scheduled player-facing item pickup
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Expose one scheduled `Pickup` command for the controlled player. The command takes one item from
+the actor's current ordered ground stack, appends it to the actor's inventory, advances one standard
+action, emits a typed pickup event, and records the accepted command in replay evidence. Rejections
+for absent ground items remain atomic and typed. Existing tester-only drop/transfer/pickup mutations
+remain outside player replay; item effects, capacity, and richer inventory rules remain deferred.
+
+Acceptance:
+
+- Core legal-command discovery includes each item at the scheduled actor's current position in
+  stable ground-stack order; accepted pickup removes only that identity, preserves remaining stack
+  order, appends inventory order, advances scheduling, and changes state/replay digests.
+- Unknown/missing ground identities, dead or unscheduled actors, and duplicate/rejected commands do
+  not mutate world, scheduler, history, snapshot, or replay evidence.
+- Protocol command/event/error mappings and JSON schemas round-trip `Pickup` and typed ground-miss
+  errors; MCP player `act` exposes the same contract while tester pickup remains unchanged.
+- The desktop showcase binds `P` to the lowest-ID available player ground item, journals request,
+  accepted event, or rejection, and includes pickup in display-free smoke without changing the
+  deterministic scenario seed or adding item effects/capacity.
+
+Verification evidence:
+
+- Focused core/protocol/MCP/Bevy tests, `scripts/verify.sh`, display-free smoke, `git diff --check`,
+  and exactly one semantic reviewer PASS at the final revision. Evidence is recorded in the PR
+  handoff and merge commit.
+
+Out of scope:
+
+- Item effects, inventory capacity, drop command, new item definitions, enemy pickup behavior,
+  persistent loot progression, rendering/audio changes, and new core timing rules beyond the standard
+  action cost.
+
 ## Future
 
 ### Remaining roadmap milestones
@@ -3134,8 +3171,8 @@ before it can move into `Past`:
   showcase; field-of-view, tactical HUD, event-driven animation pulse, and optional audio-cue
   playback slices are now tracked separately.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
-  verified single-item consumption and single-slot equipment preparations and tester item
-  operations.
+  verified single-item consumption, scheduled player pickup, and single-slot equipment preparations
+  and tester item operations.
 - Milestone 5 — The Living Dungeon: procedural floors, enemy archetypes, environmental state,
   and floor progression.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build

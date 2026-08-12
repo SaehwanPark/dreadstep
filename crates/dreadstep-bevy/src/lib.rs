@@ -523,6 +523,13 @@ pub enum PresentationMessage {
     /// The item instance removed from inventory.
     item: ItemId,
   },
+  /// An actor picked one item from its current ground stack.
+  ItemPickedUp {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved into inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationMessage {
@@ -556,6 +563,7 @@ impl PresentationMessage {
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
       Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
+      Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
     }
   }
 }
@@ -575,6 +583,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::ItemEquipped { .. } => "item_equipped",
     Event::ItemUnequipped { .. } => "item_unequipped",
     Event::ItemConsumed { .. } => "item_consumed",
+    Event::ItemPickedUp { .. } => "item_picked_up",
   }
 }
 
@@ -653,6 +662,13 @@ pub enum PresentationAudioCue {
     /// The item instance removed from inventory.
     item: ItemId,
   },
+  /// An actor picked one item from its current ground stack.
+  ItemPickedUp {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved into inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationAudioCue {
@@ -668,6 +684,7 @@ impl PresentationAudioCue {
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
       Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
+      Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
     }
   }
 }
@@ -725,7 +742,10 @@ impl PresentationAudioCueKind {
       PresentationAudioCue::Died { .. } => Self::Died,
       PresentationAudioCue::ItemEquipped { .. } => Self::ItemEquipped,
       PresentationAudioCue::ItemUnequipped { .. } => Self::ItemUnequipped,
-      PresentationAudioCue::ItemConsumed { .. } => Self::ItemConsumed,
+      // Reuse the existing item-consumption asset family without changing the typed cue identity.
+      PresentationAudioCue::ItemConsumed { .. } | PresentationAudioCue::ItemPickedUp { .. } => {
+        Self::ItemConsumed
+      }
     }
   }
 
@@ -925,6 +945,13 @@ pub enum PresentationAnimationCue {
     /// The item instance removed from inventory.
     item: ItemId,
   },
+  /// An actor picked one item from its current ground stack.
+  ItemPickedUp {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved into inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationAnimationCue {
@@ -958,6 +985,7 @@ impl PresentationAnimationCue {
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
       Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
+      Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
     }
   }
 }
@@ -2295,6 +2323,20 @@ impl PresentationRuntime {
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
     self.state.legal_commands()
+  }
+
+  /// Places one authored item on the ground for the display-free desktop smoke fixture.
+  ///
+  /// This setup-only mutation is intentionally not exposed as a player command and does not
+  /// enter replay evidence; the smoke path then exercises the scheduled [`Command::Pickup`]
+  /// transition through the same runtime used by the visible client.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_pickup(
+    &mut self,
+    actor: ActorId,
+    item: ItemId,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    self.state.world.drop_item(actor, item)
   }
 
   /// Returns the latest accepted command output without consuming it.

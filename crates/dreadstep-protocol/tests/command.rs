@@ -46,6 +46,10 @@ fn every_request_variant_round_trips_through_core() {
       actor: ActorId::new(1),
       item: ItemId::new(9),
     },
+    CommandRequest::Pickup {
+      actor: ActorId::new(1),
+      item: ItemId::new(12),
+    },
   ];
 
   for request in requests {
@@ -94,6 +98,10 @@ fn every_core_command_round_trips_through_protocol() {
     Command::UseItem {
       actor: CoreActorId::new(1),
       item: CoreItemId::new(9),
+    },
+    Command::Pickup {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(12),
     },
   ];
 
