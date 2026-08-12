@@ -1086,6 +1086,8 @@ pub enum CommandError {
   CannotAttackSelf(ActorId),
   /// A chase request must come from an enemy.
   ChaseRequiresEnemy(ActorId),
+  /// A pickup request must come from a player actor.
+  PickupRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is not adjacent.
@@ -1150,6 +1152,9 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::ChaseRequiresEnemy(actor) => {
         Self::ChaseRequiresEnemy(ActorId::new(actor.value()))
       }
+      CoreCommandError::PickupRequiresPlayer(actor) => {
+        Self::PickupRequiresPlayer(ActorId::new(actor.value()))
+      }
       CoreCommandError::CannotChaseSelf(actor) => {
         Self::CannotChaseSelf(ActorId::new(actor.value()))
       }
@@ -1212,6 +1217,13 @@ impl fmt::Display for CommandError {
         write!(
           formatter,
           "actor {} cannot issue an enemy chase",
+          actor.value()
+        )
+      }
+      Self::PickupRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue a player pickup",
           actor.value()
         )
       }

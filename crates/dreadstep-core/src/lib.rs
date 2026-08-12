@@ -1067,6 +1067,8 @@ pub enum CommandError {
   CannotAttackSelf(ActorId),
   /// A chase command must be issued by an enemy actor.
   ChaseRequiresEnemy(ActorId),
+  /// A pickup command must be issued by a player actor.
+  PickupRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is not adjacent to the attacker.
@@ -1138,6 +1140,13 @@ impl fmt::Display for CommandError {
         write!(
           formatter,
           "actor {} cannot issue an enemy chase",
+          actor.value()
+        )
+      }
+      Self::PickupRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue a player pickup",
           actor.value()
         )
       }
@@ -1783,16 +1792,18 @@ impl WorldState {
       },
       Command::Wait { actor: actor_id },
     ];
-    if let Some(stack) = self
-      .ground_items
-      .iter()
-      .find(|stack| stack.position() == actor.position())
-    {
-      for item in stack.items() {
-        commands.push(Command::Pickup {
-          actor: actor_id,
-          item: item.id(),
-        });
+    if actor.kind() == ActorKind::Player {
+      if let Some(stack) = self
+        .ground_items
+        .iter()
+        .find(|stack| stack.position() == actor.position())
+      {
+        for item in stack.items() {
+          commands.push(Command::Pickup {
+            actor: actor_id,
+            item: item.id(),
+          });
+        }
       }
     }
     for item in actor.inventory() {
@@ -1992,6 +2003,13 @@ impl WorldState {
     actor_id: ActorId,
     item_id: ItemId,
   ) -> Result<Event, CommandError> {
+    if self
+      .actors
+      .get(&actor_id)
+      .is_some_and(|actor| actor.kind() != ActorKind::Player)
+    {
+      return Err(CommandError::PickupRequiresPlayer(actor_id));
+    }
     self
       .pickup_item(actor_id, item_id)
       .map_err(|error| match error {
@@ -3020,6 +3038,37 @@ mod tests {
     );
     assert_eq!(world.ground_items()[0].items()[0].id(), ItemId::new(12));
     assert_ne!(world.digest(), before);
+  }
+
+  #[test]
+  fn enemy_pickup_is_not_legal_and_rejected_atomically() {
+    let mut world = WorldState::new(
+      floor_map(2, 1),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Player, Position::new(1, 0)),
+      ],
+    )
+    .expect("test world should be valid");
+    let item = Item::new(ItemId::new(11), ItemDefinitionId::new(101));
+    world
+      .give_item(ActorId::new(1), item)
+      .expect("item should be accepted");
+    world
+      .drop_item(ActorId::new(1), item.id())
+      .expect("item should drop");
+    assert!(!world.legal_commands().iter().any(|command| {
+      matches!(command, Command::Pickup { actor, item: candidate } if *actor == ActorId::new(1) && *candidate == item.id())
+    }));
+    let before = world.clone();
+    assert_eq!(
+      world.execute(Command::Pickup {
+        actor: ActorId::new(1),
+        item: item.id(),
+      }),
+      Err(CommandError::PickupRequiresPlayer(ActorId::new(1)))
+    );
+    assert_eq!(world, before);
   }
 
   #[test]

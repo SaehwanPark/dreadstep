@@ -662,6 +662,13 @@ pub enum PresentationAudioCue {
     /// The item instance removed from inventory.
     item: ItemId,
   },
+  /// An actor picked one item from its current ground stack.
+  ItemPickedUp {
+    /// The actor whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved into inventory.
+    item: ItemId,
+  },
 }
 
 impl PresentationAudioCue {
@@ -676,11 +683,8 @@ impl PresentationAudioCue {
       Event::Died { actor } => Self::Died { actor },
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
-      // Pickup has no dedicated sound in this slice; reuse the existing item cue family without
-      // expanding the authored audio manifest or introducing a new media dependency.
-      Event::ItemConsumed { actor, item } | Event::ItemPickedUp { actor, item } => {
-        Self::ItemConsumed { actor, item }
-      }
+      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
+      Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
     }
   }
 }
@@ -739,6 +743,8 @@ impl PresentationAudioCueKind {
       PresentationAudioCue::ItemEquipped { .. } => Self::ItemEquipped,
       PresentationAudioCue::ItemUnequipped { .. } => Self::ItemUnequipped,
       PresentationAudioCue::ItemConsumed { .. } => Self::ItemConsumed,
+      // Reuse the existing item-consumption asset family without changing the typed cue identity.
+      PresentationAudioCue::ItemPickedUp { .. } => Self::ItemConsumed,
     }
   }
 

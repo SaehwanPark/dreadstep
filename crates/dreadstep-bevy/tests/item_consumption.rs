@@ -5,7 +5,7 @@ use bevy::{app::App, ecs::entity::Entity};
 use dreadstep_bevy::{
   PresentationAnimationCue, PresentationAnimationCues, PresentationAudioCue, PresentationAudioCues,
   PresentationInput, PresentationMessage, PresentationMessages, PresentationPlugin,
-  PresentationRuntime, PresentationState, SceneActor, SceneInventoryItem,
+  PresentationRuntime, PresentationState, SceneActor, SceneGroundItem, SceneInventoryItem,
 };
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, GridMap, Item, ItemDefinitionId, ItemId, Position, Tile,
@@ -37,6 +37,37 @@ fn consumption_runtime() -> PresentationRuntime {
 fn consumption_app() -> App {
   let mut app = App::new();
   app.insert_resource(consumption_runtime());
+  app.insert_resource(PresentationInput::new(ActorId::new(1)));
+  app.insert_resource(PresentationMessages::new());
+  app.insert_resource(PresentationAudioCues::new());
+  app.insert_resource(PresentationAnimationCues::new());
+  app.insert_resource(ButtonInput::<KeyCode>::default());
+  app.add_plugins(PresentationPlugin);
+  app
+}
+
+fn pickup_app() -> App {
+  let map = GridMap::filled(1, 1, Tile::Floor).expect("map should validate");
+  let mut world = WorldState::new(
+    map,
+    vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(4), ItemDefinitionId::new(104)),
+    )
+    .expect("item should be accepted");
+  world
+    .drop_item(ActorId::new(1), ItemId::new(4))
+    .expect("item should be dropped");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
   app.insert_resource(PresentationInput::new(ActorId::new(1)));
   app.insert_resource(PresentationMessages::new());
   app.insert_resource(PresentationAudioCues::new());
@@ -125,6 +156,78 @@ fn consumption_removes_one_inventory_mirror_and_emits_all_typed_cues() {
   assert_eq!(
     app.world().resource::<PresentationAnimationCues>().cues(),
     &[PresentationAnimationCue::ItemConsumed {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    }]
+  );
+}
+
+#[test]
+fn pickup_moves_scene_item_and_preserves_typed_presentation_cues() {
+  let mut app = pickup_app();
+  app.update();
+  assert_eq!(
+    app
+      .world_mut()
+      .query::<&SceneGroundItem>()
+      .iter(app.world())
+      .count(),
+    1
+  );
+  assert_eq!(
+    app
+      .world_mut()
+      .query::<&SceneInventoryItem>()
+      .iter(app.world())
+      .count(),
+    0
+  );
+
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Pickup {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    })
+    .expect("ground item should be picked up");
+  app.update();
+
+  assert_eq!(
+    app
+      .world_mut()
+      .query::<&SceneGroundItem>()
+      .iter(app.world())
+      .count(),
+    0
+  );
+  let inventory = app
+    .world_mut()
+    .query::<&SceneInventoryItem>()
+    .iter(app.world())
+    .next()
+    .copied()
+    .expect("picked item should become an inventory mirror");
+  assert_eq!(inventory.id(), ItemId::new(4));
+  assert_eq!(inventory.owner(), ActorId::new(1));
+  assert_eq!(inventory.inventory_index(), 0);
+  assert_eq!(
+    app.world().resource::<PresentationMessages>().messages(),
+    &[PresentationMessage::ItemPickedUp {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    }]
+  );
+  assert_eq!(
+    app.world().resource::<PresentationAudioCues>().cues(),
+    &[PresentationAudioCue::ItemPickedUp {
+      actor: ActorId::new(1),
+      item: ItemId::new(4),
+    }]
+  );
+  assert_eq!(
+    app.world().resource::<PresentationAnimationCues>().cues(),
+    &[PresentationAnimationCue::ItemPickedUp {
       actor: ActorId::new(1),
       item: ItemId::new(4),
     }]

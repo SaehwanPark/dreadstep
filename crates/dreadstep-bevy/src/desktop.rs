@@ -606,6 +606,7 @@ fn audio_cue_name(cue: PresentationAudioCue) -> &'static str {
     PresentationAudioCue::ItemEquipped { .. } => "item_equipped",
     PresentationAudioCue::ItemUnequipped { .. } => "item_unequipped",
     PresentationAudioCue::ItemConsumed { .. } => "item_consumed",
+    PresentationAudioCue::ItemPickedUp { .. } => "item_picked_up",
   }
 }
 

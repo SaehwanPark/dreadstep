@@ -33,3 +33,11 @@ fn item_not_on_ground_maps_to_typed_protocol_command_error() {
     }
   );
 }
+
+#[test]
+fn pickup_requires_player_maps_to_typed_protocol_command_error() {
+  assert_eq!(
+    CommandError::from(CoreCommandError::PickupRequiresPlayer(CoreActorId::new(2))),
+    CommandError::PickupRequiresPlayer(ActorId::new(2))
+  );
+}
