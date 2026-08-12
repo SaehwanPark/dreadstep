@@ -33,6 +33,8 @@ use dreadstep_core::{
   ReplayTrace, StateDigest, Tile, WorldState,
 };
 
+pub use dreadstep_core::RunOutcome;
+
 #[cfg(feature = "desktop")]
 pub mod desktop;
 
@@ -2149,6 +2151,7 @@ pub struct PresentationSnapshot {
   tiles: Vec<Tile>,
   actors: Vec<Actor>,
   ground_items: Vec<GroundItemStack>,
+  outcome: RunOutcome,
   current_time: ActionTime,
   next_actor: Option<ActorId>,
   digest: StateDigest,
@@ -2162,6 +2165,7 @@ impl PresentationSnapshot {
       tiles: world.map().tiles().to_vec(),
       actors: world.actors().cloned().collect(),
       ground_items: world.ground_items().to_vec(),
+      outcome: world.outcome(),
       current_time: world.current_time(),
       next_actor: world.next_actor(),
       digest: world.digest(),
@@ -2196,6 +2200,12 @@ impl PresentationSnapshot {
   #[must_use]
   pub fn ground_items(&self) -> &[GroundItemStack] {
     &self.ground_items
+  }
+
+  /// Returns the canonical run outcome projected by core.
+  #[must_use]
+  pub const fn outcome(&self) -> RunOutcome {
+    self.outcome
   }
 
   /// Returns the current core action time.

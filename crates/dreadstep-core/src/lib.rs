@@ -377,6 +377,17 @@ pub enum ActorKind {
   Enemy,
 }
 
+/// The deterministic terminal state derived from retained actor records.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum RunOutcome {
+  /// The run has not reached a terminal condition.
+  InProgress,
+  /// The player is dead.
+  Defeat,
+  /// At least one enemy exists and every enemy is dead.
+  Victory,
+}
+
 /// An integer timestamp used by the deterministic action scheduler.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ActionTime(u64);
@@ -1895,6 +1906,37 @@ impl WorldState {
   #[must_use = "iterate over the actor records"]
   pub fn actors(&self) -> impl Iterator<Item = &Actor> + '_ {
     self.actors.values()
+  }
+
+  /// Returns the deterministic terminal outcome derived from retained actor records.
+  ///
+  /// Player defeat takes precedence so a world containing no living player can never be reported
+  /// as a victory. A world without an enemy remains in progress until authored content provides a
+  /// concrete opponent to defeat.
+  #[must_use]
+  pub fn outcome(&self) -> RunOutcome {
+    if self
+      .actors
+      .values()
+      .any(|actor| actor.kind() == ActorKind::Player && !actor.is_alive())
+    {
+      return RunOutcome::Defeat;
+    }
+    let has_enemy = self
+      .actors
+      .values()
+      .any(|actor| actor.kind() == ActorKind::Enemy);
+    if has_enemy
+      && self
+        .actors
+        .values()
+        .filter(|actor| actor.kind() == ActorKind::Enemy)
+        .all(|actor| !actor.is_alive())
+    {
+      RunOutcome::Victory
+    } else {
+      RunOutcome::InProgress
+    }
   }
 
   /// Returns ground-item stacks in deterministic row-major position order.

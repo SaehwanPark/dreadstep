@@ -4,6 +4,17 @@ Read this file before implementation and again before final review. Record only 
 recurring traps that are not already obvious from code, tests, or canonical documentation.
 Update an existing lesson instead of adding a duplicate.
 
+## 2026-08-12 — Derive terminal outcomes once at the core boundary
+
+- Context: The desktop showcase inferred victory by counting dead enemies locally while core
+  already retained every actor record, so future clients could disagree on terminal semantics.
+- Resolution: Add a pure `WorldState::outcome()` projection with explicit player-defeat precedence,
+  require at least one enemy for victory, and carry the typed value through protocol and Bevy
+  snapshots. Desktop terminal records now consume that projection without changing commands,
+  events, scheduling, or replay evidence.
+- Prevention: Keep terminal outcome predicates in the deterministic kernel, test empty/enemy/dead
+  edge cases and precedence, and make adapters project the value rather than reimplementing it.
+
 ## 2026-08-12 — Player inventory actions need an item-bearing public fixture
 
 - Context: The default MCP/headless fixed scenario is intentionally item-free, so a new player item

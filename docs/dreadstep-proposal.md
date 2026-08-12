@@ -1985,6 +1985,11 @@ from inventory to the current ground stack through a typed `Drop` command. It pr
 standard action timing, replay/snapshot evidence, version-10 protocol mappings, and desktop `X`
 coverage without defining effects, capacity, stack merging, or new media.
 
+The canonical run-outcome preparation is also verified: core derives `in_progress`, `defeat`, or
+`victory` from retained actor records with player-death precedence, protocol v11 exposes the same
+typed snapshot value, and Bevy terminal handling consumes that projection. Persistence, replay
+export/playback, rewards, and encounter progression remain future work.
+
 ### Implement
 
 - equipment;

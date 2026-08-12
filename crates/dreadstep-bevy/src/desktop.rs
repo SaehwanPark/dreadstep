@@ -43,7 +43,7 @@ use bevy::ui::{FlexDirection, JustifyContent, Overflow, UiRect, px};
 use bevy::window::{ClosingWindow, PrimaryWindow, Window};
 use dreadstep_core::{
   Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position,
-  StateDigest, Tile,
+  RunOutcome, StateDigest, Tile,
 };
 use serde_json::{Value, json};
 
@@ -1307,22 +1307,26 @@ fn submit_command(
       if !record_session(session, "action_accepted", payload) {
         return false;
       }
-      if output.events().contains(&Event::Died { actor: PLAYER }) {
-        session.status = DesktopStatus::Defeat;
-        session.push_message("Showcase failed — the player is dead.");
-        let _ = record_session(
-          session,
-          "terminal_defeat",
-          state_payload(runtime, json!({ "reason": "player_died" })),
-        );
-      } else if all_enemies_dead(runtime) {
-        session.status = DesktopStatus::Victory;
-        session.push_message("Showcase complete — every enemy is dead.");
-        let _ = record_session(
-          session,
-          "terminal_victory",
-          state_payload(runtime, json!({ "reason": "all_enemies_dead" })),
-        );
+      match runtime.snapshot().outcome() {
+        RunOutcome::Defeat => {
+          session.status = DesktopStatus::Defeat;
+          session.push_message("Showcase failed — the player is dead.");
+          let _ = record_session(
+            session,
+            "terminal_defeat",
+            state_payload(runtime, json!({ "reason": "player_died" })),
+          );
+        }
+        RunOutcome::Victory => {
+          session.status = DesktopStatus::Victory;
+          session.push_message("Showcase complete — every enemy is dead.");
+          let _ = record_session(
+            session,
+            "terminal_victory",
+            state_payload(runtime, json!({ "reason": "all_enemies_dead" })),
+          );
+        }
+        RunOutcome::InProgress => {}
       }
       session.enemy_timer.reset();
       true
@@ -1345,15 +1349,6 @@ fn submit_command(
       false
     }
   }
-}
-
-fn all_enemies_dead(runtime: &PresentationRuntime) -> bool {
-  runtime
-    .snapshot()
-    .actors()
-    .iter()
-    .filter(|actor| actor.kind() == ActorKind::Enemy)
-    .all(|actor| !actor.is_alive())
 }
 
 fn run_visible(
@@ -1732,6 +1727,7 @@ fn snapshot_value(snapshot: &crate::PresentationSnapshot) -> Value {
       "height": snapshot.height(),
       "tiles": snapshot.tiles().iter().copied().map(tile_name).collect::<Vec<_>>(),
     },
+    "outcome": outcome_name(snapshot.outcome()),
     "actors": actors,
     "ground_items": ground_items,
     "scheduler": {
@@ -1776,6 +1772,14 @@ fn actor_kind_name(kind: ActorKind) -> &'static str {
   match kind {
     ActorKind::Player => "player",
     ActorKind::Enemy => "enemy",
+  }
+}
+
+fn outcome_name(outcome: RunOutcome) -> &'static str {
+  match outcome {
+    RunOutcome::InProgress => "in_progress",
+    RunOutcome::Defeat => "defeat",
+    RunOutcome::Victory => "victory",
   }
 }
 
@@ -2433,6 +2437,81 @@ mod tests {
         .count(),
       1
     );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn no_enemy_world_stays_in_progress_instead_of_faking_victory() {
+    let directory = test_directory("outcome-no-enemy");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::filled(1, 1, Tile::Floor).expect("test map should be valid"),
+      vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+    )
+    .expect("test world validates");
+    let mut runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let mut session = DesktopSession::new(7, journal.clone());
+
+    assert!(submit_command(
+      &mut runtime,
+      &mut session,
+      "test",
+      Command::Wait { actor: PLAYER },
+    ));
+    assert_eq!(runtime.snapshot().outcome(), RunOutcome::InProgress);
+    assert_eq!(session.status, DesktopStatus::Running);
+    let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
+    assert!(!journal_text.contains("terminal_victory"));
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn accepted_last_enemy_death_sets_victory_and_records_terminal_once() {
+    let directory = test_directory("outcome-victory");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::filled(2, 1, Tile::Floor).expect("test map should be valid"),
+      vec![
+        Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0)),
+        Actor::with_hit_points(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(1, 0),
+          dreadstep_core::HitPoints::new(1),
+        ),
+      ],
+    )
+    .expect("test world validates");
+    let mut runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let mut session = DesktopSession::new(7, journal.clone());
+
+    assert!(submit_command(
+      &mut runtime,
+      &mut session,
+      "test",
+      Command::Attack {
+        actor: PLAYER,
+        target: ActorId::new(2),
+      },
+    ));
+    assert_eq!(runtime.snapshot().outcome(), RunOutcome::Victory);
+    assert_eq!(session.status, DesktopStatus::Victory);
+    let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
+    assert_eq!(journal_text.matches("terminal_victory").count(), 1);
+    assert!(!submit_command(
+      &mut runtime,
+      &mut session,
+      "test",
+      Command::Wait { actor: PLAYER },
+    ));
+    let journal_text_after = fs::read_to_string(journal_path(&journal)).expect("journal rereads");
+    assert_eq!(journal_text_after.matches("terminal_victory").count(), 1);
     let _ = fs::remove_dir_all(directory);
   }
 
