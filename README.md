@@ -152,8 +152,9 @@ xcode-select --install
 ```
 
 On Linux and WSL2, core/headless checks remain display-free; the full showcase gate uses the
-reviewed X11/XWayland Bevy feature path. Windows contributors should use the MSVC Rust toolchain
-and Windows build tools.
+reviewed X11/XWayland Bevy feature path and requires `pkg-config` plus ALSA development headers
+(for example, `sudo apt-get install pkg-config libasound2-dev`). Windows contributors should use
+the MSVC Rust toolchain and Windows build tools.
 
 Run the complete local verification suite:
 
