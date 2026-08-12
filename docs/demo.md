@@ -46,7 +46,8 @@ display-free smoke path.
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
 150 ms and chooses its legal adjacent `Attack` toward actor 1, otherwise its legal `Chase`, then
 falls back to legal `Wait`. The delay is never simulation time. A presentation-only “showcase
-complete” status appears after every enemy is dead; it does not add a canonical core victory rule.
+complete” status appears after every enemy is dead and consumes core's canonical `RunOutcome`
+projection.
 
 ## Optional local art
 
@@ -140,6 +141,6 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 
 Tester-only spawn, teleport, HP, inventory transfer/drop, and scenario mutation remain in MCP/tests;
 tester pickup remains a non-action test operation while player pickup/drop are scheduled commands.
-This showcase does not add player-death loops, respawn, item effects, canonical victory/loss, production
+This showcase does not add player-death loops, respawn, item effects, victory rewards, production
 audio design/music, persistent exploration memory, production media, installers, signing, save/load,
 or replay-file compatibility.

@@ -3446,7 +3446,7 @@ Verification evidence:
 
 - The focused desktop transition test passes 1/1: an accepted enemy attack that kills actor 1 sets
   `Defeat`, records exactly one `terminal_defeat`, and rejects later normal command submission.
-- Full Bevy desktop tests pass 27/27; desktop boundary/smoke remains green, and focused defeat
+- Full Bevy desktop tests pass 28/28; desktop boundary/smoke remains green, and focused defeat
   tests prove normal command blocking plus safe Escape, window-close, and same-seed restart paths.
   Existing input handling preserves safe close and
   restart behavior from the defeated state. `scripts/verify.sh` passes repository checks, strict clippy, all targets,
@@ -3457,6 +3457,47 @@ Out of scope:
 
 - Canonical core victory/loss state, save/load, death animation/audio, respawn, score, menus,
   player-death loops, new protocol fields, and human-facing balance changes.
+
+### Milestone 7 preparation slice: canonical run outcome projection
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Expose one deterministic `RunOutcome` projection from the rules kernel and carry it through the
+versioned world snapshot and Bevy presentation snapshot. The outcome is derived from retained actor
+records: a dead player is `Defeat` (with precedence), a world with at least one enemy and no living
+enemies is `Victory`, and every other world is `InProgress`. Existing command, event, scheduler,
+digest, replay, tester, and desktop journal semantics remain unchanged; Bevy terminal records now
+consume the core projection rather than duplicating the enemy-count predicate.
+
+Acceptance:
+
+- Core exposes typed `RunOutcome` and deterministic `WorldState::outcome()` without mutating state;
+  player death wins precedence over victory, no-enemy worlds remain in progress, and dead records
+  continue to be inspectable.
+- Protocol version 11 serializes `outcome` on `WorldSnapshot` with stable snake-case values and
+  preserves all existing actor, scheduler, digest, ground-item, action, history, and replay fields.
+- Bevy `PresentationSnapshot` carries the same outcome and the desktop terminal transition uses it
+  for defeat/victory while retaining exactly-once journal records and safe restart/close behavior.
+- Focused core, protocol JSON/schema, MCP observation/action, Bevy transition, headless output, and
+  display-free smoke tests prove deterministic outcome transitions and unchanged rejected-action
+  atomicity; `scripts/verify.sh`, formatting, `git diff --check`, and one semantic review pass.
+
+Verification evidence:
+
+- Core outcome tests pass 3/3, protocol projection/schema/value tests pass 3/3, MCP observation/action
+  tests pass 2/2, the Bevy presentation projection test passes 1/1, and the headless CLI suite
+  passes 5/5 with explicit `outcome=` output.
+- Existing protocol, MCP stdio, Bevy desktop unit tests pass 28/28, and the workspace adapter
+  suites remain green after the version-11 snapshot field; desktop terminal records continue to be
+  exactly-once and smoke output remains deterministic. `scripts/verify.sh`, formatting, strict
+  lint/docs, and diff checks pass.
+
+Out of scope:
+
+- New core commands/events/errors, persistence or save/load, replay playback/export, respawn, score,
+  menus, victory rewards, encounter progression, enemy AI, or player-facing balance changes.
 
 ### Milestone 4 slice: deterministic ranged ammunition
 

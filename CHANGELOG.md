@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A verified canonical run-outcome projection: core derives deterministic in-progress, defeat, and
+  victory states with player-death precedence; protocol v11, MCP/headless evidence, and Bevy
+  terminal handling consume the same projection without adding persistence or replay playback.
 - A verified deterministic melee-reach preparation slice: typed actor reach with a one-tile default,
   explicit extended-reach scenarios, and core/protocol/MCP/Bevy parity without weapon classes or
   new presentation controls.

@@ -12,13 +12,13 @@ use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
   Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
   Event as CoreEvent, GroundItemStack as CoreGroundItemStack, Item as CoreItem,
-  MapError as CoreMapError, WorldError as CoreWorldError, WorldState,
+  MapError as CoreMapError, RunOutcome as CoreRunOutcome, WorldError as CoreWorldError, WorldState,
 };
 use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 10;
+pub const PROTOCOL_VERSION: u16 = 11;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -569,6 +569,28 @@ pub enum LifeState {
   Alive,
   /// The actor remains inspectable but cannot act or occupy a tile.
   Dead,
+}
+
+/// The canonical terminal outcome projected from core actor records.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RunOutcome {
+  /// The run has not reached a terminal condition.
+  InProgress,
+  /// The player is dead.
+  Defeat,
+  /// At least one enemy exists and every enemy is dead.
+  Victory,
+}
+
+impl From<CoreRunOutcome> for RunOutcome {
+  fn from(outcome: CoreRunOutcome) -> Self {
+    match outcome {
+      CoreRunOutcome::InProgress => Self::InProgress,
+      CoreRunOutcome::Defeat => Self::Defeat,
+      CoreRunOutcome::Victory => Self::Victory,
+    }
+  }
 }
 
 /// A protocol action timestamp.
@@ -1596,6 +1618,7 @@ impl ActorSnapshot {
 #[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
 pub struct WorldSnapshot {
   protocol_version: u16,
+  outcome: RunOutcome,
   current_time: ActionTime,
   next_actor: Option<ActorId>,
   digest: StateDigest,
@@ -1609,6 +1632,7 @@ impl WorldSnapshot {
   pub fn from_world(world: &WorldState) -> Self {
     Self {
       protocol_version: PROTOCOL_VERSION,
+      outcome: world.outcome().into(),
       current_time: ActionTime::new(world.current_time().value()),
       next_actor: world.next_actor().map(|actor| ActorId::new(actor.value())),
       digest: StateDigest::new(world.digest().value()),
@@ -1625,6 +1649,12 @@ impl WorldSnapshot {
   #[must_use]
   pub const fn protocol_version(&self) -> u16 {
     self.protocol_version
+  }
+
+  /// Returns the canonical run outcome projected from core.
+  #[must_use]
+  pub const fn outcome(&self) -> RunOutcome {
+    self.outcome
   }
 
   /// Returns the world's minimum ready time.

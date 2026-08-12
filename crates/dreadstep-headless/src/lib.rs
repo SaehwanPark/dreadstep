@@ -9,7 +9,7 @@ use std::{error::Error, fmt, fmt::Write as _};
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, CommandError, Direction, GridMap, HitPoints, Item,
-  ItemDefinitionId, ItemId, Position, StateDigest, Tile, WorldState,
+  ItemDefinitionId, ItemId, Position, RunOutcome, StateDigest, Tile, WorldState,
 };
 
 /// Parsed command-line input for the fixed developer scenario.
@@ -130,6 +130,7 @@ pub struct CliOutput {
   seed: u64,
   events: Vec<String>,
   digest: StateDigest,
+  outcome: RunOutcome,
 }
 
 impl CliOutput {
@@ -151,6 +152,12 @@ impl CliOutput {
     self.digest
   }
 
+  /// Returns the canonical terminal outcome after the requested command sequence.
+  #[must_use]
+  pub const fn outcome(&self) -> RunOutcome {
+    self.outcome
+  }
+
   /// Renders stable line-oriented output for the process boundary.
   #[must_use]
   pub fn render(&self) -> String {
@@ -160,6 +167,12 @@ impl CliOutput {
       rendered.push_str(event);
       rendered.push('\n');
     }
+    let outcome = match self.outcome {
+      RunOutcome::InProgress => "in_progress",
+      RunOutcome::Defeat => "defeat",
+      RunOutcome::Victory => "victory",
+    };
+    let _ = writeln!(rendered, "outcome={outcome}");
     let _ = writeln!(rendered, "digest={}", self.digest.value());
     rendered
   }
@@ -292,6 +305,7 @@ pub fn run(input: CliInput) -> Result<CliOutput, RunError> {
     seed,
     events,
     digest: world.digest(),
+    outcome: world.outcome(),
   })
 }
 
@@ -495,6 +509,7 @@ mod tests {
       "seed=7\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
+outcome=in_progress\n\
 digest=12855340639581038520\n"
     );
   }

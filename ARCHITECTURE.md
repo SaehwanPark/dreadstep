@@ -1,6 +1,6 @@
 # Dreadstep Architecture
 
-Last Reviewed: 2026-08-11
+Last Reviewed: 2026-08-12
 Status: Verified
 
 ## Overview
@@ -12,7 +12,8 @@ translate semantic events into presentation, files, telemetry, or transport resp
 The current implementation exposes a runnable desktop showcase alongside the headless and MCP
 adapters. Milestone 1 exposes the first gameplay API in `dreadstep-core`: a typed rectangular map,
 actors, movement, melee, and chase commands, semantic movement/blocking/combat/death events,
-an integer ready-time scheduler, and core-owned replay traces/state digests. The
+an integer ready-time scheduler, canonical run-outcome projection, and core-owned replay
+traces/state digests. The
 `dreadstep-headless` adapter now provides a fixed-scenario developer CLI that translates text
 arguments into those core commands; it owns parsing and stdout only. `dreadstep-mcp` also provides
 a minimal local stdio server for the bounded player tools `start_run`, `observe`, `legal_actions`,
@@ -133,6 +134,10 @@ core digest value cross the MCP boundary.
 The `get_replay` projection packages that history, explicit seed, and core trace digest in a
 protocol-owned `ReplayEvidence` value. It remains an in-memory read-only view; persistence,
 serialization, playback, and transport registration stay outside this slice.
+
+The versioned `WorldSnapshot` also projects core's deterministic `RunOutcome` (`in_progress`,
+`defeat`, or `victory`). Core derives this value from retained actor records, with player defeat
+precedence and no-enemy worlds remaining in progress; protocol and MCP only translate the result.
 
 The player `inspect` operation is likewise a read-only lookup over the protocol world snapshot.
 It returns one protocol `ActorSnapshot` or no value for an unknown identity, preserves dead actor
@@ -489,8 +494,10 @@ events, scheduling, and replay truth. Ranged enemy AI and new status behavior re
 
 The verified player-defeat preparation keeps death semantics in core while the desktop boundary marks
 an accepted `Died { actor: PLAYER }` event as a terminal presentation status and records
-`terminal_defeat`. Normal input stops after defeat, while Escape and same-seed restart remain
-available; no protocol, replay, respawn, or canonical run-outcome state is inferred.
+`terminal_defeat`. The follow-up canonical outcome projection derives defeat/victory once in core,
+projects it through protocol v11 and Bevy snapshots, and lets the desktop consume that value.
+Normal input stops after defeat, while Escape and same-seed restart remain available; persistence,
+respawn, and replay playback remain future behavior.
 
 The verified melee-reach preparation slice adds a typed actor reach value with a one-tile default and
 an explicit extended-reach constructor for authored/test scenarios. Core uses the same Manhattan
