@@ -86,6 +86,58 @@ fn player_legal_commands_exclude_non_adjacent_attack_targets() {
 }
 
 #[test]
+fn player_legal_commands_include_ranged_targets_at_distance_two_or_three() {
+  let world = WorldState::new(
+    GridMap::filled(5, 1, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(2, 0)),
+      Actor::new(ActorId::new(3), ActorKind::Enemy, Position::new(3, 0)),
+      Actor::new(ActorId::new(4), ActorKind::Enemy, Position::new(4, 0)),
+    ],
+  )
+  .expect("test world should be valid");
+
+  assert_eq!(
+    world
+      .legal_commands()
+      .into_iter()
+      .filter_map(|command| match command {
+        Command::RangedAttack { target, .. } => Some(target),
+        _ => None,
+      })
+      .collect::<Vec<_>>(),
+    vec![ActorId::new(2), ActorId::new(3)]
+  );
+}
+
+#[test]
+fn player_combat_commands_follow_target_id_order_across_melee_and_ranged() {
+  let world = WorldState::new(
+    GridMap::filled(4, 1, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(2, 0)),
+      Actor::new(ActorId::new(3), ActorKind::Enemy, Position::new(1, 0)),
+    ],
+  )
+  .expect("test world should be valid");
+
+  assert_eq!(
+    world
+      .legal_commands()
+      .into_iter()
+      .filter_map(|command| match command {
+        Command::Attack { target, .. } => Some((target, "melee")),
+        Command::RangedAttack { target, .. } => Some((target, "ranged")),
+        _ => None,
+      })
+      .collect::<Vec<_>>(),
+    vec![(ActorId::new(2), "ranged"), (ActorId::new(3), "melee")]
+  );
+}
+
+#[test]
 fn enemy_legal_commands_exclude_dead_chase_targets() {
   let mut world = WorldState::new(
     GridMap::filled(3, 1, Tile::Floor).expect("test map should be valid"),

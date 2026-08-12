@@ -486,7 +486,7 @@ pub enum PresentationMessage {
     /// The action time at which the wait began.
     at: ActionTime,
   },
-  /// A melee attack reduced a target's hit points.
+  /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
     attacker: ActorId,
@@ -629,7 +629,7 @@ pub enum PresentationAudioCue {
     /// The actor that waited.
     actor: ActorId,
   },
-  /// A melee attack reduced a target's hit points.
+  /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
     attacker: ActorId,
@@ -908,7 +908,7 @@ pub enum PresentationAnimationCue {
     /// The action time at which the wait began.
     at: ActionTime,
   },
-  /// A melee attack reduced a target's hit points.
+  /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
     attacker: ActorId,

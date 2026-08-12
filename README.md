@@ -17,7 +17,13 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Dreadstep is continuing Milestone 3: the human presentation boundary.
+Dreadstep is continuing the transition from Milestone 3's human presentation boundary into
+Milestone 4 tactical combat.
+
+The next bounded Milestone 4 slice is in progress: scheduled ranged attacks at Manhattan distance
+2–3 are being carried through the deterministic core, protocol/MCP/headless adapters, and the
+desktop `G` control. Line of sight, cover, ammunition, weapon effects, varied action costs, and
+enemy ranged AI remain deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
