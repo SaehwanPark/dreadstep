@@ -475,6 +475,12 @@ walkable cover and treats only walls as visible boundaries. Protocol v7 carries 
 variant; cover damage modifiers, directionality, destruction, and environmental mutation remain
 future rules.
 
+The active enemy-intent presentation slice reads core's current legal command projection for the
+scheduled living enemy and exposes the selected exact command as a disposable Bevy resource. It
+shares the desktop driver's deterministic chase-then-wait preference, changes no simulation truth,
+and renders only a compact HUD summary; new enemy behavior families and intent commitment remain
+future rules.
+
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol
 errors only; core still owns scheduling, target validation, semantic events, and replay recording.

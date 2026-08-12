@@ -52,11 +52,11 @@ use crate::{
   PresentationAssetReference, PresentationAudioAssetManifest, PresentationAudioAssetProjection,
   PresentationAudioCue, PresentationAudioCueKind, PresentationAudioCues,
   PresentationBevySpriteProjection, PresentationBevySpriteTransformProjection, PresentationCamera,
-  PresentationFocus, PresentationInput, PresentationKeyboardMode, PresentationMessages,
-  PresentationPlugin, PresentationRenderAssetProjection, PresentationRenderCommandPlan,
-  PresentationRenderNodeProjection, PresentationRenderProjection, PresentationRuntime,
-  PresentationSet, PresentationSnapshot, PresentationSpriteProjection, PresentationTileSize,
-  PresentationVisibility, SceneRenderNode, SceneRenderPlaceholder,
+  PresentationEnemyIntent, PresentationFocus, PresentationInput, PresentationKeyboardMode,
+  PresentationMessages, PresentationPlugin, PresentationRenderAssetProjection,
+  PresentationRenderCommandPlan, PresentationRenderNodeProjection, PresentationRenderProjection,
+  PresentationRuntime, PresentationSet, PresentationSnapshot, PresentationSpriteProjection,
+  PresentationTileSize, PresentationVisibility, SceneRenderNode, SceneRenderPlaceholder,
 };
 
 const PLAYER: ActorId = ActorId::new(1);
@@ -1207,6 +1207,7 @@ fn desktop_enemy_driver(
   time: Res<Time>,
   mut runtime: ResMut<PresentationRuntime>,
   mut session: ResMut<DesktopSession>,
+  input: Res<PresentationInput>,
 ) {
   if !matches!(session.status, DesktopStatus::Running) {
     return;
@@ -1224,26 +1225,7 @@ fn desktop_enemy_driver(
     return;
   };
   let legal = runtime.legal_commands();
-  let command = legal
-    .iter()
-    .find(|command| {
-      matches!(
-        command,
-        Command::Chase {
-          actor: candidate,
-          target: PLAYER
-        } if *candidate == actor
-      )
-    })
-    .copied()
-    .or_else(|| {
-      legal
-        .iter()
-        .find(
-          |command| matches!(command, Command::Wait { actor: candidate } if *candidate == actor),
-        )
-        .copied()
-    });
+  let command = crate::select_enemy_command(&legal, actor, input.actor());
   if let Some(command) = command {
     let _ = submit_command(&mut runtime, &mut session, "enemy_driver", command);
   } else {
@@ -1377,6 +1359,7 @@ fn run_visible(
   app.insert_resource(PresentationVisibility::new(PLAYER, 3));
   app.insert_resource(viewport);
   app.insert_resource(crate::PresentationHud::new(PLAYER));
+  app.insert_resource(PresentationEnemyIntent::new());
   app.insert_resource(PresentationMessages::new());
   app.insert_resource(PresentationAnimationCues::new());
   app.insert_resource(DesktopAnimationState::default());
@@ -1922,11 +1905,29 @@ fn visibility_summary(visibility: Option<&PresentationVisibility>) -> String {
   )
 }
 
+fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> String {
+  let Some(intent) = intent else {
+    return "Intent unavailable".to_string();
+  };
+  match (intent.actor(), intent.command()) {
+    (Some(actor), Some(Command::Chase { target, .. })) => {
+      format!(
+        "Intent: enemy {} chases actor {}",
+        actor.value(),
+        target.value()
+      )
+    }
+    (Some(actor), Some(command)) => format!("Intent: enemy {} {:?}", actor.value(), command),
+    _ => "Intent: none".to_string(),
+  }
+}
+
 fn format_hud_stats(
   player: Option<&Actor>,
   snapshot: &PresentationSnapshot,
   status: &DesktopStatus,
   visibility: Option<&PresentationVisibility>,
+  intent: Option<&PresentationEnemyIntent>,
 ) -> String {
   let enemies_remaining = snapshot
     .actors()
@@ -1935,19 +1936,20 @@ fn format_hud_stats(
     .count();
   let Some(player) = player else {
     return format!(
-      "Player unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\nStatus: {:?}",
+      "Player unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\n{}\nStatus: {:?}",
       snapshot.current_time().value(),
       snapshot
         .next_actor()
         .map_or_else(|| "-".to_string(), |id| id.value().to_string()),
       enemies_remaining,
       visibility_summary(visibility),
+      enemy_intent_summary(intent),
       status
     );
   };
   let hit_points = i32::from(player.hit_points().value());
   format!(
-    "HP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\nStatus: {:?}",
+    "HP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\nStatus: {:?}",
     health_bar_text(hit_points),
     hit_points.clamp(0, SHOWCASE_MAX_HIT_POINTS),
     SHOWCASE_MAX_HIT_POINTS,
@@ -1959,6 +1961,7 @@ fn format_hud_stats(
       .map_or_else(|| "-".to_string(), |id| id.value().to_string()),
     enemies_remaining,
     visibility_summary(visibility),
+    enemy_intent_summary(intent),
     status
   )
 }
@@ -1967,13 +1970,20 @@ fn desktop_update_hud(
   runtime: Option<Res<PresentationRuntime>>,
   session: Option<Res<DesktopSession>>,
   visibility: Option<Res<PresentationVisibility>>,
+  intent: Option<Res<PresentationEnemyIntent>>,
   mut lines: Query<(&mut Text, &HudLine), With<HudLine>>,
 ) {
   let Some(runtime) = runtime else { return };
   let Some(session) = session else { return };
   let snapshot = runtime.snapshot();
   let player = snapshot.actors().iter().find(|actor| actor.id() == PLAYER);
-  let stats = format_hud_stats(player, &snapshot, &session.status, visibility.as_deref());
+  let stats = format_hud_stats(
+    player,
+    &snapshot,
+    &session.status,
+    visibility.as_deref(),
+    intent.as_deref(),
+  );
   let inventory = player.map_or_else(
     || "Inventory unavailable".to_string(),
     |player| {
@@ -2193,19 +2203,48 @@ mod tests {
     let state = PresentationState::start_item_run(7).expect("starter item run");
     let snapshot = state.snapshot();
     let status = DesktopStatus::Running;
-    let text = format_hud_stats(None, &snapshot, &status, None);
+    let empty_intent = PresentationEnemyIntent::new();
+    let text = format_hud_stats(None, &snapshot, &status, None, Some(&empty_intent));
     assert!(text.contains("Player unavailable"));
     assert!(text.contains("Enemies remaining: 3"));
     assert!(text.contains("FOV full map"));
+    assert!(text.contains("Intent: none"));
 
     let player = snapshot
       .actors()
       .iter()
       .find(|actor| actor.id() == PLAYER)
       .expect("player exists");
-    let text = format_hud_stats(Some(player), &snapshot, &status, None);
+    let text = format_hud_stats(Some(player), &snapshot, &status, None, Some(&empty_intent));
     assert!(text.contains("HP [##########] 10/10"));
     assert!(text.contains("enemies 3"));
+    assert!(text.contains("Intent: none"));
+  }
+
+  #[test]
+  fn hud_intent_summary_reports_the_exact_chase_target() {
+    let mut intent = PresentationEnemyIntent::new();
+    intent.actor = Some(ActorId::new(2));
+    intent.command = Some(Command::Chase {
+      actor: ActorId::new(2),
+      target: PLAYER,
+    });
+    assert_eq!(
+      enemy_intent_summary(Some(&intent)),
+      "Intent: enemy 2 chases actor 1"
+    );
+  }
+
+  #[test]
+  fn hud_intent_summary_has_missing_and_generic_command_fallbacks() {
+    assert_eq!(enemy_intent_summary(None), "Intent unavailable");
+    let intent = PresentationEnemyIntent {
+      actor: Some(ActorId::new(2)),
+      command: Some(Command::Wait {
+        actor: ActorId::new(2),
+      }),
+    };
+    assert!(enemy_intent_summary(Some(&intent)).contains("Intent: enemy 2 Wait"));
   }
 
   #[test]

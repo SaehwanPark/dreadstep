@@ -22,9 +22,10 @@ Milestone 4 tactical combat.
 
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
 ammunition, and walkable-cover slices are verified across the deterministic core,
-protocol/MCP/headless adapters, and desktop `G` control. Cover blocks only interior ranged rays;
-ammo pickups, reloads, cover damage modifiers, weapon effects, and enemy ranged AI remain
-deliberately deferred.
+protocol/MCP/headless adapters, and desktop `G` control. The next bounded slice projects the
+scheduled enemy's current intent into the desktop HUD without changing enemy behavior. Cover
+blocks only interior ranged rays; ammo pickups, reloads, cover damage modifiers, weapon effects,
+and enemy AI families remain deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and

@@ -4,6 +4,15 @@ Read this file before implementation and again before final review. Record only 
 recurring traps that are not already obvious from code, tests, or canonical documentation.
 Update an existing lesson instead of adding a duplicate.
 
+## 2026-08-12 — Intent projections must reuse the actor driver's policy
+
+- Context: The scheduled enemy exposes several legal movement commands before its preferred `Chase`
+  command, so presenting the first vector entry would disagree with the desktop enemy driver.
+- Resolution: Project the exact core command selected by the same deterministic chase-then-wait
+  preference used by the driver, with a first-legal fallback for future behavior families.
+- Prevention: Keep intent projections read-only, test actor/target identity and replay stability,
+  and update the presentation policy whenever the driver selection policy changes.
+
 ## Keep desktop engine features at the presentation boundary
 
 - Context: The initial root package depended on Bevy 0.19 with all default features.

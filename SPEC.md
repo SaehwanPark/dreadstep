@@ -3244,6 +3244,31 @@ Out of scope:
 - cover damage reduction, directional/destructible/temporary cover, environmental mutation, ammo
   pickups/reloads, weapon effects, and enemy ranged AI.
 
+### Milestone 4 slice: deterministic enemy intent presentation
+
+- Status: active
+- Started: 2026-08-12
+
+Project the currently scheduled living enemy's deterministic next legal command into a typed
+`PresentationEnemyIntent` resource and display a compact intent line in the desktop HUD. The
+projection prefers the same `Chase`-then-`Wait` selection policy as the desktop enemy driver and
+otherwise preserves the first core legal command; it does not reserve commands or change core
+behavior, events, scheduling, replay, smoke coverage, animation, or audio.
+
+Verification target:
+
+- Headless Bevy tests prove player-turn emptiness, scheduled enemy chase identity/target, missing
+  runtime safety, and unchanged runtime authority/replay evidence.
+- Desktop HUD tests prove deterministic fallback formatting; existing controls, journal, smoke,
+  visual fallback, animation, and optional-audio behavior remain exhaustive.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- New enemy behavior, ranged enemy AI, retreat, status effects, command/event variants, prediction
+  beyond the current scheduled turn, new controls, and new media.
+
 ### Milestone 4 slice: deterministic ranged ammunition
 
 - Status: verified
