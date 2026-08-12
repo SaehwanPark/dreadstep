@@ -31,6 +31,7 @@ display-free smoke path.
 | --- | --- | --- |
 | Arrow keys / WASD | Move | `Command::Move` selected from `legal_commands` |
 | Space / Enter | Wait | `Command::Wait` |
+| I | Open the first legal adjacent closed door | `Command::Interact` |
 | F | Attack the lowest-ID adjacent target | `Command::Attack` |
 | G | Ranged attack the lowest-ID clear-cardinal target at distance 2–3 (2 ticks; 3 shots) | `Command::RangedAttack` |
 | Tab / Shift-Tab | Select the next/previous owned item | presentation-only selection |
@@ -112,7 +113,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | Move / wait / enemy attack/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, healing/ammo results, and ground stack | item/reload events, optional healing/ammo evidence, and full actor snapshots | yes |
-| Terrain and actor blocking | distinct wall/cover/floor/actor pixels | `movement_blocked` reason | yes |
+| Terrain, door, and actor blocking | distinct wall/cover/floor/door/actor pixels | `movement_blocked` and `door_opened` evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
 | Optional art fallback | per-family placeholder | warning/outcome records | no display required |
@@ -126,8 +127,9 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
   --smoke --seed 7 --log-dir target/dreadstep-smoke-logs
 ```
 
-The deterministic sequence first uses `RangedAttack` against the distance-two authored enemy, then
-reloads the player's partial ammunition, drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
+The deterministic sequence first uses `RangedAttack` against the distance-two authored enemy, adds a
+closed-door smoke fixture and opens it with `Interact`, then reloads the player's partial ammunition,
+drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
 `Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,
 consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between
 player actions. Exhaustive command/event mappings and the coverage lists make a new player-visible
@@ -136,10 +138,10 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 ## Manual checklist
 
 - one non-resizable 640×360 logical (1280×720 physical at scale 2) primary window opens;
-- floor, cover, wall, player, enemy, dead actor, and ground item placeholders are visibly distinct;
+- floor, cover, wall, door, player, enemy, dead actor, and ground item placeholders are visibly distinct;
 - radius-3 field of view follows the controlled actor, hides distant nodes without removing their
   typed mirrors, and keeps adjacent wall edges readable;
-- movement, wait, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, and enemy delay
+- movement, wait, adjacent door interaction, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, and enemy delay
   work as documented;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
   and journal path;

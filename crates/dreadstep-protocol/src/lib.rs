@@ -19,7 +19,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 14;
+pub const PROTOCOL_VERSION: u16 = 15;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -50,6 +50,13 @@ pub enum CommandRequest {
   Wait {
     /// The actor issuing the request.
     actor: ActorId,
+  },
+  /// Open one adjacent closed door.
+  Interact {
+    /// The actor issuing the request.
+    actor: ActorId,
+    /// The adjacent closed door to open.
+    position: Position,
   },
   /// Attack an adjacent actor.
   Attack {
@@ -127,6 +134,10 @@ impl From<CommandRequest> for CoreCommand {
       CommandRequest::Wait { actor } => Self::Wait {
         actor: dreadstep_core::ActorId::new(actor.value()),
       },
+      CommandRequest::Interact { actor, position } => Self::Interact {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        position: dreadstep_core::Position::new(position.x(), position.y()),
+      },
       CommandRequest::Attack { actor, target } => Self::Attack {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
@@ -179,6 +190,10 @@ impl From<CoreCommand> for CommandRequest {
       },
       CoreCommand::Wait { actor } => Self::Wait {
         actor: ActorId::new(actor.value()),
+      },
+      CoreCommand::Interact { actor, position } => Self::Interact {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
       },
       CoreCommand::Attack { actor, target } => Self::Attack {
         actor: ActorId::new(actor.value()),
@@ -498,6 +513,8 @@ pub enum Tile {
   Cover,
   /// A blocking cell.
   Wall,
+  /// A closed door that blocks movement until opened.
+  Door,
 }
 
 /// One typed actor record in a tester scenario's initial world.
@@ -1137,6 +1154,13 @@ pub enum Event {
     /// The action time at which the wait began.
     at: ActionTime,
   },
+  /// An actor opened a closed door at an adjacent position.
+  DoorOpened {
+    /// The actor that opened the door.
+    actor: ActorId,
+    /// The door position that changed to floor.
+    position: Position,
+  },
   /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
@@ -1233,6 +1257,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         at: ActionTime::new(at.value()),
       },
+      CoreEvent::DoorOpened { actor, position } => Self::DoorOpened {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
       CoreEvent::Attacked {
         attacker,
         target,
@@ -1313,6 +1341,13 @@ pub enum CommandError {
   DropRequiresPlayer(ActorId),
   /// A reload request must come from a player actor.
   ReloadRequiresPlayer(ActorId),
+  /// The requested target is not an adjacent closed door.
+  InteractTargetInvalid {
+    /// The actor issuing the interaction.
+    actor: ActorId,
+    /// The requested interaction position.
+    position: Position,
+  },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is not adjacent.
@@ -1406,6 +1441,10 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::ReloadRequiresPlayer(actor) => {
         Self::ReloadRequiresPlayer(ActorId::new(actor.value()))
       }
+      CoreCommandError::InteractTargetInvalid { actor, position } => Self::InteractTargetInvalid {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
       CoreCommandError::CannotChaseSelf(actor) => {
         Self::CannotChaseSelf(ActorId::new(actor.value()))
       }
@@ -1515,6 +1554,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::InteractTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot interact with ({}, {}): target is not an adjacent closed door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }

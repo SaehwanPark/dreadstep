@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 14);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 15);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -147,6 +147,22 @@ fn command_and_event_json_use_explicit_tagged_variants() {
     request
   );
 
+  let interact = CommandRequest::Interact {
+    actor: ActorId::new(3),
+    position: dreadstep_protocol::Position::new(2, 1),
+  };
+  assert_eq!(
+    serde_json::to_value(interact).expect("interact request should serialize"),
+    serde_json::json!({"interact": {"actor": 3, "position": {"x": 2, "y": 1}}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "interact": {"actor": 3, "position": {"x": 2, "y": 1}}
+    }))
+    .expect("interact request should deserialize"),
+    interact
+  );
+
   let ranged = CommandRequest::RangedAttack {
     actor: ActorId::new(3),
     target: ActorId::new(4),
@@ -230,6 +246,14 @@ fn command_and_event_json_use_explicit_tagged_variants() {
   assert_eq!(
     serde_json::to_value(event).expect("event should serialize"),
     serde_json::json!({"waited": {"actor": 3, "at": 7}})
+  );
+  let door_event = Event::DoorOpened {
+    actor: ActorId::new(3),
+    position: dreadstep_protocol::Position::new(2, 1),
+  };
+  assert_eq!(
+    serde_json::to_value(door_event).expect("door event should serialize"),
+    serde_json::json!({"door_opened": {"actor": 3, "position": {"x": 2, "y": 1}}})
   );
   let equipment_event = Event::ItemEquipped {
     actor: ActorId::new(3),

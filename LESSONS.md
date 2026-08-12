@@ -387,3 +387,18 @@ constructor cannot silently alter the default client path or lose owner/order da
   no-effect constructor unchanged while synchronizing protocol v14 and desktop JSON/text output.
 - Prevention: Test authored and hand-built ammunition items at partial and full capacity, assert
   no-effect/healing compatibility, and keep event/schema constructors exhaustive across all adapters.
+
+## Keep environmental mutation behind a typed command
+
+- Context: The first Living Dungeon preparation slice adds a closed door without introducing a
+  generalized interaction framework.
+- Symptom: Letting adapters flip map tiles directly would make presentation or tester setup a
+  second source of game truth and would omit action timing, replay, and event evidence.
+- Cause: Terrain state and scheduled transitions belong to `WorldState`, while desktop smoke and
+  MCP scenarios only need fixture setup around that authority.
+- Resolution: Add `Tile::Door`, a checked core tile mutation primitive, and one adjacent scheduled
+  `Interact` predicate shared by legal discovery and execution. Open only after all validation,
+  emit `DoorOpened`, and keep fixture-only setup out of replay history.
+- Prevention: Test blocked movement/line of sight, successful standard-cost opening, deterministic
+  legal ordering and digest participation, and atomic rejection for every invalid target before
+  adding locks, closing, traps, or procedural generation.

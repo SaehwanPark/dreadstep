@@ -3217,6 +3217,34 @@ Out of scope:
 
 ## Active
 
+### Milestone 5 preparation slice: deterministic adjacent door interaction
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Add the smallest Living Dungeon environmental-state foundation: a closed `Door` terrain tile
+blocks movement and ranged line of sight, while a living scheduled actor may spend one standard
+action on an adjacent `Interact` command to open it to `Floor`. The transition emits typed
+`DoorOpened` evidence, participates in legal-action ordering and replay/state digests, and rejects
+non-adjacent, out-of-bounds, non-door, and already-open targets atomically. Protocol v15, MCP
+tester scenarios, headless parsing, Bevy presentation, desktop `I` input, and JSONL smoke evidence
+translate the same values without adding a generic interaction engine.
+
+Verification evidence:
+
+- Core red/green tests cover closed-door blocking, successful opening, standard timing, legal
+  discovery, deterministic replay digest, and atomic invalid interactions.
+- Protocol command/event/error JSON/schema mappings, MCP scenario replacement, headless parsing,
+  Bevy typed message and desktop journal mappings, key dispatch, and smoke coverage pass.
+- Full workspace tests, `scripts/verify.sh`, formatting, diff checks, and semantic review are
+  required before merge.
+
+Out of scope:
+
+- Lock/key systems, closing doors, traps, destructibility, noise attraction, procedural floors,
+  multiple interactions per turn, production media, and a generalized interaction framework.
+
 ### Milestone 6 preparation slice: deterministic ammunition consumable
 
 - Status: verified
@@ -3240,7 +3268,7 @@ Acceptance:
 - The authored item-bearing scenario gives player item `102` a two-round ammunition effect while
   preserving item `101` healing, the item-free default floor, opaque catalog membership, and stable
   inventory order.
-- Protocol v14, MCP, headless, Bevy, and desktop JSON/text evidence expose the optional ammunition
+- Protocol v15, MCP, headless, Bevy, and desktop JSON/text evidence expose the optional ammunition
   result without changing command/event names or audio/animation families. Focused tests, full
   workspace verification, formatting, diff checks, and one semantic review pass are required.
 
@@ -3253,7 +3281,7 @@ Verification evidence:
 
 - Core capped ammunition recovery and typed optional event evidence pass; the item effect is part
   of the deterministic state digest and no-effect/healing event payloads remain stable.
-- Content authors item `102` with a two-round restoration; protocol v14, MCP, Bevy, desktop JSON,
+- Content authors item `102` with a two-round restoration; protocol v15, MCP, Bevy, desktop JSON,
   and text evidence all project the optional ammunition result. Full workspace tests and focused
   core/content/protocol/MCP/Bevy tests pass.
 - `scripts/verify.sh`, formatting, diff checks, strict lint/docs, and display-free smoke pass; one
@@ -3296,7 +3324,7 @@ Verification evidence:
 - Core healing, capped recovery, no-effect, and atomic rejection tests pass; the state digest is
   versioned with actor maximum hit points and authored item effects.
 - Content, protocol JSON/event, MCP authored-item, Bevy presentation, desktop journal, and display-
-  free smoke coverage all pass. Protocol v14 carries the optional typed healing and ammunition
+  free smoke coverage all pass. Protocol v15 carries the optional typed healing and ammunition
   results; the existing item-consumption audio/animation families remain unchanged.
 - `cargo test --workspace --all-targets --all-features --locked`, `scripts/verify.sh`, formatting,
   and diff checks pass; one semantic review is required before merge.

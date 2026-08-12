@@ -22,9 +22,10 @@ Milestone 4 tactical combat.
 
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
 ammunition, walkable cover, deterministic scheduled-enemy intent presentation, typed melee reach,
-player-facing reload, item pickup/drop, healing and ammunition consumables, and canonical run-outcome projection are verified across
+player-facing reload, item pickup/drop, healing and ammunition consumables, deterministic adjacent
+door interaction, and canonical run-outcome projection are verified across
 the deterministic core, protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
-three-shot capacity with `R` when ammo is partial; `X` drops the selected unequipped item and
+three-shot capacity with `R` when ammo is partial; `I` opens a legal adjacent closed door; `X` drops the selected unequipped item and
 `Shift+R` restarts the same seed. Adjacent scheduled enemies use the existing fixed melee attack
 before falling back to chase; core and protocol snapshots now expose deterministic `in_progress`,
 `defeat`, or `victory` outcomes, and the desktop showcase consumes that projection while keeping
@@ -46,10 +47,14 @@ the artifact is not a playback-compatible save file.
   - Scheduled player-facing item pickup and drop with deterministic ground-stack ordering, typed
     events/errors, protocol/MCP replay evidence, and desktop `P`/`X` smoke coverage; damage/status
     effects, modifiers, and richer item semantics remain deferred.
+  - Deterministic adjacent closed-door interaction with typed `Door`, `Interact`, and `DoorOpened`
+    values, atomic rejection, protocol v15/MCP/headless/Bevy mappings, desktop `I` control, and
+    display-free smoke/journal coverage; lock/key systems, closing doors, traps, and procedural
+    floors remain deferred.
   - Deterministic desktop replay-evidence export with seed, accepted command order, replay digest,
     and canonical outcome; persistence, editing, and playback remain deferred.
   - Fixed four-item inventory capacity with atomic full-inventory rejection across core, protocol
-    v14 snapshots, MCP, headless command coverage, and Bevy legal-action projections; richer effects and
+    v15 snapshots, MCP, headless command coverage, and Bevy legal-action projections; richer effects and
     upgrades remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,

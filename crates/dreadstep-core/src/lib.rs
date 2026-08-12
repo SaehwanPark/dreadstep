@@ -333,6 +333,8 @@ pub enum Tile {
   Cover,
   /// A cell that blocks movement.
   Wall,
+  /// A closed door that blocks movement until an adjacent actor opens it.
+  Door,
 }
 
 impl Tile {
@@ -345,7 +347,7 @@ impl Tile {
   /// Returns whether this tile blocks a ranged line of sight.
   #[must_use]
   pub const fn blocks_ranged_line_of_sight(self) -> bool {
-    matches!(self, Self::Cover | Self::Wall)
+    matches!(self, Self::Cover | Self::Wall | Self::Door)
   }
 }
 
@@ -490,6 +492,18 @@ impl GridMap {
   #[must_use]
   pub fn is_walkable(&self, position: Position) -> bool {
     self.tile_at(position).is_some_and(Tile::is_walkable)
+  }
+
+  /// Replaces one in-bounds tile and returns the previous terrain.
+  ///
+  /// The bounded mutation is used by semantic world transitions such as opening a door. `None`
+  /// means that the requested position is outside this validated map.
+  pub fn set_tile(&mut self, position: Position, tile: Tile) -> Option<Tile> {
+    if !self.in_bounds(position) {
+      return None;
+    }
+    let index = self.index(position);
+    Some(std::mem::replace(&mut self.tiles[index], tile))
   }
 
   fn index(&self, position: Position) -> usize {
@@ -904,6 +918,13 @@ pub enum Command {
     /// The actor issuing the command.
     actor: ActorId,
   },
+  /// Open one adjacent closed door.
+  Interact {
+    /// The actor issuing the interaction.
+    actor: ActorId,
+    /// The adjacent closed door to open.
+    position: Position,
+  },
   /// Make a fixed basic melee attack against an actor within melee reach.
   Attack {
     /// The actor issuing the attack.
@@ -970,6 +991,7 @@ impl Command {
     match self {
       Self::Move { actor, .. }
       | Self::Wait { actor }
+      | Self::Interact { actor, .. }
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
       | Self::Chase { actor, .. }
@@ -1044,6 +1066,12 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
     Command::Wait { actor } => {
       hasher.write_u8(2);
       hasher.write_u32(actor.value());
+    }
+    Command::Interact { actor, position } => {
+      hasher.write_u8(12);
+      hasher.write_u32(actor.value());
+      hasher.write_i32(position.x());
+      hasher.write_i32(position.y());
     }
     Command::Attack { actor, target } => {
       hasher.write_u8(3);
@@ -1152,6 +1180,13 @@ pub enum Event {
     actor: ActorId,
     /// The action time at which the wait began.
     at: ActionTime,
+  },
+  /// An actor opened a closed door at an adjacent position.
+  DoorOpened {
+    /// The actor that opened the door.
+    actor: ActorId,
+    /// The door position that changed to floor.
+    position: Position,
   },
   /// An attack reduced a living target's hit points.
   Attacked {
@@ -1428,6 +1463,13 @@ pub enum CommandError {
   DropRequiresPlayer(ActorId),
   /// A reload command must be issued by a player actor.
   ReloadRequiresPlayer(ActorId),
+  /// An interaction must target an adjacent closed door.
+  InteractTargetInvalid {
+    /// The actor issuing the interaction.
+    actor: ActorId,
+    /// The requested interaction position.
+    position: Position,
+  },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is outside the attacker's melee reach.
@@ -1547,6 +1589,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::InteractTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot interact with ({}, {}): target is not an adjacent closed door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }
@@ -2102,6 +2151,14 @@ impl WorldState {
     &self.map
   }
 
+  /// Replaces one map tile for an explicit tester or presentation fixture mutation.
+  ///
+  /// This operation does not consume time or enter replay evidence. Player-facing terrain
+  /// changes still go through semantic commands such as [`Command::Interact`].
+  pub fn set_tile(&mut self, position: Position, tile: Tile) -> Option<Tile> {
+    self.map.set_tile(position, tile)
+  }
+
   /// Returns an actor by stable identity.
   #[must_use]
   pub fn actor(&self, actor: ActorId) -> Option<&Actor> {
@@ -2178,6 +2235,7 @@ impl WorldState {
         Tile::Floor => 1,
         Tile::Cover => 2,
         Tile::Wall => 3,
+        Tile::Door => 4,
       });
     }
     hasher.write_u64(self.current_time.value());
@@ -2280,6 +2338,20 @@ impl WorldState {
       },
       Command::Wait { actor: actor_id },
     ];
+    for direction in [
+      Direction::North,
+      Direction::South,
+      Direction::West,
+      Direction::East,
+    ] {
+      let position = actor.position().translated(direction);
+      if self.map.tile_at(position) == Some(Tile::Door) {
+        commands.push(Command::Interact {
+          actor: actor_id,
+          position,
+        });
+      }
+    }
     if actor.kind() == ActorKind::Player && actor.ranged_ammo() < Actor::RANGED_AMMO_CAPACITY {
       commands.push(Command::Reload { actor: actor_id });
     }
@@ -2417,6 +2489,7 @@ impl WorldState {
         actor: actor_id,
         at: self.current_time,
       }],
+      Command::Interact { position, .. } => vec![self.interact(actor_id, position)?],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
       Command::Chase { target, .. } => {
@@ -2697,6 +2770,36 @@ impl WorldState {
         to,
       })
     }
+  }
+
+  fn interact(&mut self, actor_id: ActorId, position: Position) -> Result<Event, CommandError> {
+    let actor_position = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let adjacent = actor_position
+      .x()
+      .abs_diff(position.x())
+      .checked_add(actor_position.y().abs_diff(position.y()))
+      == Some(1);
+    if !adjacent || self.map.tile_at(position) != Some(Tile::Door) {
+      return Err(CommandError::InteractTargetInvalid {
+        actor: actor_id,
+        position,
+      });
+    }
+    self
+      .map
+      .set_tile(position, Tile::Floor)
+      .ok_or(CommandError::InteractTargetInvalid {
+        actor: actor_id,
+        position,
+      })?;
+    Ok(Event::DoorOpened {
+      actor: actor_id,
+      position,
+    })
   }
 
   fn chase_direction(&self, actor: ActorId, target: ActorId) -> Result<Direction, CommandError> {

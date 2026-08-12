@@ -244,6 +244,12 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       .map(ItemId::new)
       .map_err(|_| CliError::InvalidCommand(token.to_owned()))
   };
+  let parse_coordinate = |value: Option<&&str>| {
+    value
+      .ok_or_else(|| CliError::InvalidCommand(token.to_owned()))?
+      .parse::<i32>()
+      .map_err(|_| CliError::InvalidCommand(token.to_owned()))
+  };
   match parts.as_slice() {
     ["move", actor, direction] => Ok(Command::Move {
       actor: parse_actor(Some(actor))?,
@@ -251,6 +257,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
     }),
     ["wait", actor] => Ok(Command::Wait {
       actor: parse_actor(Some(actor))?,
+    }),
+    ["interact", actor, x, y] => Ok(Command::Interact {
+      actor: parse_actor(Some(actor))?,
+      position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
     }),
     ["attack", actor, target] => Ok(Command::Attack {
       actor: parse_actor(Some(actor))?,
@@ -437,6 +447,25 @@ mod tests {
       &[Command::Drop {
         actor: ActorId::new(1),
         item: ItemId::new(101),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_interact_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "interact:1:2:-3".to_owned(),
+    ])
+    .expect("interact command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Interact {
+        actor: ActorId::new(1),
+        position: Position::new(2, -3),
       }]
     );
   }
