@@ -12,6 +12,9 @@ All notable contributor- and user-visible project changes are recorded here.
 - A verified deterministic player reload action that restores the fixed three-shot ranged-ammo
   capacity with typed core/protocol/MCP/headless evidence, protocol v9, `R` desktop control, and
   exhaustive journal/smoke coverage; ammo pickups and weapon capacities remain deferred.
+- A verified scheduled player-facing item drop slice: protocol v10 command/event/error plumbing,
+  deterministic inventory-to-ground ordering, MCP item-run setup, headless CLI coverage, and `X`
+  desktop control; item effects and capacity remain deferred.
 - An active deterministic enemy-intent presentation slice: the scheduled enemy's exact core
   command is projected into a typed Bevy resource and compact desktop HUD line without changing
   simulation behavior or adding controls/media.

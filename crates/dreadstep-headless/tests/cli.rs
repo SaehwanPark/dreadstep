@@ -31,6 +31,15 @@ fn binary_smoke_test_runs_reload_command() {
 }
 
 #[test]
+fn binary_smoke_test_runs_drop_command() {
+  let output = run_binary("drop:1:101");
+
+  assert!(output.status.success());
+  let stdout = String::from_utf8(output.stdout).expect("CLI output should be UTF-8");
+  assert!(stdout.contains("ItemDropped"));
+}
+
+#[test]
 fn binary_reports_malformed_input_with_structured_process_error() {
   let output = run_binary("bad");
 

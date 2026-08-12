@@ -210,6 +210,10 @@ fn legal_commands_and_replay_digest_include_equipment_in_order() {
       Command::Wait {
         actor: ActorId::new(1),
       },
+      Command::Drop {
+        actor: ActorId::new(1),
+        item: ItemId::new(1),
+      },
       Command::Equip {
         actor: ActorId::new(1),
         item: ItemId::new(1),

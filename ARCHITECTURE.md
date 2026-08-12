@@ -468,8 +468,10 @@ decrements ammunition only after an accepted ranged attack, omits empty actions 
 and returns typed no-ammunition rejection without mutating scheduler or replay evidence. The verified
 reload slice adds a scheduled player-only `Reload` command that restores the same fixed capacity,
 uses the standard action cost, and emits typed event evidence; full-ammo rejection remains atomic.
-Protocol v9 carries the command/event/error additions; ammo pickups, item-derived ammunition, and
-weapon capacities remain future rules.
+Protocol v9 carries the reload command/event/error additions. The verified player-drop slice is the
+version-10 follow-up: it moves one owned unequipped item into the current ground stack with standard
+action timing and typed replay evidence; ammo pickups, item-derived ammunition, and weapon capacities
+remain future rules.
 
 The verified cover slice adds a walkable `Cover` tile that blocks interior ranged rays while
 retaining the existing typed no-line-of-sight rejection. Presentation FOV continues to traverse

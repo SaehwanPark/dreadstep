@@ -8,8 +8,8 @@
 use std::{error::Error, fmt, fmt::Write as _};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, CommandError, Direction, GridMap, HitPoints, Position,
-  StateDigest, Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, CommandError, Direction, GridMap, HitPoints, Item,
+  ItemDefinitionId, ItemId, Position, StateDigest, Tile, WorldState,
 };
 
 /// Parsed command-line input for the fixed developer scenario.
@@ -224,6 +224,13 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       .map(ActorId::new)
       .map_err(|_| CliError::InvalidCommand(token.to_owned()))
   };
+  let parse_item = |value: Option<&&str>| {
+    value
+      .ok_or_else(|| CliError::InvalidCommand(token.to_owned()))?
+      .parse::<u32>()
+      .map(ItemId::new)
+      .map_err(|_| CliError::InvalidCommand(token.to_owned()))
+  };
   match parts.as_slice() {
     ["move", actor, direction] => Ok(Command::Move {
       actor: parse_actor(Some(actor))?,
@@ -246,6 +253,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
     }),
     ["reload", actor] => Ok(Command::Reload {
       actor: parse_actor(Some(actor))?,
+    }),
+    ["drop", actor, item] => Ok(Command::Drop {
+      actor: parse_actor(Some(actor))?,
+      item: parse_item(Some(item))?,
     }),
     _ => Err(CliError::InvalidCommand(token.to_owned())),
   }
@@ -301,7 +312,7 @@ where
 fn fixed_scenario() -> Result<WorldState, RunError> {
   let map =
     GridMap::filled(3, 1, Tile::Floor).map_err(|error| RunError::Scenario(error.to_string()))?;
-  WorldState::new(
+  let mut world = WorldState::new(
     map,
     vec![
       Actor::with_ranged_ammo(
@@ -319,7 +330,14 @@ fn fixed_scenario() -> Result<WorldState, RunError> {
       ),
     ],
   )
-  .map_err(|error| RunError::Scenario(error.to_string()))
+  .map_err(|error| RunError::Scenario(error.to_string()))?;
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(101), ItemDefinitionId::new(1)),
+    )
+    .map_err(|error| RunError::Scenario(error.to_string()))?;
+  Ok(world)
 }
 
 #[cfg(test)]
@@ -386,6 +404,25 @@ mod tests {
       input.commands(),
       &[Command::Reload {
         actor: ActorId::new(1),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_drop_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "drop:1:101".to_owned(),
+    ])
+    .expect("drop command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Drop {
+        actor: ActorId::new(1),
+        item: ItemId::new(101),
       }]
     );
   }
@@ -458,7 +495,7 @@ mod tests {
       "seed=7\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
-digest=13208329042387099761\n"
+digest=12855340639581038520\n"
     );
   }
 

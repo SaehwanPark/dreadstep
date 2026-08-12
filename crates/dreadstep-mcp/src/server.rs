@@ -107,6 +107,22 @@ impl DreadstepMcpServer {
     Ok(Json(snapshot))
   }
 
+  /// Starts or replaces the in-memory authored item scenario with an explicit seed.
+  #[tool(
+    name = "start_item_run",
+    description = "Start a deterministic item-bearing Dreadstep scenario and return its snapshot."
+  )]
+  pub async fn start_item_run(
+    &self,
+    Parameters(params): Parameters<StartRunParams>,
+  ) -> Result<Json<WorldSnapshot>, McpError> {
+    let session = Session::start_item_run(params.seed)
+      .map_err(|error| McpError::internal_error(error.to_string(), None))?;
+    let snapshot = session.observe();
+    *self.lock_session()? = session;
+    Ok(Json(snapshot))
+  }
+
   /// Returns the current versioned world snapshot without mutating the session.
   #[tool(
     name = "observe",

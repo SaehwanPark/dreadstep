@@ -125,6 +125,19 @@ impl Session {
     })
   }
 
+  /// Starts a session with the authored item-bearing developer scenario.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`SessionError::Scenario`] if the item scenario cannot be constructed.
+  pub fn start_item_run(seed: u64) -> Result<Self, SessionError> {
+    Ok(Self {
+      seed,
+      world: item_scenario()?,
+      trace: ReplayTrace::new(seed),
+    })
+  }
+
   /// Returns the explicit session seed.
   #[must_use]
   pub const fn seed(&self) -> u64 {
@@ -453,4 +466,34 @@ fn fixed_scenario() -> Result<WorldState, SessionError> {
     ],
   )
   .map_err(|error| SessionError::Scenario(error.into()))
+}
+
+fn item_scenario() -> Result<WorldState, SessionError> {
+  let map =
+    GridMap::filled(3, 1, Tile::Floor).map_err(|error| SessionError::Scenario(error.into()))?;
+  let mut world = WorldState::new(
+    map,
+    vec![
+      Actor::with_hit_points(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(10),
+      ),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(2, 0),
+        HitPoints::new(2),
+      ),
+    ],
+  )
+  .map_err(|error| SessionError::Scenario(error.into()))?;
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::new(ItemId::new(101), ItemDefinitionId::new(1)),
+    )
+    .map_err(|error| SessionError::Scenario(error.into()))?;
+  Ok(world)
 }

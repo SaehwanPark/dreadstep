@@ -37,6 +37,7 @@ display-free smoke path.
 | Q | Unequip | `Command::Unequip` |
 | U | Consume selected item | `Command::UseItem` |
 | P | Pick up the lowest-ID item at the player's position | `Command::Pickup` |
+| X | Drop the selected unequipped item at the player's position | `Command::Drop` |
 | R | Reload to the fixed three-shot capacity when ammo is below full | `Command::Reload` |
 | Shift-R | Restart the same seed | new presentation runtime, same core scenario |
 | Escape, close button, Ctrl-C | Shut down | process boundary only |
@@ -99,7 +100,7 @@ Failure to create the log directory or a mid-run write/flush fault is reported a
 | --- | --- | --- | --- |
 | Move / wait / enemy chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume / pickup / reload | selected/equipped HUD rows, ammo, and ground stack | item/reload events and full actor snapshots | yes |
+| Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, ammo, and ground stack | item/reload events and full actor snapshots | yes |
 | Terrain and actor blocking | distinct wall/cover/floor/actor pixels | `movement_blocked` reason | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
@@ -116,7 +117,7 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 
 The deterministic sequence first uses `RangedAttack` against the distance-two authored enemy, then
 reloads the player's partial ammunition, drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
-`Pickup`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,
+`Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,
 consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between
 player actions. Exhaustive command/event mappings and the coverage lists make a new player-visible
 core variant fail desktop-feature compilation or smoke coverage until it is documented and mapped.
@@ -127,7 +128,7 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 - floor, cover, wall, player, enemy, dead actor, and ground item placeholders are visibly distinct;
 - radius-3 field of view follows the controlled actor, hides distant nodes without removing their
   typed mirrors, and keeps adjacent wall edges readable;
-- movement, wait, combat, inventory selection, equip/unequip, consume, pickup, reload, restart, and enemy delay
+- movement, wait, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, and enemy delay
   work as documented;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
   and journal path;

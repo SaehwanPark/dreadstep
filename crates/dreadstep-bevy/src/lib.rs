@@ -569,6 +569,13 @@ pub enum PresentationMessage {
     /// The item instance moved into inventory.
     item: ItemId,
   },
+  /// A player dropped one owned unequipped item at the current position.
+  ItemDropped {
+    /// The player whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved to the ground.
+    item: ItemId,
+  },
   /// A player restored ranged ammunition to the fixed capacity.
   Reloaded {
     /// The player whose ammunition was restored.
@@ -610,6 +617,7 @@ impl PresentationMessage {
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
       Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
       Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
+      Event::ItemDropped { actor, item } => Self::ItemDropped { actor, item },
       Event::Reloaded { actor, ammunition } => Self::Reloaded { actor, ammunition },
     }
   }
@@ -631,6 +639,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::ItemUnequipped { .. } => "item_unequipped",
     Event::ItemConsumed { .. } => "item_consumed",
     Event::ItemPickedUp { .. } => "item_picked_up",
+    Event::ItemDropped { .. } => "item_dropped",
     Event::Reloaded { .. } => "reloaded",
   }
 }
@@ -733,7 +742,7 @@ impl PresentationAudioCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::Reloaded { .. } => None,
+      Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
     }
   }
 }
@@ -1035,7 +1044,7 @@ impl PresentationAnimationCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::Reloaded { .. } => None,
+      Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
     }
   }
 }
@@ -3559,6 +3568,7 @@ fn command_actor(command: Command) -> ActorId {
     | Command::Unequip { actor }
     | Command::UseItem { actor, .. }
     | Command::Pickup { actor, .. }
+    | Command::Drop { actor, .. }
     | Command::Reload { actor } => actor,
   }
 }

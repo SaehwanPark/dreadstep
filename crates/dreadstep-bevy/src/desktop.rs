@@ -70,7 +70,7 @@ const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 const HEALTH_BAR_WIDTH: usize = 10;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 10] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 11] = [
   "move",
   "wait",
   "attack",
@@ -80,11 +80,12 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 10] = [
   "unequip",
   "use_item",
   "pickup",
+  "drop",
   "reload",
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 10] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 11] = [
   "moved",
   "movement_blocked",
   "waited",
@@ -94,6 +95,7 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 10] = [
   "item_unequipped",
   "item_consumed",
   "item_picked_up",
+  "item_dropped",
   "reloaded",
 ];
 
@@ -1090,6 +1092,7 @@ fn desktop_input(
     KeyCode::KeyQ,
     KeyCode::KeyU,
     KeyCode::KeyP,
+    KeyCode::KeyX,
     KeyCode::KeyR,
     KeyCode::ArrowUp,
     KeyCode::ArrowDown,
@@ -1206,6 +1209,17 @@ fn command_for_key(
       })
       .min_by_key(|(item, _)| *item)
       .map(|(_, command)| command),
+    KeyCode::KeyX => session.selected_item.and_then(|item| {
+      legal.iter().copied().find(|command| {
+        matches!(
+          command,
+          Command::Drop {
+            actor: PLAYER,
+            item: candidate,
+          } if *candidate == item
+        )
+      })
+    }),
     KeyCode::KeyR => legal
       .iter()
       .copied()
@@ -1447,6 +1461,16 @@ fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCo
     &mut session,
     "smoke",
     Command::Pickup {
+      actor: PLAYER,
+      item: PICKUP_ITEM,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Drop {
       actor: PLAYER,
       item: PICKUP_ITEM,
     },
@@ -1762,6 +1786,7 @@ fn command_name(command: Command) -> &'static str {
     Command::Unequip { .. } => "unequip",
     Command::UseItem { .. } => "use_item",
     Command::Pickup { .. } => "pickup",
+    Command::Drop { .. } => "drop",
     Command::Reload { .. } => "reload",
   }
 }
@@ -1790,6 +1815,9 @@ fn command_value(command: Command) -> Value {
     }
     Command::Pickup { actor, item } => {
       json!({ "kind": "pickup", "actor": actor.value(), "item": item.value() })
+    }
+    Command::Drop { actor, item } => {
+      json!({ "kind": "drop", "actor": actor.value(), "item": item.value() })
     }
     Command::Reload { actor } => json!({ "kind": "reload", "actor": actor.value() }),
   }
@@ -1849,6 +1877,9 @@ fn event_value(event: Event) -> Value {
     Event::ItemPickedUp { actor, item } => {
       json!({ "kind": "item_picked_up", "actor": actor.value(), "item": item.value() })
     }
+    Event::ItemDropped { actor, item } => {
+      json!({ "kind": "item_dropped", "actor": actor.value(), "item": item.value() })
+    }
     Event::Reloaded { actor, ammunition } => {
       json!({ "kind": "reloaded", "actor": actor.value(), "ammunition": ammunition })
     }
@@ -1894,6 +1925,9 @@ fn event_message(event: Event) -> String {
     }
     Event::ItemPickedUp { actor, item } => {
       format!("Actor {} picked up item {}.", actor.value(), item.value())
+    }
+    Event::ItemDropped { actor, item } => {
+      format!("Actor {} dropped item {}.", actor.value(), item.value())
     }
     Event::Reloaded { actor, ammunition } => {
       format!("Actor {} reloaded to {} shots.", actor.value(), ammunition)
@@ -2047,7 +2081,7 @@ fn desktop_update_hud(
       .collect::<Vec<_>>()
       .join("\n")
   };
-  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit";
+  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit";
   let journal = format!(
     "{}\nseed {}",
     journal_path(&session.journal).display(),
@@ -2194,6 +2228,43 @@ mod tests {
     assert_eq!(
       command_for_key(KeyCode::KeyR, &runtime, &session),
       Some(Command::Reload { actor: PLAYER })
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn drop_key_selects_the_selected_legal_player_item() {
+    let directory = test_directory("drop-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut world = WorldState::new(
+      GridMap::filled(2, 1, Tile::Floor).expect("test map should be valid"),
+      vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+    )
+    .expect("test world should be valid");
+    world
+      .give_item(
+        PLAYER,
+        Item::new(ItemId::new(101), dreadstep_core::ItemDefinitionId::new(1)),
+      )
+      .expect("first item should be owned");
+    world
+      .give_item(
+        PLAYER,
+        Item::new(ItemId::new(102), dreadstep_core::ItemDefinitionId::new(2)),
+      )
+      .expect("second item should be owned");
+    let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let mut session = DesktopSession::new(7, journal);
+    session.selected_item = Some(ItemId::new(102));
+    assert_eq!(
+      command_for_key(KeyCode::KeyX, &runtime, &session),
+      Some(Command::Drop {
+        actor: PLAYER,
+        item: ItemId::new(102),
+      })
     );
     let _ = fs::remove_dir_all(directory);
   }

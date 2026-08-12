@@ -18,7 +18,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 9;
+pub const PROTOCOL_VERSION: u16 = 10;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -97,6 +97,13 @@ pub enum CommandRequest {
     /// The ground item instance to pick up.
     item: ItemId,
   },
+  /// Drop one owned unequipped item at the player's current position.
+  Drop {
+    /// The player issuing the request.
+    actor: ActorId,
+    /// The owned item instance to drop.
+    item: ItemId,
+  },
   /// Restore a player's ranged ammunition to the fixed capacity.
   Reload {
     /// The player issuing the request.
@@ -146,6 +153,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         item: dreadstep_core::ItemId::new(item.value()),
       },
+      CommandRequest::Drop { actor, item } => Self::Drop {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        item: dreadstep_core::ItemId::new(item.value()),
+      },
       CommandRequest::Reload { actor } => Self::Reload {
         actor: dreadstep_core::ActorId::new(actor.value()),
       },
@@ -192,6 +203,10 @@ impl From<CoreCommand> for CommandRequest {
         item: ItemId::new(item.value()),
       },
       CoreCommand::Pickup { actor, item } => Self::Pickup {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommand::Drop { actor, item } => Self::Drop {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
@@ -1081,6 +1096,13 @@ pub enum Event {
     /// The item instance removed from the ground stack.
     item: ItemId,
   },
+  /// A player dropped one owned unequipped item at the current position.
+  ItemDropped {
+    /// The player whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved to the ground.
+    item: ItemId,
+  },
   /// A player restored ranged ammunition to the fixed capacity.
   Reloaded {
     /// The player whose ammunition was restored.
@@ -1152,6 +1174,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreEvent::ItemDropped { actor, item } => Self::ItemDropped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
       CoreEvent::Reloaded { actor, ammunition } => Self::Reloaded {
         actor: ActorId::new(actor.value()),
         ammunition,
@@ -1187,6 +1213,8 @@ pub enum CommandError {
   ChaseRequiresEnemy(ActorId),
   /// A pickup request must come from a player actor.
   PickupRequiresPlayer(ActorId),
+  /// A drop request must come from a player actor.
+  DropRequiresPlayer(ActorId),
   /// A reload request must come from a player actor.
   ReloadRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
@@ -1232,7 +1260,7 @@ pub enum CommandError {
   },
   /// The actor has no equipment to remove.
   NothingEquipped(ActorId),
-  /// The requested item is equipped and therefore cannot be consumed.
+  /// The requested item is equipped and therefore cannot be moved or consumed.
   ItemEquipped {
     /// The actor whose inventory was queried.
     actor: ActorId,
@@ -1273,6 +1301,9 @@ impl From<CoreCommandError> for CommandError {
       }
       CoreCommandError::PickupRequiresPlayer(actor) => {
         Self::PickupRequiresPlayer(ActorId::new(actor.value()))
+      }
+      CoreCommandError::DropRequiresPlayer(actor) => {
+        Self::DropRequiresPlayer(ActorId::new(actor.value()))
       }
       CoreCommandError::ReloadRequiresPlayer(actor) => {
         Self::ReloadRequiresPlayer(ActorId::new(actor.value()))
@@ -1371,6 +1402,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::DropRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue a player drop",
+          actor.value()
+        )
+      }
       Self::ReloadRequiresPlayer(actor) => {
         write!(
           formatter,
@@ -1426,7 +1464,7 @@ impl fmt::Display for CommandError {
       }
       Self::ItemEquipped { actor, item } => write!(
         formatter,
-        "actor {} cannot consume equipped item {}",
+        "actor {} cannot move or consume equipped item {}",
         actor.value(),
         item.value()
       ),
