@@ -456,8 +456,12 @@ and `Died` evidence, and records the command in replay. Protocol/MCP and the hea
 translate the new typed request; the desktop binds `G` to the lowest-ID legal target and reuses the
 existing attack animation/audio cue families. A follow-up slice now adds a cardinal line-of-sight
 predicate over interior `Floor` cells; blocked and diagonal requests return typed rejection without
-mutating state or replay evidence. Cover, ammunition, weapon effects, varied action costs, and
-enemy ranged behavior remain future rules.
+mutating state or replay evidence. Cover, ammunition, weapon effects, and enemy ranged behavior
+remain future rules.
+
+The verified ranged-cost slice gives only `RangedAttack` a two-tick scheduler advance; all other
+player and enemy commands retain the standard one-tick cost. The cost is selected in core execution
+and guarded during legal discovery so adapters cannot advertise an overflowing ranged action.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

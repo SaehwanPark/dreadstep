@@ -3216,6 +3216,36 @@ Out of scope:
 - cover, ammunition, weapon/item effects, varied action costs, enemy ranged AI, projectile visuals,
   new audio, diagonal interpolation, and new desktop controls.
 
+## Active
+
+### Milestone 4 slice: deterministic ranged action cost
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Give the verified clear-cardinal `RangedAttack` a distinct two-tick action cost. Movement, waiting,
+melee, chase, equipment, consumption, and pickup retain the standard one-tick cost. Legal discovery
+and execution use the same overflow guard; accepted ranged attack/death events, replay hashing,
+protocol shape, desktop `G` control, journal, smoke, animation, and optional-audio fallback families
+remain unchanged.
+
+Verification target:
+
+- Core proves ranged ready-time advancement by exactly two ticks, deterministic next-actor/current-time
+  evidence, replay stability, standard-command preservation, and atomic schedule-overflow handling.
+- MCP action/snapshot/history/replay evidence reflects the two-tick transition without new protocol
+  command/error/event variants.
+- Existing desktop smoke, journal, visual, animation, and optional-audio fallback checks remain green;
+  no new controls or assets are introduced.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- cover, ammunition, weapon/item effects, enemy ranged AI, projectile visuals/audio, and any other
+  command cost changes.
+
 ## Future
 
 ### Remaining roadmap milestones
