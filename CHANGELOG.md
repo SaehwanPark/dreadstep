@@ -6,6 +6,8 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A bounded desktop animation pulse driven by new typed event-cue batches, with no movement
+  interpolation, production media, audio playback, or simulation timing changes.
 - A deterministic tactical HUD summary for health, turn ownership, enemy pressure, and optional
   field-of-view state, without simulation or media boundary changes.
 - An optional deterministic presentation field-of-view projection with radius-bounded cardinal

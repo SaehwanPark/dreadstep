@@ -41,12 +41,14 @@ use bevy::time::Time;
 use bevy::ui::{FlexDirection, JustifyContent, Overflow, UiRect, px};
 use bevy::window::{ClosingWindow, PrimaryWindow, Window};
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position, Tile,
+  Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position,
+  StateDigest, Tile,
 };
 use serde_json::{Value, json};
 
 use crate::{
-  PresentationAssetManifest, PresentationAssetReference, PresentationBevySpriteProjection,
+  PresentationAnimationCue, PresentationAnimationCues, PresentationAssetManifest,
+  PresentationAssetReference, PresentationBevySpriteProjection,
   PresentationBevySpriteTransformProjection, PresentationCamera, PresentationFocus,
   PresentationInput, PresentationKeyboardMode, PresentationMessages, PresentationPlugin,
   PresentationRenderAssetProjection, PresentationRenderCommandPlan,
@@ -462,10 +464,12 @@ impl Plugin for DesktopPresentationPlugin {
       Update,
       (
         configure_primary_window,
+        desktop_update_animation,
         desktop_style_sprites,
         desktop_assets,
         desktop_update_hud,
       )
+        .chain()
         .after(PresentationSet::Projection),
     );
   }
@@ -498,6 +502,69 @@ struct DesktopAssetEntry {
   placeholder: Handle<Image>,
   warned: bool,
   outcome_recorded: bool,
+}
+
+const ACTOR_PULSE_DURATION: f32 = 0.18;
+const ACTOR_PULSE_SCALE: f32 = 0.12;
+
+#[derive(Default, Resource)]
+struct DesktopAnimationState {
+  previous_cues: Vec<PresentationAnimationCue>,
+  previous_token: Option<StateDigest>,
+  remaining: f32,
+}
+
+impl DesktopAnimationState {
+  fn observe(&mut self, token: Option<StateDigest>, cues: &[PresentationAnimationCue]) {
+    if self.previous_token == token && self.previous_cues == cues {
+      return;
+    }
+    self.previous_token = token;
+    self.previous_cues = cues.to_vec();
+    self.remaining = if cues.is_empty() {
+      0.0
+    } else {
+      ACTOR_PULSE_DURATION
+    };
+  }
+
+  fn advance(&mut self, delta_seconds: f32) {
+    self.remaining = (self.remaining - delta_seconds.max(0.0)).max(0.0);
+  }
+
+  fn pulse(&self) -> f32 {
+    pulse_for_remaining(self.remaining)
+  }
+
+  fn update(
+    &mut self,
+    token: Option<StateDigest>,
+    cues: Option<&[PresentationAnimationCue]>,
+    delta_seconds: f32,
+  ) {
+    self.advance(delta_seconds);
+    if let Some(cues) = cues {
+      self.observe(token, cues);
+    }
+  }
+}
+
+fn pulse_for_remaining(remaining: f32) -> f32 {
+  (remaining / ACTOR_PULSE_DURATION).clamp(0.0, 1.0)
+}
+
+fn desktop_update_animation(
+  time: Res<Time>,
+  runtime: Option<Res<PresentationRuntime>>,
+  cues: Option<Res<PresentationAnimationCues>>,
+  state: Option<ResMut<DesktopAnimationState>>,
+) {
+  let Some(mut state) = state else { return };
+  state.update(
+    runtime.as_deref().map(PresentationRuntime::replay_digest),
+    cues.as_deref().map(PresentationAnimationCues::cues),
+    time.delta_secs(),
+  );
 }
 
 fn build_manifest() -> Result<PresentationAssetManifest, String> {
@@ -636,6 +703,7 @@ fn configure_primary_window(mut windows: Query<&mut Window, With<PrimaryWindow>>
 
 fn desktop_style_sprites(
   tile_size: Option<Res<PresentationTileSize>>,
+  animation: Option<Res<DesktopAnimationState>>,
   mut nodes: Query<(
     &SceneRenderNode,
     &mut bevy::sprite::Sprite,
@@ -643,6 +711,9 @@ fn desktop_style_sprites(
   )>,
 ) {
   let tile_size = tile_size.map(|value| *value);
+  let pulse = animation
+    .as_deref()
+    .map_or(0.0, DesktopAnimationState::pulse);
   for (node, mut sprite, mut visibility) in &mut nodes {
     let placeholder = node.placeholder();
     let color = match node.key() {
@@ -654,12 +725,7 @@ fn desktop_style_sprites(
       crate::SceneSpriteKey::GroundItem(_) => Color::srgb(0.95, 0.7, 0.16),
       crate::SceneSpriteKey::InventoryItem(_) => Color::srgb(0.22, 0.5, 0.95),
     };
-    let scale = match placeholder {
-      SceneRenderPlaceholder::Terrain => 1.0,
-      SceneRenderPlaceholder::Player | SceneRenderPlaceholder::Enemy => 0.75,
-      SceneRenderPlaceholder::DeadActor => 0.65,
-      SceneRenderPlaceholder::GroundItem | SceneRenderPlaceholder::InventoryItem => 0.45,
-    };
+    let scale = sprite_scale(placeholder, node.is_visible(), pulse);
     sprite.color = color;
     sprite.custom_size = tile_size.map(|size| {
       #[allow(clippy::cast_precision_loss)]
@@ -670,6 +736,25 @@ fn desktop_style_sprites(
     } else {
       *visibility = bevy::camera::visibility::Visibility::Inherited;
     }
+  }
+}
+
+fn sprite_scale(placeholder: SceneRenderPlaceholder, visible: bool, pulse: f32) -> f32 {
+  let base = match placeholder {
+    SceneRenderPlaceholder::Terrain => 1.0,
+    SceneRenderPlaceholder::Player | SceneRenderPlaceholder::Enemy => 0.75,
+    SceneRenderPlaceholder::DeadActor => 0.65,
+    SceneRenderPlaceholder::GroundItem | SceneRenderPlaceholder::InventoryItem => 0.45,
+  };
+  if visible
+    && matches!(
+      placeholder,
+      SceneRenderPlaceholder::Player | SceneRenderPlaceholder::Enemy
+    )
+  {
+    base * (1.0 + (ACTOR_PULSE_SCALE * pulse))
+  } else {
+    base
   }
 }
 
@@ -1112,6 +1197,8 @@ fn run_visible(
   app.insert_resource(viewport);
   app.insert_resource(crate::PresentationHud::new(PLAYER));
   app.insert_resource(PresentationMessages::new());
+  app.insert_resource(PresentationAnimationCues::new());
+  app.insert_resource(DesktopAnimationState::default());
   app.insert_resource(tile_size);
   app.insert_resource(window);
   app.insert_resource(PresentationRenderProjection::default());
@@ -1722,6 +1809,8 @@ pub fn event_kind(event: Event) -> &'static str {
 mod tests {
   use super::*;
   use crate::PresentationState;
+  use bevy::camera::visibility::Visibility;
+  use bevy::transform::components::Transform;
 
   fn test_directory(label: &str) -> PathBuf {
     std::env::temp_dir().join(format!(
@@ -1832,5 +1921,250 @@ mod tests {
     let text = format_hud_stats(Some(player), &snapshot, &status, None);
     assert!(text.contains("HP [##########] 10/10"));
     assert!(text.contains("enemies 3"));
+  }
+
+  #[test]
+  fn animation_pulse_is_bounded_and_expires() {
+    let assert_near = |actual: f32, expected: f32| {
+      assert!((actual - expected).abs() < 0.001);
+    };
+    assert_near(pulse_for_remaining(-1.0), 0.0);
+    assert_near(pulse_for_remaining(ACTOR_PULSE_DURATION), 1.0);
+    assert_near(pulse_for_remaining(ACTOR_PULSE_DURATION * 2.0), 1.0);
+
+    let mut state = DesktopAnimationState::default();
+    let cues = vec![PresentationAnimationCue::Died { actor: PLAYER }];
+    state.update(None, Some(&cues), ACTOR_PULSE_DURATION * 2.0);
+    assert_near(state.pulse(), 1.0);
+    state.update(None, Some(&cues), ACTOR_PULSE_DURATION / 2.0);
+    assert!((state.pulse() - 0.5).abs() < 0.001);
+    state.update(None, None, ACTOR_PULSE_DURATION);
+    assert_near(state.pulse(), 0.0);
+    state.update(None, Some(&[]), 0.0);
+    assert_near(state.pulse(), 0.0);
+  }
+
+  #[test]
+  fn value_identical_cues_retrigger_only_for_a_new_replay_token() {
+    let assert_near = |actual: f32, expected: f32| {
+      assert!((actual - expected).abs() < 0.001);
+    };
+    let mut runtime = PresentationRuntime::start_run(7).expect("starter run");
+    let first_token = runtime.replay_digest();
+    let cue = [PresentationAnimationCue::MovementBlocked {
+      actor: PLAYER,
+      from: Position::new(0, 0),
+      to: Position::new(0, -1),
+      reason: BlockReason::Terrain,
+    }];
+    let mut state = DesktopAnimationState::default();
+    state.observe(Some(first_token), &cue);
+    state.advance(ACTOR_PULSE_DURATION);
+    state.observe(Some(first_token), &cue);
+    assert_near(state.pulse(), 0.0);
+
+    runtime
+      .execute(Command::Move {
+        actor: PLAYER,
+        direction: Direction::East,
+      })
+      .expect("starter move accepted");
+    let second_token = runtime.replay_digest();
+    assert_ne!(first_token, second_token);
+    state.observe(Some(second_token), &cue);
+    assert_near(state.pulse(), 1.0);
+  }
+
+  #[test]
+  fn pulse_scale_only_changes_visible_living_actor_placeholders() {
+    let assert_near = |actual: f32, expected: f32| {
+      assert!((actual - expected).abs() < 0.001);
+    };
+    let pulse = 1.0;
+    assert!(sprite_scale(SceneRenderPlaceholder::Player, true, pulse) > 0.75);
+    assert!(sprite_scale(SceneRenderPlaceholder::Enemy, true, pulse) > 0.75);
+    assert_near(
+      sprite_scale(SceneRenderPlaceholder::Enemy, false, pulse),
+      0.75,
+    );
+    assert_near(
+      sprite_scale(SceneRenderPlaceholder::DeadActor, true, pulse),
+      0.65,
+    );
+    assert_near(
+      sprite_scale(SceneRenderPlaceholder::Terrain, true, pulse),
+      1.0,
+    );
+    assert_near(
+      sprite_scale(SceneRenderPlaceholder::GroundItem, true, pulse),
+      0.45,
+    );
+    assert_near(
+      sprite_scale(SceneRenderPlaceholder::InventoryItem, true, pulse),
+      0.45,
+    );
+  }
+
+  #[derive(Clone)]
+  struct SpriteSnapshot {
+    entity: Entity,
+    sprite: bevy::sprite::Sprite,
+    visibility: Visibility,
+    transform: Option<Transform>,
+  }
+
+  fn animation_system_app() -> App {
+    let map = dreadstep_core::GridMap::from_tiles(
+      5,
+      3,
+      vec![
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Wall,
+        Tile::Floor,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+      ],
+    )
+    .expect("animation map validates");
+    let mut world = dreadstep_core::WorldState::new(
+      map,
+      vec![
+        Actor::new(PLAYER, ActorKind::Player, Position::new(0, 1)),
+        Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(2, 1)),
+      ],
+    )
+    .expect("animation world validates");
+    world
+      .give_item(
+        PLAYER,
+        Item::new(ItemId::new(10), dreadstep_core::ItemDefinitionId::new(101)),
+      )
+      .expect("inventory item validates");
+    world
+      .give_item(
+        ActorId::new(2),
+        Item::new(ItemId::new(11), dreadstep_core::ItemDefinitionId::new(102)),
+      )
+      .expect("ground item validates");
+    world
+      .drop_item(ActorId::new(2), ItemId::new(11))
+      .expect("ground item drops");
+
+    let mut app = App::new();
+    app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+    app.insert_resource(PresentationInput::new(PLAYER));
+    app.insert_resource(PresentationKeyboardMode::External);
+    app.insert_resource(PresentationVisibility::new(PLAYER, 1));
+    app.insert_resource(PresentationTileSize::new(32, 32).expect("tile size validates"));
+    app.insert_resource(PresentationRenderProjection::new());
+    app.insert_resource(PresentationSpriteProjection::new());
+    app.insert_resource(PresentationRenderCommandPlan::new());
+    app.insert_resource(PresentationRenderNodeProjection::new());
+    app.insert_resource(PresentationBevySpriteProjection::new());
+    app.insert_resource(PresentationBevySpriteTransformProjection::new());
+    app.insert_resource(PresentationAnimationCues::new());
+    app.insert_resource(DesktopAnimationState::default());
+    app.insert_resource(Time::<()>::default());
+    app.add_plugins(PresentationPlugin);
+    app.add_systems(
+      Update,
+      (desktop_update_animation, desktop_style_sprites)
+        .chain()
+        .after(PresentationSet::Projection),
+    );
+    app.update();
+    app
+  }
+
+  fn capture_placeholder(app: &mut App, placeholder: SceneRenderPlaceholder) -> SpriteSnapshot {
+    app
+      .world_mut()
+      .query::<(
+        Entity,
+        &SceneRenderNode,
+        &bevy::sprite::Sprite,
+        &Visibility,
+        Option<&Transform>,
+      )>()
+      .iter(app.world())
+      .find_map(|(entity, node, sprite, visibility, transform)| {
+        (node.placeholder() == placeholder).then_some(SpriteSnapshot {
+          entity,
+          sprite: sprite.clone(),
+          visibility: *visibility,
+          transform: transform.copied(),
+        })
+      })
+      .expect("placeholder sprite should exist")
+  }
+
+  #[test]
+  fn desktop_animation_system_pulses_visible_actor_without_touching_other_visual_state() {
+    let mut app = animation_system_app();
+    let player_before = capture_placeholder(&mut app, SceneRenderPlaceholder::Player);
+    let enemy_before = capture_placeholder(&mut app, SceneRenderPlaceholder::Enemy);
+    let terrain_before = capture_placeholder(&mut app, SceneRenderPlaceholder::Terrain);
+    let ground_before = capture_placeholder(&mut app, SceneRenderPlaceholder::GroundItem);
+    let inventory_before = capture_placeholder(&mut app, SceneRenderPlaceholder::InventoryItem);
+
+    app
+      .world_mut()
+      .resource_mut::<PresentationRuntime>()
+      .execute(Command::Move {
+        actor: PLAYER,
+        direction: Direction::West,
+      })
+      .expect("blocked movement cue should be accepted");
+    app.update();
+
+    let player_after = capture_placeholder(&mut app, SceneRenderPlaceholder::Player);
+    let enemy_after = capture_placeholder(&mut app, SceneRenderPlaceholder::Enemy);
+    let terrain_after = capture_placeholder(&mut app, SceneRenderPlaceholder::Terrain);
+    let ground_after = capture_placeholder(&mut app, SceneRenderPlaceholder::GroundItem);
+    let inventory_after = capture_placeholder(&mut app, SceneRenderPlaceholder::InventoryItem);
+
+    assert_eq!(player_before.entity, player_after.entity);
+    assert!(
+      player_after.sprite.custom_size.expect("player size").x
+        > player_before.sprite.custom_size.expect("player size").x
+    );
+    for (before, after) in [
+      (&player_before, &player_after),
+      (&enemy_before, &enemy_after),
+      (&terrain_before, &terrain_after),
+      (&ground_before, &ground_after),
+      (&inventory_before, &inventory_after),
+    ] {
+      assert_eq!(before.sprite.image, after.sprite.image);
+      assert_eq!(before.sprite.color, after.sprite.color);
+      assert_eq!(before.visibility, after.visibility);
+      assert_eq!(before.transform, after.transform);
+    }
+    assert_eq!(
+      enemy_before.sprite.custom_size,
+      enemy_after.sprite.custom_size
+    );
+    assert_eq!(
+      terrain_before.sprite.custom_size,
+      terrain_after.sprite.custom_size
+    );
+    assert_eq!(
+      ground_before.sprite.custom_size,
+      ground_after.sprite.custom_size
+    );
+    assert_eq!(
+      inventory_before.sprite.custom_size,
+      inventory_after.sprite.custom_size
+    );
   }
 }
