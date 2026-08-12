@@ -8,7 +8,7 @@ fn session_exposes_protocol_actions_for_the_scheduled_player() {
   let session = Session::start_run(7).expect("fixed scenario should be valid");
   let actions = session.legal_actions();
 
-  assert_eq!(actions.len(), 6);
+  assert_eq!(actions.len(), 7);
   assert_eq!(
     actions[0],
     CommandRequest::Move {
@@ -17,7 +17,7 @@ fn session_exposes_protocol_actions_for_the_scheduled_player() {
     }
   );
   assert_eq!(
-    actions[5],
+    actions[6],
     CommandRequest::Attack {
       actor: ActorId::new(1),
       target: ActorId::new(2),
@@ -42,7 +42,7 @@ fn legal_action_discovery_is_read_only_for_world_history_and_replay() {
 
   let actions = session.legal_actions();
 
-  assert_eq!(actions.len(), 6);
+  assert_eq!(actions.len(), 7);
   assert_eq!(session.observe(), before_snapshot);
   assert_eq!(session.history(), before_history);
   assert_eq!(session.get_replay(), before_replay);

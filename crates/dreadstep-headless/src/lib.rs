@@ -244,6 +244,9 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
     }),
+    ["reload", actor] => Ok(Command::Reload {
+      actor: parse_actor(Some(actor))?,
+    }),
     _ => Err(CliError::InvalidCommand(token.to_owned())),
   }
 }
@@ -301,7 +304,13 @@ fn fixed_scenario() -> Result<WorldState, RunError> {
   WorldState::new(
     map,
     vec![
-      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_ranged_ammo(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(10),
+        2,
+      ),
       Actor::with_hit_points(
         ActorId::new(2),
         ActorKind::Enemy,
@@ -359,6 +368,24 @@ mod tests {
       &[Command::RangedAttack {
         actor: ActorId::new(1),
         target: ActorId::new(2),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_reload_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "reload:1".to_owned(),
+    ])
+    .expect("reload command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Reload {
+        actor: ActorId::new(1),
       }]
     );
   }
@@ -431,7 +458,7 @@ mod tests {
       "seed=7\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
-digest=16357781975358876476\n"
+digest=13208329042387099761\n"
     );
   }
 

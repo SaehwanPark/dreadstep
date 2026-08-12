@@ -576,8 +576,11 @@ pub struct Actor {
 }
 
 impl Actor {
+  /// The fixed capacity restored by the deterministic reload command.
+  pub const RANGED_AMMO_CAPACITY: u16 = 3;
+
   /// The default number of ranged shots available to a newly created actor.
-  pub const DEFAULT_RANGED_AMMO: u16 = 3;
+  pub const DEFAULT_RANGED_AMMO: u16 = Self::RANGED_AMMO_CAPACITY;
 
   /// Creates an actor that is ready at the beginning of the world timeline.
   #[must_use]
@@ -780,6 +783,11 @@ pub enum Command {
     /// The ground item instance to pick up.
     item: ItemId,
   },
+  /// Restore a player's ranged ammunition to its fixed capacity.
+  Reload {
+    /// The player issuing the reload.
+    actor: ActorId,
+  },
 }
 
 impl Command {
@@ -793,7 +801,8 @@ impl Command {
       | Self::Equip { actor, .. }
       | Self::Unequip { actor }
       | Self::UseItem { actor, .. }
-      | Self::Pickup { actor, .. } => actor,
+      | Self::Pickup { actor, .. }
+      | Self::Reload { actor } => actor,
     }
   }
 }
@@ -894,6 +903,10 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u32(actor.value());
       hasher.write_u32(item.value());
     }
+    Command::Reload { actor } => {
+      hasher.write_u8(10);
+      hasher.write_u32(actor.value());
+    }
   }
 }
 
@@ -988,6 +1001,13 @@ pub enum Event {
     actor: ActorId,
     /// The picked-up item identity.
     item: ItemId,
+  },
+  /// A player restored ranged ammunition to the fixed capacity.
+  Reloaded {
+    /// The player whose ammunition was restored.
+    actor: ActorId,
+    /// The restored ammunition count.
+    ammunition: u16,
   },
 }
 
@@ -1193,6 +1213,8 @@ pub enum CommandError {
   ChaseRequiresEnemy(ActorId),
   /// A pickup command must be issued by a player actor.
   PickupRequiresPlayer(ActorId),
+  /// A reload command must be issued by a player actor.
+  ReloadRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is outside the attacker's melee reach.
@@ -1218,6 +1240,8 @@ pub enum CommandError {
   },
   /// The actor has no ranged ammunition remaining.
   RangedAttackNoAmmunition(ActorId),
+  /// The actor already has the full ranged ammunition capacity.
+  ReloadNotNeeded(ActorId),
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1251,6 +1275,10 @@ pub enum CommandError {
 }
 
 impl fmt::Display for CommandError {
+  #[expect(
+    clippy::too_many_lines,
+    reason = "the command boundary keeps each typed rejection message exhaustive"
+  )]
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
@@ -1290,6 +1318,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::ReloadRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot reload because only players may reload",
+          actor.value()
+        )
+      }
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }
@@ -1314,6 +1349,11 @@ impl fmt::Display for CommandError {
       Self::RangedAttackNoAmmunition(actor) => write!(
         formatter,
         "actor {} cannot ranged attack without ammunition",
+        actor.value()
+      ),
+      Self::ReloadNotNeeded(actor) => write!(
+        formatter,
+        "actor {} cannot reload with full ammunition",
         actor.value()
       ),
       Self::ItemNotOwned { actor, item } => write!(
@@ -1953,6 +1993,9 @@ impl WorldState {
       },
       Command::Wait { actor: actor_id },
     ];
+    if actor.kind() == ActorKind::Player && actor.ranged_ammo() < Actor::RANGED_AMMO_CAPACITY {
+      commands.push(Command::Reload { actor: actor_id });
+    }
     if actor.kind() == ActorKind::Player
       && let Some(stack) = self
         .ground_items
@@ -2046,6 +2089,14 @@ impl WorldState {
     if matches!(command, Command::RangedAttack { .. }) && actor.ranged_ammo() == 0 {
       return Err(CommandError::RangedAttackNoAmmunition(actor_id));
     }
+    if matches!(command, Command::Reload { .. }) {
+      if actor.kind() != ActorKind::Player {
+        return Err(CommandError::ReloadRequiresPlayer(actor_id));
+      }
+      if actor.ranged_ammo() >= Actor::RANGED_AMMO_CAPACITY {
+        return Err(CommandError::ReloadNotNeeded(actor_id));
+      }
+    }
     let action_cost = match command {
       Command::RangedAttack { .. } => ActionCost::RANGED,
       _ => ActionCost::STANDARD,
@@ -2069,6 +2120,17 @@ impl WorldState {
       Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
       Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],
       Command::Pickup { item, .. } => vec![self.pickup_item_command(actor_id, item)?],
+      Command::Reload { .. } => {
+        self
+          .actors
+          .get_mut(&actor_id)
+          .ok_or(CommandError::UnknownActor(actor_id))?
+          .ranged_ammo = Actor::RANGED_AMMO_CAPACITY;
+        vec![Event::Reloaded {
+          actor: actor_id,
+          ammunition: Actor::RANGED_AMMO_CAPACITY,
+        }]
+      }
     };
     if matches!(command, Command::RangedAttack { .. }) {
       self

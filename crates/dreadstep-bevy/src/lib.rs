@@ -569,6 +569,13 @@ pub enum PresentationMessage {
     /// The item instance moved into inventory.
     item: ItemId,
   },
+  /// A player restored ranged ammunition to the fixed capacity.
+  Reloaded {
+    /// The player whose ammunition was restored.
+    actor: ActorId,
+    /// The restored ammunition count.
+    ammunition: u16,
+  },
 }
 
 impl PresentationMessage {
@@ -603,6 +610,7 @@ impl PresentationMessage {
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
       Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
       Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
+      Event::Reloaded { actor, ammunition } => Self::Reloaded { actor, ammunition },
     }
   }
 }
@@ -623,6 +631,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::ItemUnequipped { .. } => "item_unequipped",
     Event::ItemConsumed { .. } => "item_consumed",
     Event::ItemPickedUp { .. } => "item_picked_up",
+    Event::Reloaded { .. } => "reloaded",
   }
 }
 
@@ -711,19 +720,20 @@ pub enum PresentationAudioCue {
 }
 
 impl PresentationAudioCue {
-  fn from_event(event: Event) -> Self {
+  fn from_event(event: Event) -> Option<Self> {
     match event {
-      Event::Moved { actor, .. } => Self::Moved { actor },
-      Event::MovementBlocked { actor, reason, .. } => Self::MovementBlocked { actor, reason },
-      Event::Waited { actor, .. } => Self::Waited { actor },
+      Event::Moved { actor, .. } => Some(Self::Moved { actor }),
+      Event::MovementBlocked { actor, reason, .. } => Some(Self::MovementBlocked { actor, reason }),
+      Event::Waited { actor, .. } => Some(Self::Waited { actor }),
       Event::Attacked {
         attacker, target, ..
-      } => Self::Attacked { attacker, target },
-      Event::Died { actor } => Self::Died { actor },
-      Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
-      Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
-      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
-      Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
+      } => Some(Self::Attacked { attacker, target }),
+      Event::Died { actor } => Some(Self::Died { actor }),
+      Event::ItemEquipped { actor, item } => Some(Self::ItemEquipped { actor, item }),
+      Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
+      Event::ItemConsumed { actor, item } => Some(Self::ItemConsumed { actor, item }),
+      Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
+      Event::Reloaded { .. } => None,
     }
   }
 }
@@ -994,37 +1004,38 @@ pub enum PresentationAnimationCue {
 }
 
 impl PresentationAnimationCue {
-  fn from_event(event: Event) -> Self {
+  fn from_event(event: Event) -> Option<Self> {
     match event {
-      Event::Moved { actor, from, to } => Self::Moved { actor, from, to },
+      Event::Moved { actor, from, to } => Some(Self::Moved { actor, from, to }),
       Event::MovementBlocked {
         actor,
         from,
         to,
         reason,
-      } => Self::MovementBlocked {
+      } => Some(Self::MovementBlocked {
         actor,
         from,
         to,
         reason,
-      },
-      Event::Waited { actor, at } => Self::Waited { actor, at },
+      }),
+      Event::Waited { actor, at } => Some(Self::Waited { actor, at }),
       Event::Attacked {
         attacker,
         target,
         damage,
         remaining_hit_points,
-      } => Self::Attacked {
+      } => Some(Self::Attacked {
         attacker,
         target,
         damage,
         remaining_hit_points,
-      },
-      Event::Died { actor } => Self::Died { actor },
-      Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
-      Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
-      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
-      Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
+      }),
+      Event::Died { actor } => Some(Self::Died { actor }),
+      Event::ItemEquipped { actor, item } => Some(Self::ItemEquipped { actor, item }),
+      Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
+      Event::ItemConsumed { actor, item } => Some(Self::ItemConsumed { actor, item }),
+      Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
+      Event::Reloaded { .. } => None,
     }
   }
 }
@@ -3547,7 +3558,8 @@ fn command_actor(command: Command) -> ActorId {
     | Command::Equip { actor, .. }
     | Command::Unequip { actor }
     | Command::UseItem { actor, .. }
-    | Command::Pickup { actor, .. } => actor,
+    | Command::Pickup { actor, .. }
+    | Command::Reload { actor } => actor,
   }
 }
 
@@ -3582,7 +3594,7 @@ fn sync_audio_cues(world: &mut World) {
           .events()
           .iter()
           .copied()
-          .map(PresentationAudioCue::from_event)
+          .filter_map(PresentationAudioCue::from_event)
           .collect()
       })
       .unwrap_or_default()
@@ -3622,7 +3634,7 @@ fn sync_animation_cues(world: &mut World) {
           .events()
           .iter()
           .copied()
-          .map(PresentationAnimationCue::from_event)
+          .filter_map(PresentationAnimationCue::from_event)
           .collect()
       })
       .unwrap_or_default()

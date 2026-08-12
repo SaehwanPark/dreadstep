@@ -70,7 +70,7 @@ const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 const HEALTH_BAR_WIDTH: usize = 10;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 9] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 10] = [
   "move",
   "wait",
   "attack",
@@ -80,10 +80,11 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 9] = [
   "unequip",
   "use_item",
   "pickup",
+  "reload",
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 9] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 10] = [
   "moved",
   "movement_blocked",
   "waited",
@@ -93,6 +94,7 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 9] = [
   "item_unequipped",
   "item_consumed",
   "item_picked_up",
+  "reloaded",
 ];
 
 const USAGE: &str = "Usage: dreadstep [--seed <u64>] [--log-dir <path>] [--smoke] [--help]";
@@ -1039,11 +1041,11 @@ fn desktop_input(
     exit.write(AppExit::Success);
     return;
   }
-  if keys.just_pressed(KeyCode::KeyR) {
+  if restart_requested(&keys) {
     let _ = record_session(
       &mut session,
       "input_request",
-      json!({ "key": "R", "action": "restart" }),
+      json!({ "key": "Shift+R", "action": "restart" }),
     );
     if matches!(session.status, DesktopStatus::Faulted(_)) {
       exit.write(AppExit::error());
@@ -1088,6 +1090,7 @@ fn desktop_input(
     KeyCode::KeyQ,
     KeyCode::KeyU,
     KeyCode::KeyP,
+    KeyCode::KeyR,
     KeyCode::ArrowUp,
     KeyCode::ArrowDown,
     KeyCode::ArrowLeft,
@@ -1130,6 +1133,11 @@ fn desktop_input(
     return;
   };
   let _ = submit_command(&mut runtime, &mut session, "player", command);
+}
+
+fn restart_requested(keys: &ButtonInput<KeyCode>) -> bool {
+  keys.just_pressed(KeyCode::KeyR)
+    && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight))
 }
 
 fn select_inventory_item(
@@ -1198,6 +1206,10 @@ fn command_for_key(
       })
       .min_by_key(|(item, _)| *item)
       .map(|(_, command)| command),
+    KeyCode::KeyR => legal
+      .iter()
+      .copied()
+      .find(|command| matches!(command, Command::Reload { actor: PLAYER })),
     other => crate::KeyboardIntent::from_key(other).map(|intent| intent.command(PLAYER)),
   }?;
   legal.into_iter().find(|command| *command == candidate)
@@ -1413,6 +1425,13 @@ fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCo
       actor: PLAYER,
       target: RANGED_TARGET,
     },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Reload { actor: PLAYER },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
   if let Err(error) = runtime.prepare_smoke_pickup(PLAYER, PICKUP_ITEM) {
@@ -1743,6 +1762,7 @@ fn command_name(command: Command) -> &'static str {
     Command::Unequip { .. } => "unequip",
     Command::UseItem { .. } => "use_item",
     Command::Pickup { .. } => "pickup",
+    Command::Reload { .. } => "reload",
   }
 }
 
@@ -1771,6 +1791,7 @@ fn command_value(command: Command) -> Value {
     Command::Pickup { actor, item } => {
       json!({ "kind": "pickup", "actor": actor.value(), "item": item.value() })
     }
+    Command::Reload { actor } => json!({ "kind": "reload", "actor": actor.value() }),
   }
 }
 
@@ -1828,6 +1849,9 @@ fn event_value(event: Event) -> Value {
     Event::ItemPickedUp { actor, item } => {
       json!({ "kind": "item_picked_up", "actor": actor.value(), "item": item.value() })
     }
+    Event::Reloaded { actor, ammunition } => {
+      json!({ "kind": "reloaded", "actor": actor.value(), "ammunition": ammunition })
+    }
   }
 }
 
@@ -1870,6 +1894,9 @@ fn event_message(event: Event) -> String {
     }
     Event::ItemPickedUp { actor, item } => {
       format!("Actor {} picked up item {}.", actor.value(), item.value())
+    }
+    Event::Reloaded { actor, ammunition } => {
+      format!("Actor {} reloaded to {} shots.", actor.value(), ammunition)
     }
   }
 }
@@ -2020,7 +2047,7 @@ fn desktop_update_hud(
       .collect::<Vec<_>>()
       .join("\n")
   };
-  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup\nQ unequip  U consume  R restart\nEsc/close quit";
+  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit";
   let journal = format!(
     "{}\nseed {}",
     journal_path(&session.journal).display(),
@@ -2142,6 +2169,42 @@ mod tests {
       })
     );
     let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn reload_key_selects_the_legal_player_reload() {
+    let directory = test_directory("reload-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::filled(2, 1, Tile::Floor).expect("test map should be valid"),
+      vec![Actor::with_ranged_ammo(
+        PLAYER,
+        ActorKind::Player,
+        Position::new(0, 0),
+        dreadstep_core::HitPoints::new(10),
+        1,
+      )],
+    )
+    .expect("test world should be valid");
+    let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let session = DesktopSession::new(7, journal);
+    assert_eq!(
+      command_for_key(KeyCode::KeyR, &runtime, &session),
+      Some(Command::Reload { actor: PLAYER })
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn reload_only_restarts_when_shift_is_held() {
+    let mut keys = ButtonInput::<KeyCode>::default();
+    keys.press(KeyCode::KeyR);
+    assert!(!restart_requested(&keys));
+    keys.press(KeyCode::ShiftLeft);
+    assert!(restart_requested(&keys));
   }
 
   #[test]

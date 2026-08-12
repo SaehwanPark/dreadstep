@@ -18,7 +18,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 8;
+pub const PROTOCOL_VERSION: u16 = 9;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -97,6 +97,11 @@ pub enum CommandRequest {
     /// The ground item instance to pick up.
     item: ItemId,
   },
+  /// Restore a player's ranged ammunition to the fixed capacity.
+  Reload {
+    /// The player issuing the request.
+    actor: ActorId,
+  },
 }
 
 impl From<CommandRequest> for CoreCommand {
@@ -140,6 +145,9 @@ impl From<CommandRequest> for CoreCommand {
       CommandRequest::Pickup { actor, item } => Self::Pickup {
         actor: dreadstep_core::ActorId::new(actor.value()),
         item: dreadstep_core::ItemId::new(item.value()),
+      },
+      CommandRequest::Reload { actor } => Self::Reload {
+        actor: dreadstep_core::ActorId::new(actor.value()),
       },
     }
   }
@@ -186,6 +194,9 @@ impl From<CoreCommand> for CommandRequest {
       CoreCommand::Pickup { actor, item } => Self::Pickup {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
+      },
+      CoreCommand::Reload { actor } => Self::Reload {
+        actor: ActorId::new(actor.value()),
       },
     }
   }
@@ -1070,6 +1081,13 @@ pub enum Event {
     /// The item instance removed from the ground stack.
     item: ItemId,
   },
+  /// A player restored ranged ammunition to the fixed capacity.
+  Reloaded {
+    /// The player whose ammunition was restored.
+    actor: ActorId,
+    /// The restored ammunition count.
+    ammunition: u16,
+  },
 }
 
 impl From<CoreBlockReason> for BlockReason {
@@ -1134,6 +1152,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreEvent::Reloaded { actor, ammunition } => Self::Reloaded {
+        actor: ActorId::new(actor.value()),
+        ammunition,
+      },
     }
   }
 }
@@ -1165,6 +1187,8 @@ pub enum CommandError {
   ChaseRequiresEnemy(ActorId),
   /// A pickup request must come from a player actor.
   PickupRequiresPlayer(ActorId),
+  /// A reload request must come from a player actor.
+  ReloadRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
   /// The attack target is not adjacent.
@@ -1190,6 +1214,8 @@ pub enum CommandError {
   },
   /// The actor has no ranged ammunition remaining.
   RangedAttackNoAmmunition(ActorId),
+  /// The actor already has the full ranged ammunition capacity.
+  ReloadNotNeeded(ActorId),
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1248,6 +1274,9 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::PickupRequiresPlayer(actor) => {
         Self::PickupRequiresPlayer(ActorId::new(actor.value()))
       }
+      CoreCommandError::ReloadRequiresPlayer(actor) => {
+        Self::ReloadRequiresPlayer(ActorId::new(actor.value()))
+      }
       CoreCommandError::CannotChaseSelf(actor) => {
         Self::CannotChaseSelf(ActorId::new(actor.value()))
       }
@@ -1269,6 +1298,9 @@ impl From<CoreCommandError> for CommandError {
       }
       CoreCommandError::RangedAttackNoAmmunition(actor) => {
         Self::RangedAttackNoAmmunition(ActorId::new(actor.value()))
+      }
+      CoreCommandError::ReloadNotNeeded(actor) => {
+        Self::ReloadNotNeeded(ActorId::new(actor.value()))
       }
       CoreCommandError::ItemNotOwned { actor, item } => Self::ItemNotOwned {
         actor: ActorId::new(actor.value()),
@@ -1294,6 +1326,10 @@ impl From<CoreCommandError> for CommandError {
 }
 
 impl fmt::Display for CommandError {
+  #[expect(
+    clippy::too_many_lines,
+    reason = "the protocol boundary keeps each typed rejection message exhaustive"
+  )]
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
@@ -1335,6 +1371,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::ReloadRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot reload because only players may reload",
+          actor.value()
+        )
+      }
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }
@@ -1359,6 +1402,11 @@ impl fmt::Display for CommandError {
       Self::RangedAttackNoAmmunition(actor) => write!(
         formatter,
         "actor {} cannot ranged attack without ammunition",
+        actor.value()
+      ),
+      Self::ReloadNotNeeded(actor) => write!(
+        formatter,
+        "actor {} cannot reload with full ammunition",
         actor.value()
       ),
       Self::ItemNotOwned { actor, item } => write!(

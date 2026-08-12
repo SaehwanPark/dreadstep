@@ -4,6 +4,17 @@ Read this file before implementation and again before final review. Record only 
 recurring traps that are not already obvious from code, tests, or canonical documentation.
 Update an existing lesson instead of adding a duplicate.
 
+## 2026-08-12 — Public commands require versioned boundary and control reconciliation
+
+- Context: Adding a player reload action changed the core command/event/error set and competed
+  with the existing desktop restart key.
+- Resolution: Bump the protocol version, carry the new typed variants through every exhaustive
+  adapter, and move restart to `Shift+R` while keeping plain `R` legal-action driven. Reuse the
+  existing optional audio family rather than inventing a new media contract.
+- Prevention: Treat public enum additions and input bindings as one cross-boundary slice; test
+  JSON shape, accepted/rejected replay evidence, smoke coverage, and the visible control text
+  together.
+
 ## 2026-08-12 — Intent projections must reuse the actor driver's policy
 
 - Context: The scheduled enemy exposes several legal movement commands before its preferred `Chase`
