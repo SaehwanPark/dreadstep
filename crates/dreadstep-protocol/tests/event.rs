@@ -42,6 +42,12 @@ fn maps_every_core_event_variant_to_protocol_values() {
       actor: CoreActorId::new(1),
       position: CorePosition::new(1, 0),
     },
+    CoreEvent::TrapTriggered {
+      actor: CoreActorId::new(1),
+      position: CorePosition::new(2, 0),
+      damage: CoreDamage::new(1),
+      remaining_hit_points: CoreHitPoints::new(4),
+    },
     CoreEvent::Attacked {
       attacker: CoreActorId::new(1),
       target: CoreActorId::new(2),
@@ -99,6 +105,12 @@ fn maps_every_core_event_variant_to_protocol_values() {
       Event::DoorOpened {
         actor: ActorId::new(1),
         position: Position::new(1, 0),
+      },
+      Event::TrapTriggered {
+        actor: ActorId::new(1),
+        position: Position::new(2, 0),
+        damage: Damage::new(1),
+        remaining_hit_points: HitPoints::new(4),
       },
       Event::Attacked {
         attacker: ActorId::new(1),

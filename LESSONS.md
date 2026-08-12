@@ -402,3 +402,18 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Test blocked movement/line of sight, successful standard-cost opening, deterministic
   legal ordering and digest participation, and atomic rejection for every invalid target before
   adding locks, closing, traps, or procedural generation.
+
+## Reuse movement as the trap trigger boundary
+
+- Context: The next Living Dungeon slice adds a one-shot floor trap without adding another command
+  or a generalized environmental interaction framework.
+- Symptom: Implementing trap effects only in player movement would make enemy chase behavior diverge,
+  while emitting damage before movement would leave adapters unable to explain the actor's position.
+- Cause: `Move` and `Chase` share one core movement transition, and entering a trap is a consequence
+  of successful movement rather than a separate intent.
+- Resolution: Keep `Tile::Trap` walkable and line-of-sight transparent, emit `Moved` first, consume
+  the tile, apply fixed damage, then emit `TrapTriggered` and optional `Died` in one deterministic
+  event list. Keep fixture placement outside replay evidence and map the event exhaustively at
+  protocol/MCP/Bevy/desktop boundaries.
+- Prevention: Test chase reuse, one-shot consumption, lethal ordering, standard timing, and atomic
+  blocked movement before adding hidden traps, disarming, rearming, or trap archetypes.

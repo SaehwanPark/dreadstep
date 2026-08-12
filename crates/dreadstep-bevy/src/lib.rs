@@ -534,6 +534,17 @@ pub enum PresentationMessage {
     /// The opened door position.
     position: Position,
   },
+  /// An actor entered a one-shot floor trap and took fixed damage.
+  TrapTriggered {
+    /// The actor that entered the trap.
+    actor: ActorId,
+    /// The consumed trap position.
+    position: Position,
+    /// The fixed damage applied by the trap.
+    damage: Damage,
+    /// The actor's hit points after trap damage.
+    remaining_hit_points: HitPoints,
+  },
   /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
@@ -615,6 +626,17 @@ impl PresentationMessage {
       },
       Event::Waited { actor, at } => Self::Waited { actor, at },
       Event::DoorOpened { actor, position } => Self::DoorOpened { actor, position },
+      Event::TrapTriggered {
+        actor,
+        position,
+        damage,
+        remaining_hit_points,
+      } => Self::TrapTriggered {
+        actor,
+        position,
+        damage,
+        remaining_hit_points,
+      },
       Event::Attacked {
         attacker,
         target,
@@ -658,6 +680,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::MovementBlocked { .. } => "movement_blocked",
     Event::Waited { .. } => "waited",
     Event::DoorOpened { .. } => "door_opened",
+    Event::TrapTriggered { .. } => "trap_triggered",
     Event::Attacked { .. } => "attacked",
     Event::Died { .. } => "died",
     Event::ItemEquipped { .. } => "item_equipped",
@@ -767,7 +790,10 @@ impl PresentationAudioCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::ItemDropped { .. } | Event::Reloaded { .. } | Event::DoorOpened { .. } => None,
+      Event::ItemDropped { .. }
+      | Event::Reloaded { .. }
+      | Event::DoorOpened { .. }
+      | Event::TrapTriggered { .. } => None,
     }
   }
 }
@@ -1069,7 +1095,10 @@ impl PresentationAnimationCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::DoorOpened { .. } | Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
+      Event::DoorOpened { .. }
+      | Event::ItemDropped { .. }
+      | Event::Reloaded { .. }
+      | Event::TrapTriggered { .. } => None,
     }
   }
 }
@@ -2476,6 +2505,24 @@ impl PresentationRuntime {
     Ok(())
   }
 
+  /// Places one floor trap for the display-free desktop smoke fixture.
+  ///
+  /// This setup-only mutation does not enter replay evidence; the smoke path then exercises the
+  /// normal scheduled enemy chase transition through the same runtime as the visible client.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_trap(
+    &mut self,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self.state.world.set_tile(position, Tile::Trap).is_none() {
+      return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
+        actor: ActorId::new(1),
+        position,
+      });
+    }
+    Ok(())
+  }
+
   /// Returns the latest accepted command output without consuming it.
   #[must_use]
   pub const fn output(&self) -> Option<&PresentationOutput> {
@@ -2684,14 +2731,12 @@ fn visible_positions(
         Some(Tile::Wall | Tile::Door) => {
           visible.insert((neighbor.x(), neighbor.y()));
         }
-        Some(tile)
-          if tile.is_walkable()
-            && distance < radius
-            && visited_walkable.insert((neighbor.x(), neighbor.y())) =>
+        Some(Tile::Floor | Tile::Cover | Tile::Trap)
+          if distance < radius && visited_walkable.insert((neighbor.x(), neighbor.y())) =>
         {
           queue.push_back((neighbor, distance + 1));
         }
-        Some(Tile::Floor | Tile::Cover) | None => {}
+        Some(Tile::Floor | Tile::Cover | Tile::Trap) | None => {}
       }
     }
   }

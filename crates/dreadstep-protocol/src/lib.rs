@@ -19,7 +19,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 15;
+pub const PROTOCOL_VERSION: u16 = 16;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -515,6 +515,8 @@ pub enum Tile {
   Wall,
   /// A closed door that blocks movement until opened.
   Door,
+  /// A walkable floor trap that triggers once when entered.
+  Trap,
 }
 
 /// One typed actor record in a tester scenario's initial world.
@@ -1161,6 +1163,17 @@ pub enum Event {
     /// The door position that changed to floor.
     position: Position,
   },
+  /// An actor entered a one-shot floor trap and took fixed damage.
+  TrapTriggered {
+    /// The actor that entered the trap.
+    actor: ActorId,
+    /// The consumed trap position.
+    position: Position,
+    /// The fixed damage applied by the trap.
+    damage: Damage,
+    /// The actor's hit points after trap damage.
+    remaining_hit_points: HitPoints,
+  },
   /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
@@ -1260,6 +1273,17 @@ impl From<CoreEvent> for Event {
       CoreEvent::DoorOpened { actor, position } => Self::DoorOpened {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
+      },
+      CoreEvent::TrapTriggered {
+        actor,
+        position,
+        damage,
+        remaining_hit_points,
+      } => Self::TrapTriggered {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+        damage: Damage::new(damage.value()),
+        remaining_hit_points: HitPoints::new(remaining_hit_points.value()),
       },
       CoreEvent::Attacked {
         attacker,
