@@ -7,6 +7,8 @@ readonly REQUIRED_FILES=(
   ".agents/skills/develop-dreadstep/agents/openai.yaml"
   ".agents/skills/review-dreadstep/SKILL.md"
   ".agents/skills/review-dreadstep/agents/openai.yaml"
+  ".agents/skills/test-player/SKILL.md"
+  ".agents/skills/test-player/agents/openai.yaml"
   ".editorconfig"
   "AGENTS.md"
   "ARCHITECTURE.md"
@@ -71,6 +73,7 @@ check_skill() {
 
 check_skill "develop-dreadstep"
 check_skill "review-dreadstep"
+check_skill "test-player"
 
 check_local_media_policy() {
   local ignored_path
