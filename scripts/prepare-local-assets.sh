@@ -19,7 +19,11 @@ EOF
 }
 
 sha256() {
-  shasum -a 256 "$1" | awk '{print $1}'
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
 }
 
 validate_archive() {
@@ -54,12 +58,17 @@ check_sources() {
   local family
   local tile_id
   local member
+  local signature
 
   for binding in "${TILE_BINDINGS[@]}"; do
     family="${binding%%:*}"
     tile_id="${binding##*:}"
     member="Tiles/tile_${tile_id}.png"
-    unzip -p "$archive" "$member" >/dev/null
+    signature="$(unzip -p "$archive" "$member" | od -An -tx1 -N8 | tr -d ' \n')"
+    if [[ "$signature" != "$PNG_SIGNATURE" ]]; then
+      echo "source member is not a PNG: $member" >&2
+      return 4
+    fi
     echo "validated $family <- $member"
   done
 }
