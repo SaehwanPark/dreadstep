@@ -87,11 +87,12 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 12] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 12] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 13] = [
   "moved",
   "movement_blocked",
   "waited",
   "door_opened",
+  "trap_triggered",
   "attacked",
   "died",
   "item_equipped",
@@ -952,6 +953,7 @@ fn desktop_style_sprites(
       crate::SceneSpriteKey::Terrain(Tile::Cover) => Color::srgb(0.36, 0.25, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::Wall) => Color::srgb(0.04, 0.06, 0.08),
       crate::SceneSpriteKey::Terrain(Tile::Door) => Color::srgb(0.48, 0.25, 0.08),
+      crate::SceneSpriteKey::Terrain(Tile::Trap) => Color::srgb(0.58, 0.1, 0.12),
       crate::SceneSpriteKey::Player => Color::srgb(0.1, 0.85, 0.35),
       crate::SceneSpriteKey::Enemy => Color::srgb(0.9, 0.2, 0.22),
       crate::SceneSpriteKey::DeadActor => Color::srgb(0.4, 0.4, 0.45),
@@ -1513,6 +1515,14 @@ fn run_visible(
 fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCode {
   let mut session = DesktopSession::new(runtime.seed(), journal.clone());
   let mut failed = false;
+  if let Err(error) = runtime.prepare_smoke_trap(Position::new(4, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "trap_fixture_setup", "error": error.to_string() }),
+    );
+  }
   failed |= !submit_command(
     &mut runtime,
     &mut session,
@@ -1860,6 +1870,7 @@ fn tile_name(tile: Tile) -> &'static str {
     Tile::Cover => "cover",
     Tile::Wall => "wall",
     Tile::Door => "door",
+    Tile::Trap => "trap",
   }
 }
 
@@ -1977,6 +1988,18 @@ fn event_value(event: Event) -> Value {
       "actor": actor.value(),
       "position": position_value(position),
     }),
+    Event::TrapTriggered {
+      actor,
+      position,
+      damage,
+      remaining_hit_points,
+    } => json!({
+      "kind": "trap_triggered",
+      "actor": actor.value(),
+      "position": position_value(position),
+      "damage": damage.value(),
+      "remaining_hit_points": remaining_hit_points.value(),
+    }),
     Event::Attacked {
       attacker,
       target,
@@ -2049,6 +2072,19 @@ fn event_message(event: Event) -> String {
       actor.value(),
       position.x(),
       position.y()
+    ),
+    Event::TrapTriggered {
+      actor,
+      position,
+      damage,
+      remaining_hit_points,
+    } => format!(
+      "Actor {} triggered a trap at ({}, {}) for {} damage ({} HP left).",
+      actor.value(),
+      position.x(),
+      position.y(),
+      damage.value(),
+      remaining_hit_points.value()
     ),
     Event::Attacked {
       attacker,

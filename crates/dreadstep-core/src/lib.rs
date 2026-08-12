@@ -335,13 +335,15 @@ pub enum Tile {
   Wall,
   /// A closed door that blocks movement until an adjacent actor opens it.
   Door,
+  /// A walkable floor trap that triggers once when an actor enters it.
+  Trap,
 }
 
 impl Tile {
   /// Returns whether this tile permits an actor to enter it.
   #[must_use]
   pub const fn is_walkable(self) -> bool {
-    matches!(self, Self::Floor | Self::Cover)
+    matches!(self, Self::Floor | Self::Cover | Self::Trap)
   }
 
   /// Returns whether this tile blocks a ranged line of sight.
@@ -632,6 +634,9 @@ impl Damage {
 
   /// The fixed damage dealt by the bounded ranged command.
   pub const RANGED: Self = Self(1);
+
+  /// The fixed damage dealt when an actor enters a floor trap.
+  pub const TRAP: Self = Self(1);
 
   /// Creates damage from a numeric value.
   #[must_use]
@@ -1187,6 +1192,17 @@ pub enum Event {
     actor: ActorId,
     /// The door position that changed to floor.
     position: Position,
+  },
+  /// An actor entered a one-shot floor trap and took fixed damage.
+  TrapTriggered {
+    /// The actor that entered the trap.
+    actor: ActorId,
+    /// The trap position that was consumed.
+    position: Position,
+    /// The fixed damage applied by the trap.
+    damage: Damage,
+    /// The actor's hit points after trap damage.
+    remaining_hit_points: HitPoints,
   },
   /// An attack reduced a living target's hit points.
   Attacked {
@@ -2236,6 +2252,7 @@ impl WorldState {
         Tile::Cover => 2,
         Tile::Wall => 3,
         Tile::Door => 4,
+        Tile::Trap => 5,
       });
     }
     hasher.write_u64(self.current_time.value());
@@ -2484,7 +2501,7 @@ impl WorldState {
       .checked_add(action_cost)
       .ok_or(CommandError::ScheduleOverflow(actor_id))?;
     let events = match command {
-      Command::Move { direction, .. } => vec![self.move_actor(actor_id, direction)?],
+      Command::Move { direction, .. } => self.move_actor(actor_id, direction)?,
       Command::Wait { .. } => vec![Event::Waited {
         actor: actor_id,
         at: self.current_time,
@@ -2494,7 +2511,7 @@ impl WorldState {
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
       Command::Chase { target, .. } => {
         let direction = self.chase_direction(actor_id, target)?;
-        vec![self.move_actor(actor_id, direction)?]
+        self.move_actor(actor_id, direction)?
       }
       Command::Equip { item, .. } => self.equip_item(actor_id, item)?,
       Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
@@ -2737,7 +2754,11 @@ impl WorldState {
     })
   }
 
-  fn move_actor(&mut self, actor_id: ActorId, direction: Direction) -> Result<Event, CommandError> {
+  fn move_actor(
+    &mut self,
+    actor_id: ActorId,
+    direction: Direction,
+  ) -> Result<Vec<Event>, CommandError> {
     let from = self
       .actors
       .get(&actor_id)
@@ -2745,30 +2766,56 @@ impl WorldState {
       .ok_or(CommandError::UnknownActor(actor_id))?;
     let to = from.translated(direction);
     if !self.map.is_walkable(to) {
-      Ok(Event::MovementBlocked {
+      Ok(vec![Event::MovementBlocked {
         actor: actor_id,
         from,
         to,
         reason: BlockReason::Terrain,
-      })
+      }])
     } else if let Some(blocker) = self.actor_at(to) {
-      Ok(Event::MovementBlocked {
+      Ok(vec![Event::MovementBlocked {
         actor: actor_id,
         from,
         to,
         reason: BlockReason::Actor(blocker),
-      })
+      }])
     } else {
       self
         .actors
         .get_mut(&actor_id)
         .ok_or(CommandError::UnknownActor(actor_id))?
         .position = to;
-      Ok(Event::Moved {
+      let mut events = vec![Event::Moved {
         actor: actor_id,
         from,
         to,
-      })
+      }];
+      if self.map.tile_at(to) == Some(Tile::Trap) {
+        self
+          .map
+          .set_tile(to, Tile::Floor)
+          .ok_or(CommandError::UnknownActor(actor_id))?;
+        let damage = Damage::TRAP;
+        let remaining_hit_points = {
+          let actor = self
+            .actors
+            .get_mut(&actor_id)
+            .ok_or(CommandError::UnknownActor(actor_id))?;
+          let remaining_hit_points = actor.hit_points.reduced_by(damage);
+          actor.hit_points = remaining_hit_points;
+          remaining_hit_points
+        };
+        events.push(Event::TrapTriggered {
+          actor: actor_id,
+          position: to,
+          damage,
+          remaining_hit_points,
+        });
+        if !remaining_hit_points.is_alive() {
+          events.push(Event::Died { actor: actor_id });
+        }
+      }
+      Ok(events)
     }
   }
 

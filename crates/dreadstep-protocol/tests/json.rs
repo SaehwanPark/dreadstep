@@ -7,8 +7,8 @@ use dreadstep_core::{
   WorldState as CoreWorldState,
 };
 use dreadstep_protocol::{
-  ActionTime, ActorId, CommandRequest, Direction, Event, ItemId, PROTOCOL_VERSION, ReplayEvidence,
-  StateDigest, WorldSnapshot,
+  ActionTime, ActorId, CommandRequest, Damage, Direction, Event, HitPoints, ItemId,
+  PROTOCOL_VERSION, ReplayEvidence, StateDigest, WorldSnapshot,
 };
 
 fn snapshot() -> WorldSnapshot {
@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 15);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 16);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -254,6 +254,23 @@ fn command_and_event_json_use_explicit_tagged_variants() {
   assert_eq!(
     serde_json::to_value(door_event).expect("door event should serialize"),
     serde_json::json!({"door_opened": {"actor": 3, "position": {"x": 2, "y": 1}}})
+  );
+  let trap_event = Event::TrapTriggered {
+    actor: ActorId::new(3),
+    position: dreadstep_protocol::Position::new(2, 1),
+    damage: Damage::new(1),
+    remaining_hit_points: HitPoints::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(trap_event).expect("trap event should serialize"),
+    serde_json::json!({
+      "trap_triggered": {
+        "actor": 3,
+        "position": {"x": 2, "y": 1},
+        "damage": 1,
+        "remaining_hit_points": 4
+      }
+    })
   );
   let equipment_event = Event::ItemEquipped {
     actor: ActorId::new(3),

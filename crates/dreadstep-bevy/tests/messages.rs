@@ -187,6 +187,48 @@ fn attack_and_death_preserve_event_order_and_payloads() {
 }
 
 #[test]
+fn trap_trigger_preserves_movement_damage_and_consumption_order() {
+  let runtime = custom_runtime(
+    2,
+    vec![Tile::Floor, Tile::Trap],
+    vec![Actor::with_hit_points(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+      HitPoints::new(3),
+    )],
+  );
+  let mut app = message_app(runtime, ActorId::new(1));
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Move {
+      actor: ActorId::new(1),
+      direction: dreadstep_core::Direction::East,
+    })
+    .expect("trap movement should succeed");
+  app.update();
+
+  assert_eq!(
+    messages(&app),
+    vec![
+      PresentationMessage::Moved {
+        actor: ActorId::new(1),
+        from: Position::new(0, 0),
+        to: Position::new(1, 0),
+      },
+      PresentationMessage::TrapTriggered {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
+        damage: Damage::TRAP,
+        remaining_hit_points: HitPoints::new(2),
+      },
+    ]
+  );
+}
+
+#[test]
 fn rejected_command_clears_stale_messages_without_mutating_core() {
   let mut app = message_app(
     PresentationRuntime::start_run(7).expect("content should validate"),
