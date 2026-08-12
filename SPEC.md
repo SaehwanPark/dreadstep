@@ -3185,6 +3185,37 @@ Out of scope:
 - line of sight, cover, ammunition, weapon/item effects, varied action costs, enemy ranged AI,
   new map rules, production art/audio, animation changes, and tester operations.
 
+## Active
+
+### Milestone 4 slice: deterministic ranged line of sight
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Extend the verified `RangedAttack` contract with a deterministic cardinal line of sight. A clear
+same-row or same-column ray at Manhattan distance 2 or 3 remains accepted; diagonal targets and
+wall-blocked rays return typed `RangedAttackNoLineOfSight` rejection without consuming an action or
+changing replay/state evidence. Legal-action discovery applies the same predicate. Protocol version
+5 carries the new error while the command, attack/death events, fixed damage, desktop `G` control,
+and existing presentation/audio fallback families remain unchanged.
+
+Verification target:
+
+- Core proves clear cardinal rays, wall and diagonal rejection, deterministic legal-action filtering,
+  and atomic state/scheduler/replay stability.
+- Protocol v5 maps and serializes the typed no-line-of-sight error; MCP preserves rejected-action
+  history/replay evidence and existing action behavior.
+- Existing desktop smoke, journal, attack animation, and optional-audio fallback checks remain green;
+  no new controls or assets are introduced.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- cover, ammunition, weapon/item effects, varied action costs, enemy ranged AI, projectile visuals,
+  new audio, diagonal interpolation, and new desktop controls.
+
 ## Future
 
 ### Remaining roadmap milestones

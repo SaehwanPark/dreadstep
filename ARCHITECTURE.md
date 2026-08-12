@@ -96,7 +96,8 @@ materially more efficient in Rust.
 living actor occupancy is checked separately so events can distinguish terrain from another
 actor. `WorldState::execute` accepts only the living actor at the minimum `ActionTime`, orders
 ties by `ActorId`, applies fixed melee damage to adjacent targets or the bounded one-point
-ranged attack at Manhattan distance 2–3, resolves enemy chase steps with horizontal-axis priority,
+ranged attack on clear cardinal rays at Manhattan distance 2–3, resolves enemy chase steps with
+horizontal-axis priority,
 and advances the acting actor by the fixed action cost. Dead
 actor records remain inspectable but are removed from scheduling and movement occupancy. The
 stable state digest uses an explicit deterministic byte order and does not use a
@@ -449,12 +450,14 @@ evidence. Protocol/MCP convert the request, event, and typed ground-miss error; 
 `P` to the lowest-ID available ground item and covers the transition in its journal and display-free
 smoke path. No drop command, capacity, item effects, enemy pickup, or new media policy is inferred.
 
-The active Milestone 4 ranged-combat slice adds `RangedAttack` as a second player combat command.
+The verified Milestone 4 ranged-combat slice adds `RangedAttack` as a second player combat command.
 Core discovers stable target IDs at Manhattan distance 2–3, reuses the existing typed `Attacked`
 and `Died` evidence, and records the command in replay. Protocol/MCP and the headless CLI only
 translate the new typed request; the desktop binds `G` to the lowest-ID legal target and reuses the
-existing attack animation/audio cue families. Line of sight, cover, ammunition, weapon effects,
-varied action costs, and enemy ranged behavior remain future rules.
+existing attack animation/audio cue families. A follow-up slice now adds a cardinal line-of-sight
+predicate over interior `Floor` cells; blocked and diagonal requests return typed rejection without
+mutating state or replay evidence. Cover, ammunition, weapon effects, varied action costs, and
+enemy ranged behavior remain future rules.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

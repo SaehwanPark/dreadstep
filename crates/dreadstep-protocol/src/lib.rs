@@ -18,7 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 4;
+pub const PROTOCOL_VERSION: u16 = 5;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -57,7 +57,7 @@ pub enum CommandRequest {
     /// The actor being targeted.
     target: ActorId,
   },
-  /// Make a bounded ranged attack against an actor two or three tiles away.
+  /// Make a bounded ranged attack against an actor two or three clear cardinal tiles away.
   RangedAttack {
     /// The actor issuing the request.
     actor: ActorId,
@@ -1078,7 +1078,8 @@ impl From<CoreEvent> for Event {
 }
 
 /// A structured command rejection projected for an adapter boundary.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum CommandError {
   /// The command addresses no actor in the world.
   UnknownActor(ActorId),
@@ -1117,6 +1118,13 @@ pub enum CommandError {
     /// The actor issuing the ranged attack.
     attacker: ActorId,
     /// The actor outside the bounded ranged interval.
+    target: ActorId,
+  },
+  /// The ranged target is not visible along a clear cardinal ray.
+  RangedAttackNoLineOfSight {
+    /// The actor issuing the ranged attack.
+    attacker: ActorId,
+    /// The actor hidden by a diagonal path or blocking terrain.
     target: ActorId,
   },
   /// The actor does not own the requested item.
@@ -1186,6 +1194,12 @@ impl From<CoreCommandError> for CommandError {
       },
       CoreCommandError::RangedAttackOutOfRange { attacker, target } => {
         Self::RangedAttackOutOfRange {
+          attacker: ActorId::new(attacker.value()),
+          target: ActorId::new(target.value()),
+        }
+      }
+      CoreCommandError::RangedAttackNoLineOfSight { attacker, target } => {
+        Self::RangedAttackNoLineOfSight {
           attacker: ActorId::new(attacker.value()),
           target: ActorId::new(target.value()),
         }
@@ -1267,6 +1281,12 @@ impl fmt::Display for CommandError {
       Self::RangedAttackOutOfRange { attacker, target } => write!(
         formatter,
         "actor {} cannot ranged attack target {} outside distance 2..=3",
+        attacker.value(),
+        target.value()
+      ),
+      Self::RangedAttackNoLineOfSight { attacker, target } => write!(
+        formatter,
+        "actor {} cannot ranged attack target {} without a clear cardinal line of sight",
         attacker.value(),
         target.value()
       ),

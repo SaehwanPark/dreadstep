@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A deterministic cardinal line-of-sight guard for scheduled ranged attacks, with typed no-line-of-
+  sight rejection, legal-action filtering, protocol v5 conversion, and MCP atomicity evidence;
+  cover, ammunition, and projectile presentation remain deferred.
 - A deterministic scheduled `RangedAttack` command for living actors at Manhattan distance 2–3,
   with typed core/protocol/MCP/headless evidence, replay participation, desktop `G` targeting,
   and display-free smoke coverage; line of sight, cover, ammunition, weapon effects, varied action

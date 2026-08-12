@@ -1101,6 +1101,13 @@ pub enum CommandError {
     /// The actor outside the bounded ranged interval.
     target: ActorId,
   },
+  /// A ranged target is not visible along a clear cardinal ray.
+  RangedAttackNoLineOfSight {
+    /// The actor issuing the ranged attack.
+    attacker: ActorId,
+    /// The actor hidden by a diagonal path or blocking terrain.
+    target: ActorId,
+  },
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1185,6 +1192,12 @@ impl fmt::Display for CommandError {
       Self::RangedAttackOutOfRange { attacker, target } => write!(
         formatter,
         "actor {} cannot ranged attack target {} outside distance 2..=3",
+        attacker.value(),
+        target.value()
+      ),
+      Self::RangedAttackNoLineOfSight { attacker, target } => write!(
+        formatter,
+        "actor {} cannot ranged attack target {} without a clear cardinal line of sight",
         attacker.value(),
         target.value()
       ),
@@ -1787,9 +1800,9 @@ impl WorldState {
   /// Cardinal movement and waiting are always listed because blocked movement still produces an
   /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
   /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
-  /// Player attacks include adjacent melee targets and targets two or three tiles away for the
-  /// bounded ranged command; enemy chase requests include every distinct living target. Results
-  /// follow the fixed direction, inventory, and then stable actor identity order.
+  /// Player attacks include adjacent melee targets and clear cardinal rays two or three tiles away
+  /// for the bounded ranged command; enemy chase requests include every distinct living target.
+  /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
     let Some(actor_id) = self.next_actor() else {
@@ -1861,7 +1874,10 @@ impl WorldState {
             target: target.id(),
           });
         }
-        ActorKind::Player if Self::is_ranged_distance(actor.position(), target.position()) => {
+        ActorKind::Player
+          if Self::is_ranged_distance(actor.position(), target.position())
+            && self.has_ranged_line_of_sight(actor.position(), target.position()) =>
+        {
           commands.push(Command::RangedAttack {
             actor: actor_id,
             target: target.id(),
@@ -2194,6 +2210,9 @@ impl WorldState {
         CommandError::AttackOutOfRange { attacker, target }
       });
     }
+    if ranged && !self.has_ranged_line_of_sight(attacker_position, target_position) {
+      return Err(CommandError::RangedAttackNoLineOfSight { attacker, target });
+    }
     let remaining_hit_points = target_actor.hit_points().reduced_by(damage);
     self
       .actors
@@ -2218,6 +2237,32 @@ impl WorldState {
       .abs_diff(second.x())
       .saturating_add(first.y().abs_diff(second.y()));
     (2..=3).contains(&distance)
+  }
+
+  fn has_ranged_line_of_sight(&self, first: Position, second: Position) -> bool {
+    if first.x() == second.x() {
+      let step = if first.y() < second.y() { 1 } else { -1 };
+      let mut y = first.y() + step;
+      while y != second.y() {
+        if !self.map.is_walkable(Position::new(first.x(), y)) {
+          return false;
+        }
+        y += step;
+      }
+      true
+    } else if first.y() == second.y() {
+      let step = if first.x() < second.x() { 1 } else { -1 };
+      let mut x = first.x() + step;
+      while x != second.x() {
+        if !self.map.is_walkable(Position::new(x, first.y())) {
+          return false;
+        }
+        x += step;
+      }
+      true
+    } else {
+      false
+    }
   }
 }
 
