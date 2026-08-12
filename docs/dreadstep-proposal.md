@@ -1738,6 +1738,11 @@ Current exploratory gate (2026-08-09):
   only, and this is not production asset approval.
 - This is not a production asset selection: dungeon combat, movement, pickup, detection, and
   environmental audio still require a targeted source or an explicit original-audio decision.
+ The CC0 Kenney pack is now the reproducibly prepared local art fallback for the desktop
+ showcase: `scripts/prepare-local-assets.sh` validates the recorded archive and installs six
+ native source tiles under ignored `assets/dreadstep/` paths. This is local prototype adoption,
+ not final production asset approval; dungeon combat, movement, pickup, detection, and
+ environmental audio still require a targeted source or an explicit original-audio decision.
 - The reversible renderer-boundary spike is now verified: a typed ordered projection over existing
   scene mirrors preserves complete keyed values, per-kind checked placement, and inventory-unplaced
   semantics without enabling render plugins or loading production media. Actual windowing,

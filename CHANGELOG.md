@@ -11,6 +11,8 @@ All notable contributor- and user-visible project changes are recorded here.
 - An optional desktop audio-cue adapter that routes distinct typed batches through the validated
   local manifest and requests non-looping playback only for existing local files; missing media stays
   a safe fallback and no production audio is committed.
+- A reproducible local-only CC0 art preparation script that validates the recorded Kenney archive
+  and installs six nearest-neighbor showcase source tiles without tracking media binaries.
 - A deterministic tactical HUD summary for health, turn ownership, enemy pressure, and optional
   field-of-view state, without simulation or media boundary changes.
 - An optional deterministic presentation field-of-view projection with radius-bounded cardinal

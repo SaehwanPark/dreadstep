@@ -320,6 +320,11 @@ outside this boundary.
 
 The verified presentation asset evaluation and native tile-size evidence are tracked outside the
 Rust boundary in `docs/presentation/asset-evaluation.md` and `docs/presentation/tile-samples.md`.
+The selected local CC0 art fallback is prepared by the repository-side
+`scripts/prepare-local-assets.sh` adapter. It validates the recorded archive hash and source
+members, writes only to ignored local-media paths, and leaves `PresentationAssetManifest` plus
+the deterministic placeholder path authoritative when the archive or files are absent. This
+preparation step has no core, protocol, replay, journal, or public schema effect.
 They record local-only generated and CC0 candidates, exact nearest-neighbor 24×24/32×32 samples,
 and a provisional 32×32 working scale; dungeon audio sourcing remains open after a UI-only fallback
 evaluation. The verified reversible renderer boundary consumes this metadata without loading

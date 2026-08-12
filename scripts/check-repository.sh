@@ -33,6 +33,7 @@ readonly REQUIRED_FILES=(
   "docs/harness/dreadstep/team-spec.md"
   "rust-toolchain.toml"
   "rustfmt.toml"
+  "scripts/prepare-local-assets.sh"
 )
 
 for path in "${REQUIRED_FILES[@]}"; do
