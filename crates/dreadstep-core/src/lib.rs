@@ -525,8 +525,8 @@ impl StableHasher {
   }
 }
 
-/// An actor with a stable identity, kind, position, hit points, inventory, optional equipment,
-/// and next ready time.
+/// An actor with a stable identity, kind, position, hit points, ranged ammunition, inventory,
+/// optional equipment, and next ready time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Actor {
   id: ActorId,
@@ -535,10 +535,14 @@ pub struct Actor {
   hit_points: HitPoints,
   inventory: Vec<Item>,
   equipped: Option<ItemId>,
+  ranged_ammo: u16,
   ready_at: ActionTime,
 }
 
 impl Actor {
+  /// The default number of ranged shots available to a newly created actor.
+  pub const DEFAULT_RANGED_AMMO: u16 = 3;
+
   /// Creates an actor that is ready at the beginning of the world timeline.
   #[must_use]
   pub const fn new(id: ActorId, kind: ActorKind, position: Position) -> Self {
@@ -553,6 +557,18 @@ impl Actor {
     position: Position,
     hit_points: HitPoints,
   ) -> Self {
+    Self::with_ranged_ammo(id, kind, position, hit_points, Self::DEFAULT_RANGED_AMMO)
+  }
+
+  /// Creates an actor with explicit hit points and ranged ammunition.
+  #[must_use]
+  pub const fn with_ranged_ammo(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+    ranged_ammo: u16,
+  ) -> Self {
     Self {
       id,
       kind,
@@ -560,6 +576,7 @@ impl Actor {
       hit_points,
       inventory: Vec::new(),
       equipped: None,
+      ranged_ammo,
       ready_at: ActionTime::new(0),
     }
   }
@@ -598,6 +615,12 @@ impl Actor {
   #[must_use]
   pub const fn equipped_item(&self) -> Option<ItemId> {
     self.equipped
+  }
+
+  /// Returns the number of ranged shots remaining for this actor.
+  #[must_use]
+  pub const fn ranged_ammo(&self) -> u16 {
+    self.ranged_ammo
   }
 
   /// Returns whether this actor can be scheduled, targeted, or moved around.
@@ -1111,6 +1134,8 @@ pub enum CommandError {
     /// The actor hidden by a diagonal path or blocking terrain.
     target: ActorId,
   },
+  /// The actor has no ranged ammunition remaining.
+  RangedAttackNoAmmunition(ActorId),
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1203,6 +1228,11 @@ impl fmt::Display for CommandError {
         "actor {} cannot ranged attack target {} without a clear cardinal line of sight",
         attacker.value(),
         target.value()
+      ),
+      Self::RangedAttackNoAmmunition(actor) => write!(
+        formatter,
+        "actor {} cannot ranged attack without ammunition",
+        actor.value()
       ),
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
@@ -1731,10 +1761,10 @@ impl WorldState {
   /// Returns a stable digest of all semantic world state.
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
-  /// identity, kind, life, position, hit points, ready time, ordered inventory item identities and
-  /// definition references, optional equipped item identity, and ordered ground-item stacks. It is
-  /// deterministic regression evidence, not a cryptographic integrity check or serialized state
-  /// format.
+  /// identity, kind, life, position, hit points, ranged ammunition, ready time, ordered inventory
+  /// item identities and definition references, optional equipped item identity, and ordered
+  /// ground-item stacks. It is deterministic regression evidence, not a cryptographic integrity
+  /// check or serialized state format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
@@ -1758,6 +1788,7 @@ impl WorldState {
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
       hasher.write_u16(actor.hit_points().value());
+      hasher.write_u16(actor.ranged_ammo());
       hasher.write_u64(actor.ready_at().value());
       hasher.write_u64(u64::try_from(actor.inventory().len()).unwrap_or(u64::MAX));
       for item in actor.inventory() {
@@ -1880,6 +1911,7 @@ impl WorldState {
         ActorKind::Player
           if Self::is_ranged_distance(actor.position(), target.position())
             && self.has_ranged_line_of_sight(actor.position(), target.position())
+            && actor.ranged_ammo() > 0
             && actor.ready_at().checked_add(ActionCost::RANGED).is_some() =>
         {
           commands.push(Command::RangedAttack {
@@ -1924,6 +1956,9 @@ impl WorldState {
         scheduled,
       });
     }
+    if matches!(command, Command::RangedAttack { .. }) && actor.ranged_ammo() == 0 {
+      return Err(CommandError::RangedAttackNoAmmunition(actor_id));
+    }
     let action_cost = match command {
       Command::RangedAttack { .. } => ActionCost::RANGED,
       _ => ActionCost::STANDARD,
@@ -1948,6 +1983,13 @@ impl WorldState {
       Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],
       Command::Pickup { item, .. } => vec![self.pickup_item_command(actor_id, item)?],
     };
+    if matches!(command, Command::RangedAttack { .. }) {
+      self
+        .actors
+        .get_mut(&actor_id)
+        .ok_or(CommandError::UnknownActor(actor_id))?
+        .ranged_ammo -= 1;
+    }
     self
       .actors
       .get_mut(&actor_id)

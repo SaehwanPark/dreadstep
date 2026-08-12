@@ -6,10 +6,20 @@ use dreadstep_core::{
 };
 
 fn world(target: Position, hit_points: u16) -> WorldState {
+  world_with_ammo(target, hit_points, Actor::DEFAULT_RANGED_AMMO)
+}
+
+fn world_with_ammo(target: Position, hit_points: u16, ranged_ammo: u16) -> WorldState {
   WorldState::new(
     GridMap::filled(7, 1, Tile::Floor).expect("test map should be valid"),
     vec![
-      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_ranged_ammo(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(10),
+        ranged_ammo,
+      ),
       Actor::with_hit_points(
         ActorId::new(2),
         ActorKind::Enemy,
@@ -57,6 +67,13 @@ fn ranged_attack_accepts_distance_two_and_advances_two_ticks() {
       .value(),
     2
   );
+  assert_eq!(
+    world
+      .actor(ActorId::new(1))
+      .expect("attacker exists")
+      .ranged_ammo(),
+    Actor::DEFAULT_RANGED_AMMO - 1
+  );
   assert_eq!(result.next_actor(), Some(ActorId::new(2)));
   assert_eq!(result.current_time().value(), 0);
   assert_ne!(world.digest(), before_digest);
@@ -91,6 +108,34 @@ fn ranged_attack_reports_current_time_after_two_tick_transition() {
   );
   assert_eq!(result.next_actor(), Some(ActorId::new(2)));
   assert_eq!(result.current_time().value(), 2);
+}
+
+#[test]
+fn ranged_attack_rejects_empty_ammunition_atomically_and_hides_the_action() {
+  let mut world = world_with_ammo(Position::new(2, 0), 2, 0);
+  let before = world.clone();
+
+  assert!(!world.legal_commands().contains(&Command::RangedAttack {
+    actor: ActorId::new(1),
+    target: ActorId::new(2),
+  }));
+  assert_eq!(
+    world.execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }),
+    Err(CommandError::RangedAttackNoAmmunition(ActorId::new(1)))
+  );
+  assert_eq!(world, before);
+}
+
+#[test]
+fn ranged_ammunition_is_part_of_the_world_digest() {
+  let three_shot = world_with_ammo(Position::new(2, 0), 2, 3);
+  let two_shot = world_with_ammo(Position::new(2, 0), 2, 2);
+
+  assert_ne!(three_shot, two_shot);
+  assert_ne!(three_shot.digest(), two_shot.digest());
 }
 
 #[test]

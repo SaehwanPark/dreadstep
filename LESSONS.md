@@ -246,3 +246,16 @@ constructor cannot silently alter the default client path or lose owner/order da
   cost in legal discovery, and leave protocol command shape and presentation cues unchanged.
 - Prevention: Whenever one command gets a distinct cost, test both accepted ready-time transitions
   and near-overflow legal filtering; do not encode timing in adapters or replay-only metadata.
+
+## Consume ranged resources only after semantic acceptance
+
+- Context: The ranged-ammunition slice adds three default shots without introducing reload or pickup
+  commands.
+- Symptom: Decrementing ammo before target and line-of-sight validation would make rejected actions
+  mutate state and diverge from the accepted history/replay contract.
+- Cause: Scheduler cost and resource mutation are core-owned effects that must follow all semantic
+  validation branches.
+- Resolution: Filter zero-ammo ranged commands during legal discovery, reject direct zero-ammo
+  requests with a typed error, and decrement exactly once only after `ranged_attack` succeeds.
+- Prevention: For every finite command resource, assert accepted digest/snapshot changes, empty
+  action filtering, and atomic rejection across all preconditions.

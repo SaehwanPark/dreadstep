@@ -431,7 +431,7 @@ mod tests {
       "seed=7\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
-digest=3840175395840395446\n"
+digest=453469381614362262\n"
     );
   }
 
