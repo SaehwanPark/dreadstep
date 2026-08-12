@@ -17,8 +17,8 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, Position,
-  ReplayTrace, Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId,
+  MeleeReach as CoreMeleeReach, Position, ReplayTrace, Tile, WorldState,
 };
 use dreadstep_protocol::{
   ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
@@ -184,11 +184,14 @@ impl Session {
           ProtocolActorKind::Player => ActorKind::Player,
           ProtocolActorKind::Enemy => ActorKind::Enemy,
         };
-        Actor::with_hit_points(
+        Actor::with_melee_reach(
           ActorId::new(actor.id().value()),
           kind,
           Position::new(actor.position().x(), actor.position().y()),
           HitPoints::new(actor.hit_points().value()),
+          // `ProtocolMeleeReach` is private-field and constructor validated; the fallback keeps
+          // this adapter panic-free if a future wire decoder changes that invariant.
+          CoreMeleeReach::new(actor.melee_reach().value()).unwrap_or_default(),
         )
       })
       .collect();

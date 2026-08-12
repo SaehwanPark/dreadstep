@@ -475,6 +475,33 @@ impl Damage {
   }
 }
 
+/// A non-zero Manhattan distance at which an actor may perform melee attacks.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct MeleeReach(u8);
+
+impl MeleeReach {
+  /// The default adjacent melee reach.
+  pub const DEFAULT: Self = Self(1);
+
+  /// Creates a melee reach, rejecting zero because it cannot target another tile.
+  #[must_use]
+  pub const fn new(value: u8) -> Option<Self> {
+    if value == 0 { None } else { Some(Self(value)) }
+  }
+
+  /// Returns the numeric Manhattan reach.
+  #[must_use]
+  pub const fn value(self) -> u8 {
+    self.0
+  }
+}
+
+impl Default for MeleeReach {
+  fn default() -> Self {
+    Self::DEFAULT
+  }
+}
+
 /// A stable, non-cryptographic digest used for deterministic regression evidence.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct StateDigest(u64);
@@ -533,14 +560,15 @@ impl StableHasher {
   }
 }
 
-/// An actor with a stable identity, kind, position, hit points, ranged ammunition, inventory,
-/// optional equipment, and next ready time.
+/// An actor with a stable identity, kind, position, hit points, melee reach, ranged ammunition,
+/// inventory, optional equipment, and next ready time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Actor {
   id: ActorId,
   kind: ActorKind,
   position: Position,
   hit_points: HitPoints,
+  melee_reach: MeleeReach,
   inventory: Vec<Item>,
   equipped: Option<ItemId>,
   ranged_ammo: u16,
@@ -577,16 +605,56 @@ impl Actor {
     hit_points: HitPoints,
     ranged_ammo: u16,
   ) -> Self {
+    Self::with_ranged_ammo_and_melee_reach(
+      id,
+      kind,
+      position,
+      hit_points,
+      ranged_ammo,
+      MeleeReach::DEFAULT,
+    )
+  }
+
+  /// Creates an actor with explicit hit points, melee reach, and ranged ammunition.
+  #[must_use]
+  pub const fn with_ranged_ammo_and_melee_reach(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+    ranged_ammo: u16,
+    melee_reach: MeleeReach,
+  ) -> Self {
     Self {
       id,
       kind,
       position,
       hit_points,
+      melee_reach,
       inventory: Vec::new(),
       equipped: None,
       ranged_ammo,
       ready_at: ActionTime::new(0),
     }
+  }
+
+  /// Creates an actor with explicit hit points and melee reach using default ranged ammunition.
+  #[must_use]
+  pub const fn with_melee_reach(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+    melee_reach: MeleeReach,
+  ) -> Self {
+    Self::with_ranged_ammo_and_melee_reach(
+      id,
+      kind,
+      position,
+      hit_points,
+      Self::DEFAULT_RANGED_AMMO,
+      melee_reach,
+    )
   }
 
   /// Returns this actor's stable identity.
@@ -611,6 +679,12 @@ impl Actor {
   #[must_use]
   pub const fn hit_points(&self) -> HitPoints {
     self.hit_points
+  }
+
+  /// Returns this actor's non-zero Manhattan melee reach.
+  #[must_use]
+  pub const fn melee_reach(&self) -> MeleeReach {
+    self.melee_reach
   }
 
   /// Returns this actor's items in deterministic insertion order.
@@ -659,11 +733,11 @@ pub enum Command {
     /// The actor issuing the command.
     actor: ActorId,
   },
-  /// Make a fixed basic melee attack against an adjacent actor.
+  /// Make a fixed basic melee attack against an actor within melee reach.
   Attack {
     /// The actor issuing the attack.
     actor: ActorId,
-    /// The adjacent actor being targeted.
+    /// The actor being targeted within melee reach.
     target: ActorId,
   },
   /// Make a fixed ranged attack against a target two or three tiles away.
@@ -1121,7 +1195,7 @@ pub enum CommandError {
   PickupRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
-  /// The attack target is not adjacent to the attacker.
+  /// The attack target is outside the attacker's melee reach.
   AttackOutOfRange {
     /// The actor issuing the attack.
     attacker: ActorId,
@@ -1797,6 +1871,7 @@ impl WorldState {
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
       hasher.write_u16(actor.hit_points().value());
+      hasher.write_u8(actor.melee_reach().value());
       hasher.write_u16(actor.ranged_ammo());
       hasher.write_u64(actor.ready_at().value());
       hasher.write_u64(u64::try_from(actor.inventory().len()).unwrap_or(u64::MAX));
@@ -1843,8 +1918,9 @@ impl WorldState {
   /// Cardinal movement and waiting are always listed because blocked movement still produces an
   /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
   /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
-  /// Player attacks include adjacent melee targets and clear cardinal rays two or three tiles away
-  /// for the bounded ranged command; enemy chase requests include every distinct living target.
+  /// Player attacks include targets within the actor's melee reach and clear cardinal rays two or
+  /// three tiles away for the bounded ranged command; enemy chase requests include every distinct
+  /// living target.
   /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
@@ -1911,7 +1987,9 @@ impl WorldState {
       .filter(|target| target.is_alive() && target.id() != actor_id)
     {
       match actor.kind() {
-        ActorKind::Player if Self::is_adjacent(actor.position(), target.position()) => {
+        ActorKind::Player
+          if Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach()) =>
+        {
           commands.push(Command::Attack {
             actor: actor_id,
             target: target.id(),
@@ -2138,12 +2216,6 @@ impl WorldState {
     })
   }
 
-  fn is_adjacent(first: Position, second: Position) -> bool {
-    let horizontal = i64::from(first.x()) - i64::from(second.x());
-    let vertical = i64::from(first.y()) - i64::from(second.y());
-    horizontal.abs() + vertical.abs() == 1
-  }
-
   fn move_actor(&mut self, actor_id: ActorId, direction: Direction) -> Result<Event, CommandError> {
     let from = self
       .actors
@@ -2211,10 +2283,15 @@ impl WorldState {
   }
 
   fn attack(&mut self, attacker: ActorId, target: ActorId) -> Result<Vec<Event>, CommandError> {
+    let reach = self
+      .actors
+      .get(&attacker)
+      .map(Actor::melee_reach)
+      .ok_or(CommandError::UnknownActor(attacker))?;
     self.attack_with_distance(
       attacker,
       target,
-      |distance| distance == 1,
+      |first, second| Self::is_melee_distance(first, second, reach),
       Damage::MELEE,
       false,
     )
@@ -2228,7 +2305,7 @@ impl WorldState {
     self.attack_with_distance(
       attacker,
       target,
-      |distance| (2..=3).contains(&distance),
+      Self::is_ranged_distance,
       Damage::RANGED,
       true,
     )
@@ -2238,7 +2315,7 @@ impl WorldState {
     &mut self,
     attacker: ActorId,
     target: ActorId,
-    in_range: impl FnOnce(u32) -> bool,
+    in_range: impl FnOnce(Position, Position) -> bool,
     damage: Damage,
     ranged: bool,
   ) -> Result<Vec<Event>, CommandError> {
@@ -2258,11 +2335,7 @@ impl WorldState {
       return Err(CommandError::TargetDead(target));
     }
     let target_position = target_actor.position();
-    let distance = attacker_position
-      .x()
-      .abs_diff(target_position.x())
-      .saturating_add(attacker_position.y().abs_diff(target_position.y()));
-    if !in_range(distance) {
+    if !in_range(attacker_position, target_position) {
       return Err(if ranged {
         CommandError::RangedAttackOutOfRange { attacker, target }
       } else {
@@ -2296,6 +2369,14 @@ impl WorldState {
       .abs_diff(second.x())
       .saturating_add(first.y().abs_diff(second.y()));
     (2..=3).contains(&distance)
+  }
+
+  fn is_melee_distance(first: Position, second: Position, reach: MeleeReach) -> bool {
+    let distance = first
+      .x()
+      .abs_diff(second.x())
+      .saturating_add(first.y().abs_diff(second.y()));
+    distance <= u32::from(reach.value())
   }
 
   fn has_ranged_line_of_sight(&self, first: Position, second: Position) -> bool {

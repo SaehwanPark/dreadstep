@@ -21,9 +21,10 @@ Dreadstep is continuing the transition from Milestone 3's human presentation bou
 Milestone 4 tactical combat.
 
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
-ammunition, and walkable-cover slices are verified across the deterministic core,
-protocol/MCP/headless adapters, and desktop `G` control. The next bounded slice projects the
-scheduled enemy's current intent into the desktop HUD without changing enemy behavior. Cover
+ammunition, walkable cover, and deterministic scheduled-enemy intent presentation slices are
+verified across the deterministic core, protocol/MCP/headless adapters, and desktop boundary. The
+next bounded slice adds a typed actor melee reach (default one tile, explicit extended reach for
+authored/test scenarios) without introducing weapon classes or changing desktop controls. Cover
 blocks only interior ranged rays; ammo pickups, reloads, cover damage modifiers, weapon effects,
 and enemy AI families remain deliberately deferred.
 

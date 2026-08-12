@@ -2,11 +2,12 @@
 
 use dreadstep_core::{
   Actor, ActorId as CoreActorId, ActorKind as CoreActorKind, Command, GridMap,
-  HitPoints as CoreHitPoints, Position as CorePosition, Tile, WorldState,
+  HitPoints as CoreHitPoints, MeleeReach as CoreMeleeReach, Position as CorePosition, Tile,
+  WorldState,
 };
 use dreadstep_protocol::{
-  ActionTime, ActorId, ActorKind, ActorSnapshot, HitPoints, LifeState, PROTOCOL_VERSION, Position,
-  WorldSnapshot,
+  ActionTime, ActorId, ActorKind, ActorSnapshot, HitPoints, LifeState, MeleeReach,
+  PROTOCOL_VERSION, Position, WorldSnapshot,
 };
 
 fn world_with_actors() -> WorldState {
@@ -48,7 +49,28 @@ fn snapshot_has_version_and_stable_actor_order() {
   assert_eq!(player.hit_points(), HitPoints::new(10));
   assert_eq!(player.life(), LifeState::Alive);
   assert_eq!(player.ready_at(), ActionTime::new(0));
+  assert_eq!(player.melee_reach(), MeleeReach::DEFAULT);
   assert_eq!(player.ranged_ammo(), 3);
+}
+
+#[test]
+fn snapshot_projects_explicit_melee_reach() {
+  let world = WorldState::new(
+    GridMap::filled(3, 1, Tile::Floor).expect("test map should be valid"),
+    vec![Actor::with_melee_reach(
+      CoreActorId::new(1),
+      CoreActorKind::Player,
+      CorePosition::new(0, 0),
+      CoreHitPoints::new(10),
+      CoreMeleeReach::new(2).expect("two is a valid reach"),
+    )],
+  )
+  .expect("world should be valid");
+
+  assert_eq!(
+    WorldSnapshot::from_world(&world).actors()[0].melee_reach(),
+    MeleeReach::new(2).expect("two is a valid reach")
+  );
 }
 
 #[test]

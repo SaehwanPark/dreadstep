@@ -13,6 +13,16 @@ Update an existing lesson instead of adding a duplicate.
 - Prevention: Keep intent projections read-only, test actor/target identity and replay stability,
   and update the presentation policy whenever the driver selection policy changes.
 
+## 2026-08-12 — Legal discovery and execution must share reach predicates
+
+- Context: Adding a second melee range can make a target appear legal while direct execution still
+  applies the old adjacent-only rule, or permit a command that discovery omitted.
+- Resolution: Keep the typed actor reach and one Manhattan-distance predicate at the core boundary,
+  then use it from both legal-action discovery and `Attack` validation; adapters only project the
+  resulting value and command evidence.
+- Prevention: Test default and explicit reach through both paths, include the reach in the digest
+  and snapshots, and preserve atomic rejection/replay evidence for out-of-range requests.
+
 ## Keep desktop engine features at the presentation boundary
 
 - Context: The initial root package depended on Bevy 0.19 with all default features.

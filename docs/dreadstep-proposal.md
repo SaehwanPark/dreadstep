@@ -1964,11 +1964,15 @@ order, advances one standard action, emits `ItemPickedUp`, and records replay/sn
 protocol/MCP and the desktop showcase expose the same contract. Effects, capacity, drop commands,
 enemy pickup, and richer inventory UX remain future work.
 
-The current roadmap also includes an active presentation preparation slice: the desktop HUD reads
-the currently scheduled living enemy's exact core command using the same deterministic
-chase-then-wait preference as the enemy driver. This exposes intent without reserving commands or
-changing enemy behavior; ranged enemy AI, retreat, status effects, and richer intent policy remain
-future work.
+The current roadmap includes a verified presentation preparation slice: the desktop HUD reads the
+currently scheduled living enemy's exact core command using the same deterministic chase-then-wait
+preference as the enemy driver. This exposes intent without reserving commands or changing enemy
+behavior; ranged enemy AI, retreat, status effects, and richer intent policy remain future work.
+
+The next bounded combat-preparation slice adds a typed actor melee reach with a one-tile default
+and explicit extended-reach authored/test actors. Legal discovery and execution share the same
+predicate and preserve fixed damage, action cost, events, replay, and desktop behavior; weapon
+classes and equipment-derived effects remain future work.
 
 ### Implement
 

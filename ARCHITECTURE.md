@@ -475,11 +475,17 @@ walkable cover and treats only walls as visible boundaries. Protocol v7 carries 
 variant; cover damage modifiers, directionality, destruction, and environmental mutation remain
 future rules.
 
-The active enemy-intent presentation slice reads core's current legal command projection for the
+The verified enemy-intent presentation slice reads core's current legal command projection for the
 scheduled living enemy and exposes the selected exact command as a disposable Bevy resource. It
 shares the desktop driver's deterministic chase-then-wait preference, changes no simulation truth,
 and renders only a compact HUD summary; new enemy behavior families and intent commitment remain
 future rules.
+
+The active melee-reach preparation slice adds a typed actor reach value with a one-tile default and
+an explicit extended-reach constructor for authored/test scenarios. Core uses the same Manhattan
+reach predicate for `Attack` legal discovery and execution; protocol snapshots and Bevy scene
+mirrors carry the value, while weapon classes, equipment-derived effects, and new presentation
+controls remain future rules.
 
 The typed MCP player-action slice extends that same process boundary with JSON command requests and
 structured `SessionOutput` event/snapshot evidence. MCP maps invalid command results to protocol

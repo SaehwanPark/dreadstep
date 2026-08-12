@@ -3,11 +3,12 @@
 use dreadstep_core::{
   Actor as CoreActor, ActorId as CoreActorId, ActorKind as CoreActorKind, GridMap as CoreGridMap,
   Item as CoreItem, ItemDefinitionId as CoreItemDefinitionId, ItemId as CoreItemId,
-  Position as CorePosition, Tile as CoreTile, WorldState as CoreWorldState,
+  MeleeReach as CoreMeleeReach, Position as CorePosition, Tile as CoreTile,
+  WorldState as CoreWorldState,
 };
 use dreadstep_protocol::{
-  ActionTime, ActorId, CommandRequest, Direction, Event, ItemId, ReplayEvidence, StateDigest,
-  WorldSnapshot,
+  ActionTime, ActorId, CommandRequest, Direction, Event, ItemId, PROTOCOL_VERSION, ReplayEvidence,
+  StateDigest, WorldSnapshot,
 };
 
 fn snapshot() -> WorldSnapshot {
@@ -56,8 +57,9 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 8);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
-  assert_eq!(value["protocol_version"], 7);
+  assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
   assert_eq!(value["next_actor"], 1);
   assert!(value["digest"].is_number());
@@ -65,14 +67,34 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["id"], 1);
   assert_eq!(value["actors"][0]["kind"], "player");
   assert_eq!(value["actors"][0]["life"], "alive");
+  assert_eq!(value["actors"][0]["melee_reach"], 1);
   assert_eq!(value["actors"][0]["ranged_ammo"], 3);
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
   assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
   let equipped_value =
     serde_json::to_value(equipped_snapshot()).expect("snapshot should serialize");
-  assert_eq!(equipped_value["protocol_version"], 7);
+  assert_eq!(equipped_value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(equipped_value["actors"][0]["equipped_item"], 4);
+}
+
+#[test]
+fn snapshot_json_projects_explicit_melee_reach() {
+  let world = CoreWorldState::new(
+    CoreGridMap::filled(3, 1, CoreTile::Floor).expect("map should be valid"),
+    vec![CoreActor::with_melee_reach(
+      CoreActorId::new(1),
+      CoreActorKind::Player,
+      CorePosition::new(0, 0),
+      dreadstep_core::HitPoints::new(10),
+      CoreMeleeReach::new(2).expect("two is a valid reach"),
+    )],
+  )
+  .expect("world should be valid");
+
+  let value =
+    serde_json::to_value(WorldSnapshot::from_world(&world)).expect("snapshot should serialize");
+  assert_eq!(value["actors"][0]["melee_reach"], 2);
 }
 
 #[test]
@@ -93,6 +115,10 @@ fn snapshot_schema_exposes_the_versioned_projection_shape() {
   assert!(properties["digest"].is_object());
   assert!(properties["actors"].is_object());
   assert!(properties["ground_items"].is_object());
+  let actor_schema = &value["$defs"]["ActorSnapshot"];
+  let reach_ref = &actor_schema["properties"]["melee_reach"]["$ref"];
+  assert!(reach_ref.as_str().is_some());
+  assert_eq!(value["$defs"]["MeleeReach"]["minimum"], 1);
 }
 
 #[test]

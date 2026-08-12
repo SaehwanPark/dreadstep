@@ -27,6 +27,29 @@ fn scenario_values_preserve_typed_map_and_actor_inputs() {
   assert_eq!(scenario.tiles(), &[Tile::Floor, Tile::Cover, Tile::Wall]);
   assert_eq!(scenario.actors().len(), 1);
   assert_eq!(scenario.actors()[0].id(), ActorId::new(1));
+  assert_eq!(
+    scenario.actors()[0].melee_reach(),
+    dreadstep_protocol::MeleeReach::DEFAULT
+  );
+}
+
+#[test]
+fn scenario_values_preserve_explicit_melee_reach() {
+  let reach = dreadstep_protocol::MeleeReach::new(2).expect("two is a valid reach");
+  let scenario = Scenario::new(
+    3,
+    1,
+    vec![Tile::Floor, Tile::Floor, Tile::Floor],
+    vec![ScenarioActor::with_melee_reach(
+      ActorId::new(1),
+      dreadstep_protocol::ActorKind::Player,
+      Position::new(0, 0),
+      dreadstep_protocol::HitPoints::new(4),
+      reach,
+    )],
+  );
+
+  assert_eq!(scenario.actors()[0].melee_reach(), reach);
 }
 
 #[test]
