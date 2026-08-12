@@ -1,7 +1,7 @@
 //! Contract tests for ranged command rejection conversion.
 
 use dreadstep_core::{ActorId as CoreActorId, CommandError as CoreCommandError};
-use dreadstep_protocol::{ActorId, CommandError};
+use dreadstep_protocol::{ActorId, CommandError, Position};
 use schemars::schema_for;
 use serde_json::json;
 
@@ -91,4 +91,30 @@ fn inventory_full_error_has_a_tagged_json_and_schema_contract() {
   );
   let schema = serde_json::to_value(schema_for!(CommandError)).expect("schema should serialize");
   assert!(schema.to_string().contains("inventory_full"));
+}
+
+#[test]
+fn interact_target_error_has_a_tagged_json_and_schema_contract() {
+  let error = CommandError::from(CoreCommandError::InteractTargetInvalid {
+    actor: CoreActorId::new(1),
+    position: dreadstep_core::Position::new(2, 3),
+  });
+  assert_eq!(
+    error,
+    CommandError::InteractTargetInvalid {
+      actor: ActorId::new(1),
+      position: Position::new(2, 3),
+    }
+  );
+  let value = serde_json::to_value(error).expect("command error should serialize");
+  assert_eq!(
+    value,
+    json!({"interact_target_invalid": {"actor": 1, "position": {"x": 2, "y": 3}}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandError>(value).expect("command error should deserialize"),
+    error
+  );
+  let schema = serde_json::to_value(schema_for!(CommandError)).expect("schema should serialize");
+  assert!(schema.to_string().contains("interact_target_invalid"));
 }

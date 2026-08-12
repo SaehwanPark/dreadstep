@@ -6,9 +6,15 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Verified deterministic adjacent door interaction: closed `Door` terrain blocks movement and ranged
+  sight until a scheduled `Interact` opens it with standard action cost and typed `DoorOpened`
+  evidence. Protocol v15, MCP tester scenarios, headless parsing, Bevy/desktop `I` control, and
+  display-free smoke/journal coverage are synchronized; lock/key, closing, traps, and procedural
+  floors remain deferred.
+
 - Verified deterministic item effects now include authored item `101` as a three-point healing
   consumable and item `102` as a two-round ammunition consumable. Core caps both results at actor
-  limits and reports mutually exclusive optional evidence in `ItemConsumed`; protocol v14, MCP,
+  limits and reports mutually exclusive optional evidence in `ItemConsumed`; protocol v15, MCP,
   Bevy, desktop journal, and smoke evidence preserve the same result while richer item effects
   remain deferred.
 

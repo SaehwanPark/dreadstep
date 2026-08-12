@@ -527,6 +527,13 @@ pub enum PresentationMessage {
     /// The action time at which the wait began.
     at: ActionTime,
   },
+  /// An actor opened a closed door at an adjacent position.
+  DoorOpened {
+    /// The actor that opened the door.
+    actor: ActorId,
+    /// The opened door position.
+    position: Position,
+  },
   /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
@@ -607,6 +614,7 @@ impl PresentationMessage {
         reason,
       },
       Event::Waited { actor, at } => Self::Waited { actor, at },
+      Event::DoorOpened { actor, position } => Self::DoorOpened { actor, position },
       Event::Attacked {
         attacker,
         target,
@@ -649,6 +657,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::Moved { .. } => "moved",
     Event::MovementBlocked { .. } => "movement_blocked",
     Event::Waited { .. } => "waited",
+    Event::DoorOpened { .. } => "door_opened",
     Event::Attacked { .. } => "attacked",
     Event::Died { .. } => "died",
     Event::ItemEquipped { .. } => "item_equipped",
@@ -758,7 +767,7 @@ impl PresentationAudioCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
+      Event::ItemDropped { .. } | Event::Reloaded { .. } | Event::DoorOpened { .. } => None,
     }
   }
 }
@@ -1060,7 +1069,7 @@ impl PresentationAnimationCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
+      Event::DoorOpened { .. } | Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
     }
   }
 }
@@ -2448,6 +2457,25 @@ impl PresentationRuntime {
     self.state.world.drop_item(actor, item)
   }
 
+  /// Places one closed door for the display-free desktop smoke fixture.
+  ///
+  /// This setup-only mutation does not enter replay evidence; the smoke path then exercises the
+  /// normal scheduled [`Command::Interact`] transition through the same runtime as the visible
+  /// client.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_door(
+    &mut self,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self.state.world.set_tile(position, Tile::Door).is_none() {
+      return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
+        actor: ActorId::new(1),
+        position,
+      });
+    }
+    Ok(())
+  }
+
   /// Returns the latest accepted command output without consuming it.
   #[must_use]
   pub const fn output(&self) -> Option<&PresentationOutput> {
@@ -2653,7 +2681,7 @@ fn visible_positions(
     ] {
       let neighbor = position.translated(direction);
       match snapshot_tile(snapshot, neighbor) {
-        Some(Tile::Wall) => {
+        Some(Tile::Wall | Tile::Door) => {
           visible.insert((neighbor.x(), neighbor.y()));
         }
         Some(tile)
@@ -3617,6 +3645,7 @@ fn command_actor(command: Command) -> ActorId {
   match command {
     Command::Move { actor, .. }
     | Command::Wait { actor }
+    | Command::Interact { actor, .. }
     | Command::Attack { actor, .. }
     | Command::RangedAttack { actor, .. }
     | Command::Chase { actor, .. }

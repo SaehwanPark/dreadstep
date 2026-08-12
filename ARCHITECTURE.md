@@ -142,11 +142,16 @@ The versioned `WorldSnapshot` also projects core's deterministic `RunOutcome` (`
 `defeat`, or `victory`). Core derives this value from retained actor records, with player defeat
 precedence and no-enemy worlds remaining in progress; protocol and MCP only translate the result.
 
-Protocol v14 projects the fixed four-item inventory capacity on each actor snapshot and carries the
+Protocol v15 projects the fixed four-item inventory capacity on each actor snapshot and carries the
 optional healing or ammunition result on `ItemConsumed`. Core enforces the limit for tester ownership/pickup/
 transfer and scheduled player pickup; adapters only translate the typed rejection, legal-action
 omission, and effect evidence, so stacking, upgrades, and richer item rules do not become hidden
 adapter rules.
+
+Closed doors are core-owned terrain state: `Tile::Door` is non-walkable and blocks ranged sight until
+the scheduled actor issues an adjacent `Interact`, which changes that one tile to `Floor` and emits
+`DoorOpened`. Protocol, MCP, headless, and Bevy/desktop layers only translate the typed command,
+event, error, and journal values; fixture-only tile setup never enters replay history.
 
 The player `inspect` operation is likewise a read-only lookup over the protocol world snapshot.
 It returns one protocol `ActorSnapshot` or no value for an unknown identity, preserves dead actor

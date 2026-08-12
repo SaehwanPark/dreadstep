@@ -185,6 +185,7 @@ impl Session {
         ProtocolTile::Floor => Tile::Floor,
         ProtocolTile::Cover => Tile::Cover,
         ProtocolTile::Wall => Tile::Wall,
+        ProtocolTile::Door => Tile::Door,
       })
       .collect();
     let map = GridMap::from_tiles(scenario.width(), scenario.height(), tiles)

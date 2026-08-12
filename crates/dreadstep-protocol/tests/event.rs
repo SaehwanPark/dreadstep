@@ -38,6 +38,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       actor: CoreActorId::new(1),
       at: CoreActionTime::new(3),
     },
+    CoreEvent::DoorOpened {
+      actor: CoreActorId::new(1),
+      position: CorePosition::new(1, 0),
+    },
     CoreEvent::Attacked {
       attacker: CoreActorId::new(1),
       target: CoreActorId::new(2),
@@ -91,6 +95,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       Event::Waited {
         actor: ActorId::new(1),
         at: ActionTime::new(3),
+      },
+      Event::DoorOpened {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
       },
       Event::Attacked {
         attacker: ActorId::new(1),

@@ -71,9 +71,10 @@ const HEALTH_BAR_WIDTH: usize = 10;
 const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 11] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 12] = [
   "move",
   "wait",
+  "interact",
   "attack",
   "ranged_attack",
   "chase",
@@ -86,10 +87,11 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 11] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 11] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 12] = [
   "moved",
   "movement_blocked",
   "waited",
+  "door_opened",
   "attacked",
   "died",
   "item_equipped",
@@ -949,6 +951,7 @@ fn desktop_style_sprites(
       crate::SceneSpriteKey::Terrain(Tile::Floor) => Color::srgb(0.16, 0.2, 0.24),
       crate::SceneSpriteKey::Terrain(Tile::Cover) => Color::srgb(0.36, 0.25, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::Wall) => Color::srgb(0.04, 0.06, 0.08),
+      crate::SceneSpriteKey::Terrain(Tile::Door) => Color::srgb(0.48, 0.25, 0.08),
       crate::SceneSpriteKey::Player => Color::srgb(0.1, 0.85, 0.35),
       crate::SceneSpriteKey::Enemy => Color::srgb(0.9, 0.2, 0.22),
       crate::SceneSpriteKey::DeadActor => Color::srgb(0.4, 0.4, 0.45),
@@ -1280,6 +1283,10 @@ fn command_for_key(
       .iter()
       .copied()
       .find(|command| matches!(command, Command::Reload { actor: PLAYER })),
+    KeyCode::KeyI => legal
+      .iter()
+      .copied()
+      .find(|command| matches!(command, Command::Interact { actor: PLAYER, .. })),
     other => crate::KeyboardIntent::from_key(other).map(|intent| intent.command(PLAYER)),
   }?;
   legal.into_iter().find(|command| *command == candidate)
@@ -1513,6 +1520,24 @@ fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCo
     Command::RangedAttack {
       actor: PLAYER,
       target: RANGED_TARGET,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_door(Position::new(2, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "door_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Interact {
+      actor: PLAYER,
+      position: Position::new(2, 1),
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
@@ -1834,6 +1859,7 @@ fn tile_name(tile: Tile) -> &'static str {
     Tile::Floor => "floor",
     Tile::Cover => "cover",
     Tile::Wall => "wall",
+    Tile::Door => "door",
   }
 }
 
@@ -1867,6 +1893,7 @@ fn command_name(command: Command) -> &'static str {
   match command {
     Command::Move { .. } => "move",
     Command::Wait { .. } => "wait",
+    Command::Interact { .. } => "interact",
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
     Command::Chase { .. } => "chase",
@@ -1885,6 +1912,11 @@ fn command_value(command: Command) -> Value {
       json!({ "kind": "move", "actor": actor.value(), "direction": direction_name(direction) })
     }
     Command::Wait { actor } => json!({ "kind": "wait", "actor": actor.value() }),
+    Command::Interact { actor, position } => json!({
+      "kind": "interact",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
     Command::Attack { actor, target } => {
       json!({ "kind": "attack", "actor": actor.value(), "target": target.value() })
     }
@@ -1940,6 +1972,11 @@ fn event_value(event: Event) -> Value {
     Event::Waited { actor, at } => {
       json!({ "kind": "waited", "actor": actor.value(), "at": at.value() })
     }
+    Event::DoorOpened { actor, position } => json!({
+      "kind": "door_opened",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
     Event::Attacked {
       attacker,
       target,
@@ -2007,6 +2044,12 @@ fn event_message(event: Event) -> String {
       format!("Actor {} blocked by {:?}.", actor.value(), reason)
     }
     Event::Waited { actor, at } => format!("Actor {} waited at t{}.", actor.value(), at.value()),
+    Event::DoorOpened { actor, position } => format!(
+      "Actor {} opened the door at ({}, {}).",
+      actor.value(),
+      position.x(),
+      position.y()
+    ),
     Event::Attacked {
       attacker,
       target,
@@ -2391,6 +2434,31 @@ mod tests {
     assert_eq!(
       command_for_key(KeyCode::KeyR, &runtime, &session),
       Some(Command::Reload { actor: PLAYER })
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn interact_key_selects_the_adjacent_legal_door() {
+    let directory = test_directory("interact-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let world = WorldState::new(
+      GridMap::from_tiles(3, 1, vec![Tile::Floor, Tile::Door, Tile::Floor])
+        .expect("test map should be valid"),
+      vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+    )
+    .expect("test world should be valid");
+    let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+    let session = DesktopSession::new(7, journal);
+    assert_eq!(
+      command_for_key(KeyCode::KeyI, &runtime, &session),
+      Some(Command::Interact {
+        actor: PLAYER,
+        position: Position::new(1, 0),
+      })
     );
     let _ = fs::remove_dir_all(directory);
   }
