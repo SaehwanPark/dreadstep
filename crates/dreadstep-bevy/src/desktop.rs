@@ -2230,7 +2230,7 @@ mod tests {
         .map(|(family, name)| {
           (
             family,
-            PresentationAssetReference::new(format!("assets/audio/dreadstep/{prefix}-{name}.ogg"))
+            PresentationAssetReference::new(format!("assets/audio/dreadstep/{prefix}-{name}.wav"))
               .expect("test audio path validates"),
           )
         })
@@ -2241,15 +2241,26 @@ mod tests {
 
   fn install_test_audio_files(prefix: &str) -> [PathBuf; 2] {
     let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/audio/dreadstep");
-    let source =
-      PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../audio/generated-cue-click.wav");
     fs::create_dir_all(&directory).expect("test audio directory creates");
     let paths = [
-      directory.join(format!("{prefix}-attacked.ogg")),
-      directory.join(format!("{prefix}-died.ogg")),
+      directory.join(format!("{prefix}-attacked.wav")),
+      directory.join(format!("{prefix}-died.wav")),
     ];
+    let mut wav = Vec::with_capacity(44);
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&36_u32.to_le_bytes());
+    wav.extend_from_slice(b"WAVEfmt ");
+    wav.extend_from_slice(&16_u32.to_le_bytes());
+    wav.extend_from_slice(&1_u16.to_le_bytes());
+    wav.extend_from_slice(&1_u16.to_le_bytes());
+    wav.extend_from_slice(&44_100_u32.to_le_bytes());
+    wav.extend_from_slice(&44_100_u32.to_le_bytes());
+    wav.extend_from_slice(&1_u16.to_le_bytes());
+    wav.extend_from_slice(&8_u16.to_le_bytes());
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&0_u32.to_le_bytes());
     for path in &paths {
-      fs::copy(&source, path).expect("test audio fixture copies");
+      fs::write(path, &wav).expect("test audio fixture writes");
     }
     paths
   }

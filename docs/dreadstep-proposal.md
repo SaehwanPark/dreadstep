@@ -1769,8 +1769,9 @@ Current exploratory gate (2026-08-09):
   distinct accepted events even when cue values match. Movement interpolation, sprite sheets, audio
   playback, and production media remain deferred.
 - The verified optional audio-placeholder slice observes replay-digest cue batches and routes each
-  existing local reference through non-looping Bevy playback without changing simulation timing or
-  smoke evidence; production sound design and media selection remain deferred.
+  existing `assets/`-rooted reference through non-looping Bevy playback without changing simulation
+  timing or smoke evidence; other validated roots receive deterministic unsupported-root fallbacks,
+  while production sound design and media selection remain deferred.
 - The verified headless Bevy Sprite API bridge enables only the `bevy_sprite` API feature and joins
   deterministic solid-color Sprite values to stable placeholder nodes with optional 32×32 sizing;
   Sprite/render plugins, texture loading, transforms, windows, playback, and production media remain
