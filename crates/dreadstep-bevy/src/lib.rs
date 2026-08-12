@@ -742,9 +742,10 @@ impl PresentationAudioCueKind {
       PresentationAudioCue::Died { .. } => Self::Died,
       PresentationAudioCue::ItemEquipped { .. } => Self::ItemEquipped,
       PresentationAudioCue::ItemUnequipped { .. } => Self::ItemUnequipped,
-      PresentationAudioCue::ItemConsumed { .. } => Self::ItemConsumed,
       // Reuse the existing item-consumption asset family without changing the typed cue identity.
-      PresentationAudioCue::ItemPickedUp { .. } => Self::ItemConsumed,
+      PresentationAudioCue::ItemConsumed { .. } | PresentationAudioCue::ItemPickedUp { .. } => {
+        Self::ItemConsumed
+      }
     }
   }
 
