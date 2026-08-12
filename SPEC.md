@@ -3340,6 +3340,45 @@ Out of scope:
 - Ammo pickups, item-derived ammunition, weapon capacities, reload animations, reload audio,
   ranged enemy AI, projectile effects, and any additional action-cost changes.
 
+### Milestone 4 slice: scheduled player-facing item drop
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Expose one scheduled `Drop` command for a living player. The command removes one owned unequipped
+item from the actor's ordered inventory, appends it unchanged to the actor's current ground stack,
+advances one standard action, emits a typed `ItemDropped` event, and records the accepted request in
+replay evidence. Equipped items remain protected by a typed command rejection; tester-only drop
+mutations and item effects remain separate contracts. Protocol version 10 owns the new command and
+event mapping.
+
+Verification target:
+
+- Core proves stable inventory removal, ground-stack append order, standard scheduling, digest/replay
+  participation, legal-action filtering, and atomic owned/equipped/wrong-role/unscheduled rejection.
+- Protocol/MCP/headless carry the versioned command/event/error mappings and preserve accepted and
+  rejected history/replay/snapshot evidence through their public boundaries.
+- Bevy binds `X` to the selected legal player drop and includes the new command/event in exhaustive
+  journal and display-free smoke coverage without adding visual, audio, or animation families.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- Item effects, capacity, stack merging, enemy drop behavior, drop animation/audio, new item
+  definitions, persistence, and any additional action-cost changes.
+
+Verification evidence:
+
+- Core player-drop tests pass 4/4; protocol mapping/JSON tests pass 2/2; MCP player-drop session
+  tests pass 2/2 and stdio tests pass 3/3, including the explicit item-run public fixture.
+- Headless parser/unit tests pass 8/8 and CLI subprocess tests pass 5/5, including accepted
+  `drop:1:101` output; Bevy desktop tests cover `X`, exhaustive mappings, and drop smoke evidence.
+- `scripts/verify.sh` passes repository checks, formatting, strict workspace Clippy, all workspace
+  targets, warning-denied docs, and display-free desktop smoke; no new visual/audio/animation family
+  is introduced.
+
 ### Milestone 4 slice: deterministic ranged ammunition
 
 - Status: verified

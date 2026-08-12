@@ -1980,6 +1980,11 @@ action timing, replay/snapshot evidence, versioned protocol/MCP/headless mapping
 coverage while leaving pickups, weapon-specific capacities, reload media, and ranged enemy behavior
 for later slices.
 
+The bounded inventory slice is now verified: a scheduled player may move one owned unequipped item
+from inventory to the current ground stack through a typed `Drop` command. It preserves item order,
+standard action timing, replay/snapshot evidence, version-10 protocol mappings, and desktop `X`
+coverage without defining effects, capacity, stack merging, or new media.
+
 ### Implement
 
 - equipment;

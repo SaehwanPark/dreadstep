@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 async fn in_memory_tools_return_structured_versioned_outputs() {
   let server = DreadstepMcpServer::new(7).expect("fixed scenario should be valid");
   let observe = server.observe().await.expect("observe should succeed");
-  assert_eq!(observe.0.protocol_version(), 9);
+  assert_eq!(observe.0.protocol_version(), 10);
   assert_eq!(observe.0.protocol_version(), PROTOCOL_VERSION);
   let restarted = server
     .start_run(Parameters(StartRunParams { seed: 11 }))
@@ -384,6 +384,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
       "inspect",
       "legal_actions",
       "observe",
+      "start_item_run",
       "start_run"
     ]
   );
@@ -444,7 +445,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let history_after_rejection_output = &history_after_rejection["result"]["structuredContent"];
   let replay_after_rejection_output = &replay_after_rejection["result"]["structuredContent"];
   let after_rejection_snapshot = &after_rejection["result"]["structuredContent"];
-  assert_eq!(started_snapshot["protocol_version"], 9);
+  assert_eq!(started_snapshot["protocol_version"], 10);
   assert_eq!(started_snapshot["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(started_snapshot["actors"][0]["melee_reach"], 1);
   assert_eq!(started_snapshot, observed_snapshot);
@@ -516,5 +517,93 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
       .expect("actors should be present")
       .len(),
     2
+  );
+}
+
+#[test]
+fn subprocess_stdio_round_trip_accepts_player_drop_in_item_run() {
+  let executable = env!("CARGO_BIN_EXE_dreadstep-mcp");
+  let mut child = Command::new(executable)
+    .stdin(Stdio::piped())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .expect("MCP binary should spawn");
+  let mut input = child.stdin.take().expect("stdin should be piped");
+  let stdout = child.stdout.take().expect("stdout should be piped");
+  let mut output = BufReader::new(stdout);
+  let _initialized = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "2026-07-28",
+        "capabilities": {},
+        "clientInfo": {"name": "dreadstep-drop-test", "version": "0.1"}
+      }
+    }),
+    &mut input,
+    &mut output,
+  );
+  writeln!(
+    input,
+    "{}",
+    json!({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+  )
+  .expect("notification should be written");
+  input.flush().expect("notification should be flushed");
+  let started = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "tools/call",
+      "params": {"name": "start_item_run", "arguments": {"seed": 17}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let legal = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "tools/call",
+      "params": {"name": "legal_actions", "arguments": {}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  let dropped = round_trip(
+    &json!({
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "tools/call",
+      "params": {"name": "act", "arguments": {"request": {"drop": {"actor": 1, "item": 101}}}}
+    }),
+    &mut input,
+    &mut output,
+  );
+  drop(output);
+  drop(input);
+  let output = child
+    .wait_with_output()
+    .expect("MCP process should finish after stdin closes");
+  assert!(output.status.success());
+  assert!(output.stdout.is_empty());
+  assert!(output.stderr.is_empty());
+  assert_eq!(
+    started["result"]["structuredContent"]["actors"][0]["inventory"][0]["id"],
+    101
+  );
+  assert!(
+    legal["result"]["structuredContent"]
+      .as_array()
+      .expect("legal actions should be an array")
+      .iter()
+      .any(|command| command == &json!({"drop": {"actor": 1, "item": 101}}))
+  );
+  assert_eq!(
+    dropped["result"]["structuredContent"]["events"][0]["item_dropped"]["item"],
+    101
   );
 }

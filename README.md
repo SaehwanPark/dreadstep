@@ -22,10 +22,11 @@ Milestone 4 tactical combat.
 
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
 ammunition, walkable cover, deterministic scheduled-enemy intent presentation, typed melee reach,
-and player-facing reload slices are verified across the deterministic core, protocol/MCP/headless
-adapters, and desktop boundary. Reload restores the fixed three-shot capacity with `R` when ammo is
-partial; `Shift+R` restarts the same seed. Cover blocks only interior ranged rays; ammo pickups,
-cover damage modifiers, weapon effects, and enemy AI families remain deliberately deferred.
+and player-facing reload and item-drop slices are verified across the deterministic core,
+protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
+three-shot capacity with `R` when ammo is partial; `X` drops the selected unequipped item and
+`Shift+R` restarts the same seed. Cover blocks only interior ranged rays; ammo pickups, cover damage
+modifiers, weapon effects, and enemy AI families remain deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and

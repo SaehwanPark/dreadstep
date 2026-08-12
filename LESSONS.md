@@ -4,6 +4,16 @@ Read this file before implementation and again before final review. Record only 
 recurring traps that are not already obvious from code, tests, or canonical documentation.
 Update an existing lesson instead of adding a duplicate.
 
+## 2026-08-12 — Player inventory actions need an item-bearing public fixture
+
+- Context: The default MCP/headless fixed scenario is intentionally item-free, so a new player item
+  command cannot be proven through public boundaries by changing only the command enum.
+- Resolution: Keep `start_run` item-free, add an explicit authored item-run entry point for MCP, and
+  give the headless developer fixture one stable item; both public paths now exercise accepted drop
+  behavior without weakening the tester-only mutation boundary.
+- Prevention: For player inventory commands, provide a deterministic item-bearing fixture and test
+  legal discovery plus wire/CLI acceptance before declaring adapter parity.
+
 ## 2026-08-12 — Public commands require versioned boundary and control reconciliation
 
 - Context: Adding a player reload action changed the core command/event/error set and competed

@@ -783,6 +783,13 @@ pub enum Command {
     /// The ground item instance to pick up.
     item: ItemId,
   },
+  /// Drop one owned unequipped item at the player's current position.
+  Drop {
+    /// The player issuing the command.
+    actor: ActorId,
+    /// The owned item instance to drop.
+    item: ItemId,
+  },
   /// Restore a player's ranged ammunition to its fixed capacity.
   Reload {
     /// The player issuing the reload.
@@ -802,6 +809,7 @@ impl Command {
       | Self::Unequip { actor }
       | Self::UseItem { actor, .. }
       | Self::Pickup { actor, .. }
+      | Self::Drop { actor, .. }
       | Self::Reload { actor } => actor,
     }
   }
@@ -907,6 +915,11 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u8(10);
       hasher.write_u32(actor.value());
     }
+    Command::Drop { actor, item } => {
+      hasher.write_u8(11);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(item.value());
+    }
   }
 }
 
@@ -1000,6 +1013,13 @@ pub enum Event {
     /// The actor whose inventory changed.
     actor: ActorId,
     /// The picked-up item identity.
+    item: ItemId,
+  },
+  /// A player dropped one owned unequipped item at the current position.
+  ItemDropped {
+    /// The player whose inventory changed.
+    actor: ActorId,
+    /// The item instance moved to the ground.
     item: ItemId,
   },
   /// A player restored ranged ammunition to the fixed capacity.
@@ -1213,6 +1233,8 @@ pub enum CommandError {
   ChaseRequiresEnemy(ActorId),
   /// A pickup command must be issued by a player actor.
   PickupRequiresPlayer(ActorId),
+  /// A drop command must be issued by a player actor.
+  DropRequiresPlayer(ActorId),
   /// A reload command must be issued by a player actor.
   ReloadRequiresPlayer(ActorId),
   /// An enemy cannot chase itself.
@@ -1258,7 +1280,7 @@ pub enum CommandError {
   },
   /// The actor has no equipped item to remove.
   NothingEquipped(ActorId),
-  /// The requested item is equipped and cannot be consumed.
+  /// The requested item is equipped and cannot be moved or consumed.
   ItemEquipped {
     /// The actor whose equipment references the item.
     actor: ActorId,
@@ -1318,6 +1340,13 @@ impl fmt::Display for CommandError {
           actor.value()
         )
       }
+      Self::DropRequiresPlayer(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot issue a player drop",
+          actor.value()
+        )
+      }
       Self::ReloadRequiresPlayer(actor) => {
         write!(
           formatter,
@@ -1373,7 +1402,7 @@ impl fmt::Display for CommandError {
       }
       Self::ItemEquipped { actor, item } => write!(
         formatter,
-        "actor {} cannot consume equipped item {}",
+        "actor {} cannot move or consume equipped item {}",
         actor.value(),
         item.value()
       ),
@@ -1963,6 +1992,10 @@ impl WorldState {
   /// living target.
   /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
+  #[expect(
+    clippy::too_many_lines,
+    reason = "the legal command projection keeps deterministic action ordering explicit"
+  )]
   pub fn legal_commands(&self) -> Vec<Command> {
     let Some(actor_id) = self.next_actor() else {
       return Vec::new();
@@ -2007,6 +2040,16 @@ impl WorldState {
           actor: actor_id,
           item: item.id(),
         });
+      }
+    }
+    if actor.kind() == ActorKind::Player {
+      for item in actor.inventory() {
+        if actor.equipped_item() != Some(item.id()) {
+          commands.push(Command::Drop {
+            actor: actor_id,
+            item: item.id(),
+          });
+        }
       }
     }
     for item in actor.inventory() {
@@ -2120,6 +2163,7 @@ impl WorldState {
       Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
       Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],
       Command::Pickup { item, .. } => vec![self.pickup_item_command(actor_id, item)?],
+      Command::Drop { item, .. } => vec![self.drop_item_command(actor_id, item)?],
       Command::Reload { .. } => {
         self
           .actors
@@ -2273,6 +2317,35 @@ impl WorldState {
         },
       })?;
     Ok(Event::ItemPickedUp {
+      actor: actor_id,
+      item: item_id,
+    })
+  }
+
+  fn drop_item_command(
+    &mut self,
+    actor_id: ActorId,
+    item_id: ItemId,
+  ) -> Result<Event, CommandError> {
+    if self
+      .actors
+      .get(&actor_id)
+      .is_some_and(|actor| actor.kind() != ActorKind::Player)
+    {
+      return Err(CommandError::DropRequiresPlayer(actor_id));
+    }
+    self
+      .drop_item(actor_id, item_id)
+      .map_err(|error| match error {
+        WorldError::UnknownActor(actor) => CommandError::UnknownActor(actor),
+        WorldError::ItemNotOwned { actor, item } => CommandError::ItemNotOwned { actor, item },
+        WorldError::ItemEquipped { actor, item } => CommandError::ItemEquipped { actor, item },
+        _ => CommandError::ItemNotOwned {
+          actor: actor_id,
+          item: item_id,
+        },
+      })?;
+    Ok(Event::ItemDropped {
       actor: actor_id,
       item: item_id,
     })
