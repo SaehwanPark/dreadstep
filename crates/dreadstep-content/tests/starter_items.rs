@@ -4,7 +4,9 @@ use dreadstep_content::{
   ContentError, ItemCatalogDefinition, StarterItemPlacement, starter_floor,
   starter_floor_definition, starter_item_floor, starter_item_floor_definition,
 };
-use dreadstep_core::{ActorId, Item, ItemDefinitionId, ItemId, WorldState};
+use dreadstep_core::{
+  ActorId, HealingAmount, Item, ItemDefinitionId, ItemEffect, ItemId, WorldState,
+};
 
 #[test]
 fn starter_item_floor_is_complete_and_repeatable() {
@@ -41,7 +43,13 @@ fn starter_item_floor_is_complete_and_repeatable() {
   assert_eq!(
     actors[0].inventory(),
     &[
-      Item::new(ItemId::new(101), ItemDefinitionId::new(2)),
+      Item::with_effect(
+        ItemId::new(101),
+        ItemDefinitionId::new(2),
+        ItemEffect::Heal {
+          amount: HealingAmount::new(3).expect("starter healing amount should be positive"),
+        },
+      ),
       Item::new(ItemId::new(102), ItemDefinitionId::new(3)),
     ]
   );

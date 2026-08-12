@@ -1,7 +1,9 @@
 //! Contract tests for single-item consumption through the MCP player session.
 
 use dreadstep_mcp::{Session, SessionError};
-use dreadstep_protocol::{ActorId, CommandError, CommandRequest, Event, ItemDefinitionId, ItemId};
+use dreadstep_protocol::{
+  ActorId, CommandError, CommandRequest, Event, HitPoints, ItemDefinitionId, ItemId,
+};
 
 #[test]
 fn consumption_updates_snapshot_history_replay_and_typed_event() {
@@ -25,6 +27,7 @@ fn consumption_updates_snapshot_history_replay_and_typed_event() {
     &[Event::ItemConsumed {
       actor: ActorId::new(1),
       item: ItemId::new(4),
+      healing: None,
     }]
   );
   let actor_snapshot = session
@@ -94,4 +97,30 @@ fn consumption_rejects_unknown_and_equipped_items_without_session_mutation() {
   assert_eq!(session.observe(), equipped_before);
   assert_eq!(session.history(), equipped_history);
   assert_eq!(session.get_replay(), equipped_replay);
+}
+
+#[test]
+fn authored_healing_item_reports_capped_recovery_through_player_output() {
+  let mut session = Session::start_item_run(7).expect("authored item scenario should be valid");
+  session
+    .set_hp(ActorId::new(1), HitPoints::new(8))
+    .expect("tester damage should be accepted");
+
+  let output = session
+    .act(CommandRequest::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(101),
+    })
+    .expect("authored healing item should be consumable");
+
+  let [Event::ItemConsumed { healing, .. }] = output.events() else {
+    panic!("healing use should emit one item-consumption event");
+  };
+  let healing = healing.expect("authored item should report healing evidence");
+  assert_eq!(healing.amount(), 2);
+  assert_eq!(healing.remaining_hit_points(), HitPoints::new(10));
+  assert_eq!(
+    output.snapshot().actors()[0].hit_points(),
+    HitPoints::new(10)
+  );
 }

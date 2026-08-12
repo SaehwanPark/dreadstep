@@ -17,8 +17,8 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, GridMap, HitPoints, Item, ItemDefinitionId, ItemId,
-  MeleeReach as CoreMeleeReach, Position, ReplayTrace, Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, GridMap, HealingAmount, HitPoints, Item, ItemDefinitionId,
+  ItemEffect, ItemId, MeleeReach as CoreMeleeReach, Position, ReplayTrace, Tile, WorldState,
 };
 use dreadstep_protocol::{
   ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
@@ -494,7 +494,13 @@ fn item_scenario() -> Result<WorldState, SessionError> {
   world
     .give_item(
       ActorId::new(1),
-      Item::new(ItemId::new(101), ItemDefinitionId::new(1)),
+      Item::with_effect(
+        ItemId::new(101),
+        ItemDefinitionId::new(1),
+        ItemEffect::Heal {
+          amount: HealingAmount::THREE,
+        },
+      ),
     )
     .map_err(|error| SessionError::Scenario(error.into()))?;
   Ok(world)

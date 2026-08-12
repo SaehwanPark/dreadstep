@@ -2,14 +2,18 @@
 
 use dreadstep_core::{
   ActionTime as CoreActionTime, ActorId as CoreActorId, BlockReason as CoreBlockReason,
-  Damage as CoreDamage, Event as CoreEvent, HitPoints as CoreHitPoints, ItemId as CoreItemId,
-  Position as CorePosition,
+  Damage as CoreDamage, Event as CoreEvent, HealingResult as CoreHealingResult,
+  HitPoints as CoreHitPoints, ItemId as CoreItemId, Position as CorePosition,
 };
 use dreadstep_protocol::{
   ActionTime, ActorId, BlockReason, Damage, Event, HitPoints, ItemId, Position,
 };
 
 #[test]
+#[expect(
+  clippy::too_many_lines,
+  reason = "the exhaustive conversion fixture documents every semantic event"
+)]
 fn maps_every_core_event_variant_to_protocol_values() {
   let events = [
     CoreEvent::Moved {
@@ -53,6 +57,7 @@ fn maps_every_core_event_variant_to_protocol_values() {
     CoreEvent::ItemConsumed {
       actor: CoreActorId::new(1),
       item: CoreItemId::new(6),
+      healing: None,
     },
     CoreEvent::ItemPickedUp {
       actor: CoreActorId::new(1),
@@ -105,11 +110,38 @@ fn maps_every_core_event_variant_to_protocol_values() {
       Event::ItemConsumed {
         actor: ActorId::new(1),
         item: ItemId::new(6),
+        healing: None,
       },
       Event::ItemPickedUp {
         actor: ActorId::new(1),
         item: ItemId::new(7),
       },
     ]
+  );
+}
+
+#[test]
+fn maps_optional_healing_evidence_and_json_shape() {
+  let event = Event::from(CoreEvent::ItemConsumed {
+    actor: CoreActorId::new(1),
+    item: CoreItemId::new(6),
+    healing: Some(CoreHealingResult::new(2, CoreHitPoints::new(10))),
+  });
+
+  let Event::ItemConsumed { healing, .. } = event else {
+    panic!("item consumption should preserve its event variant");
+  };
+  let healing = healing.expect("healing evidence should cross the protocol boundary");
+  assert_eq!(healing.amount(), 2);
+  assert_eq!(healing.remaining_hit_points(), HitPoints::new(10));
+  assert_eq!(
+    serde_json::to_value(event).expect("healing event should serialize"),
+    serde_json::json!({
+      "item_consumed": {
+        "actor": 1,
+        "item": 6,
+        "healing": {"amount": 2, "remaining_hit_points": 10}
+      }
+    })
   );
 }

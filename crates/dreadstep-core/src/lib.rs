@@ -62,18 +62,99 @@ impl ItemDefinitionId {
   }
 }
 
+/// A positive amount restored by a healing item effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct HealingAmount(u16);
+
+impl HealingAmount {
+  /// The smallest valid healing amount.
+  pub const ONE: Self = Self(1);
+
+  /// The authored three-point healing amount used by the starter fixture.
+  pub const THREE: Self = Self(3);
+
+  /// Creates a positive healing amount.
+  #[must_use]
+  pub const fn new(value: u16) -> Option<Self> {
+    if value == 0 { None } else { Some(Self(value)) }
+  }
+
+  /// Returns the numeric healing amount.
+  #[must_use]
+  pub const fn value(self) -> u16 {
+    self.0
+  }
+}
+
+/// The gameplay effect authored for one item instance.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ItemEffect {
+  /// The item has no gameplay effect when consumed.
+  None,
+  /// Restore the supplied amount of hit points, capped at the actor maximum.
+  Heal {
+    /// The positive amount to restore.
+    amount: HealingAmount,
+  },
+}
+
+/// The observable result of applying an item effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct HealingResult {
+  amount: u16,
+  remaining_hit_points: HitPoints,
+}
+
+impl HealingResult {
+  /// Creates typed healing evidence for an accepted item use.
+  #[must_use]
+  pub const fn new(amount: u16, remaining_hit_points: HitPoints) -> Self {
+    Self {
+      amount,
+      remaining_hit_points,
+    }
+  }
+
+  /// Returns the actual amount restored after capacity clamping.
+  #[must_use]
+  pub const fn amount(self) -> u16 {
+    self.amount
+  }
+
+  /// Returns the actor's hit points after healing.
+  #[must_use]
+  pub const fn remaining_hit_points(self) -> HitPoints {
+    self.remaining_hit_points
+  }
+}
+
 /// One opaque item instance in world state, either in an actor inventory or on the ground.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Item {
   id: ItemId,
   definition: ItemDefinitionId,
+  effect: ItemEffect,
 }
 
 impl Item {
   /// Creates an item instance with an explicit identity and content reference.
   #[must_use]
   pub const fn new(id: ItemId, definition: ItemDefinitionId) -> Self {
-    Self { id, definition }
+    Self {
+      id,
+      definition,
+      effect: ItemEffect::None,
+    }
+  }
+
+  /// Creates an item instance with an explicit authored gameplay effect.
+  #[must_use]
+  pub const fn with_effect(id: ItemId, definition: ItemDefinitionId, effect: ItemEffect) -> Self {
+    Self {
+      id,
+      definition,
+      effect,
+    }
   }
 
   /// Returns the globally unique instance identity.
@@ -86,6 +167,12 @@ impl Item {
   #[must_use]
   pub const fn definition(self) -> ItemDefinitionId {
     self.definition
+  }
+
+  /// Returns the authored gameplay effect for this item instance.
+  #[must_use]
+  pub const fn effect(self) -> ItemEffect {
+    self.effect
   }
 }
 
@@ -579,6 +666,7 @@ pub struct Actor {
   kind: ActorKind,
   position: Position,
   hit_points: HitPoints,
+  max_hit_points: HitPoints,
   melee_reach: MeleeReach,
   inventory: Vec<Item>,
   equipped: Option<ItemId>,
@@ -647,6 +735,7 @@ impl Actor {
       kind,
       position,
       hit_points,
+      max_hit_points: hit_points,
       melee_reach,
       inventory: Vec::new(),
       equipped: None,
@@ -696,6 +785,12 @@ impl Actor {
   #[must_use]
   pub const fn hit_points(&self) -> HitPoints {
     self.hit_points
+  }
+
+  /// Returns this actor's authored maximum hit points.
+  #[must_use]
+  pub const fn max_hit_points(&self) -> HitPoints {
+    self.max_hit_points
   }
 
   /// Returns this actor's non-zero Manhattan melee reach.
@@ -937,6 +1032,16 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
   }
 }
 
+fn hash_item_effect(hasher: &mut StableHasher, effect: ItemEffect) {
+  match effect {
+    ItemEffect::None => hasher.write_u8(0),
+    ItemEffect::Heal { amount } => {
+      hasher.write_u8(1);
+      hasher.write_u16(amount.value());
+    }
+  }
+}
+
 const fn direction_code(direction: Direction) -> u8 {
   match direction {
     Direction::North => 1,
@@ -1015,12 +1120,14 @@ pub enum Event {
     /// The item that was unequipped.
     item: ItemId,
   },
-  /// An actor consumed an owned item instance; effect semantics remain outside this slice.
+  /// An actor consumed an owned item instance, optionally applying its authored effect.
   ItemConsumed {
     /// The actor whose inventory changed.
     actor: ActorId,
     /// The consumed item identity.
     item: ItemId,
+    /// The deterministic healing result, when this item restores hit points.
+    healing: Option<HealingResult>,
   },
   /// An actor picked one item from its current ground stack.
   ItemPickedUp {
@@ -1991,14 +2098,14 @@ impl WorldState {
   /// Returns a stable digest of all semantic world state.
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
-  /// identity, kind, life, position, hit points, ranged ammunition, ready time, ordered inventory
-  /// item identities and definition references, optional equipped item identity, and ordered
-  /// ground-item stacks. It is deterministic regression evidence, not a cryptographic integrity
-  /// check or serialized state format.
+  /// identity, kind, life, position, current and maximum hit points, ranged ammunition, ready
+  /// time, ordered inventory item identities, definition references and effects, optional equipped
+  /// item identity, and ordered ground-item stacks. It is deterministic regression evidence, not a
+  /// cryptographic integrity check or serialized state format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V2");
+    hasher.write_bytes(b"DREADSTEP-STATE-V3");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in &self.map.tiles {
@@ -2019,6 +2126,7 @@ impl WorldState {
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
       hasher.write_u16(actor.hit_points().value());
+      hasher.write_u16(actor.max_hit_points().value());
       hasher.write_u8(actor.melee_reach().value());
       hasher.write_u16(actor.ranged_ammo());
       hasher.write_u64(actor.ready_at().value());
@@ -2026,6 +2134,7 @@ impl WorldState {
       for item in actor.inventory() {
         hasher.write_u32(item.id().value());
         hasher.write_u32(item.definition().value());
+        hash_item_effect(&mut hasher, item.effect());
       }
       match actor.equipped_item() {
         Some(item) => {
@@ -2044,6 +2153,7 @@ impl WorldState {
         for item in stack.items() {
           hasher.write_u32(item.id().value());
           hasher.write_u32(item.definition().value());
+          hash_item_effect(&mut hasher, item.effect());
         }
       }
     }
@@ -2352,32 +2462,63 @@ impl WorldState {
   }
 
   fn use_item(&mut self, actor_id: ActorId, item_id: ItemId) -> Result<Event, CommandError> {
-    let item_index = self
+    let actor = self
       .actors
       .get(&actor_id)
-      .ok_or(CommandError::UnknownActor(actor_id))?
-      .inventory()
-      .iter()
-      .position(|item| item.id() == item_id)
-      .ok_or(CommandError::ItemNotOwned {
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let Some(item) = actor.inventory().iter().find(|item| item.id() == item_id) else {
+      return Err(CommandError::ItemNotOwned {
         actor: actor_id,
         item: item_id,
-      })?;
-    if self.actors.get(&actor_id).and_then(Actor::equipped_item) == Some(item_id) {
+      });
+    };
+    if actor.equipped_item() == Some(item_id) {
       return Err(CommandError::ItemEquipped {
         actor: actor_id,
         item: item_id,
       });
     }
+    let item_index = actor
+      .inventory()
+      .iter()
+      .position(|candidate| candidate.id() == item_id)
+      .ok_or(CommandError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      })?;
+    let effect = item.effect();
+    let current_hit_points = actor.hit_points();
+    let maximum_hit_points = actor.max_hit_points();
     self
       .actors
       .get_mut(&actor_id)
       .ok_or(CommandError::UnknownActor(actor_id))?
       .inventory
       .remove(item_index);
+    let healing = match effect {
+      ItemEffect::None => None,
+      ItemEffect::Heal { amount } => {
+        let restored = if current_hit_points >= maximum_hit_points {
+          current_hit_points.value()
+        } else {
+          current_hit_points
+            .value()
+            .saturating_add(amount.value())
+            .min(maximum_hit_points.value())
+        };
+        let actual = restored.saturating_sub(current_hit_points.value());
+        self
+          .actors
+          .get_mut(&actor_id)
+          .ok_or(CommandError::UnknownActor(actor_id))?
+          .hit_points = HitPoints::new(restored);
+        Some(HealingResult::new(actual, HitPoints::new(restored)))
+      }
+    };
     Ok(Event::ItemConsumed {
       actor: actor_id,
       item: item_id,
+      healing,
     })
   }
 

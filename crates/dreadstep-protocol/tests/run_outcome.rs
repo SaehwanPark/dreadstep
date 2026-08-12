@@ -7,7 +7,7 @@ use dreadstep_core::{
 use dreadstep_protocol::{ActorId, PROTOCOL_VERSION, RunOutcome, WorldSnapshot};
 
 #[test]
-fn snapshot_projects_in_progress_outcome_and_protocol_version_twelve() {
+fn snapshot_projects_in_progress_outcome_and_current_protocol_version() {
   let world = WorldState::new(
     GridMap::filled(2, 1, Tile::Floor).expect("map should be valid"),
     vec![
@@ -26,7 +26,7 @@ fn snapshot_projects_in_progress_outcome_and_protocol_version_twelve() {
   .expect("world should be valid");
   let snapshot = WorldSnapshot::from_world(&world);
 
-  assert_eq!(PROTOCOL_VERSION, 12);
+  assert_eq!(PROTOCOL_VERSION, 13);
   assert_eq!(snapshot.protocol_version(), PROTOCOL_VERSION);
   assert_eq!(snapshot.outcome(), RunOutcome::InProgress);
   assert_eq!(snapshot.actors()[0].id(), ActorId::new(1));

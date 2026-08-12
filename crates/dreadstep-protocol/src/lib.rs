@@ -11,14 +11,15 @@ use std::fmt;
 use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
   Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
-  Event as CoreEvent, GroundItemStack as CoreGroundItemStack, Item as CoreItem,
-  MapError as CoreMapError, RunOutcome as CoreRunOutcome, WorldError as CoreWorldError, WorldState,
+  Event as CoreEvent, GroundItemStack as CoreGroundItemStack, HealingResult as CoreHealingResult,
+  Item as CoreItem, MapError as CoreMapError, RunOutcome as CoreRunOutcome,
+  WorldError as CoreWorldError, WorldState,
 };
 use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 12;
+pub const PROTOCOL_VERSION: u16 = 13;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -376,6 +377,34 @@ impl ItemDefinitionId {
 pub struct ItemSnapshot {
   id: ItemId,
   definition: ItemDefinitionId,
+}
+
+/// Protocol evidence for hit points restored by a healing item.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+pub struct HealingResult {
+  amount: u16,
+  remaining_hit_points: HitPoints,
+}
+
+impl HealingResult {
+  fn from_core(result: CoreHealingResult) -> Self {
+    Self {
+      amount: result.amount(),
+      remaining_hit_points: HitPoints::new(result.remaining_hit_points().value()),
+    }
+  }
+
+  /// Returns the actual amount restored after maximum-hit-point clamping.
+  #[must_use]
+  pub const fn amount(self) -> u16 {
+    self.amount
+  }
+
+  /// Returns the actor's hit points after healing.
+  #[must_use]
+  pub const fn remaining_hit_points(self) -> HitPoints {
+    self.remaining_hit_points
+  }
 }
 
 impl ItemSnapshot {
@@ -1116,6 +1145,8 @@ pub enum Event {
     actor: ActorId,
     /// The item instance removed from inventory.
     item: ItemId,
+    /// Optional healing evidence produced by the item effect.
+    healing: Option<HealingResult>,
   },
   /// An actor picked one item from its current ground stack.
   ItemPickedUp {
@@ -1194,9 +1225,14 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
-      CoreEvent::ItemConsumed { actor, item } => Self::ItemConsumed {
+      CoreEvent::ItemConsumed {
+        actor,
+        item,
+        healing,
+      } => Self::ItemConsumed {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
+        healing: healing.map(HealingResult::from_core),
       },
       CoreEvent::ItemPickedUp { actor, item } => Self::ItemPickedUp {
         actor: ActorId::new(actor.value()),

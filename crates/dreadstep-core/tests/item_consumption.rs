@@ -1,8 +1,9 @@
 //! Core single-item consumption contract tests.
 
 use dreadstep_core::{
-  ActionCost, Actor, ActorId, ActorKind, Command, CommandError, Event, GridMap, HitPoints, Item,
-  ItemDefinitionId, ItemId, Position, ReplayTrace, Tile, WorldState,
+  ActionCost, Actor, ActorId, ActorKind, Command, CommandError, Event, GridMap, HealingAmount,
+  HealingResult, HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, Position, ReplayTrace,
+  Tile, WorldState,
 };
 
 fn consumption_world() -> WorldState {
@@ -47,6 +48,7 @@ fn use_item_consumes_one_owned_instance_and_emits_typed_event() {
     &[Event::ItemConsumed {
       actor: ActorId::new(1),
       item: ItemId::new(2),
+      healing: None,
     }]
   );
   assert_eq!(
@@ -213,4 +215,80 @@ fn legal_commands_and_replay_digest_include_each_consumable_identity() {
     item: ItemId::new(3),
   });
   assert_ne!(first.digest(), second.digest());
+}
+
+#[test]
+fn healing_consumable_is_capped_and_reports_actual_recovery() {
+  let map = GridMap::filled(1, 1, Tile::Floor).expect("map should validate");
+  let mut world = WorldState::new(
+    map,
+    vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )],
+  )
+  .expect("world should validate");
+  let amount = HealingAmount::new(5).expect("positive healing should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_effect(
+        ItemId::new(9),
+        ItemDefinitionId::new(909),
+        ItemEffect::Heal { amount },
+      ),
+    )
+    .expect("healing item should be accepted");
+  world
+    .set_hit_points(ActorId::new(1), HitPoints::new(8))
+    .expect("tester damage should be accepted");
+
+  let result = world
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(9),
+    })
+    .expect("healing item should be consumed");
+
+  assert_eq!(
+    result.events(),
+    &[Event::ItemConsumed {
+      actor: ActorId::new(1),
+      item: ItemId::new(9),
+      healing: Some(HealingResult::new(2, HitPoints::new(10))),
+    }]
+  );
+  assert_eq!(
+    world
+      .actor(ActorId::new(1))
+      .expect("actor should remain")
+      .hit_points(),
+    HitPoints::new(10)
+  );
+
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_effect(
+        ItemId::new(10),
+        ItemDefinitionId::new(910),
+        ItemEffect::Heal { amount },
+      ),
+    )
+    .expect("a second healing item should be accepted");
+  let full_health = world
+    .execute(Command::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(10),
+    })
+    .expect("full-health healing item should still be consumed");
+  assert_eq!(
+    full_health.events(),
+    &[Event::ItemConsumed {
+      actor: ActorId::new(1),
+      item: ItemId::new(10),
+      healing: Some(HealingResult::new(0, HitPoints::new(10))),
+    }]
+  );
 }

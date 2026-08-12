@@ -1959,8 +1959,18 @@ fn event_value(event: Event) -> Value {
     Event::ItemUnequipped { actor, item } => {
       json!({ "kind": "item_unequipped", "actor": actor.value(), "item": item.value() })
     }
-    Event::ItemConsumed { actor, item } => {
-      json!({ "kind": "item_consumed", "actor": actor.value(), "item": item.value() })
+    Event::ItemConsumed {
+      actor,
+      item,
+      healing,
+    } => {
+      let healing = healing.map_or(Value::Null, |result| {
+        json!({
+          "amount": result.amount(),
+          "remaining_hit_points": result.remaining_hit_points().value(),
+        })
+      });
+      json!({ "kind": "item_consumed", "actor": actor.value(), "item": item.value(), "healing": healing })
     }
     Event::ItemPickedUp { actor, item } => {
       json!({ "kind": "item_picked_up", "actor": actor.value(), "item": item.value() })
@@ -2008,8 +2018,22 @@ fn event_message(event: Event) -> String {
     Event::ItemUnequipped { actor, item } => {
       format!("Actor {} unequipped item {}.", actor.value(), item.value())
     }
-    Event::ItemConsumed { actor, item } => {
-      format!("Actor {} consumed item {}.", actor.value(), item.value())
+    Event::ItemConsumed {
+      actor,
+      item,
+      healing,
+    } => {
+      if let Some(healing) = healing {
+        format!(
+          "Actor {} consumed item {} and restored {} HP ({} HP).",
+          actor.value(),
+          item.value(),
+          healing.amount(),
+          healing.remaining_hit_points().value()
+        )
+      } else {
+        format!("Actor {} consumed item {}.", actor.value(), item.value())
+      }
     }
     Event::ItemPickedUp { actor, item } => {
       format!("Actor {} picked up item {}.", actor.value(), item.value())
@@ -2445,6 +2469,31 @@ mod tests {
     assert_eq!(health_bar_text(-3), "[----------]");
     assert_eq!(health_bar_text(5), "[#####-----]");
     assert_eq!(health_bar_text(99), "[##########]");
+  }
+
+  #[test]
+  fn healing_consumption_is_visible_in_desktop_event_evidence() {
+    let event = Event::ItemConsumed {
+      actor: PLAYER,
+      item: ItemId::new(101),
+      healing: Some(dreadstep_core::HealingResult::new(
+        2,
+        dreadstep_core::HitPoints::new(10),
+      )),
+    };
+    assert_eq!(
+      event_value(event),
+      json!({
+        "kind": "item_consumed",
+        "actor": 1,
+        "item": 101,
+        "healing": {"amount": 2, "remaining_hit_points": 10},
+      })
+    );
+    assert_eq!(
+      event_message(event),
+      "Actor 1 consumed item 101 and restored 2 HP (10 HP)."
+    );
   }
 
   #[test]
