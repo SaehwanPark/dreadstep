@@ -268,6 +268,13 @@ the world. The default starter floor remains item-free. A separate `starter_item
 helper provides one deterministic catalog-bound fixture for adapters and tests without changing
 that default or introducing item gameplay semantics.
 
+The seeded procedural-floor preparation helper remains on the same content boundary:
+`procedural_floor_definition(seed, depth)` derives a deterministic 13×9 corridor fixture using only
+the explicit seed/depth inputs, and `procedural_floor(seed, depth)` builds it through
+`StarterFloorDefinition::build`. Content therefore owns authored variation while core still
+validates map and actor invariants and owns the resulting world truth. The procedural helper is not
+silently substituted into MCP, headless, or desktop startup and does not create a second authority.
+
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position
 and `ActorId`, preserves identity across updates, removes stale or duplicate keys deterministically,

@@ -1887,8 +1887,10 @@ Establish the NetHack-inspired systemic identity.
 
 Repository status note: the deterministic preparation slices for doors, one-shot traps, adjacent
 breakable terrain, and kick-open door noise evidence are verified in the core simulation and its
-protocol, MCP, headless, and Bevy boundaries. Procedural generation, damage/tool interactions, noise
-propagation, and enemy attraction remain future Milestone 5 work.
+protocol, MCP, headless, and Bevy boundaries. The content boundary now also has a seeded 13×9
+corridor-floor generator with deterministic partition gaps and authored actor placement. Floor
+progression, richer procedural generation, damage/tool interactions, noise propagation, and enemy
+attraction remain future Milestone 5 work.
 
 ### Introduce a deliberately small interaction set
 

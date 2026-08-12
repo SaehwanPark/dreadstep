@@ -3831,6 +3831,51 @@ Out of scope:
 - cover, ammunition, weapon/item effects, enemy ranged AI, projectile visuals/audio, and any other
   command cost changes.
 
+### Milestone 5 preparation slice: deterministic seeded floor generation
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Add a content-owned seeded floor generator as the first procedural-dungeon preparation boundary.
+The generator produces a fixed-size connected corridor layout with deterministic partition gaps and
+authored actor placements. It converts its output through `StarterFloorDefinition`, so map, terrain,
+identity, occupancy, and life validation remain owned by `dreadstep-core`.
+
+Acceptance:
+
+- `dreadstep-content` exposes `procedural_floor_definition(seed, depth)` and `procedural_floor(seed,
+  depth)` helpers with stable output for identical inputs.
+- Generated floors have a 13×9 perimeter wall, three deterministic interior wall partitions with one
+  floor gap each, stable player/enemy positions, and depth-scaled enemy hit points capped at a small
+  authored bound.
+- Different seeds or depths may change the partition gaps or authored enemy durability, while every
+  generated world remains valid and deterministic; no process-global randomness or wall-clock state
+  participates.
+- The generator remains content-only: it does not add core commands, protocol fields, MCP mutations,
+  persistence, procedural replay state, or a second world authority. Existing starter floors and the
+  item-bearing fixture remain unchanged.
+
+Verification target:
+
+- Focused content tests prove same-input digest stability, seed/depth variation, perimeter and
+  partition invariants, actor placement, and validation through core.
+- Workspace tests, formatting, `git diff --check`, and `scripts/verify.sh` remain green. Desktop and
+  agent-facing paths retain their existing authored starter fixtures; the procedural helper is not
+  silently substituted into the showcase.
+
+Verification evidence:
+
+- Focused `cargo test -p dreadstep-content --test procedural_floor --locked` passes all four
+  deterministic layout, variation, actor, and core-validation tests.
+- `scripts/verify.sh` passes repository structure checks, strict lint/docs, all workspace targets,
+  and display-free desktop smoke; no adapter contract or showcase fixture changes are present.
+
+Out of scope:
+
+- Floor transitions, run progression, procedural loot, room templates beyond this corridor fixture,
+  random encounter placement, save/load, replay playback, and player-facing renderer changes.
+
 ## Future
 
 ### Remaining roadmap milestones
