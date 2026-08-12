@@ -3364,11 +3364,6 @@ Verification target:
 - Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
   reviewer report PASS.
 
-Out of scope:
-
-- Item effects, capacity, stack merging, enemy drop behavior, drop animation/audio, new item
-  definitions, persistence, and any additional action-cost changes.
-
 Verification evidence:
 
 - Core player-drop tests pass 4/4; protocol mapping/JSON tests pass 2/2; MCP player-drop session
@@ -3378,6 +3373,47 @@ Verification evidence:
 - `scripts/verify.sh` passes repository checks, formatting, strict workspace Clippy, all workspace
   targets, warning-denied docs, and display-free desktop smoke; no new visual/audio/animation family
   is introduced.
+
+Out of scope:
+
+- Item effects, capacity, stack merging, enemy drop behavior, drop animation/audio, new item
+  definitions, persistence, and any additional action-cost changes.
+
+### Milestone 4 preparation slice: deterministic inventory capacity
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Give every actor a fixed four-item inventory capacity. Core ownership, tester pickup/transfer,
+and scheduled player pickup enforce the same limit atomically; full player inventories hide pickup
+from legal-action discovery and return a typed rejection on direct execution. Protocol v12 exposes
+the capacity on actor snapshots and maps the new command/world errors. Item effects, stacking,
+weight, and capacity upgrades remain deferred.
+
+Acceptance:
+
+- Core accepts exactly four ordered item instances, rejects a fifth `give_item`, full pickup, and
+  full transfer without mutating world, ground, scheduler, history, or replay evidence.
+- Legal commands omit full-inventory player pickup while preserving existing ordering and all other
+  item commands; same-actor tester transfer remains an idempotent ownership validation.
+- Protocol v12 maps `inventory_full` for command/world boundaries and snapshots expose
+  `inventory_capacity: 4`; MCP tester operations preserve typed atomic rejection evidence.
+- Bevy/headless projections remain deterministic, desktop smoke remains exhaustive, and focused
+  core/protocol/MCP/Bevy tests, `scripts/verify.sh`, formatting, diff checks, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- Item effects, stack merging, weight, encumbrance, capacity upgrades, equipment slots beyond the
+  existing single slot, UI redesign, new commands/events/media, persistence, and save/load.
+
+Verification evidence:
+
+- Core capacity tests pass 4/4; protocol command/world-error and JSON/schema tests cover the new
+  typed variant and actor snapshot field; MCP tester capacity rejection is atomic.
+- Existing headless, Bevy presentation/desktop, protocol, MCP, and stdio suites remain green after
+  protocol version 12; `scripts/verify.sh` passes strict lint/docs and display-free smoke.
 
 ### Milestone 4 slice: deterministic enemy melee intent
 

@@ -77,3 +77,18 @@ fn ranged_no_ammunition_error_has_a_tagged_json_and_schema_contract() {
   let schema = serde_json::to_value(schema_for!(CommandError)).expect("schema should serialize");
   assert!(schema.to_string().contains("ranged_attack_no_ammunition"));
 }
+
+#[test]
+fn inventory_full_error_has_a_tagged_json_and_schema_contract() {
+  let core = CoreCommandError::InventoryFull(CoreActorId::new(1));
+  let error = CommandError::from(core);
+  assert_eq!(error, CommandError::InventoryFull(ActorId::new(1)));
+  let value = serde_json::to_value(error).expect("command error should serialize");
+  assert_eq!(value, json!({"inventory_full": 1}));
+  assert_eq!(
+    serde_json::from_value::<CommandError>(value).expect("command error should deserialize"),
+    error
+  );
+  let schema = serde_json::to_value(schema_for!(CommandError)).expect("schema should serialize");
+  assert!(schema.to_string().contains("inventory_full"));
+}

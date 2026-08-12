@@ -18,7 +18,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 11;
+pub const PROTOCOL_VERSION: u16 = 12;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -783,6 +783,8 @@ pub enum WorldError {
   UnknownActor(ActorId),
   /// An item identity is already owned by an actor in the world.
   DuplicateItemId(ItemId),
+  /// A tester mutation would exceed the actor's fixed inventory capacity.
+  InventoryFull(ActorId),
   /// A tester transfer source does not own the requested item identity.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -864,6 +866,7 @@ impl From<CoreWorldError> for WorldError {
     match error {
       CoreWorldError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
       CoreWorldError::DuplicateItemId(item) => Self::DuplicateItemId(ItemId::new(item.value())),
+      CoreWorldError::InventoryFull(actor) => Self::InventoryFull(ActorId::new(actor.value())),
       CoreWorldError::ItemNotOwned { actor, item } => Self::ItemNotOwned {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
@@ -926,6 +929,9 @@ impl fmt::Display for WorldError {
       Self::UnknownActor(actor) => write!(formatter, "unknown actor {}", actor.value()),
       Self::DuplicateItemId(item) => {
         write!(formatter, "item id {} is duplicated", item.value())
+      }
+      Self::InventoryFull(actor) => {
+        write!(formatter, "actor {} inventory is full", actor.value())
       }
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
@@ -1273,6 +1279,8 @@ pub enum CommandError {
     /// The requested item identity.
     item: ItemId,
   },
+  /// The actor's fixed inventory capacity would be exceeded.
+  InventoryFull(ActorId),
   /// The requested item is already equipped.
   ItemAlreadyEquipped {
     /// The actor whose equipment was queried.
@@ -1359,6 +1367,7 @@ impl From<CoreCommandError> for CommandError {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
+      CoreCommandError::InventoryFull(actor) => Self::InventoryFull(ActorId::new(actor.value())),
       CoreCommandError::ItemAlreadyEquipped { actor, item } => Self::ItemAlreadyEquipped {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
@@ -1475,6 +1484,9 @@ impl fmt::Display for CommandError {
         actor.value(),
         item.value()
       ),
+      Self::InventoryFull(actor) => {
+        write!(formatter, "actor {} inventory is full", actor.value())
+      }
       Self::ItemAlreadyEquipped { actor, item } => write!(
         formatter,
         "actor {} already equips item {}",
@@ -1513,6 +1525,8 @@ pub struct ActorSnapshot {
   ready_at: ActionTime,
   melee_reach: MeleeReach,
   ranged_ammo: u16,
+  /// The fixed maximum number of inventory entries this actor may carry.
+  inventory_capacity: u16,
   inventory: Vec<ItemSnapshot>,
   equipped_item: Option<ItemId>,
 }
@@ -1537,6 +1551,8 @@ impl ActorSnapshot {
       // projection panic-free if that invariant ever changes at the domain boundary.
       melee_reach: MeleeReach::new(actor.melee_reach().value()).unwrap_or_default(),
       ranged_ammo: actor.ranged_ammo(),
+      inventory_capacity: u16::try_from(dreadstep_core::Actor::INVENTORY_CAPACITY)
+        .expect("fixed inventory capacity fits protocol integer"),
       inventory: actor
         .inventory()
         .iter()
@@ -1599,6 +1615,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn ranged_ammo(&self) -> u16 {
     self.ranged_ammo
+  }
+
+  /// Returns the actor's fixed maximum inventory size.
+  #[must_use]
+  pub const fn inventory_capacity(&self) -> u16 {
+    self.inventory_capacity
   }
 
   /// Returns owned item snapshots in deterministic insertion order.

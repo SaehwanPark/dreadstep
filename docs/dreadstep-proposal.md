@@ -1992,6 +1992,11 @@ slice now writes a versioned create-new replay-evidence artifact with the seed, 
 order, replay digest, and outcome beside each run journal. Persistence, replay parsing/playback,
 rewards, and encounter progression remain future work.
 
+The inventory-capacity preparation is also verified: each actor carries at most four ordered item
+instances, full ownership/pickup/transfer operations reject atomically, protocol v12 exposes the
+capacity and typed overflow errors, and legal player pickup omits a full inventory. Effects,
+stacking, weight, and capacity upgrades remain future work.
+
 ### Implement
 
 - equipment;

@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 11);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 12);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -70,6 +70,7 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["life"], "alive");
   assert_eq!(value["actors"][0]["melee_reach"], 1);
   assert_eq!(value["actors"][0]["ranged_ammo"], 3);
+  assert_eq!(value["actors"][0]["inventory_capacity"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
   assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
@@ -120,6 +121,7 @@ fn snapshot_schema_exposes_the_versioned_projection_shape() {
   let actor_schema = &value["$defs"]["ActorSnapshot"];
   let reach_ref = &actor_schema["properties"]["melee_reach"]["$ref"];
   assert!(reach_ref.as_str().is_some());
+  assert!(actor_schema["properties"]["inventory_capacity"].is_object());
   assert_eq!(value["$defs"]["MeleeReach"]["minimum"], 1);
 }
 
