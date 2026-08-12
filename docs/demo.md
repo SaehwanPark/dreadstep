@@ -15,6 +15,9 @@ enemy count, turn/position summary, and explicit field-of-view state. These are 
 readings; inventory, messages, controls, journal output, and the smoke command/event matrix remain
 unchanged.
 
+New typed event-cue batches now add only a short pulse to visible living actor placeholders. The
+pulse does not move nodes, alter field-of-view masking, or change the smoke/journal path.
+
 ## Controls
 
 | Key | Action | Core command source |

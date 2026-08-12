@@ -67,6 +67,11 @@ field-of-view summaries are formatted locally, while inventory, event, controls,
 remain existing presentation effects. Missing player data and absent optional visibility use
 explicit safe fallbacks; the HUD cannot issue commands or alter core state.
 
+The visible client may consume the existing `PresentationAnimationCues` buffer as a local visual
+effect. Its fixed-duration actor pulse is driven by Bevy presentation time only, starts on a newly
+observed non-empty cue batch, and leaves core action time, sprite identity, visibility, assets,
+transforms, and diagnostic journal evidence untouched. Missing cue or pulse state is a no-op.
+
 The earlier headless presentation records below remain valid when the `desktop` feature is absent.
 The runnable showcase is an opt-in process wrapper around those projections: its ECS scene, HUD,
 asset handles, timers, and journal are effects and never a second simulation authority.

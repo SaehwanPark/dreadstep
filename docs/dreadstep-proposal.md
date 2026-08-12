@@ -1762,6 +1762,9 @@ Current exploratory gate (2026-08-09):
   fixed-width health bar, turn/position, remaining-enemy pressure, and optional field-of-view
   summary from authoritative runtime/projection data; production media, localization, and playback
   remain deferred.
+- The verified animation polish slice is scoped to a fixed-duration pulse on visible living actor
+  placeholders when a new typed animation-cue batch arrives; movement interpolation, sprite sheets,
+  audio playback, and production media remain deferred.
 - The verified headless Bevy Sprite API bridge enables only the `bevy_sprite` API feature and joins
   deterministic solid-color Sprite values to stable placeholder nodes with optional 32×32 sizing;
   Sprite/render plugins, texture loading, transforms, windows, playback, and production media remain

@@ -2985,6 +2985,47 @@ Out of scope:
 - Core/protocol/MCP changes, new commands/events, localization, production media, animation/audio
   playback, layout redesign, window/camera changes, and richer gameplay item semantics.
 
+### Milestone 3 slice: event-driven desktop animation pulse
+
+- Status: verified
+- Started: 2026-08-11
+- Completed: 2026-08-11
+
+Use the existing typed `PresentationAnimationCues` projection to drive a short visible-client pulse
+on actor placeholder sprites. The pulse is disposable presentation state over retained scene nodes;
+core action time, commands, events, visibility, assets, and journal evidence remain authoritative or
+unchanged at their existing boundaries.
+
+Acceptance:
+
+- A new non-empty cue batch starts a fixed 180 ms pulse, an unchanged or empty batch does not
+  retrigger it, and elapsed presentation time clamps the pulse to the interval `[0, 1]`.
+- Only visible living actor placeholders receive the pulse; inventory nodes, hidden FOV nodes,
+  terrain, ground items, dead actors, asset handles, base colors, and transforms retain existing
+  behavior.
+- Missing animation-cue or pulse resources are safe no-ops, and desktop startup inserts the typed
+  cue resource without changing the display-free smoke path.
+- Focused tests cover cue-batch transitions, duration expiry, and pulse bounds; no new core rule,
+  timer, dependency, schema, or audio/production-media behavior is introduced.
+
+Verification target:
+
+- Desktop-feature unit and boundary tests, `scripts/verify.sh`, `git diff --check`, and the
+  display-free smoke remain green; exactly one semantic reviewer reports PASS at final revision.
+
+Verification evidence:
+
+- Desktop-feature unit tests pass all eight tests, including pulse bounds, cue-batch transition,
+  expiry, and the existing CLI/journal helpers; desktop boundary/subprocess tests pass all eight.
+- `cargo clippy -p dreadstep-bevy --all-targets --all-features --locked -- -D warnings`,
+  `scripts/verify.sh`, and `git diff --check` pass; smoke retains all seven command/eight event
+  kinds and deterministic journal evidence.
+
+Out of scope:
+
+- Movement interpolation, sprite sheets, production animation assets, audio playback, core time,
+  ECS-issued commands, localization, camera/window changes, and richer gameplay systems.
+
 ### Deferred item gameplay semantics
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
@@ -3006,9 +3047,9 @@ remaining renderer work in the proposal still defines these future product miles
 its own bounded acceptance slice
 before it can move into `Past`:
 
-- Milestone 3 — First Visible Dreadstep polish: production art adoption, animation, and audio
-  placeholders/playback remain around the verified showcase; field-of-view and tactical HUD slices
-  are now verified.
+- Milestone 3 — First Visible Dreadstep polish: production art adoption and audio
+  placeholders/playback remain around the verified showcase; field-of-view, tactical HUD, and
+  event-driven animation pulse slices are now verified.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions beyond the
   verified single-item consumption and single-slot equipment preparations and tester item
   operations.

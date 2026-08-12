@@ -46,7 +46,8 @@ use dreadstep_core::{
 use serde_json::{Value, json};
 
 use crate::{
-  PresentationAssetManifest, PresentationAssetReference, PresentationBevySpriteProjection,
+  PresentationAnimationCue, PresentationAnimationCues, PresentationAssetManifest,
+  PresentationAssetReference, PresentationBevySpriteProjection,
   PresentationBevySpriteTransformProjection, PresentationCamera, PresentationFocus,
   PresentationInput, PresentationKeyboardMode, PresentationMessages, PresentationPlugin,
   PresentationRenderAssetProjection, PresentationRenderCommandPlan,
@@ -462,10 +463,12 @@ impl Plugin for DesktopPresentationPlugin {
       Update,
       (
         configure_primary_window,
+        desktop_update_animation,
         desktop_style_sprites,
         desktop_assets,
         desktop_update_hud,
       )
+        .chain()
         .after(PresentationSet::Projection),
     );
   }
@@ -498,6 +501,53 @@ struct DesktopAssetEntry {
   placeholder: Handle<Image>,
   warned: bool,
   outcome_recorded: bool,
+}
+
+const ACTOR_PULSE_DURATION: f32 = 0.18;
+const ACTOR_PULSE_SCALE: f32 = 0.12;
+
+#[derive(Default, Resource)]
+struct DesktopAnimationState {
+  previous_cues: Vec<PresentationAnimationCue>,
+  remaining: f32,
+}
+
+impl DesktopAnimationState {
+  fn observe(&mut self, cues: &[PresentationAnimationCue]) {
+    if self.previous_cues == cues {
+      return;
+    }
+    self.previous_cues = cues.to_vec();
+    self.remaining = if cues.is_empty() {
+      0.0
+    } else {
+      ACTOR_PULSE_DURATION
+    };
+  }
+
+  fn advance(&mut self, delta_seconds: f32) {
+    self.remaining = (self.remaining - delta_seconds.max(0.0)).max(0.0);
+  }
+
+  fn pulse(&self) -> f32 {
+    pulse_for_remaining(self.remaining)
+  }
+}
+
+fn pulse_for_remaining(remaining: f32) -> f32 {
+  (remaining / ACTOR_PULSE_DURATION).clamp(0.0, 1.0)
+}
+
+fn desktop_update_animation(
+  time: Res<Time>,
+  cues: Option<Res<PresentationAnimationCues>>,
+  state: Option<ResMut<DesktopAnimationState>>,
+) {
+  let Some(mut state) = state else { return };
+  if let Some(cues) = cues {
+    state.observe(cues.cues());
+  }
+  state.advance(time.delta_secs());
 }
 
 fn build_manifest() -> Result<PresentationAssetManifest, String> {
@@ -636,6 +686,7 @@ fn configure_primary_window(mut windows: Query<&mut Window, With<PrimaryWindow>>
 
 fn desktop_style_sprites(
   tile_size: Option<Res<PresentationTileSize>>,
+  animation: Option<Res<DesktopAnimationState>>,
   mut nodes: Query<(
     &SceneRenderNode,
     &mut bevy::sprite::Sprite,
@@ -643,6 +694,9 @@ fn desktop_style_sprites(
   )>,
 ) {
   let tile_size = tile_size.map(|value| *value);
+  let pulse = animation
+    .as_deref()
+    .map_or(0.0, DesktopAnimationState::pulse);
   for (node, mut sprite, mut visibility) in &mut nodes {
     let placeholder = node.placeholder();
     let color = match node.key() {
@@ -654,12 +708,20 @@ fn desktop_style_sprites(
       crate::SceneSpriteKey::GroundItem(_) => Color::srgb(0.95, 0.7, 0.16),
       crate::SceneSpriteKey::InventoryItem(_) => Color::srgb(0.22, 0.5, 0.95),
     };
-    let scale = match placeholder {
+    let mut scale = match placeholder {
       SceneRenderPlaceholder::Terrain => 1.0,
       SceneRenderPlaceholder::Player | SceneRenderPlaceholder::Enemy => 0.75,
       SceneRenderPlaceholder::DeadActor => 0.65,
       SceneRenderPlaceholder::GroundItem | SceneRenderPlaceholder::InventoryItem => 0.45,
     };
+    if node.is_visible()
+      && matches!(
+        placeholder,
+        SceneRenderPlaceholder::Player | SceneRenderPlaceholder::Enemy
+      )
+    {
+      scale *= 1.0 + (ACTOR_PULSE_SCALE * pulse);
+    }
     sprite.color = color;
     sprite.custom_size = tile_size.map(|size| {
       #[allow(clippy::cast_precision_loss)]
@@ -1112,6 +1174,8 @@ fn run_visible(
   app.insert_resource(viewport);
   app.insert_resource(crate::PresentationHud::new(PLAYER));
   app.insert_resource(PresentationMessages::new());
+  app.insert_resource(PresentationAnimationCues::new());
+  app.insert_resource(DesktopAnimationState::default());
   app.insert_resource(tile_size);
   app.insert_resource(window);
   app.insert_resource(PresentationRenderProjection::default());
@@ -1832,5 +1896,27 @@ mod tests {
     let text = format_hud_stats(Some(player), &snapshot, &status, None);
     assert!(text.contains("HP [##########] 10/10"));
     assert!(text.contains("enemies 3"));
+  }
+
+  #[test]
+  fn animation_pulse_is_bounded_and_expires() {
+    let assert_near = |actual: f32, expected: f32| {
+      assert!((actual - expected).abs() < 0.001);
+    };
+    assert_near(pulse_for_remaining(-1.0), 0.0);
+    assert_near(pulse_for_remaining(ACTOR_PULSE_DURATION), 1.0);
+    assert_near(pulse_for_remaining(ACTOR_PULSE_DURATION * 2.0), 1.0);
+
+    let mut state = DesktopAnimationState::default();
+    let cues = vec![PresentationAnimationCue::Died { actor: PLAYER }];
+    state.observe(&cues);
+    assert_near(state.pulse(), 1.0);
+    state.observe(&cues);
+    state.advance(ACTOR_PULSE_DURATION / 2.0);
+    assert!((state.pulse() - 0.5).abs() < 0.001);
+    state.advance(ACTOR_PULSE_DURATION);
+    assert_near(state.pulse(), 0.0);
+    state.observe(&[]);
+    assert_near(state.pulse(), 0.0);
   }
 }
