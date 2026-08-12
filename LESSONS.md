@@ -219,3 +219,17 @@ constructor cannot silently alter the default client path or lose owner/order da
   adapters for exact command vectors, smoke matrices, JSON mappings, and hard-coded adapter output;
   update those expectations deliberately, and require the full cross-platform verification before
   handoff.
+
+## Keep ranged visibility pure and shared
+
+- Context: The ranged-combat follow-up adds wall blocking without adding projectile state or a
+  presentation dependency.
+- Symptom: Validating line of sight only during execution would advertise commands that later fail;
+  adding separate adapter checks would also allow protocol/MCP and desktop projections to diverge.
+- Cause: Legal discovery and command execution are independent core entry points, and diagonal grid
+  rays have no existing interpolation rule.
+- Resolution: Use one core predicate for both paths: only same-row or same-column distance-2..=3
+  rays with walkable interior cells are visible; blocked or diagonal requests return a typed error
+  atomically. Adapters translate that error and retain existing attack cues.
+- Prevention: Keep visibility predicates in the functional core, specify diagonal behavior before
+  implementation, and test legal filtering plus rejected state/replay evidence together.

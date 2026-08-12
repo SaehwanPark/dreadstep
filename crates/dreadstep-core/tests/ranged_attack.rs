@@ -114,6 +114,66 @@ fn ranged_attack_rejects_melee_and_far_targets_atomically() {
 }
 
 #[test]
+fn ranged_attack_rejects_wall_blocked_and_diagonal_targets_atomically() {
+  let mut blocked = WorldState::new(
+    GridMap::from_tiles(
+      4,
+      1,
+      vec![Tile::Floor, Tile::Wall, Tile::Floor, Tile::Floor],
+    )
+    .expect("map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(2, 0),
+        HitPoints::new(2),
+      ),
+    ],
+  )
+  .expect("world should be valid");
+  let before = blocked.clone();
+  assert_eq!(
+    blocked.execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }),
+    Err(CommandError::RangedAttackNoLineOfSight {
+      attacker: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+  );
+  assert_eq!(blocked, before);
+
+  let mut diagonal = WorldState::new(
+    GridMap::filled(3, 3, Tile::Floor).expect("map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(1, 1),
+        HitPoints::new(2),
+      ),
+    ],
+  )
+  .expect("world should be valid");
+  let before = diagonal.clone();
+  assert_eq!(
+    diagonal.execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }),
+    Err(CommandError::RangedAttackNoLineOfSight {
+      attacker: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+  );
+  assert_eq!(diagonal, before);
+}
+
+#[test]
 fn ranged_attack_rejects_invalid_identity_and_scheduler_requests_atomically() {
   let mut world = world(Position::new(2, 0), 2);
   for (command, expected) in [

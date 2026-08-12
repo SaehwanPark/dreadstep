@@ -14,9 +14,17 @@ use rmcp::{
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
+use serde_json::Value;
 
 use crate::{Session, SessionError, SessionOutput};
 use dreadstep_protocol::{ActorId, ActorSnapshot, CommandRequest, ReplayEvidence, WorldSnapshot};
+
+fn session_error_data(error: &SessionError) -> Option<Value> {
+  match error {
+    SessionError::CommandRejected(command_error) => serde_json::to_value(command_error).ok(),
+    SessionError::Scenario(_) | SessionError::WorldRejected(_) => None,
+  }
+}
 
 /// Parameters for the `start_run` MCP tool.
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -160,9 +168,30 @@ impl DreadstepMcpServer {
       .lock_session()?
       .act(params.request)
       .map(Json)
-      .map_err(|error| McpError::invalid_params(error.to_string(), None))
+      .map_err(|error| McpError::invalid_params(error.to_string(), session_error_data(&error)))
   }
 }
 
 #[tool_handler]
 impl ServerHandler for DreadstepMcpServer {}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use dreadstep_protocol::{ActorId, CommandError};
+
+  #[test]
+  fn command_rejections_keep_structured_protocol_error_data() {
+    let error = SessionError::CommandRejected(CommandError::RangedAttackNoLineOfSight {
+      attacker: ActorId::new(1),
+      target: ActorId::new(2),
+    });
+
+    assert_eq!(
+      session_error_data(&error),
+      Some(serde_json::json!({
+        "ranged_attack_no_line_of_sight": {"attacker": 1, "target": 2}
+      }))
+    );
+  }
+}

@@ -112,6 +112,50 @@ fn player_legal_commands_include_ranged_targets_at_distance_two_or_three() {
 }
 
 #[test]
+fn player_legal_commands_exclude_blocked_and_diagonal_ranged_targets() {
+  let world = WorldState::new(
+    GridMap::from_tiles(
+      3,
+      4,
+      vec![
+        Tile::Floor,
+        Tile::Wall,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+      ],
+    )
+    .expect("test map should be valid"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(2, 0)),
+      Actor::new(ActorId::new(3), ActorKind::Enemy, Position::new(1, 1)),
+      Actor::new(ActorId::new(4), ActorKind::Enemy, Position::new(0, 3)),
+    ],
+  )
+  .expect("test world should be valid");
+
+  assert_eq!(
+    world
+      .legal_commands()
+      .into_iter()
+      .filter_map(|command| match command {
+        Command::RangedAttack { target, .. } => Some(target),
+        _ => None,
+      })
+      .collect::<Vec<_>>(),
+    vec![ActorId::new(4)]
+  );
+}
+
+#[test]
 fn player_combat_commands_follow_target_id_order_across_melee_and_ranged() {
   let world = WorldState::new(
     GridMap::filled(4, 1, Tile::Floor).expect("test map should be valid"),
