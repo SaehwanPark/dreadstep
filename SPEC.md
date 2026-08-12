@@ -3054,8 +3054,9 @@ Acceptance:
 
 - Each distinct non-empty accepted cue batch is observed once in source order; unchanged token-and-
   batch pairs do not retrigger, while distinct accepted batches with equal cue values do.
-- Existing local audio references are loaded through Bevy's audio asset path and spawned as short,
-  non-looping playback effects; absent references are safe no-ops with deterministic warning evidence.
+- Existing `assets/`-rooted local audio references are loaded through Bevy's default audio asset path
+  and spawned as short, non-looping playback effects; root/crate-local references remain validated
+  headless metadata but are deterministic unsupported-root fallbacks at the desktop boundary.
 - Missing audio resources, asset-server resources, or desktop session resources do not panic or alter
   runtime state; cue payloads, manifest validation, journal schema, and smoke output remain intact.
 - Focused tests cover batch identity, missing-resource safety, manifest path routing, and playback
@@ -3068,8 +3069,9 @@ Verification target:
 
 Verification evidence:
 
-- Desktop-feature unit tests pass all fourteen tests, including audio batch identity, complete
-  manifest/path routing, and missing-resource safety; the audio manifest boundary tests pass all four.
+- Desktop-feature unit tests pass all sixteen tests, including audio batch identity, stale-manifest
+  loss/restoration, existing-file ordered playback requests, complete manifest/path routing, and
+  missing-resource safety; the audio manifest boundary tests pass all four.
 - Strict desktop Clippy, `scripts/verify.sh`, and display-free smoke pass with the Bevy audio feature;
   the desktop adapter remains resource-guarded and no production audio binary is tracked.
 

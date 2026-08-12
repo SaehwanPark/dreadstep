@@ -19,9 +19,10 @@ New typed event-cue batches now add only a short pulse to visible living actor p
 runtime replay digest keeps distinct accepted events observable even when their cue values match.
 The pulse does not move nodes, alter field-of-view masking, or change the smoke/journal path.
 
-Typed audio-cue batches also route through the validated local audio manifest. Existing files are
-requested as short non-looping effects; absent files are recorded as optional-media warnings and do
-not affect the simulation or display-free smoke path.
+Typed audio-cue batches also route through the validated local audio manifest. Existing
+`assets/`-rooted files are requested as short non-looping effects; root/crate-local metadata and
+absent files are recorded as safe optional-media fallbacks and do not affect the simulation or
+display-free smoke path.
 
 ## Controls
 

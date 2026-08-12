@@ -576,6 +576,9 @@ struct DesktopAudioState {
   previous_token: Option<StateDigest>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Component)]
+struct DesktopAudioPlayback(PresentationAudioCue);
+
 impl DesktopAudioState {
   fn observe(&mut self, token: Option<StateDigest>, cues: &[PresentationAudioCue]) -> bool {
     if self.previous_token == token && self.previous_cues == cues {
@@ -587,8 +590,8 @@ impl DesktopAudioState {
   }
 }
 
-fn audio_asset_path(path: &str) -> &str {
-  path.strip_prefix("assets/").unwrap_or(path)
+fn audio_asset_path(path: &str) -> Option<&str> {
+  path.strip_prefix("assets/")
 }
 
 fn audio_cue_name(cue: PresentationAudioCue) -> &'static str {
@@ -607,20 +610,21 @@ fn audio_cue_name(cue: PresentationAudioCue) -> &'static str {
 fn desktop_play_audio(
   runtime: Option<Res<PresentationRuntime>>,
   cues: Option<Res<PresentationAudioCues>>,
-  projection: Option<Res<PresentationAudioAssetProjection>>,
+  manifest: Option<Res<PresentationAudioAssetManifest>>,
   asset_server: Option<Res<AssetServer>>,
   state: Option<ResMut<DesktopAudioState>>,
   mut commands: Commands,
   mut session: Option<ResMut<DesktopSession>>,
 ) {
-  let (Some(runtime), Some(cues), Some(projection), Some(asset_server), Some(mut state)) =
-    (runtime, cues, projection, asset_server, state)
+  let (Some(runtime), Some(cues), Some(manifest), Some(asset_server), Some(mut state)) =
+    (runtime, cues, manifest, asset_server, state)
   else {
     return;
   };
   if !state.observe(Some(runtime.replay_digest()), cues.cues()) {
     return;
   }
+  let projection = PresentationAudioAssetProjection::from_cues(cues.cues(), &manifest);
   for entry in projection.entries() {
     let path = entry.reference().path();
     if !Path::new(path).is_file() {
@@ -633,8 +637,22 @@ fn desktop_play_audio(
       }
       continue;
     }
-    let handle: Handle<AudioSource> = asset_server.load(audio_asset_path(path).to_string());
-    commands.spawn((AudioPlayer::new(handle), PlaybackSettings::DESPAWN));
+    let Some(asset_path) = audio_asset_path(path) else {
+      if let Some(session) = &mut session {
+        let _ = record_session(
+          &mut *session,
+          "audio_outcome",
+          json!({ "cue": audio_cue_name(entry.cue()), "path": path, "outcome": "unsupported_asset_root" }),
+        );
+      }
+      continue;
+    };
+    let handle: Handle<AudioSource> = asset_server.load(asset_path.to_string());
+    commands.spawn((
+      DesktopAudioPlayback(entry.cue()),
+      AudioPlayer::new(handle),
+      PlaybackSettings::DESPAWN,
+    ));
     if let Some(session) = &mut session {
       let _ = record_session(
         &mut *session,
@@ -1944,6 +1962,9 @@ pub fn event_kind(event: Event) -> &'static str {
 mod tests {
   use super::*;
   use crate::PresentationState;
+  use bevy::app::TaskPoolPlugin;
+  use bevy::asset::{AssetApp, AssetPlugin};
+  use bevy::audio::PlaybackMode;
   use bevy::camera::visibility::Visibility;
   use bevy::transform::components::Transform;
 
@@ -2138,9 +2159,14 @@ mod tests {
       assert!(reference.path().starts_with("assets/audio/dreadstep/"));
       assert_eq!(
         audio_asset_path(reference.path()),
-        reference.path().trim_start_matches("assets/")
+        Some(reference.path().trim_start_matches("assets/"))
       );
     }
+    assert_eq!(audio_asset_path("audio/root.ogg"), None);
+    assert_eq!(
+      audio_asset_path("crates/dreadstep-bevy/audio/local.ogg"),
+      None
+    );
   }
 
   #[test]
@@ -2148,6 +2174,179 @@ mod tests {
     let mut app = App::new();
     app.add_systems(Update, desktop_play_audio);
     app.update();
+  }
+
+  fn audio_playback_app(manifest: PresentationAudioAssetManifest) -> App {
+    let map = dreadstep_core::GridMap::from_tiles(2, 1, vec![Tile::Floor, Tile::Floor])
+      .expect("audio map validates");
+    let world = dreadstep_core::WorldState::new(
+      map,
+      vec![
+        Actor::with_hit_points(
+          PLAYER,
+          ActorKind::Player,
+          Position::new(0, 0),
+          dreadstep_core::HitPoints::new(3),
+        ),
+        Actor::with_hit_points(
+          ATTACK_TARGET,
+          ActorKind::Enemy,
+          Position::new(1, 0),
+          dreadstep_core::HitPoints::new(1),
+        ),
+      ],
+    )
+    .expect("audio world validates");
+    let mut app = App::new();
+    app.add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()));
+    app.init_asset::<AudioSource>();
+    app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+    app.insert_resource(PresentationAudioCues::new());
+    app.insert_resource(manifest);
+    app.insert_resource(PresentationAudioAssetProjection::new());
+    app.insert_resource(DesktopAudioState::default());
+    app.add_plugins(PresentationPlugin);
+    app.add_systems(
+      Update,
+      desktop_play_audio.after(PresentationSet::Projection),
+    );
+    app
+  }
+
+  fn test_audio_manifest(prefix: &str) -> PresentationAudioAssetManifest {
+    let families = [
+      (PresentationAudioCueKind::Moved, "moved"),
+      (PresentationAudioCueKind::MovementBlocked, "blocked"),
+      (PresentationAudioCueKind::Waited, "waited"),
+      (PresentationAudioCueKind::Attacked, "attacked"),
+      (PresentationAudioCueKind::Died, "died"),
+      (PresentationAudioCueKind::ItemEquipped, "equipped"),
+      (PresentationAudioCueKind::ItemUnequipped, "unequipped"),
+      (PresentationAudioCueKind::ItemConsumed, "consumed"),
+    ];
+    PresentationAudioAssetManifest::new(
+      families
+        .into_iter()
+        .map(|(family, name)| {
+          (
+            family,
+            PresentationAssetReference::new(format!("assets/audio/dreadstep/{prefix}-{name}.ogg"))
+              .expect("test audio path validates"),
+          )
+        })
+        .collect(),
+    )
+    .expect("test audio manifest validates")
+  }
+
+  fn install_test_audio_files(prefix: &str) -> [PathBuf; 2] {
+    let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/audio/dreadstep");
+    let source =
+      PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../audio/generated-cue-click.wav");
+    fs::create_dir_all(&directory).expect("test audio directory creates");
+    let paths = [
+      directory.join(format!("{prefix}-attacked.ogg")),
+      directory.join(format!("{prefix}-died.ogg")),
+    ];
+    for path in &paths {
+      fs::copy(&source, path).expect("test audio fixture copies");
+    }
+    paths
+  }
+
+  #[test]
+  fn existing_audio_files_spawn_ordered_non_looping_playback_requests() {
+    let paths = install_test_audio_files("ordered");
+    let mut app = audio_playback_app(test_audio_manifest("ordered"));
+    app.update();
+    app
+      .world_mut()
+      .resource_mut::<PresentationRuntime>()
+      .execute(Command::Attack {
+        actor: PLAYER,
+        target: ATTACK_TARGET,
+      })
+      .expect("adjacent attack should succeed");
+    app.update();
+
+    let mut query = app
+      .world_mut()
+      .query::<(&DesktopAudioPlayback, &PlaybackSettings)>();
+    let requests = query
+      .iter(app.world())
+      .map(|(playback, settings)| (playback.0, settings.mode))
+      .collect::<Vec<_>>();
+    assert_eq!(requests.len(), 2);
+    assert!(
+      requests
+        .iter()
+        .all(|(_, mode)| matches!(mode, PlaybackMode::Despawn))
+    );
+    assert_eq!(
+      requests.iter().map(|(cue, _)| *cue).collect::<Vec<_>>(),
+      vec![
+        PresentationAudioCue::Attacked {
+          attacker: PLAYER,
+          target: ATTACK_TARGET,
+        },
+        PresentationAudioCue::Died {
+          actor: ATTACK_TARGET,
+        },
+      ]
+    );
+    for path in paths {
+      let _ = fs::remove_file(path);
+    }
+  }
+
+  #[test]
+  fn manifest_loss_skips_stale_audio_and_restoration_plays_current_batch_once() {
+    let paths = install_test_audio_files("restore");
+    let manifest = test_audio_manifest("restore");
+    let mut app = audio_playback_app(manifest.clone());
+    app.update();
+    app
+      .world_mut()
+      .remove_resource::<PresentationAudioAssetManifest>();
+    app
+      .world_mut()
+      .resource_mut::<PresentationRuntime>()
+      .execute(Command::Attack {
+        actor: PLAYER,
+        target: ATTACK_TARGET,
+      })
+      .expect("adjacent attack should succeed");
+    app.update();
+    assert_eq!(
+      app
+        .world_mut()
+        .query::<&DesktopAudioPlayback>()
+        .iter(app.world())
+        .count(),
+      0
+    );
+    app.insert_resource(manifest);
+    app.update();
+    assert_eq!(
+      app
+        .world_mut()
+        .query::<&DesktopAudioPlayback>()
+        .iter(app.world())
+        .count(),
+      2
+    );
+    app.update();
+    assert_eq!(
+      app
+        .world_mut()
+        .query::<&DesktopAudioPlayback>()
+        .iter(app.world())
+        .count(),
+      2
+    );
+    for path in paths {
+      let _ = fs::remove_file(path);
+    }
   }
 
   #[test]

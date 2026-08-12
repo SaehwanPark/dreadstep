@@ -92,8 +92,9 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     deferred.
 - Verified audio placeholder playback
   - Distinct typed audio-cue batches now route through the validated eight-family manifest and request
-    existing local files as non-looping Bevy effects; absent audio, audio resources, and audio devices
-    remain safe fallbacks. Production sound design, music, and mastering remain deferred.
+    existing `assets/`-rooted files as non-looping Bevy effects; root/crate-local metadata, absent
+    audio, audio resources, and audio devices remain safe fallbacks. Production sound design, music,
+    and mastering remain deferred.
 - Still deferred
   - production texture/media adoption, anchor policy beyond centering, animation playback,
     production audio assets/mastering/music, multiple floors, and richer gameplay item semantics such as

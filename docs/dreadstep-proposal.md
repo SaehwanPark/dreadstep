@@ -1758,8 +1758,8 @@ Current exploratory gate (2026-08-09):
 - The verified local-only audio cue manifest binds all eight typed cue families to validated root,
   `assets/audio/`, or crate-local `audio/` references and preserves ordered payloads without
   filesystem reads at the headless boundary. The verified desktop adapter requests existing local
-  references as non-looping playback effects and records safe missing-media fallbacks; production
-  audio selection, mastering, and music remain later work.
+  `assets/`-rooted references as non-looping playback effects and records safe missing/unsupported-
+  root fallbacks; production audio selection, mastering, and music remain later work.
 - The verified desktop tactical HUD polish keeps the existing panel structure while formatting a
   fixed-width health bar, turn/position, remaining-enemy pressure, and optional field-of-view
   summary from authoritative runtime/projection data; production media, localization, and playback

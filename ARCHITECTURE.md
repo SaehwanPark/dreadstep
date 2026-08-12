@@ -75,9 +75,11 @@ assets, transforms, and diagnostic journal evidence untouched. Missing cue or pu
 
 The visible client may also consume the existing `PresentationAudioCues` and validated
 `PresentationAudioAssetManifest` through an optional desktop playback effect. It observes the replay
-digest plus ordered cue values, requests each existing local reference once per distinct batch, and
-uses non-looping Bevy `AudioPlayer` entities. Missing references or audio resources are safe recorded
-fallbacks; audio playback never changes core state, timing, event payloads, or replay evidence.
+digest plus ordered cue values, requests each existing `assets/`-rooted local reference once per
+distinct batch, and uses non-looping Bevy `AudioPlayer` entities. Root/crate-local references remain
+valid headless metadata but are safe unsupported-root fallbacks at this desktop boundary. Missing
+references or audio resources are safe recorded fallbacks; audio playback never changes core state,
+timing, event payloads, or replay evidence.
 
 The earlier headless presentation records below remain valid when the `desktop` feature is absent.
 The runnable showcase is an opt-in process wrapper around those projections: its ECS scene, HUD,
