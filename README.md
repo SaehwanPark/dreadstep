@@ -29,7 +29,9 @@ three-shot capacity with `R` when ammo is partial; `X` drops the selected unequi
 before falling back to chase; core and protocol snapshots now expose deterministic `in_progress`,
 `defeat`, or `victory` outcomes, and the desktop showcase consumes that projection while keeping
 restart available. Ranged enemy AI, ammo pickups, cover damage modifiers, weapon effects,
-persistence, and replay export remain deliberately deferred.
+persistence, save/load, and replay playback remain deliberately deferred. Each desktop smoke or
+visible run now also writes a versioned `*.replay.json` evidence artifact beside its JSONL journal;
+the artifact is not a playback-compatible save file.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
@@ -43,6 +45,8 @@ persistence, and replay export remain deliberately deferred.
   - Scheduled player-facing item pickup and drop with deterministic ground-stack ordering, typed
     events/errors, protocol/MCP replay evidence, and desktop `P`/`X` smoke coverage; effects,
     modifiers, capacity, and richer item semantics remain deferred.
+  - Deterministic desktop replay-evidence export with seed, accepted command order, replay digest,
+    and canonical outcome; persistence, editing, and playback remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,
     focus, scene focus, camera, viewport, tile/actor/ground/inventory mirrors, typed HUD status,

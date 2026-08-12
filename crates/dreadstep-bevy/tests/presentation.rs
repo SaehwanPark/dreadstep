@@ -120,3 +120,23 @@ fn accepted_command_emits_events_and_rejected_command_is_atomic() {
   assert_eq!(state.snapshot(), before_rejection.0);
   assert_eq!(state.replay_digest(), before_rejection.1);
 }
+
+#[test]
+fn replay_commands_expose_only_accepted_commands_in_order() {
+  let mut state = PresentationState::new(7, world());
+  let move_command = Command::Move {
+    actor: ActorId::new(1),
+    direction: Direction::East,
+  };
+  state
+    .execute(move_command)
+    .expect("scheduled player should move");
+  let rejected = Command::Wait {
+    actor: ActorId::new(1),
+  };
+  state
+    .execute(rejected)
+    .expect_err("enemy should be scheduled after the player moves");
+
+  assert_eq!(state.replay_commands(), &[move_command]);
+}

@@ -15,6 +15,16 @@ Update an existing lesson instead of adding a duplicate.
 - Prevention: Keep terminal outcome predicates in the deterministic kernel, test empty/enemy/dead
   edge cases and precedence, and make adapters project the value rather than reimplementing it.
 
+## 2026-08-12 — Export replay evidence from the accepted core trace
+
+- Context: Desktop journals contain request, outcome, and presentation records, but reconstructing
+  a replay from those diagnostics would risk including rejected commands or adapter-only mutations.
+- Resolution: Expose the runtime's read-only accepted command trace and write a small versioned
+  desktop artifact from that source, carrying seed, command order, digest, and canonical outcome;
+  allocate the file with create-new semantics and record its path in the journal.
+- Prevention: Treat replay export as evidence rather than playback, derive command lists only from
+  core's accepted trace, preserve order, and test collision suffixes plus journal/artifact parity.
+
 ## 2026-08-12 — Player inventory actions need an item-bearing public fixture
 
 - Context: The default MCP/headless fixed scenario is intentionally item-free, so a new player item

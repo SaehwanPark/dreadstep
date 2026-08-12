@@ -68,6 +68,7 @@ const SMOKE_ENEMY_ATTACK_LIMIT: usize = 32;
 const ENEMY_DELAY: Duration = Duration::from_millis(150);
 const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 const HEALTH_BAR_WIDTH: usize = 10;
+const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
 pub const SHOWCASE_COMMAND_KINDS: [&str; 11] = [
@@ -391,6 +392,67 @@ fn journal_path(journal: &JournalHandle) -> PathBuf {
     Err(poisoned) => poisoned.into_inner(),
   };
   guard.path().to_path_buf()
+}
+
+fn replay_export_value(runtime: &PresentationRuntime) -> Value {
+  json!({
+    "schema_version": REPLAY_EXPORT_SCHEMA_VERSION,
+    "seed": runtime.seed(),
+    "commands": runtime
+      .replay_commands()
+      .iter()
+      .copied()
+      .map(command_value)
+      .collect::<Vec<_>>(),
+    "replay_digest": runtime.replay_digest().value(),
+    "outcome": outcome_name(runtime.snapshot().outcome()),
+  })
+}
+
+fn export_replay(
+  runtime: &PresentationRuntime,
+  journal: &JournalHandle,
+) -> Result<PathBuf, String> {
+  let journal_path = journal_path(journal);
+  let stem = journal_path
+    .file_stem()
+    .and_then(|value| value.to_str())
+    .ok_or_else(|| "run journal path has no valid filename stem".to_string())?;
+  let directory = journal_path
+    .parent()
+    .ok_or_else(|| "run journal path has no parent directory".to_string())?;
+  let export = replay_export_value(runtime);
+  for counter in 0_u32..10_000 {
+    let suffix = if counter == 0 {
+      String::new()
+    } else {
+      format!("-{counter}")
+    };
+    let path = directory.join(format!("{stem}.replay{suffix}.json"));
+    match OpenOptions::new().create_new(true).write(true).open(&path) {
+      Ok(mut file) => {
+        serde_json::to_writer_pretty(&mut file, &export).map_err(|error| error.to_string())?;
+        file.write_all(b"\n").map_err(|error| error.to_string())?;
+        file.flush().map_err(|error| error.to_string())?;
+        record(
+          journal,
+          "replay_exported",
+          json!({
+            "path": path.display().to_string(),
+            "schema_version": REPLAY_EXPORT_SCHEMA_VERSION,
+            "commands": runtime.replay_commands().len(),
+            "replay_digest": runtime.replay_digest().value(),
+            "outcome": outcome_name(runtime.snapshot().outcome()),
+          }),
+        )
+        .map_err(|error| error.to_string())?;
+        return Ok(path);
+      }
+      Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+      Err(error) => return Err(error.to_string()),
+    }
+  }
+  Err("could not allocate a unique replay export filename".to_string())
 }
 
 fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
@@ -991,11 +1053,6 @@ fn desktop_fault_exit(
       |runtime| state_payload(&runtime, json!({ "error": error })),
     );
     let _ = record_session(&mut session, "terminal_fault", payload);
-    let _ = record_session(
-      &mut session,
-      "shutdown",
-      json!({ "reason": "runtime_fault" }),
-    );
   }
   exit.write(AppExit::error());
 }
@@ -1012,13 +1069,7 @@ fn desktop_observe_close(
   {
     return;
   }
-  if record_session(
-    &mut session,
-    "shutdown",
-    json!({ "reason": "window_close" }),
-  ) {
-    session.status = DesktopStatus::Shutdown("window_close".to_string());
-  }
+  session.status = DesktopStatus::Shutdown("window_close".to_string());
 }
 
 #[allow(clippy::too_many_lines)]
@@ -1040,7 +1091,6 @@ fn desktop_input(
       "input_request",
       json!({ "key": "Escape", "action": "shutdown" }),
     );
-    let _ = record_session(&mut session, "shutdown", json!({ "reason": "escape" }));
     if matches!(session.status, DesktopStatus::Faulted(_)) {
       exit.write(AppExit::error());
       return;
@@ -1421,9 +1471,20 @@ fn run_visible(
     Some(session) => session.status.clone(),
     None => DesktopStatus::Shutdown("window_closed".to_string()),
   };
+  let runtime = app
+    .world()
+    .get_resource::<PresentationRuntime>()
+    .ok_or_else(|| "desktop runtime resource missing after app exit".to_string())?;
+  export_replay(runtime, &journal)?;
   match status {
-    DesktopStatus::Faulted(error) => Err(error),
-    DesktopStatus::Shutdown(_) => Ok(()),
+    DesktopStatus::Faulted(error) => {
+      record(&journal, "shutdown", json!({ "reason": "runtime_fault" }))
+        .map_err(|journal_error| journal_error.to_string())?;
+      Err(error)
+    }
+    DesktopStatus::Shutdown(reason) => {
+      record(&journal, "shutdown", json!({ "reason": reason })).map_err(|error| error.to_string())
+    }
     DesktopStatus::Victory => record(
       &journal,
       "shutdown",
@@ -1640,6 +1701,14 @@ fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle) -> ExitCo
     terminal_payload,
   ) {
     failed = true;
+  }
+  if export_replay(&runtime, &journal).is_err() {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "replay_export_fault",
+      json!({ "reason": "replay_export_failed" }),
+    );
   }
   if !record_session(
     &mut session,
@@ -2172,6 +2241,41 @@ mod tests {
   }
 
   #[test]
+  fn replay_export_is_versioned_ordered_and_create_new() {
+    let directory = test_directory("replay-export");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut runtime = PresentationRuntime::start_run(7).expect("starter run");
+    let command = Command::Move {
+      actor: PLAYER,
+      direction: Direction::East,
+    };
+    runtime.execute(command).expect("starter move accepted");
+
+    let first = export_replay(&runtime, &journal).expect("first export writes");
+    let second = export_replay(&runtime, &journal).expect("second export gets a new path");
+    assert_ne!(first, second);
+    let export =
+      serde_json::from_str::<Value>(&fs::read_to_string(&first).expect("first export reads"))
+        .expect("first export parses");
+    assert_eq!(export["schema_version"], REPLAY_EXPORT_SCHEMA_VERSION);
+    assert_eq!(export["seed"], 7);
+    assert_eq!(export["commands"].as_array().map(Vec::len), Some(1));
+    assert_eq!(export["commands"][0], command_value(command));
+    assert_eq!(export["replay_digest"], runtime.replay_digest().value());
+    assert_eq!(export["outcome"], "in_progress");
+
+    let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
+    assert_eq!(
+      journal_text.matches("\"kind\":\"replay_exported\"").count(),
+      2
+    );
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
   fn pickup_key_selects_the_lowest_id_ground_item() {
     let directory = test_directory("pickup-key");
     let _ = fs::create_dir_all(&directory);
@@ -2560,6 +2664,17 @@ mod tests {
       app.world().resource::<DesktopSession>().status,
       DesktopStatus::Shutdown("escape".to_string())
     );
+    let escape_journal = fs::read_dir(&directory)
+      .expect("escape journal directory reads")
+      .next()
+      .expect("escape journal exists")
+      .expect("escape journal entry reads")
+      .path();
+    assert!(
+      !fs::read_to_string(escape_journal)
+        .expect("escape journal reads")
+        .contains("\"kind\":\"shutdown\"")
+    );
     let _ = fs::remove_dir_all(directory);
 
     let (mut app, directory) = defeated_input_app("defeat-close");
@@ -2569,6 +2684,17 @@ mod tests {
     assert_eq!(
       app.world().resource::<DesktopSession>().status,
       DesktopStatus::Shutdown("window_close".to_string())
+    );
+    let close_journal = fs::read_dir(&directory)
+      .expect("close journal directory reads")
+      .next()
+      .expect("close journal exists")
+      .expect("close journal entry reads")
+      .path();
+    assert!(
+      !fs::read_to_string(close_journal)
+        .expect("close journal reads")
+        .contains("\"kind\":\"shutdown\"")
     );
     let _ = fs::remove_dir_all(directory);
   }

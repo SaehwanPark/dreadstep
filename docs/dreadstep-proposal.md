@@ -1987,8 +1987,10 @@ coverage without defining effects, capacity, stack merging, or new media.
 
 The canonical run-outcome preparation is also verified: core derives `in_progress`, `defeat`, or
 `victory` from retained actor records with player-death precedence, protocol v11 exposes the same
-typed snapshot value, and Bevy terminal handling consumes that projection. Persistence, replay
-export/playback, rewards, and encounter progression remain future work.
+typed snapshot value, and Bevy terminal handling consumes that projection. A desktop preparation
+slice now writes a versioned create-new replay-evidence artifact with the seed, accepted command
+order, replay digest, and outcome beside each run journal. Persistence, replay parsing/playback,
+rewards, and encounter progression remain future work.
 
 ### Implement
 
@@ -2054,7 +2056,7 @@ This is the most important pre-alpha milestone.
 - death;
 - victory;
 - save-and-quit;
-- replay export.
+- playback-compatible replay export.
 
 Placeholders introduced in Milestone 3 must be replaced or deliberately refined into a coherent
 production-quality pixel-art and audio direction before this milestone exits.

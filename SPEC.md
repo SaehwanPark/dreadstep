@@ -3446,7 +3446,8 @@ Verification evidence:
 
 - The focused desktop transition test passes 1/1: an accepted enemy attack that kills actor 1 sets
   `Defeat`, records exactly one `terminal_defeat`, and rejects later normal command submission.
-- Full Bevy desktop tests pass 28/28; desktop boundary/smoke remains green, and focused defeat
+- At this slice's completion, full Bevy desktop tests passed 28/28; desktop boundary/smoke remained
+  green, and focused defeat
   tests prove normal command blocking plus safe Escape, window-close, and same-seed restart paths.
   Existing input handling preserves safe close and
   restart behavior from the defeated state. `scripts/verify.sh` passes repository checks, strict clippy, all targets,
@@ -3489,15 +3490,54 @@ Verification evidence:
 - Core outcome tests pass 3/3, protocol projection/schema/value tests pass 3/3, MCP observation/action
   tests pass 2/2, the Bevy presentation projection test passes 1/1, and the headless CLI suite
   passes 5/5 with explicit `outcome=` output.
-- Existing protocol, MCP stdio, Bevy desktop unit tests pass 28/28, and the workspace adapter
+- At this slice's completion, existing protocol, MCP stdio, Bevy desktop unit tests passed 28/28,
+  and the workspace adapter
   suites remain green after the version-11 snapshot field; desktop terminal records continue to be
   exactly-once and smoke output remains deterministic. `scripts/verify.sh`, formatting, strict
   lint/docs, and diff checks pass.
 
 Out of scope:
 
-- New core commands/events/errors, persistence or save/load, replay playback/export, respawn, score,
+- New core commands/events/errors, persistence or save/load, replay playback, respawn, score,
   menus, victory rewards, encounter progression, enemy AI, or player-facing balance changes.
+
+### Milestone 7 preparation slice: deterministic desktop replay export
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Write one deterministic, versioned replay-evidence artifact when the desktop showcase run ends.
+The export preserves the explicit seed, accepted core commands in execution order, replay digest,
+and canonical run outcome. It is a diagnostic export only: it does not promise save/load,
+validation, editing, or playback compatibility, and rejected commands never enter the command list.
+
+Acceptance:
+
+- The Bevy runtime exposes a read-only accepted-command trace without duplicating core state or
+  recording rejected commands.
+- Desktop smoke and visible runs create a sibling `*.replay.json` file using schema version 1,
+  never overwrite an existing file, and append a `replay_exported` journal record with matching
+  seed/digest/outcome evidence before the final shutdown record.
+- Export command objects use the existing exhaustive desktop command mapping, preserve order, and
+  carry `in_progress`, `defeat`, or `victory` from the core presentation snapshot.
+- Focused runtime/export tests, display-free smoke tests, `scripts/verify.sh`, formatting,
+  `git diff --check`, and one semantic reviewer report PASS.
+
+Out of scope:
+
+- Save/load, persistent run identity, replay parsing or playback, protocol/MCP replay-file
+  registration, command editing, compression, signing, or new gameplay/presentation media.
+
+Verification evidence:
+
+- Bevy presentation tests prove accepted-command ordering and atomic omission of rejected commands;
+  desktop unit coverage passes 29/29 and proves schema fields, digest/outcome parity, and create-new
+  collision suffixes.
+- Desktop boundary/smoke tests pass 8/8 and prove one JSONL journal plus one replay artifact, matching
+  digest and seed, deterministic normalized journals across repeated runs, and a final shutdown record.
+- `scripts/verify.sh` passes repository checks, strict clippy, all targets, warning-denied docs,
+  formatting, diff checks, and display-free desktop smoke.
 
 ### Milestone 4 slice: deterministic ranged ammunition
 
@@ -3580,7 +3620,7 @@ before it can move into `Past`:
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build
   choices.
 - Milestone 7 — Vertical Slice: opening-to-victory run, mature presentation, music, polished
-  combat feedback, boss, death, victory, save/quit, and replay export.
+  combat feedback, boss, death, victory, save/quit, and playback-compatible replay export.
 - Milestone 8 — Agent QA and Balance Laboratory: scenario agents, behavioral agents, and balance
   experiments.
 - Milestone 9 — Content Alpha: broader content, authored scenarios, and coherent production

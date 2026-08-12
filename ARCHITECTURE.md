@@ -132,8 +132,11 @@ after successful execution, rejected requests are omitted, and only protocol req
 core digest value cross the MCP boundary.
 
 The `get_replay` projection packages that history, explicit seed, and core trace digest in a
-protocol-owned `ReplayEvidence` value. It remains an in-memory read-only view; persistence,
-serialization, playback, and transport registration stay outside this slice.
+protocol-owned `ReplayEvidence` value. It remains an in-memory read-only view. The desktop boundary
+also writes a version-1 `*.replay.json` diagnostic artifact containing the explicit seed, accepted
+core command order, replay digest, and canonical outcome beside each run journal. That artifact is
+create-new and evidence-only; persistence, parsing, editing, playback, and transport registration
+remain outside the current contract.
 
 The versioned `WorldSnapshot` also projects core's deterministic `RunOutcome` (`in_progress`,
 `defeat`, or `victory`). Core derives this value from retained actor records, with player defeat
