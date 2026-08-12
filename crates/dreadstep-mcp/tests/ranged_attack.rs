@@ -71,6 +71,16 @@ fn legal_actions_and_act_expose_ranged_attack_with_replay_evidence() {
     2
   );
   assert_eq!(
+    output
+      .snapshot()
+      .actors()
+      .iter()
+      .find(|actor| actor.id() == ActorId::new(1))
+      .expect("attacker remains visible")
+      .ranged_ammo(),
+    2
+  );
+  assert_eq!(
     session.history(),
     vec![CommandRequest::RangedAttack {
       actor: ActorId::new(1),
@@ -151,4 +161,68 @@ fn blocked_ranged_attack_is_hidden_and_rejected_without_session_mutation() {
   assert_eq!(session.observe(), before);
   assert_eq!(session.get_replay(), replay);
   assert!(session.history().is_empty());
+}
+
+#[test]
+fn empty_ranged_ammunition_is_hidden_and_rejected_without_session_mutation() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  session
+    .create_scenario(&Scenario::new(
+      5,
+      1,
+      vec![Tile::Floor; 5],
+      vec![
+        ScenarioActor::new(
+          ActorId::new(1),
+          ActorKind::Player,
+          Position::new(0, 0),
+          HitPoints::new(4),
+        ),
+        ScenarioActor::new(
+          ActorId::new(2),
+          ActorKind::Enemy,
+          Position::new(2, 0),
+          HitPoints::new(10),
+        ),
+      ],
+    ))
+    .expect("scenario should validate");
+
+  for _ in 0..3 {
+    session
+      .act(CommandRequest::RangedAttack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+      .expect("each default shot should be accepted");
+    while session.observe().next_actor() == Some(ActorId::new(2)) {
+      session
+        .act(CommandRequest::Wait {
+          actor: ActorId::new(2),
+        })
+        .expect("enemy should yield until the player is scheduled");
+    }
+  }
+
+  assert!(
+    !session
+      .legal_actions()
+      .contains(&CommandRequest::RangedAttack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      })
+  );
+  let before = session.observe();
+  let replay = session.get_replay();
+  assert_eq!(
+    session.act(CommandRequest::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }),
+    Err(SessionError::CommandRejected(
+      CommandError::RangedAttackNoAmmunition(ActorId::new(1))
+    ))
+  );
+  assert_eq!(session.observe(), before);
+  assert_eq!(session.get_replay(), replay);
 }

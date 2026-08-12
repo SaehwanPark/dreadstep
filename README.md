@@ -20,10 +20,10 @@ not need to care about the testing architecture to enjoy it.
 Dreadstep is continuing the transition from Milestone 3's human presentation boundary into
 Milestone 4 tactical combat.
 
-The scheduled ranged attack, clear-cardinal line-of-sight, and distinct ranged action-cost slices
-are verified across the deterministic core, protocol/MCP/headless adapters, and desktop `G` control.
-Further Milestone 4 work will be taken in bounded slices. Cover, ammunition, weapon effects, and
-enemy ranged AI remain deliberately deferred.
+The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, and finite
+ammunition slices are verified across the deterministic core, protocol/MCP/headless adapters, and
+desktop `G` control. Further Milestone 4 work will be taken in bounded slices. Ammo pickups,
+reloads, cover, weapon effects, and enemy ranged AI remain deliberately deferred.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and

@@ -59,3 +59,21 @@ fn ranged_no_line_of_sight_error_has_a_tagged_json_and_schema_contract() {
       .contains("ranged_attack_no_line_of_sight")
   );
 }
+
+#[test]
+fn ranged_no_ammunition_error_has_a_tagged_json_and_schema_contract() {
+  let core = CoreCommandError::RangedAttackNoAmmunition(CoreActorId::new(1));
+  let error = CommandError::from(core);
+  assert_eq!(
+    error,
+    CommandError::RangedAttackNoAmmunition(ActorId::new(1))
+  );
+  let value = serde_json::to_value(error).expect("command error should serialize");
+  assert_eq!(value, json!({"ranged_attack_no_ammunition": 1}));
+  assert_eq!(
+    serde_json::from_value::<CommandError>(value).expect("command error should deserialize"),
+    error
+  );
+  let schema = serde_json::to_value(schema_for!(CommandError)).expect("schema should serialize");
+  assert!(schema.to_string().contains("ranged_attack_no_ammunition"));
+}

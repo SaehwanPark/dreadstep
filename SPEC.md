@@ -3185,8 +3185,6 @@ Out of scope:
 - line of sight, cover, ammunition, weapon/item effects, varied action costs, enemy ranged AI,
   new map rules, production art/audio, animation changes, and tester operations.
 
-## Active
-
 ### Milestone 4 slice: deterministic ranged line of sight
 
 - Status: verified
@@ -3217,6 +3215,35 @@ Out of scope:
   new audio, diagonal interpolation, and new desktop controls.
 
 ## Active
+
+### Milestone 4 slice: deterministic ranged ammunition
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Give each actor a deterministic three-shot ranged ammunition resource by default. A successful
+clear-cardinal `RangedAttack` consumes exactly one shot; legal discovery omits empty-ammunition
+requests and direct execution returns typed `RangedAttackNoAmmunition` without changing world,
+scheduler, history, snapshot, or replay evidence. The remaining action cost, attack/death events,
+protocol snapshot shape, desktop `G` control, journal, smoke, animation, and optional-audio fallback
+families remain unchanged except for the protocol versioned ammunition field and typed error.
+
+Verification target:
+
+- Core proves default/explicit ammunition, exact one-shot decrement, digest change, empty-action
+  filtering, typed atomic rejection, and preservation of all existing ranged validation branches.
+- Protocol v6 serializes `ranged_ammo`, maps the typed no-ammunition error, and round-trips its JSON
+  and schema contract; MCP preserves accepted snapshot/history/replay and rejected-action evidence.
+- Headless parsing remains unchanged; desktop `G` selection, journal, display-free smoke, animation,
+  and optional-audio fallback remain green without new controls or assets.
+- Full workspace tests, `scripts/verify.sh`, formatting, `git diff --check`, and one semantic
+  reviewer report PASS.
+
+Out of scope:
+
+- Ammo pickups, reload commands, weapon-specific capacities, cover, damage modifiers, enemy ranged
+  AI, new protocol commands, new events, and new presentation/audio assets.
 
 ### Milestone 4 slice: deterministic ranged action cost
 

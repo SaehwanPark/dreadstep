@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
-  assert_eq!(value["protocol_version"], 5);
+  assert_eq!(value["protocol_version"], 6);
   assert_eq!(value["current_time"], 0);
   assert_eq!(value["next_actor"], 1);
   assert!(value["digest"].is_number());
@@ -65,12 +65,13 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["id"], 1);
   assert_eq!(value["actors"][0]["kind"], "player");
   assert_eq!(value["actors"][0]["life"], "alive");
+  assert_eq!(value["actors"][0]["ranged_ammo"], 3);
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
   assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
   let equipped_value =
     serde_json::to_value(equipped_snapshot()).expect("snapshot should serialize");
-  assert_eq!(equipped_value["protocol_version"], 5);
+  assert_eq!(equipped_value["protocol_version"], 6);
   assert_eq!(equipped_value["actors"][0]["equipped_item"], 4);
 }
 

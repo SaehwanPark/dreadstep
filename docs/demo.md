@@ -31,7 +31,7 @@ display-free smoke path.
 | Arrow keys / WASD | Move | `Command::Move` selected from `legal_commands` |
 | Space / Enter | Wait | `Command::Wait` |
 | F | Attack the lowest-ID adjacent target | `Command::Attack` |
-| G | Ranged attack the lowest-ID clear-cardinal target at distance 2–3 (2 ticks) | `Command::RangedAttack` |
+| G | Ranged attack the lowest-ID clear-cardinal target at distance 2–3 (2 ticks; 3 shots) | `Command::RangedAttack` |
 | Tab / Shift-Tab | Select the next/previous owned item | presentation-only selection |
 | E | Equip selected item | `Command::Equip` |
 | Q | Unequip | `Command::Unequip` |

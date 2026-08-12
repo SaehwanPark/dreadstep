@@ -18,7 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 5;
+pub const PROTOCOL_VERSION: u16 = 6;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -1127,6 +1127,8 @@ pub enum CommandError {
     /// The actor hidden by a diagonal path or blocking terrain.
     target: ActorId,
   },
+  /// The actor has no ranged ammunition remaining.
+  RangedAttackNoAmmunition(ActorId),
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -1203,6 +1205,9 @@ impl From<CoreCommandError> for CommandError {
           attacker: ActorId::new(attacker.value()),
           target: ActorId::new(target.value()),
         }
+      }
+      CoreCommandError::RangedAttackNoAmmunition(actor) => {
+        Self::RangedAttackNoAmmunition(ActorId::new(actor.value()))
       }
       CoreCommandError::ItemNotOwned { actor, item } => Self::ItemNotOwned {
         actor: ActorId::new(actor.value()),
@@ -1290,6 +1295,11 @@ impl fmt::Display for CommandError {
         attacker.value(),
         target.value()
       ),
+      Self::RangedAttackNoAmmunition(actor) => write!(
+        formatter,
+        "actor {} cannot ranged attack without ammunition",
+        actor.value()
+      ),
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
         "actor {} does not own item {}",
@@ -1332,6 +1342,7 @@ pub struct ActorSnapshot {
   hit_points: HitPoints,
   life: LifeState,
   ready_at: ActionTime,
+  ranged_ammo: u16,
   inventory: Vec<ItemSnapshot>,
   equipped_item: Option<ItemId>,
 }
@@ -1352,6 +1363,7 @@ impl ActorSnapshot {
         LifeState::Dead
       },
       ready_at: ActionTime::new(actor.ready_at().value()),
+      ranged_ammo: actor.ranged_ammo(),
       inventory: actor
         .inventory()
         .iter()
@@ -1402,6 +1414,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn ready_at(&self) -> ActionTime {
     self.ready_at
+  }
+
+  /// Returns the actor's remaining ranged ammunition.
+  #[must_use]
+  pub const fn ranged_ammo(&self) -> u16 {
+    self.ranged_ammo
   }
 
   /// Returns owned item snapshots in deterministic insertion order.

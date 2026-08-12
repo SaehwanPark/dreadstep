@@ -48,6 +48,7 @@ fn snapshot_has_version_and_stable_actor_order() {
   assert_eq!(player.hit_points(), HitPoints::new(10));
   assert_eq!(player.life(), LifeState::Alive);
   assert_eq!(player.ready_at(), ActionTime::new(0));
+  assert_eq!(player.ranged_ammo(), 3);
 }
 
 #[test]
