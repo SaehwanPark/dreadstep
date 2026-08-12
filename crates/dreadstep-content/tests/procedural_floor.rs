@@ -109,3 +109,38 @@ fn generated_actor_roster_is_stable_and_walkable() {
     ]
   );
 }
+
+#[test]
+fn every_generated_floor_tile_is_reachable_from_the_player() {
+  for seed in 0..32 {
+    for depth in [0, 1, 3, 6] {
+      let world = procedural_floor(seed, depth).expect("generated floor should validate");
+      let start = world
+        .actor(ActorId::new(1))
+        .expect("generated player should exist")
+        .position();
+      let mut visited = vec![start];
+      let mut index = 0;
+      while let Some(position) = visited.get(index).copied() {
+        index += 1;
+        for neighbor in [
+          Position::new(position.x() + 1, position.y()),
+          Position::new(position.x() - 1, position.y()),
+          Position::new(position.x(), position.y() + 1),
+          Position::new(position.x(), position.y() - 1),
+        ] {
+          if world.map().is_walkable(neighbor) && !visited.contains(&neighbor) {
+            visited.push(neighbor);
+          }
+        }
+      }
+      let floor_count = world
+        .map()
+        .tiles()
+        .iter()
+        .filter(|tile| tile.is_walkable())
+        .count();
+      assert_eq!(visited.len(), floor_count, "seed={seed}, depth={depth}");
+    }
+  }
+}

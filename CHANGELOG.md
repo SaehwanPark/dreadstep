@@ -8,9 +8,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 - Added a deterministic seeded corridor-floor content preparation slice: `procedural_floor` and
   `procedural_floor_definition` generate a validated 13×9 floor with three single-gap wall
-  partitions, stable actor placement, and small depth-scaled enemy durability. Existing starter
-  floors, protocol/MCP contracts, replay evidence, and the desktop fixture remain unchanged while
-  floor progression and renderer selection stay deferred.
+  partitions, stable actor placement, small depth-scaled enemy durability, and a tested guarantee
+  that every generated walkable tile is reachable from the player. Existing starter floors,
+  protocol/MCP contracts, replay evidence, and the desktop fixture remain unchanged while floor
+  progression and renderer selection stay deferred.
 
 - Verified deterministic kick-open doors with noise evidence: a scheduled adjacent `Kick` opens a
   closed `Door` with standard action cost, ordered `DoorOpened` then fixed-radius `NoiseCreated`
