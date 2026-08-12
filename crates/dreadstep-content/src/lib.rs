@@ -9,8 +9,8 @@
 use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HealingAmount, HitPoints, Item, ItemDefinitionId, ItemEffect,
-  ItemId, MapError, Position, Tile, WorldError, WorldState,
+  Actor, ActorId, ActorKind, AmmunitionAmount, GridMap, HealingAmount, HitPoints, Item,
+  ItemDefinitionId, ItemEffect, ItemId, MapError, Position, Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -333,7 +333,13 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
       ),
       StarterItemPlacement::new(
         ActorId::new(1),
-        Item::new(ItemId::new(102), ItemDefinitionId::new(3)),
+        Item::with_effect(
+          ItemId::new(102),
+          ItemDefinitionId::new(3),
+          ItemEffect::RestoreAmmunition {
+            amount: AmmunitionAmount::TWO,
+          },
+        ),
       ),
     ])
 }

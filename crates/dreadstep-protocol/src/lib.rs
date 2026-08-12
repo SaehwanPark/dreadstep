@@ -9,17 +9,17 @@
 use std::fmt;
 
 use dreadstep_core::{
-  Actor as CoreActor, ActorKind as CoreActorKind, BlockReason as CoreBlockReason,
-  Command as CoreCommand, CommandError as CoreCommandError, Direction as CoreDirection,
-  Event as CoreEvent, GroundItemStack as CoreGroundItemStack, HealingResult as CoreHealingResult,
-  Item as CoreItem, MapError as CoreMapError, RunOutcome as CoreRunOutcome,
-  WorldError as CoreWorldError, WorldState,
+  Actor as CoreActor, ActorKind as CoreActorKind, AmmunitionResult as CoreAmmunitionResult,
+  BlockReason as CoreBlockReason, Command as CoreCommand, CommandError as CoreCommandError,
+  Direction as CoreDirection, Event as CoreEvent, GroundItemStack as CoreGroundItemStack,
+  HealingResult as CoreHealingResult, Item as CoreItem, MapError as CoreMapError,
+  RunOutcome as CoreRunOutcome, WorldError as CoreWorldError, WorldState,
 };
 use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 13;
+pub const PROTOCOL_VERSION: u16 = 14;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -404,6 +404,34 @@ impl HealingResult {
   #[must_use]
   pub const fn remaining_hit_points(self) -> HitPoints {
     self.remaining_hit_points
+  }
+}
+
+/// Protocol evidence for ranged ammunition restored by an ammunition item.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+pub struct AmmunitionResult {
+  amount: u16,
+  remaining_ammunition: u16,
+}
+
+impl AmmunitionResult {
+  fn from_core(result: CoreAmmunitionResult) -> Self {
+    Self {
+      amount: result.amount(),
+      remaining_ammunition: result.remaining_ammunition(),
+    }
+  }
+
+  /// Returns the actual number of rounds restored after capacity clamping.
+  #[must_use]
+  pub const fn amount(self) -> u16 {
+    self.amount
+  }
+
+  /// Returns the actor's ammunition after restoration.
+  #[must_use]
+  pub const fn remaining_ammunition(self) -> u16 {
+    self.remaining_ammunition
   }
 }
 
@@ -1147,6 +1175,8 @@ pub enum Event {
     item: ItemId,
     /// Optional healing evidence produced by the item effect.
     healing: Option<HealingResult>,
+    /// Optional ammunition evidence produced by the item effect.
+    ammunition: Option<AmmunitionResult>,
   },
   /// An actor picked one item from its current ground stack.
   ItemPickedUp {
@@ -1229,10 +1259,12 @@ impl From<CoreEvent> for Event {
         actor,
         item,
         healing,
+        ammunition,
       } => Self::ItemConsumed {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
         healing: healing.map(HealingResult::from_core),
+        ammunition: ammunition.map(AmmunitionResult::from_core),
       },
       CoreEvent::ItemPickedUp { actor, item } => Self::ItemPickedUp {
         actor: ActorId::new(actor.value()),

@@ -86,6 +86,30 @@ impl HealingAmount {
   }
 }
 
+/// A positive number of ranged shots restored by an ammunition item effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct AmmunitionAmount(u16);
+
+impl AmmunitionAmount {
+  /// The smallest valid ammunition amount.
+  pub const ONE: Self = Self(1);
+
+  /// The authored two-round ammunition amount used by the starter fixture.
+  pub const TWO: Self = Self(2);
+
+  /// Creates a positive ammunition amount.
+  #[must_use]
+  pub const fn new(value: u16) -> Option<Self> {
+    if value == 0 { None } else { Some(Self(value)) }
+  }
+
+  /// Returns the numeric ammunition amount.
+  #[must_use]
+  pub const fn value(self) -> u16 {
+    self.0
+  }
+}
+
 /// The gameplay effect authored for one item instance.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ItemEffect {
@@ -95,6 +119,11 @@ pub enum ItemEffect {
   Heal {
     /// The positive amount to restore.
     amount: HealingAmount,
+  },
+  /// Restore ranged ammunition, capped at the actor's fixed capacity.
+  RestoreAmmunition {
+    /// The positive number of shots to restore.
+    amount: AmmunitionAmount,
   },
 }
 
@@ -125,6 +154,36 @@ impl HealingResult {
   #[must_use]
   pub const fn remaining_hit_points(self) -> HitPoints {
     self.remaining_hit_points
+  }
+}
+
+/// The observable result of applying an ammunition item effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AmmunitionResult {
+  amount: u16,
+  remaining_ammunition: u16,
+}
+
+impl AmmunitionResult {
+  /// Creates typed ammunition evidence for an accepted item use.
+  #[must_use]
+  pub const fn new(amount: u16, remaining_ammunition: u16) -> Self {
+    Self {
+      amount,
+      remaining_ammunition,
+    }
+  }
+
+  /// Returns the actual number of rounds restored after capacity clamping.
+  #[must_use]
+  pub const fn amount(self) -> u16 {
+    self.amount
+  }
+
+  /// Returns the actor's ammunition after restoration.
+  #[must_use]
+  pub const fn remaining_ammunition(self) -> u16 {
+    self.remaining_ammunition
   }
 }
 
@@ -1039,6 +1098,10 @@ fn hash_item_effect(hasher: &mut StableHasher, effect: ItemEffect) {
       hasher.write_u8(1);
       hasher.write_u16(amount.value());
     }
+    ItemEffect::RestoreAmmunition { amount } => {
+      hasher.write_u8(2);
+      hasher.write_u16(amount.value());
+    }
   }
 }
 
@@ -1128,6 +1191,8 @@ pub enum Event {
     item: ItemId,
     /// The deterministic healing result, when this item restores hit points.
     healing: Option<HealingResult>,
+    /// The deterministic ammunition result, when this item restores ranged shots.
+    ammunition: Option<AmmunitionResult>,
   },
   /// An actor picked one item from its current ground stack.
   ItemPickedUp {
@@ -2489,14 +2554,15 @@ impl WorldState {
     let effect = item.effect();
     let current_hit_points = actor.hit_points();
     let maximum_hit_points = actor.max_hit_points();
+    let current_ammunition = actor.ranged_ammo();
     self
       .actors
       .get_mut(&actor_id)
       .ok_or(CommandError::UnknownActor(actor_id))?
       .inventory
       .remove(item_index);
-    let healing = match effect {
-      ItemEffect::None => None,
+    let (healing, ammunition) = match effect {
+      ItemEffect::None => (None, None),
       ItemEffect::Heal { amount } => {
         let restored = if current_hit_points >= maximum_hit_points {
           current_hit_points.value()
@@ -2512,13 +2578,29 @@ impl WorldState {
           .get_mut(&actor_id)
           .ok_or(CommandError::UnknownActor(actor_id))?
           .hit_points = HitPoints::new(restored);
-        Some(HealingResult::new(actual, HitPoints::new(restored)))
+        (
+          Some(HealingResult::new(actual, HitPoints::new(restored))),
+          None,
+        )
+      }
+      ItemEffect::RestoreAmmunition { amount } => {
+        let restored = current_ammunition
+          .saturating_add(amount.value())
+          .min(Actor::RANGED_AMMO_CAPACITY);
+        let actual = restored.saturating_sub(current_ammunition);
+        self
+          .actors
+          .get_mut(&actor_id)
+          .ok_or(CommandError::UnknownActor(actor_id))?
+          .ranged_ammo = restored;
+        (None, Some(AmmunitionResult::new(actual, restored)))
       }
     };
     Ok(Event::ItemConsumed {
       actor: actor_id,
       item: item_id,
       healing,
+      ammunition,
     })
   }
 

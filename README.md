@@ -22,14 +22,14 @@ Milestone 4 tactical combat.
 
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
 ammunition, walkable cover, deterministic scheduled-enemy intent presentation, typed melee reach,
-player-facing reload, item pickup/drop, the first healing consumable, and canonical run-outcome projection are verified across
+player-facing reload, item pickup/drop, healing and ammunition consumables, and canonical run-outcome projection are verified across
 the deterministic core, protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
 three-shot capacity with `R` when ammo is partial; `X` drops the selected unequipped item and
 `Shift+R` restarts the same seed. Adjacent scheduled enemies use the existing fixed melee attack
 before falling back to chase; core and protocol snapshots now expose deterministic `in_progress`,
 `defeat`, or `victory` outcomes, and the desktop showcase consumes that projection while keeping
 restart available. Ranged enemy AI, ammo pickups, cover damage modifiers, weapon effects beyond the
-first healing consumable, persistence, save/load, and replay playback remain deliberately deferred. Each desktop smoke or
+first healing and ammunition consumables, persistence, save/load, and replay playback remain deliberately deferred. Each desktop smoke or
 visible run now also writes a versioned `*.replay.json` evidence artifact beside its JSONL journal;
 the artifact is not a playback-compatible save file.
 
@@ -41,14 +41,15 @@ the artifact is not a playback-compatible save file.
     item-free.
   - Scheduled single-slot equipment and single-item consumption contracts with digest/replay/
     snapshot evidence, protocol/MCP projections, atomic tester/player guards, typed Bevy scene and
-    cue projections, and a capped three-point authored healing effect with optional event evidence.
+    cue projections, a capped three-point authored healing effect, a capped two-round ammunition
+    effect, and optional event evidence.
   - Scheduled player-facing item pickup and drop with deterministic ground-stack ordering, typed
     events/errors, protocol/MCP replay evidence, and desktop `P`/`X` smoke coverage; damage/status
     effects, modifiers, and richer item semantics remain deferred.
   - Deterministic desktop replay-evidence export with seed, accepted command order, replay digest,
     and canonical outcome; persistence, editing, and playback remain deferred.
   - Fixed four-item inventory capacity with atomic full-inventory rejection across core, protocol
-    v13 snapshots, MCP, headless command coverage, and Bevy legal-action projections; effects and
+    v14 snapshots, MCP, headless command coverage, and Bevy legal-action projections; richer effects and
     upgrades remain deferred.
 - Verified headless Bevy boundary
   - Shared authored floors, runtime/app projection, deterministic keyboard dispatch, feedback,

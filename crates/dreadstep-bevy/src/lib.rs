@@ -28,9 +28,9 @@ use bevy::transform::components::Transform;
 use bevy::window::{PrimaryWindow, Window, WindowResolution};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
-  ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
-  Event, GridMap, GroundItemStack, HealingResult, HitPoints, Item, ItemDefinitionId, ItemId,
-  Position, ReplayTrace, StateDigest, Tile, WorldState,
+  ActionTime, Actor, ActorId, ActorKind, AmmunitionResult, BlockReason, Command, CommandError,
+  Damage, Direction, Event, GridMap, GroundItemStack, HealingResult, HitPoints, Item,
+  ItemDefinitionId, ItemId, Position, ReplayTrace, StateDigest, Tile, WorldState,
 };
 
 pub use dreadstep_core::RunOutcome;
@@ -565,6 +565,8 @@ pub enum PresentationMessage {
     item: ItemId,
     /// Optional healing evidence produced by the item effect.
     healing: Option<HealingResult>,
+    /// Optional ammunition evidence produced by the item effect.
+    ammunition: Option<AmmunitionResult>,
   },
   /// An actor picked one item from its current ground stack.
   ItemPickedUp {
@@ -623,10 +625,12 @@ impl PresentationMessage {
         actor,
         item,
         healing,
+        ammunition,
       } => Self::ItemConsumed {
         actor,
         item,
         healing,
+        ammunition,
       },
       Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
       Event::ItemDropped { actor, item } => Self::ItemDropped { actor, item },

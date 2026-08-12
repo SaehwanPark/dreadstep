@@ -28,6 +28,7 @@ fn consumption_updates_snapshot_history_replay_and_typed_event() {
       actor: ActorId::new(1),
       item: ItemId::new(4),
       healing: None,
+      ammunition: None,
     }]
   );
   let actor_snapshot = session
@@ -123,4 +124,40 @@ fn authored_healing_item_reports_capped_recovery_through_player_output() {
     output.snapshot().actors()[0].hit_points(),
     HitPoints::new(10)
   );
+}
+
+#[test]
+fn authored_ammunition_item_reports_capped_recovery_through_player_output() {
+  let mut session = Session::start_item_run(7).expect("authored item scenario should be valid");
+  session
+    .act(CommandRequest::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("the authored enemy should be a clear ranged target");
+  session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should spend its first turn");
+  session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should spend its second turn");
+
+  let output = session
+    .act(CommandRequest::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(102),
+    })
+    .expect("authored ammunition item should be consumable");
+
+  let [Event::ItemConsumed { ammunition, .. }] = output.events() else {
+    panic!("ammunition use should emit one item-consumption event");
+  };
+  let ammunition = ammunition.expect("authored item should report ammunition evidence");
+  assert_eq!(ammunition.amount(), 1);
+  assert_eq!(ammunition.remaining_ammunition(), 3);
+  assert_eq!(output.snapshot().actors()[0].ranged_ammo(), 3);
 }
