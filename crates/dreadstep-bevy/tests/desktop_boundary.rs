@@ -176,8 +176,28 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
     .expect("journal directory reads")
     .collect::<Result<Vec<_>, _>>()
     .expect("journal entries read");
-  assert_eq!(files.len(), 1);
-  let journal = fs::read_to_string(files[0].path()).expect("journal reads");
+  assert_eq!(files.len(), 2);
+  let journal_path = files
+    .iter()
+    .find(|entry| {
+      entry
+        .path()
+        .extension()
+        .is_some_and(|extension| extension == "jsonl")
+    })
+    .expect("JSONL journal exists")
+    .path();
+  let replay_path = files
+    .iter()
+    .find(|entry| {
+      entry
+        .path()
+        .extension()
+        .is_some_and(|extension| extension == "json")
+    })
+    .expect("replay export exists")
+    .path();
+  let journal = fs::read_to_string(journal_path).expect("journal reads");
   let records = journal
     .lines()
     .map(|line| serde_json::from_str::<Value>(line).expect("each journal line is JSON"))
@@ -186,12 +206,26 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
   for (index, record) in records.iter().enumerate() {
     assert_eq!(record["schema_version"], 1);
     assert_eq!(record["sequence"], index as u64 + 1);
-    assert!(record["payload"]["state"].is_object() || record["kind"] == "shutdown");
+    assert!(
+      record["payload"]["state"].is_object()
+        || record["kind"] == "shutdown"
+        || record["kind"] == "replay_exported"
+    );
   }
   let complete = records
     .iter()
     .find(|record| record["kind"] == "smoke_complete")
     .expect("smoke completion record");
+  assert_smoke_coverage(complete);
+  assert_eq!(
+    records.last().map(|record| &record["kind"]),
+    Some(&Value::from("shutdown"))
+  );
+  assert_replay_export(&replay_path, &records, complete);
+}
+
+#[cfg(feature = "desktop")]
+fn assert_smoke_coverage(complete: &Value) {
   for kind in [
     "move",
     "wait",
@@ -229,9 +263,35 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
         .any(|value| value == kind)
     );
   }
+}
+
+#[cfg(feature = "desktop")]
+fn assert_replay_export(replay_path: &std::path::Path, records: &[Value], complete: &Value) {
+  let replay = serde_json::from_str::<Value>(
+    &std::fs::read_to_string(replay_path).expect("replay export reads"),
+  )
+  .expect("replay export parses");
+  assert_eq!(replay["schema_version"], 1);
+  assert_eq!(replay["seed"], 7);
+  assert_eq!(replay["outcome"], "in_progress");
+  assert!(
+    !replay["commands"]
+      .as_array()
+      .expect("replay commands array")
+      .is_empty()
+  );
   assert_eq!(
-    records.last().map(|record| &record["kind"]),
-    Some(&Value::from("shutdown"))
+    replay["replay_digest"],
+    complete["payload"]["replay_digest"]
+  );
+  let exported = records
+    .iter()
+    .find(|record| record["kind"] == "replay_exported")
+    .expect("replay export journal record");
+  assert_eq!(exported["payload"]["schema_version"], 1);
+  assert_eq!(
+    exported["payload"]["replay_digest"],
+    replay["replay_digest"]
   );
 }
 
@@ -251,6 +311,7 @@ fn smoke_runs_have_identical_semantic_evidence() {
   ));
   let directories = [base.join("one"), base.join("two")];
   let mut normalized = Vec::new();
+  let mut replay_exports = Vec::new();
   for directory in directories {
     fs::create_dir_all(&directory).expect("determinism journal directory creates");
     let output = ProcessCommand::new(env!("CARGO_BIN_EXE_dreadstep"))
@@ -265,9 +326,25 @@ fn smoke_runs_have_identical_semantic_evidence() {
     );
     let file = fs::read_dir(&directory)
       .expect("determinism journal directory reads")
-      .next()
+      .filter_map(Result::ok)
+      .find(|entry| {
+        entry
+          .path()
+          .extension()
+          .is_some_and(|extension| extension == "jsonl")
+      })
       .expect("determinism journal exists")
-      .expect("determinism journal entry reads")
+      .path();
+    let replay_file = fs::read_dir(&directory)
+      .expect("determinism replay directory reads")
+      .filter_map(Result::ok)
+      .find(|entry| {
+        entry
+          .path()
+          .extension()
+          .is_some_and(|extension| extension == "json")
+      })
+      .expect("determinism replay export exists")
       .path();
     let records = fs::read_to_string(file)
       .expect("determinism journal reads")
@@ -276,12 +353,22 @@ fn smoke_runs_have_identical_semantic_evidence() {
       .map(|mut value| {
         value["elapsed_ms"] = Value::from(0_u64);
         value["payload"]["extra"]["journal"] = Value::from("<journal>");
+        if value["kind"] == "replay_exported" {
+          value["payload"]["path"] = Value::from("<replay>");
+        }
         value
       })
       .collect::<Vec<_>>();
     normalized.push(records);
+    replay_exports.push(
+      serde_json::from_str::<Value>(
+        &fs::read_to_string(replay_file).expect("determinism replay export reads"),
+      )
+      .expect("determinism replay export parses"),
+    );
   }
   assert_eq!(normalized[0], normalized[1]);
+  assert_eq!(replay_exports[0], replay_exports[1]);
 }
 
 #[cfg(feature = "desktop")]

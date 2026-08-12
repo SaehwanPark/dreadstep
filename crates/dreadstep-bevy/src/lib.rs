@@ -2303,6 +2303,15 @@ impl PresentationState {
     self.trace.digest()
   }
 
+  /// Returns accepted commands in their deterministic execution order.
+  ///
+  /// Rejected commands are never recorded. This read-only view is suitable for diagnostic
+  /// export; it is not a playback or persistence contract.
+  #[must_use]
+  pub fn replay_commands(&self) -> &[Command] {
+    self.trace.commands()
+  }
+
   /// Returns core's deterministic legal command projection without mutating the state.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
@@ -2394,6 +2403,15 @@ impl PresentationRuntime {
   #[must_use]
   pub fn replay_digest(&self) -> StateDigest {
     self.state.replay_digest()
+  }
+
+  /// Returns accepted commands in their deterministic execution order.
+  ///
+  /// Rejected commands are never recorded. This read-only view is suitable for diagnostic
+  /// export; it is not a playback or persistence contract.
+  #[must_use]
+  pub fn replay_commands(&self) -> &[Command] {
+    self.state.replay_commands()
   }
 
   /// Returns core's deterministic legal command projection without mutating the state.

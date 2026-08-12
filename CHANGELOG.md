@@ -6,6 +6,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A verified deterministic desktop replay-evidence export: each smoke or visible run writes a
+  create-new version-1 `*.replay.json` artifact with seed, accepted command order, replay digest,
+  and canonical outcome, plus a matching journal record; playback and save/load remain deferred.
 - A verified canonical run-outcome projection: core derives deterministic in-progress, defeat, and
   victory states with player-death precedence; protocol v11, MCP/headless evidence, and Bevy
   terminal handling consume the same projection without adding persistence or replay playback.

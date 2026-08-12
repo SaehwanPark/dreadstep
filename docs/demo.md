@@ -93,8 +93,11 @@ unchanged rejected actions, asset outcomes, warnings, terminal victory/fault, sh
 caught unexpected panic payloads. Every record is flushed before the process continues. Existing
 files are never overwritten; a suffix is allocated on filename collision.
 
-The journal is diagnostic evidence, not a protocol message or a promised replay-file format.
-Failure to create the log directory or a mid-run write/flush fault is reported and returns exit 1.
+The journal is diagnostic evidence, not a protocol message or a replay playback format. At clean
+smoke or visible-run completion, the desktop boundary also writes a versioned sibling
+`*.replay.json` artifact containing the seed, accepted command order, replay digest, and canonical
+outcome. It is create-new evidence only; save/load and playback remain deferred. Failure to create
+the log directory or a mid-run write/flush fault is reported and returns exit 1.
 
 ## Coverage matrix
 
@@ -143,4 +146,4 @@ Tester-only spawn, teleport, HP, inventory transfer/drop, and scenario mutation 
 tester pickup remains a non-action test operation while player pickup/drop are scheduled commands.
 This showcase does not add player-death loops, respawn, item effects, victory rewards, production
 audio design/music, persistent exploration memory, production media, installers, signing, save/load,
-or replay-file compatibility.
+or replay playback/compatibility.
