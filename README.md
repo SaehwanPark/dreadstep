@@ -90,6 +90,10 @@ Dreadstep is continuing Milestone 3: the human presentation boundary.
     the runtime replay digest preserving retriggers for distinct accepted events with identical cue
     values; movement interpolation, production sheets, production audio, and simulation timing remain
     deferred.
+- Verified local CC0 art adoption preparation
+  - The recorded Kenney Tiny Dungeon archive can be checked and installed into the ignored
+    `assets/dreadstep/` showcase paths with `scripts/prepare-local-assets.sh`; clean checkouts retain
+    deterministic placeholders, and final palette/art direction remain open.
 - Verified audio placeholder playback
   - Distinct typed audio-cue batches now route through the validated eight-family manifest and request
     existing `assets/`-rooted files as non-looping Bevy effects; root/crate-local metadata, absent
@@ -115,6 +119,16 @@ tracked documentation such as
 [`CREDITS.md`](CREDITS.md) and the proposal; do not commit service credentials.
 The tracked concept-art reference and future README screenshots under root `screenshots/` are
 explicit exceptions because they are outside the local-media directories.
+
+To prepare the selected CC0 local art fallback from the recorded archive:
+
+```sh
+scripts/prepare-local-assets.sh --check
+scripts/prepare-local-assets.sh --install
+```
+
+The script validates the archive hash and source members before writing six ignored PNGs. It is
+optional; the desktop client keeps its readable per-family placeholders when local media is absent.
 
 ## Design Principles
 

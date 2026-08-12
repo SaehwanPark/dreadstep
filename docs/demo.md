@@ -61,6 +61,16 @@ journaled warnings and retain that family’s placeholder. Terrain placeholders 
 separately for floor and wall. Inventory render nodes stay unplaced and hidden; inventory is shown
 in the HUD instead.
 
+The selected CC0 prototype can be prepared reproducibly from the ignored archive:
+
+```sh
+scripts/prepare-local-assets.sh --check
+scripts/prepare-local-assets.sh --install
+```
+
+The command validates the recorded SHA-256 and six source members before writing the files above.
+It is optional and local-only; a clean checkout continues to use deterministic placeholders.
+
 ## Journal contract
 
 Every line has:
