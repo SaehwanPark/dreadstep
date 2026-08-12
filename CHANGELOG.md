@@ -6,6 +6,11 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- A verified first gameplay item effect: authored item `101` is a deterministic three-point healing
+  consumable. Core keeps actor maximum hit points, clamps recovery, and reports optional healing in
+  the existing `ItemConsumed` event; protocol v13, MCP, Bevy, desktop journal, and smoke evidence
+  preserve the same result while richer item effects remain deferred.
+
 - A verified fixed four-item inventory capacity: core, protocol v12, MCP tester operations, and
   player pickup legal-action discovery reject overflow atomically while actor snapshots expose the
   capacity; item effects, stacking, and upgrades remain deferred.

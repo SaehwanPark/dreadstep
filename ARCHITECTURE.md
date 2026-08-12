@@ -142,10 +142,11 @@ The versioned `WorldSnapshot` also projects core's deterministic `RunOutcome` (`
 `defeat`, or `victory`). Core derives this value from retained actor records, with player defeat
 precedence and no-enemy worlds remaining in progress; protocol and MCP only translate the result.
 
-Protocol v12 also projects the fixed four-item inventory capacity on each actor snapshot. Core
-enforces the limit for tester ownership/pickup/transfer and scheduled player pickup; adapters only
-translate the typed rejection and legal-action omission, so item effects, stacking, and upgrades do
-not become hidden adapter rules.
+Protocol v13 projects the fixed four-item inventory capacity on each actor snapshot and carries the
+optional healing result on `ItemConsumed`. Core enforces the limit for tester ownership/pickup/
+transfer and scheduled player pickup; adapters only translate the typed rejection, legal-action
+omission, and effect evidence, so stacking, upgrades, and richer item rules do not become hidden
+adapter rules.
 
 The player `inspect` operation is likewise a read-only lookup over the protocol world snapshot.
 It returns one protocol `ActorSnapshot` or no value for an unknown identity, preserves dead actor
@@ -189,7 +190,8 @@ to core; MCP only projects the result and does not record player history or repl
 The item-catalog foundation keeps definition membership on the content side: it validates ordered,
 opaque `ItemDefinitionId` references and exposes read-only lookup without changing core world state.
 The catalog is authoring support rather than a second item store; core remains authoritative for
-item instances, ownership, digests, and snapshots, and gameplay semantics remain deferred.
+item instances, ownership, effects, digests, and snapshots. The first authored healing effect is
+carried on the core item instance and applied by `UseItem`; adapters only project its optional result.
 
 The tester item-drop extension keeps ground-item records in core, keyed by stable map position with
 deterministic stack order. Protocol projects those records as read-only snapshot values and MCP
@@ -200,8 +202,8 @@ The tester item-pickup extension moves an item from the actor's current core-own
 into that actor's ordered inventory. Protocol/MCP preserve this tester operation separately from the
 scheduled player command: the player-facing `Pickup` command consumes one standard action, emits
 `ItemPickedUp`, and records replay/history evidence, while the tester operation remains an atomic
-non-action mutation. Both paths preserve stack and inventory order; effects remain deferred while
-core enforces the shared fixed four-item capacity.
+non-action mutation. Both paths preserve stack and inventory order; richer effects remain deferred
+while core enforces the shared fixed four-item capacity.
 
 Validated tester teleport crosses the boundary as a typed actor identity and destination position.
 Core owns bounds, terrain, living occupancy, and preservation of scheduler/inventory state; MCP only
@@ -451,11 +453,12 @@ world, snapshot, and digest state. Protocol/MCP expose the typed field and event
 `SceneActor` mirrors the field without owning item storage. Effects, modifiers, and additional slots
 remain outside this boundary; core-owned capacity enforcement is projected through protocol.
 
-The verified single-item consumption preparation slice adds scheduled `UseItem` for one owned,
-unequipped item. Core removes only that inventory instance, advances the standard action time, and
-emits `ItemConsumed`; protocol and MCP preserve the typed action/evidence, while Bevy removes the
-stale inventory mirror and retains the actor and remaining item entities. No effect, stat,
-identification, or rendering policy is inferred here.
+The verified single-item consumption slice adds scheduled `UseItem` for one owned, unequipped item.
+Core removes only that inventory instance, applies an authored healing effect capped at the actor's
+maximum hit points, advances standard action time, and emits `ItemConsumed` with optional typed
+healing evidence; protocol and MCP preserve the typed action/evidence, while Bevy removes the stale
+inventory mirror and retains the actor and remaining item entities. Richer effects, identification,
+and rendering policy remain outside this boundary.
 
 The verified scheduled item-pickup slice adds `Pickup` for the controlled actor's current ground
 stack. Core discovers item identities in stable stack order, moves only the requested identity into
@@ -463,8 +466,8 @@ the ordered inventory, advances the standard action, emits `ItemPickedUp`, and r
 evidence. Protocol/MCP convert the request, event, and typed ground-miss error; the desktop binds
 `P` to the lowest-ID available ground item and covers the transition in its journal and display-free
 smoke path. The verified player-drop follow-up moves one owned unequipped item back to the current
-ground stack with the same standard timing; item effects, enemy pickup, and new media policy remain
-outside this boundary.
+ground stack with the same standard timing; richer item effects, enemy pickup, and new media policy
+remain outside this boundary.
 
 The verified Milestone 4 ranged-combat slice adds `RangedAttack` as a second player combat command.
 Core discovers stable target IDs at Manhattan distance 2–3, reuses the existing typed `Attacked`

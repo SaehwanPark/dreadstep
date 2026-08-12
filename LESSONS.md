@@ -357,3 +357,19 @@ constructor cannot silently alter the default client path or lose owner/order da
   low-health threshold so its deterministic coverage can finish.
 - Prevention: Test adjacent and distant legal ordering at the core boundary, test the exact Bevy
   selector, and treat smoke-only safety guards as diagnostic policy rather than simulation rules.
+
+## Keep item effects on instances and report capped results
+
+- Context: The first authored healing consumable extends the previously opaque item-ownership
+  contract without making adapters infer gameplay from definition IDs.
+- Symptom: Applying healing in content, MCP, or Bevy would duplicate rules and could disagree on
+  maximum hit points, while reporting only “consumed” would hide the actual capped recovery.
+- Cause: Core owns actor hit points, item instances, scheduling, and digest state; content authors
+  the effect, and adapters only translate evidence around the core transition.
+- Resolution: Store an optional typed effect on each core item instance, keep `Item::new` as the
+  explicit no-effect constructor, retain an actor maximum-hit-point value, clamp healing in core,
+  and carry the actual amount plus remaining HP as optional `ItemConsumed` evidence. Keep the
+  protocol version and desktop diagnostic event mapping synchronized.
+- Prevention: Test full-health, partial, capped, no-effect, and rejected uses at core; assert the
+  authored content fixture; map optional evidence through protocol/MCP/Bevy; and search adapter
+  JSON/golden tests whenever state-digest or event schemas change.

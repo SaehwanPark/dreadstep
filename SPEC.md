@@ -3033,9 +3033,10 @@ Out of scope:
 
 The opaque ownership slice and content catalog foundation intentionally do not define item effects,
 identification, capacity, or richer gameplay-facing item commands beyond the completed equipment
-and single-item consumption preparations above. Tester-only transfer, drop, and pickup are verified
-separately in their completed slices above; effects and richer player operations still require an
-explicit core contract.
+and single-item consumption preparations above. The first healing effect is now a verified explicit
+core contract; damage/status effects, identification, stacking, and richer item families remain
+future work. Tester-only transfer, drop, and pickup are verified separately in their completed
+slices above.
 
 ### Milestone 3 slice: optional desktop audio-cue playback
 
@@ -3215,6 +3216,53 @@ Out of scope:
   new audio, diagonal interpolation, and new desktop controls.
 
 ## Active
+
+### Milestone 6 preparation slice: deterministic healing consumable
+
+- Status: verified
+- Started: 2026-08-12
+- Completed: 2026-08-12
+
+Give the existing scheduled `UseItem` command its first gameplay effect: an authored healing
+consumable. Item instances carry a typed optional effect, the starter item scenario authors one
+healing item, and using that unequipped item removes it, advances one standard action, and reports
+the actual healed amount plus remaining hit points through the existing `ItemConsumed` event. Core
+keeps the actor's authored maximum hit points so healing is capped and deterministic; protocol,
+MCP, headless, and Bevy continue to project the existing command/event shape with the new optional
+healing evidence. Opaque item-definition membership, tester mutations, equipment, replay command
+ordering, and rejected-action atomicity remain unchanged.
+
+Acceptance:
+
+- `dreadstep-core` exposes a typed non-zero healing amount and optional item effect, preserves the
+  existing `Item::new` no-effect constructor, and gives actors a stable maximum hit-point value.
+- A scheduled living actor may consume an owned, unequipped healing item; current hit points rise by
+  the lesser of the effect and available capacity, the item is removed, one standard action is
+  consumed, and `ItemConsumed` includes deterministic healing evidence. No-effect items preserve
+  the existing event payload and behavior.
+- Healing never exceeds maximum hit points; unknown, equipped, dead, unscheduled, and rejected
+  requests leave world state, scheduler, digest, history, and replay evidence unchanged.
+- The authored starter-item scenario gives player item `101` a three-point heal while retaining the
+  default item-free floor and opaque definition catalog boundary. Protocol/MCP/headless round trips
+  and Bevy scene mirrors remain stable, with event JSON/journal text exposing the optional heal.
+- Focused core/content/protocol/MCP/headless/Bevy tests cover full, partial, capped, no-effect, and
+  rejected consumption paths plus deterministic replay/digest evidence; `scripts/verify.sh`,
+  formatting, diff checks, and one semantic review pass are required before merge.
+
+Verification evidence:
+
+- Core healing, capped recovery, no-effect, and atomic rejection tests pass; the state digest is
+  versioned with actor maximum hit points and authored item effects.
+- Content, protocol JSON/event, MCP authored-item, Bevy presentation, desktop journal, and display-
+  free smoke coverage all pass. Protocol v13 carries the optional typed healing result; the existing
+  item-consumption audio/animation families remain unchanged.
+- `cargo test --workspace --all-targets --all-features --locked`, `scripts/verify.sh`, formatting,
+  and diff checks pass; one semantic review is required before merge.
+
+Out of scope:
+
+- damage-over-time or status effects, equipment modifiers, item identification UI, additional item
+  definitions, stacking, persistence, save/load, replay playback, new commands, and production media.
 
 ### Milestone 4 slice: deterministic ranged cover terrain
 

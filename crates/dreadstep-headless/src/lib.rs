@@ -510,7 +510,7 @@ mod tests {
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
 outcome=in_progress\n\
-digest=12855340639581038520\n"
+digest=9203069779232099541\n"
     );
   }
 

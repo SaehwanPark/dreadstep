@@ -29,8 +29,8 @@ use bevy::window::{PrimaryWindow, Window, WindowResolution};
 use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, BlockReason, Command, CommandError, Damage, Direction,
-  Event, GridMap, GroundItemStack, HitPoints, Item, ItemDefinitionId, ItemId, Position,
-  ReplayTrace, StateDigest, Tile, WorldState,
+  Event, GridMap, GroundItemStack, HealingResult, HitPoints, Item, ItemDefinitionId, ItemId,
+  Position, ReplayTrace, StateDigest, Tile, WorldState,
 };
 
 pub use dreadstep_core::RunOutcome;
@@ -563,6 +563,8 @@ pub enum PresentationMessage {
     actor: ActorId,
     /// The item instance removed from inventory.
     item: ItemId,
+    /// Optional healing evidence produced by the item effect.
+    healing: Option<HealingResult>,
   },
   /// An actor picked one item from its current ground stack.
   ItemPickedUp {
@@ -617,7 +619,15 @@ impl PresentationMessage {
       Event::Died { actor } => Self::Died { actor },
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
-      Event::ItemConsumed { actor, item } => Self::ItemConsumed { actor, item },
+      Event::ItemConsumed {
+        actor,
+        item,
+        healing,
+      } => Self::ItemConsumed {
+        actor,
+        item,
+        healing,
+      },
       Event::ItemPickedUp { actor, item } => Self::ItemPickedUp { actor, item },
       Event::ItemDropped { actor, item } => Self::ItemDropped { actor, item },
       Event::Reloaded { actor, ammunition } => Self::Reloaded { actor, ammunition },
@@ -742,7 +752,7 @@ impl PresentationAudioCue {
       Event::Died { actor } => Some(Self::Died { actor }),
       Event::ItemEquipped { actor, item } => Some(Self::ItemEquipped { actor, item }),
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
-      Event::ItemConsumed { actor, item } => Some(Self::ItemConsumed { actor, item }),
+      Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
       Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
     }
@@ -1044,7 +1054,7 @@ impl PresentationAnimationCue {
       Event::Died { actor } => Some(Self::Died { actor }),
       Event::ItemEquipped { actor, item } => Some(Self::ItemEquipped { actor, item }),
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
-      Event::ItemConsumed { actor, item } => Some(Self::ItemConsumed { actor, item }),
+      Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
       Event::ItemDropped { .. } | Event::Reloaded { .. } => None,
     }

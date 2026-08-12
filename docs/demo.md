@@ -94,8 +94,10 @@ caught unexpected panic payloads. Every record is flushed before the process con
 files are never overwritten; a suffix is allocated on filename collision.
 
 Actor snapshots include the fixed four-item inventory capacity. A full player's pickup action is
-omitted from legal actions and rejected atomically if requested directly; item effects and capacity
-upgrades remain outside this showcase slice.
+omitted from legal actions and rejected atomically if requested directly. The authored item-run
+fixture's item `101` is a three-point healing consumable; the journal records its actual capped
+recovery in the existing `item_consumed` event payload. Other item effects and capacity upgrades
+remain outside this showcase slice.
 
 The journal is diagnostic evidence, not a protocol message or a replay playback format. At clean
 smoke or visible-run completion, the desktop boundary also writes a versioned sibling
@@ -109,7 +111,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | --- | --- | --- | --- |
 | Move / wait / enemy attack/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, ammo, and ground stack | item/reload events and full actor snapshots | yes |
+| Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, healing result, ammo, and ground stack | item/reload events, optional healing evidence, and full actor snapshots | yes |
 | Terrain and actor blocking | distinct wall/cover/floor/actor pixels | `movement_blocked` reason | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |

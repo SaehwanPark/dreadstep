@@ -9,8 +9,8 @@
 use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, HitPoints, Item, ItemDefinitionId, ItemId, MapError,
-  Position, Tile, WorldError, WorldState,
+  Actor, ActorId, ActorKind, GridMap, HealingAmount, HitPoints, Item, ItemDefinitionId, ItemEffect,
+  ItemId, MapError, Position, Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -311,7 +311,7 @@ pub fn starter_floor() -> Result<WorldState, ContentError> {
 ///
 /// This scenario is separate from [`starter_floor_definition`], which intentionally remains
 /// item-free. It binds the shared starter catalog and uses interleaved placements to provide a
-/// stable content fixture for adapters and tests without introducing item gameplay semantics.
+/// stable content fixture for adapters and tests, including the first authored healing item.
 #[must_use]
 pub fn starter_item_floor_definition() -> StarterFloorDefinition {
   starter_floor_definition()
@@ -319,7 +319,13 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
     .with_items(vec![
       StarterItemPlacement::new(
         ActorId::new(1),
-        Item::new(ItemId::new(101), ItemDefinitionId::new(2)),
+        Item::with_effect(
+          ItemId::new(101),
+          ItemDefinitionId::new(2),
+          ItemEffect::Heal {
+            amount: HealingAmount::THREE,
+          },
+        ),
       ),
       StarterItemPlacement::new(
         ActorId::new(2),
