@@ -432,3 +432,16 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Test movement/sight blocking, legal-action ordering, standard timing, replay/state
   participation, and atomic same-position/non-adjacent/out-of-bounds/non-breakable/already-broken
   rejection before adding damage, tools, multi-hit durability, procedural placement, or noise.
+
+## Keep noise evidence ahead of noise behavior
+
+- Context: A kick-open-door slice introduces the proposal's noise vocabulary without committing to
+  an enemy investigation policy or propagation algorithm.
+- Symptom: Making a door kick mutate enemy intent immediately would couple a local environmental verb
+  to an unfinished global AI rule and make smoke behavior depend on hidden range semantics.
+- Cause: `NoiseCreated` is semantic event evidence, while propagation and attraction are separate
+  gameplay policies that need their own deterministic state and acceptance contract.
+- Resolution: Emit `DoorOpened` first and fixed-radius `NoiseCreated` second from the core kick
+  transition; map both events exhaustively and defer propagation/attraction explicitly.
+- Prevention: Test ordered event evidence, standard timing, replay participation, and atomic target
+  rejection before adding noise state, falloff, enemy interest, or interaction composition.

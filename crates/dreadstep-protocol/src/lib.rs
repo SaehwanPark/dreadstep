@@ -19,7 +19,7 @@ use schemars::{JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 17;
+pub const PROTOCOL_VERSION: u16 = 18;
 
 /// A cardinal direction in a protocol action request.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Deserialize, JsonSchema, Serialize)]
@@ -56,6 +56,13 @@ pub enum CommandRequest {
     /// The actor issuing the request.
     actor: ActorId,
     /// The adjacent closed door to open.
+    position: Position,
+  },
+  /// Kick one adjacent closed door open and create a deterministic noise event.
+  Kick {
+    /// The actor issuing the kick.
+    actor: ActorId,
+    /// The adjacent closed door to kick open.
     position: Position,
   },
   /// Break one adjacent breakable terrain cell into floor.
@@ -145,6 +152,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         position: dreadstep_core::Position::new(position.x(), position.y()),
       },
+      CommandRequest::Kick { actor, position } => Self::Kick {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        position: dreadstep_core::Position::new(position.x(), position.y()),
+      },
       CommandRequest::Break { actor, position } => Self::Break {
         actor: dreadstep_core::ActorId::new(actor.value()),
         position: dreadstep_core::Position::new(position.x(), position.y()),
@@ -203,6 +214,10 @@ impl From<CoreCommand> for CommandRequest {
         actor: ActorId::new(actor.value()),
       },
       CoreCommand::Interact { actor, position } => Self::Interact {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreCommand::Kick { actor, position } => Self::Kick {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
@@ -1180,6 +1195,15 @@ pub enum Event {
     /// The door position that changed to floor.
     position: Position,
   },
+  /// A kick opened a door and created a fixed-radius noise source.
+  NoiseCreated {
+    /// The actor whose action created the noise.
+    actor: ActorId,
+    /// The position where the noise originated.
+    position: Position,
+    /// The fixed radius carried as future propagation evidence.
+    radius: u8,
+  },
   /// An actor broke one adjacent breakable terrain cell into floor.
   BreakableBroken {
     /// The actor that broke the terrain.
@@ -1298,6 +1322,15 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
+      CoreEvent::NoiseCreated {
+        actor,
+        position,
+        radius,
+      } => Self::NoiseCreated {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+        radius,
+      },
       CoreEvent::BreakableBroken { actor, position } => Self::BreakableBroken {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
@@ -1398,6 +1431,13 @@ pub enum CommandError {
     /// The actor issuing the interaction.
     actor: ActorId,
     /// The requested interaction position.
+    position: Position,
+  },
+  /// The requested target is not an adjacent closed door for a kick.
+  KickTargetInvalid {
+    /// The actor issuing the kick.
+    actor: ActorId,
+    /// The requested door position.
     position: Position,
   },
   /// The requested target is not an adjacent breakable terrain cell.
@@ -1501,6 +1541,10 @@ impl From<CoreCommandError> for CommandError {
         Self::ReloadRequiresPlayer(ActorId::new(actor.value()))
       }
       CoreCommandError::InteractTargetInvalid { actor, position } => Self::InteractTargetInvalid {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreCommandError::KickTargetInvalid { actor, position } => Self::KickTargetInvalid {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
@@ -1620,6 +1664,13 @@ impl fmt::Display for CommandError {
       Self::InteractTargetInvalid { actor, position } => write!(
         formatter,
         "actor {} cannot interact with ({}, {}): target is not an adjacent closed door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::KickTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot kick ({}, {}): target is not an adjacent closed door",
         actor.value(),
         position.x(),
         position.y()

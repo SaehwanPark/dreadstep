@@ -534,6 +534,15 @@ pub enum PresentationMessage {
     /// The opened door position.
     position: Position,
   },
+  /// A kick opened a door and created a fixed-radius noise source.
+  NoiseCreated {
+    /// The actor whose action created the noise.
+    actor: ActorId,
+    /// The position where the noise originated.
+    position: Position,
+    /// The fixed radius carried as future propagation evidence.
+    radius: u8,
+  },
   /// An actor broke one adjacent breakable terrain cell into floor.
   BreakableBroken {
     /// The actor that broke the terrain.
@@ -633,6 +642,15 @@ impl PresentationMessage {
       },
       Event::Waited { actor, at } => Self::Waited { actor, at },
       Event::DoorOpened { actor, position } => Self::DoorOpened { actor, position },
+      Event::NoiseCreated {
+        actor,
+        position,
+        radius,
+      } => Self::NoiseCreated {
+        actor,
+        position,
+        radius,
+      },
       Event::BreakableBroken { actor, position } => Self::BreakableBroken { actor, position },
       Event::TrapTriggered {
         actor,
@@ -688,6 +706,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::MovementBlocked { .. } => "movement_blocked",
     Event::Waited { .. } => "waited",
     Event::DoorOpened { .. } => "door_opened",
+    Event::NoiseCreated { .. } => "noise_created",
     Event::BreakableBroken { .. } => "breakable_broken",
     Event::TrapTriggered { .. } => "trap_triggered",
     Event::Attacked { .. } => "attacked",
@@ -802,6 +821,7 @@ impl PresentationAudioCue {
       Event::ItemDropped { .. }
       | Event::Reloaded { .. }
       | Event::DoorOpened { .. }
+      | Event::NoiseCreated { .. }
       | Event::BreakableBroken { .. }
       | Event::TrapTriggered { .. } => None,
     }
@@ -1106,6 +1126,7 @@ impl PresentationAnimationCue {
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
       Event::DoorOpened { .. }
+      | Event::NoiseCreated { .. }
       | Event::ItemDropped { .. }
       | Event::Reloaded { .. }
       | Event::BreakableBroken { .. }
@@ -3725,6 +3746,7 @@ fn command_actor(command: Command) -> ActorId {
     Command::Move { actor, .. }
     | Command::Wait { actor }
     | Command::Interact { actor, .. }
+    | Command::Kick { actor, .. }
     | Command::Break { actor, .. }
     | Command::Attack { actor, .. }
     | Command::RangedAttack { actor, .. }
