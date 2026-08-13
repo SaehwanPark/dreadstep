@@ -285,7 +285,9 @@ the same seed; the adapter replaces its disposable runtime, clears its presentat
 and records `floor_advanced`. The HUD reads the same session scenario/depth fields as a plain-language
 status label; it does not infer depth from core snapshots or journal paths. This is a presentation
 transition, not a second progression authority; core, protocol, MCP, and headless scenarios remain
-unchanged.
+unchanged. Terminal guidance is likewise derived from the session outcome: procedural victory
+advertises the next depth only when checked arithmetic finds one, while authored victory and defeat
+expose restart recovery.
 
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position

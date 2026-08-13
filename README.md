@@ -40,7 +40,9 @@ roster; every generated walkable tile is reachable from the player; different in
 gaps or authored enemy durability. The visible client can opt into that floor with `--procedural`;
 after victory, `N` advances to the next depth with the same seed. Default and display-free smoke
 startup still use the stable authored item fixture. The HUD names the active scenario and procedural
-depth so a player can distinguish a fresh restart from a floor transition.
+depth so a player can distinguish a fresh restart from a floor transition. Terminal outcomes also
+state the available next action: procedural victory points to `N` when a next depth is available,
+while authored victory and defeat point to `Shift+R`.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
