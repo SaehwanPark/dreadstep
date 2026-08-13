@@ -34,6 +34,13 @@ pub enum Command {
     /// The adjacent closed door to kick open.
     position: Position,
   },
+  /// Close one adjacent open door.
+  Close {
+    /// The actor issuing the close command.
+    actor: ActorId,
+    /// The adjacent open door to close.
+    position: Position,
+  },
   /// Break one adjacent breakable terrain cell into floor.
   Break {
     /// The actor issuing the break command.
@@ -132,6 +139,7 @@ impl Command {
       | Self::Wait { actor }
       | Self::Interact { actor, .. }
       | Self::Kick { actor, .. }
+      | Self::Close { actor, .. }
       | Self::Break { actor, .. }
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }

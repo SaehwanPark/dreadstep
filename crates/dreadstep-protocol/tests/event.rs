@@ -47,6 +47,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       position: CorePosition::new(1, 0),
       radius: 3,
     },
+    CoreEvent::DoorClosed {
+      actor: CoreActorId::new(1),
+      position: CorePosition::new(1, 0),
+    },
     CoreEvent::BreakableBroken {
       actor: CoreActorId::new(1),
       position: CorePosition::new(1, 0),
@@ -124,6 +128,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
         actor: ActorId::new(1),
         position: Position::new(1, 0),
         radius: 3,
+      },
+      Event::DoorClosed {
+        actor: ActorId::new(1),
+        position: Position::new(1, 0),
       },
       Event::BreakableBroken {
         actor: ActorId::new(1),

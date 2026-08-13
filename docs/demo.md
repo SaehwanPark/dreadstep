@@ -52,6 +52,7 @@ display-free smoke path.
 | Space / Enter | Wait | `Command::Wait` |
 | I | Open the first legal adjacent closed door | `Command::Interact` |
 | K | Kick the first legal adjacent closed door | `Command::Kick` |
+| C | Close the first legal adjacent open door | `Command::Close` |
 | B | Break the first legal adjacent breakable tile | `Command::Break` |
 | F | Attack the lowest-ID adjacent target | `Command::Attack` |
 | G | Ranged attack the lowest-ID clear-cardinal target at distance 2–3 (2 ticks; 3 shots) | `Command::RangedAttack` |
@@ -73,6 +74,10 @@ one-use `Investigate` toward a nearby kick-noise position, `Chase`, and finally 
 is never simulation time. A
 presentation-only “showcase complete” status appears after every enemy is dead and consumes core's
 canonical `RunOutcome` projection.
+
+The authored item showcase places a closed door at `(2,1)`, immediately east of player actor 1.
+Start the item showcase to exercise `I` (open) and `C` (close) without relying on the display-free
+smoke fixture; the item-free core starter floor remains the stable adapter test fixture.
 
 ## Optional local art
 
@@ -138,7 +143,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | Move / wait / enemy attack/ranged/investigate/chase; Kiter retreat | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped HUD rows, reach-weapon/Frost Flask effects, healing/ammo results, and ground stack | item/reload/throw events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
-| Terrain, door, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |
+| Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/open-door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Opt-in procedural floor and `N` advancement | seeded 13×9 floor and next-depth restart after victory | `run_started` depth and `floor_advanced` evidence | no; smoke keeps item fixture |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
@@ -159,7 +164,7 @@ enemy to a clear distance-three throw fixture and throws Frost Flask item 104 (r
 `ItemThrown` and an applied Chilled status), then adds a breakable-terrain
 smoke fixture and breaks it with `Break`, then adds a closed-door fixture and kicks it with `Kick`
 (including terrain-aware noise evidence and a nearby enemy `Investigate` turn), re-adds a door and opens it with
-`Interact`, then reloads the player's
+`Interact`, closes the resulting OpenDoor with `Close`, then reloads the player's
 partial ammunition,
 drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
 `Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 103, attacks enemy 2 from two tiles until death, then unequips it,
@@ -172,10 +177,10 @@ fail desktop-feature compilation or smoke coverage until it is documented and ma
 ## Manual checklist
 
 - one non-resizable 640×360 logical (1280×720 physical at scale 2) primary window opens;
-- floor, cover, wall, door, trap, breakable, player, enemy, dead actor, and ground item placeholders are visibly distinct;
+- floor, cover, wall, door, OpenDoor, trap, breakable, player, enemy, dead actor, and ground item placeholders are visibly distinct;
 - radius-3 field of view follows the controlled actor, hides distant nodes without removing their
   typed mirrors, and keeps adjacent wall edges readable;
-- movement, wait, adjacent door interaction, breakable terrain, trap triggering, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, procedural `N` floor advancement after victory, and enemy delay
+- movement, wait, adjacent door interaction, door closing, breakable terrain, trap triggering, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, procedural `N` floor advancement after victory, and enemy delay
   work as documented;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
   and journal path;

@@ -53,6 +53,13 @@ pub enum CommandRequest {
     /// The adjacent closed door to kick open.
     position: Position,
   },
+  /// Close one adjacent open door.
+  Close {
+    /// The actor issuing the close command.
+    actor: ActorId,
+    /// The adjacent open door to close.
+    position: Position,
+  },
   /// Break one adjacent breakable terrain cell into floor.
   Break {
     /// The actor issuing the break command.
@@ -167,6 +174,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         position: dreadstep_core::Position::new(position.x(), position.y()),
       },
+      CommandRequest::Close { actor, position } => Self::Close {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        position: dreadstep_core::Position::new(position.x(), position.y()),
+      },
       CommandRequest::Break { actor, position } => Self::Break {
         actor: dreadstep_core::ActorId::new(actor.value()),
         position: dreadstep_core::Position::new(position.x(), position.y()),
@@ -246,6 +257,10 @@ impl From<CoreCommand> for CommandRequest {
         position: Position::new(position.x(), position.y()),
       },
       CoreCommand::Kick { actor, position } => Self::Kick {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreCommand::Close { actor, position } => Self::Close {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },

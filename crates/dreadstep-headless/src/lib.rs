@@ -266,6 +266,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
     }),
+    ["close", actor, x, y] => Ok(Command::Close {
+      actor: parse_actor(Some(actor))?,
+      position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
+    }),
     ["break", actor, x, y] => Ok(Command::Break {
       actor: parse_actor(Some(actor))?,
       position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
@@ -567,6 +571,25 @@ mod tests {
   }
 
   #[test]
+  fn parses_close_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "close:1:2:-3".to_owned(),
+    ])
+    .expect("close command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Close {
+        actor: ActorId::new(1),
+        position: Position::new(2, -3),
+      }]
+    );
+  }
+
+  #[test]
   fn parses_break_command_tokens() {
     let input = parse_args([
       "--seed".to_owned(),
@@ -712,7 +735,7 @@ event=ItemEquipped { actor: ActorId(1), item: ItemId(103) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 outcome=in_progress\n\
-digest=13796731742059069417\n"
+digest=16430442479340956930\n"
     );
   }
 

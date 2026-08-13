@@ -6,6 +6,14 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added reclosable doors as a bounded Living Dungeon interaction. `Interact` and `Kick` now
+  preserve an opened door as transparent, walkable `OpenDoor` terrain; a scheduled living actor
+  may use typed `Close` on an adjacent unoccupied OpenDoor to restore blocking `Door` terrain with
+  standard timing and `DoorClosed` evidence. Protocol v24, MCP, headless, Bevy/desktop controls,
+  and display-free smoke map the same core-owned transition. The authored item showcase now places
+  a closed door beside the player for the documented controls. Locks, keys, durability, diagonal
+  closing, and automatic enemy door-closing remain deferred.
+
 - Added the bounded authored Kiter enemy behavior. A scheduled Kiter adjacent to a living target
   advertises and executes typed `Retreat` before attack/ranged/investigate/chase fallbacks, choosing
   the farthest unoccupied walkable cardinal tile with stable N/S/W/E ties. Protocol v23 snapshots

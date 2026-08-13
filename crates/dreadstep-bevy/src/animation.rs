@@ -115,6 +115,7 @@ impl PresentationAnimationCue {
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
       Event::ItemThrown { .. }
       | Event::DoorOpened { .. }
+      | Event::DoorClosed { .. }
       | Event::NoiseCreated { .. }
       | Event::ItemDropped { .. }
       | Event::Reloaded { .. }

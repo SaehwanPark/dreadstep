@@ -50,6 +50,22 @@ pub enum CommandError {
     /// The requested door position.
     position: Position,
   },
+  /// A close did not target an adjacent open door.
+  CloseTargetInvalid {
+    /// The actor issuing the close command.
+    actor: ActorId,
+    /// The requested open-door position.
+    position: Position,
+  },
+  /// A living actor occupies the open doorway being closed.
+  DoorCloseOccupied {
+    /// The actor issuing the close command.
+    actor: ActorId,
+    /// The occupied doorway position.
+    position: Position,
+    /// The actor preventing the close.
+    occupant: ActorId,
+  },
   /// The requested target is not an adjacent breakable terrain cell.
   BreakTargetInvalid {
     /// The actor issuing the break command.

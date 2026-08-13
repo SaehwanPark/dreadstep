@@ -15,13 +15,17 @@ tools, MCP agents, and the future Bevy client will issue the same semantic comma
 observe the same events. The engineering exists to make the game better; players should
 not need to care about the testing architecture to enjoy it.
 
+The authored item showcase places a closed door beside the player so the documented open/close
+controls are immediately reachable; the item-free starter floor remains the deterministic core
+fixture.
+
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v23**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v24**. Core owns deterministic combat, inventory, and
 environmental rules; protocol/MCP/headless/Bevy translate those values. The opt-in desktop
 showcase journals each run and can start an authored item fixture or a seeded procedural floor.
 
-- Verified: core rules, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat behavior, MCP/headless adapters, Bevy projections, desktop `--smoke`,
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat behavior, MCP/headless adapters, Bevy projections, desktop `--smoke`,
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).

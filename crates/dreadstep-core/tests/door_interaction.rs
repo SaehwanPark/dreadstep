@@ -59,7 +59,10 @@ fn adjacent_interact_opens_door_and_advances_standard_time() {
     })
     .expect("adjacent closed door should open");
 
-  assert_eq!(world.map().tile_at(Position::new(1, 0)), Some(Tile::Floor));
+  assert_eq!(
+    world.map().tile_at(Position::new(1, 0)),
+    Some(Tile::OpenDoor)
+  );
   assert_eq!(
     result.events(),
     &[Event::DoorOpened {

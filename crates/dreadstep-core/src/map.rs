@@ -77,6 +77,8 @@ pub enum Tile {
   Wall,
   /// A closed door that blocks movement until an adjacent actor opens it.
   Door,
+  /// An opened door that remains walkable and transparent until an adjacent actor closes it.
+  OpenDoor,
   /// A blocking terrain cell that an adjacent actor may break into floor.
   Breakable,
   /// A walkable floor trap that triggers once when an actor enters it.
@@ -91,7 +93,7 @@ impl Tile {
   pub const fn is_walkable(self) -> bool {
     matches!(
       self,
-      Self::Floor | Self::Cover | Self::Trap | Self::ChillTrap
+      Self::Floor | Self::Cover | Self::OpenDoor | Self::Trap | Self::ChillTrap
     )
   }
 

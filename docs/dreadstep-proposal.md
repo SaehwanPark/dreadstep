@@ -1885,8 +1885,8 @@ AI agents demonstrate more than one viable encounter strategy.
 
 Establish the NetHack-inspired systemic identity.
 
-Repository status note: the deterministic preparation slices for doors, one-shot traps, Chilled
-status via authored ChillTrap, adjacent
+Repository status note: the deterministic preparation slices for doors, reclosable OpenDoor terrain,
+one-shot traps, Chilled status via authored ChillTrap, adjacent
 breakable terrain, kick-open door noise evidence, terrain-aware radius-three propagation, and
 one-use nearby-enemy investigation are verified in the core simulation and its protocol, MCP,
 headless, and Bevy boundaries. The content

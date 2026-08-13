@@ -31,6 +31,10 @@ fn every_request_variant_round_trips_through_core() {
       actor: ActorId::new(1),
       position: dreadstep_protocol::Position::new(1, 0),
     },
+    CommandRequest::Close {
+      actor: ActorId::new(1),
+      position: dreadstep_protocol::Position::new(1, 0),
+    },
     CommandRequest::Attack {
       actor: ActorId::new(1),
       target: ActorId::new(2),
@@ -98,6 +102,10 @@ fn every_core_command_round_trips_through_protocol() {
       actor: CoreActorId::new(2),
     },
     Command::Interact {
+      actor: CoreActorId::new(1),
+      position: dreadstep_core::Position::new(1, 0),
+    },
+    Command::Close {
       actor: CoreActorId::new(1),
       position: dreadstep_core::Position::new(1, 0),
     },

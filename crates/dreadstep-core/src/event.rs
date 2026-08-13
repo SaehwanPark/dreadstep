@@ -50,7 +50,7 @@ pub enum Event {
   DoorOpened {
     /// The actor that opened the door.
     actor: ActorId,
-    /// The door position that changed to floor.
+    /// The door position that changed to open.
     position: Position,
   },
   /// A kick opened a door and created a fixed-radius noise source.
@@ -61,6 +61,13 @@ pub enum Event {
     position: Position,
     /// The fixed radius used by the terrain-aware propagation query.
     radius: u8,
+  },
+  /// An actor closed one adjacent open door.
+  DoorClosed {
+    /// The actor that closed the door.
+    actor: ActorId,
+    /// The door position that changed to closed.
+    position: Position,
   },
   /// An actor broke one adjacent breakable terrain cell into floor.
   BreakableBroken {

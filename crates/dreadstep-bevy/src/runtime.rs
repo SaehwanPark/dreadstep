@@ -2,7 +2,7 @@
 
 use bevy::ecs::resource::Resource;
 use dreadstep_content::{
-  ContentError, chill_trap_floor, procedural_floor, starter_floor, starter_item_floor,
+  ContentError, chill_trap_floor, procedural_floor, starter_floor, starter_item_showcase_floor,
 };
 use dreadstep_core::{
   ActorId, Command, CommandError, EnemyBehavior, GridMap, ItemId, Position, ReplayTrace,
@@ -35,7 +35,7 @@ impl PresentationState {
   ///
   /// Returns [`ContentError`] when the authored item floor fails core or catalog validation.
   pub fn start_item_run(seed: u64) -> Result<Self, ContentError> {
-    Ok(Self::new(seed, starter_item_floor()?))
+    Ok(Self::new(seed, starter_item_showcase_floor()?))
   }
 
   /// Starts the authored chilled-status showcase floor.
@@ -271,6 +271,26 @@ impl PresentationRuntime {
     position: Position,
   ) -> Result<(), dreadstep_core::WorldError> {
     if self.state.world.set_tile(position, Tile::Door).is_none() {
+      return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
+        actor: ActorId::new(1),
+        position,
+      });
+    }
+    Ok(())
+  }
+
+  /// Restores one authored showcase cell to ordinary floor for an independent smoke fixture.
+  ///
+  /// The visible starter-item showcase intentionally begins with a reachable closed door, while
+  /// the smoke runner later reuses that cell for unrelated actor-placement and terrain checks.
+  /// This setup-only normalization keeps those fixtures independent without entering replay
+  /// evidence or changing the core player path.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_floor(
+    &mut self,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self.state.world.set_tile(position, Tile::Floor).is_none() {
       return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
         actor: ActorId::new(1),
         position,

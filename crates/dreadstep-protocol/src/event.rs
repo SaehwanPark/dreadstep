@@ -73,7 +73,7 @@ pub enum Event {
   DoorOpened {
     /// The actor that opened the door.
     actor: ActorId,
-    /// The door position that changed to floor.
+    /// The door position that changed to an open doorway.
     position: Position,
   },
   /// A kick opened a door and created a fixed-radius noise source.
@@ -84,6 +84,13 @@ pub enum Event {
     position: Position,
     /// The fixed radius carried as future propagation evidence.
     radius: u8,
+  },
+  /// An actor closed one adjacent open door.
+  DoorClosed {
+    /// The actor that closed the door.
+    actor: ActorId,
+    /// The door position that changed to closed terrain.
+    position: Position,
   },
   /// An actor broke one adjacent breakable terrain cell into floor.
   BreakableBroken {
@@ -240,6 +247,10 @@ impl From<CoreEvent> for Event {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
         radius,
+      },
+      CoreEvent::DoorClosed { actor, position } => Self::DoorClosed {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
       },
       CoreEvent::BreakableBroken { actor, position } => Self::BreakableBroken {
         actor: ActorId::new(actor.value()),

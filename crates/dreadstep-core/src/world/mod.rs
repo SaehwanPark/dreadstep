@@ -168,7 +168,7 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V7");
+    hasher.write_bytes(b"DREADSTEP-STATE-V8");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -177,9 +177,10 @@ impl WorldState {
         Tile::Cover => 2,
         Tile::Wall => 3,
         Tile::Door => 4,
-        Tile::Breakable => 5,
-        Tile::Trap => 6,
-        Tile::ChillTrap => 7,
+        Tile::OpenDoor => 5,
+        Tile::Breakable => 6,
+        Tile::Trap => 7,
+        Tile::ChillTrap => 8,
       });
     }
     hasher.write_u64(self.current_time.value());
@@ -370,6 +371,7 @@ impl WorldState {
       }],
       Command::Interact { position, .. } => vec![self.interact(actor_id, position)?],
       Command::Kick { position, .. } => self.kick_door(actor_id, position)?,
+      Command::Close { position, .. } => vec![self.close_door(actor_id, position)?],
       Command::Break { position, .. } => vec![self.break_terrain(actor_id, position)?],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,

@@ -85,6 +85,7 @@ impl PresentationAudioCue {
       | Event::ItemThrown { .. }
       | Event::Reloaded { .. }
       | Event::DoorOpened { .. }
+      | Event::DoorClosed { .. }
       | Event::NoiseCreated { .. }
       | Event::BreakableBroken { .. }
       | Event::TrapTriggered { .. }

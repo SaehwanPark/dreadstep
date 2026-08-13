@@ -120,6 +120,7 @@ pub(crate) fn tile_name(tile: Tile) -> &'static str {
     Tile::Cover => "cover",
     Tile::Wall => "wall",
     Tile::Door => "door",
+    Tile::OpenDoor => "open_door",
     Tile::Breakable => "breakable",
     Tile::Trap => "trap",
     Tile::ChillTrap => "chill_trap",
@@ -159,6 +160,7 @@ pub(crate) fn command_name(command: Command) -> &'static str {
     Command::Interact { .. } => "interact",
     Command::Break { .. } => "break",
     Command::Kick { .. } => "kick",
+    Command::Close { .. } => "close",
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
     Command::Throw { .. } => "throw",
@@ -192,6 +194,11 @@ pub(crate) fn command_value(command: Command) -> Value {
     }),
     Command::Kick { actor, position } => json!({
       "kind": "kick",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
+    Command::Close { actor, position } => json!({
+      "kind": "close",
       "actor": actor.value(),
       "position": position_value(position),
     }),
@@ -271,6 +278,11 @@ pub(crate) fn event_value(event: Event) -> Value {
     }
     Event::DoorOpened { actor, position } => json!({
       "kind": "door_opened",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
+    Event::DoorClosed { actor, position } => json!({
+      "kind": "door_closed",
       "actor": actor.value(),
       "position": position_value(position),
     }),
@@ -391,6 +403,12 @@ pub(crate) fn event_message(event: Event) -> String {
     Event::Waited { actor, at } => format!("Actor {} waited at t{}.", actor.value(), at.value()),
     Event::DoorOpened { actor, position } => format!(
       "Actor {} opened the door at ({}, {}).",
+      actor.value(),
+      position.x(),
+      position.y()
+    ),
+    Event::DoorClosed { actor, position } => format!(
+      "Actor {} closed the door at ({}, {}).",
       actor.value(),
       position.x(),
       position.y()
@@ -587,9 +605,9 @@ pub(crate) fn terminal_hud_message(status: &DesktopStatus, procedural: bool, dep
 
 pub(crate) fn controls_text(procedural: bool) -> &'static str {
   if procedural {
-    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  T throw selected  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit"
+    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  T throw selected  C close door  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit"
   } else {
-    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  T throw selected  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit"
+    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  T throw selected  C close door  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit"
   }
 }
 

@@ -319,6 +319,17 @@ pub fn chill_trap_floor() -> Result<WorldState, ContentError> {
   Ok(world)
 }
 
+/// Builds the authored reclosable-door showcase floor.
+///
+/// # Errors
+///
+/// Returns [`ContentError`] if the authored starter floor cannot be validated.
+pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
+  let mut world = starter_floor()?;
+  world.set_tile(Position::new(2, 1), Tile::Door);
+  Ok(world)
+}
+
 /// Returns a deterministic seeded corridor-floor definition.
 ///
 /// This is the first procedural-content boundary: it varies only authored terrain and enemy
@@ -460,6 +471,20 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
 /// placement validation.
 pub fn starter_item_floor() -> Result<WorldState, ContentError> {
   starter_item_floor_definition().build()
+}
+
+/// Builds the desktop-authored item showcase with a reachable closed door beside the player.
+///
+/// The underlying item fixture remains stable for adapter tests; this presentation fixture adds
+/// only the authored terrain needed for the documented open/close controls.
+///
+/// # Errors
+///
+/// Returns [`ContentError`] when the authored item floor cannot be validated.
+pub fn starter_item_showcase_floor() -> Result<WorldState, ContentError> {
+  let mut world = starter_item_floor()?;
+  world.set_tile(Position::new(2, 1), Tile::Door);
+  Ok(world)
 }
 
 /// Returns the deterministic authored starter item-definition references.
