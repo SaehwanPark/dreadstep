@@ -24,8 +24,8 @@ pub use event::{BlockReason, Event};
 pub use hit_points::HitPoints;
 pub use ids::{ActorId, ItemDefinitionId, ItemId};
 pub use item::{
-  AmmunitionAmount, AmmunitionResult, GroundItemStack, HealingAmount, HealingResult, Item,
-  ItemEffect,
+  AmmunitionAmount, AmmunitionResult, EquipmentEffect, GroundItemStack, HealingAmount,
+  HealingResult, Item, ItemEffect,
 };
 pub use map::{Direction, GridMap, MapError, Position, Tile};
 pub use replay::{ReplayTrace, StateDigest};

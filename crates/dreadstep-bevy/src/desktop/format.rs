@@ -90,7 +90,15 @@ pub(crate) fn actor_value(actor: &Actor) -> Value {
 }
 
 pub(crate) fn item_value(item: Item) -> Value {
-  json!({ "id": item.id().value(), "definition": item.definition().value() })
+  json!({
+    "id": item.id().value(),
+    "definition": item.definition().value(),
+    "equipment_effect": item.equipment_effect().map(|effect| match effect {
+      dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
+        json!({ "minimum_melee_reach": reach.value() })
+      }
+    }),
+  })
 }
 
 pub(crate) fn position_value(position: Position) -> Value {
@@ -596,10 +604,17 @@ pub(crate) fn desktop_update_hud(
           let selected = session.selected_item == Some(item.id());
           let equipped = player.equipped_item() == Some(item.id());
           format!(
-            "{}item {} (def {}){}",
+            "{}item {} (def {}){}{}",
             if selected { "> " } else { "  " },
             item.id().value(),
             item.definition().value(),
+            item
+              .equipment_effect()
+              .map_or_else(String::new, |effect| match effect {
+                dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
+                  format!(" [reach {}]", reach.value())
+                }
+              },),
             if equipped { " [equipped]" } else { "" }
           )
         })

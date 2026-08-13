@@ -9,10 +9,18 @@ All notable contributor- and user-visible project changes are recorded here.
 - Split oversized core, protocol, and Bevy production sources into cohesive modules with
   crate-root re-exports, added an 800-line CI budget (excluding `*tests.rs` characterization
   suites), and compacted SPEC/ARCHITECTURE/README so verified slice history lives in this
-  changelog rather than duplicated writeups. Protocol is now v19; workspace version remains
+  changelog rather than duplicated writeups. Protocol is now v20; workspace version remains
   `0.0.0`.
 
 ### Added
+
+- Added the first equipment-derived mechanical effect: authored item 103 (definition 4) is a
+  non-consumable reach weapon. Equipping it raises effective melee reach to at least two while
+  preserving the existing equipment slot, replacement events, and standard action timing;
+  unequipping restores the actor's authored base reach. Protocol v20 projects the closed effect,
+  direct `UseItem` rejects it with typed `ItemNotConsumable`, and the desktop item fixture/smoke
+  now equips 103 while consuming healing item 101 separately. Damage, weapon classes, armor,
+  affixes, durability, identification, and randomized loot remain deferred.
 
 - Added deterministic kick-noise enemy investigation: a successful `Kick` arms a one-use,
   terrain-aware radius-3 hearing target on each eligible living enemy; the scheduled enemy now

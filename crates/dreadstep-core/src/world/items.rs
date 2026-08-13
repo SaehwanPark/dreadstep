@@ -336,6 +336,12 @@ impl WorldState {
         item: item_id,
       });
     };
+    if item.equipment_effect().is_some() {
+      return Err(CommandError::ItemNotConsumable {
+        actor: actor_id,
+        item: item_id,
+      });
+    }
     if actor.equipped_item() == Some(item_id) {
       return Err(CommandError::ItemEquipped {
         actor: actor_id,

@@ -301,6 +301,13 @@ pub enum CommandError {
     /// The equipped item identity.
     item: ItemId,
   },
+  /// The requested item is equipment and cannot be consumed.
+  ItemNotConsumable {
+    /// The actor whose inventory was queried.
+    actor: ActorId,
+    /// The non-consumable item identity.
+    item: ItemId,
+  },
   /// The requested item is not in the actor's current ground stack.
   ItemNotOnGround {
     /// The actor whose current ground stack was searched.
@@ -458,6 +465,12 @@ impl fmt::Display for CommandError {
       Self::ItemEquipped { actor, item } => write!(
         formatter,
         "actor {} cannot move or consume equipped item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotConsumable { actor, item } => write!(
+        formatter,
+        "actor {} cannot consume non-consumable item {}",
         actor.value(),
         item.value()
       ),

@@ -132,3 +132,50 @@ fn tester_cannot_move_equipped_item_and_preserves_session_evidence() {
   assert_eq!(session.history(), history);
   assert_eq!(session.get_replay(), replay);
 }
+
+#[test]
+fn authored_reach_weapon_changes_melee_range_and_rejects_consumption() {
+  let mut session = Session::start_item_run(7).expect("authored item scenario should be valid");
+  let weapon = session
+    .inspect(ActorId::new(1))
+    .expect("player should exist")
+    .inventory()
+    .iter()
+    .find(|item| item.id() == ItemId::new(103))
+    .copied()
+    .expect("authored reach weapon should be present");
+  assert!(matches!(
+    weapon.equipment_effect(),
+    Some(dreadstep_protocol::EquipmentEffect::MinimumMeleeReach { reach }) if reach.value() == 2
+  ));
+  assert_eq!(
+    session.act(CommandRequest::UseItem {
+      actor: ActorId::new(1),
+      item: ItemId::new(103),
+    }),
+    Err(SessionError::CommandRejected(
+      CommandError::ItemNotConsumable {
+        actor: ActorId::new(1),
+        item: ItemId::new(103),
+      }
+    ))
+  );
+  session
+    .act(CommandRequest::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(103),
+    })
+    .expect("reach weapon should equip");
+  session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should yield");
+  let output = session
+    .act(CommandRequest::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("equipped reach should enable distance-two melee");
+  assert!(matches!(output.events(), [Event::Attacked { .. }]));
+}

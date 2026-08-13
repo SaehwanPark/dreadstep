@@ -121,18 +121,19 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: contextual terminal HUD guidance |
 | 2026-08-13 | Milestone 4 slice: deterministic enemy ranged intent |
 | 2026-08-13 | Milestone 5 preparation slice: deterministic kick-noise enemy investigation |
+| 2026-08-13 | Milestone 6 preparation slice: deterministic equipment-derived melee reach |
 | 2026-08-13 | Milestone 5 preparation slice: terrain-aware kick-noise propagation |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **19**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **20**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. Desktop controls and smoke coverage are
 documented in [`docs/demo.md`](docs/demo.md).
 
 ### Core
 
 - Typed map, actors, scheduling, melee and ranged combat, chase/investigation, inventory, equipment,
-  pickup/drop, consumables, doors, traps, breakables, terrain-aware kick noise, cover, reach, reload,
+  pickup/drop, consumables, equipment effects, doors, traps, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, and state digests.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 

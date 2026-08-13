@@ -189,7 +189,7 @@ fn pickup_key_selects_the_lowest_id_ground_item() {
     command_for_key(KeyCode::KeyP, &runtime, &session),
     Some(Command::Pickup {
       actor: PLAYER,
-      item: EQUIP_ITEM,
+      item: PICKUP_ITEM,
     })
   );
   let _ = fs::remove_dir_all(directory);

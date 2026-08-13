@@ -476,6 +476,13 @@ pub enum CommandError {
     /// The equipped item identity.
     item: ItemId,
   },
+  /// The requested item is equipment and cannot be consumed.
+  ItemNotConsumable {
+    /// The actor whose inventory was queried.
+    actor: ActorId,
+    /// The non-consumable item identity.
+    item: ItemId,
+  },
   /// The requested item is not in the actor's current ground stack.
   ItemNotOnGround {
     /// The actor whose current ground stack was searched.
@@ -486,6 +493,10 @@ pub enum CommandError {
 }
 
 impl From<CoreCommandError> for CommandError {
+  #[expect(
+    clippy::too_many_lines,
+    reason = "the protocol boundary keeps every typed core rejection exhaustive"
+  )]
   fn from(error: CoreCommandError) -> Self {
     match error {
       CoreCommandError::UnknownActor(actor) => Self::UnknownActor(ActorId::new(actor.value())),
@@ -579,6 +590,10 @@ impl From<CoreCommandError> for CommandError {
         Self::NothingEquipped(ActorId::new(actor.value()))
       }
       CoreCommandError::ItemEquipped { actor, item } => Self::ItemEquipped {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+      },
+      CoreCommandError::ItemNotConsumable { actor, item } => Self::ItemNotConsumable {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
       },
@@ -742,6 +757,12 @@ impl fmt::Display for CommandError {
       Self::ItemEquipped { actor, item } => write!(
         formatter,
         "actor {} cannot move or consume equipped item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotConsumable { actor, item } => write!(
+        formatter,
+        "actor {} cannot consume non-consumable item {}",
         actor.value(),
         item.value()
       ),

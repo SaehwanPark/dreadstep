@@ -10,7 +10,8 @@ use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, AmmunitionAmount, GridMap, HealingAmount, HitPoints, Item,
-  ItemDefinitionId, ItemEffect, ItemId, MapError, Position, Tile, WorldError, WorldState,
+  ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position, Tile, WorldError,
+  WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -392,7 +393,8 @@ pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentErro
 ///
 /// This scenario is separate from [`starter_floor_definition`], which intentionally remains
 /// item-free. It binds the shared starter catalog and uses interleaved placements to provide a
-/// stable content fixture for adapters and tests, including the first authored healing item.
+/// stable content fixture for adapters and tests, including authored consumables and the first
+/// equipment-derived reach weapon.
 #[must_use]
 pub fn starter_item_floor_definition() -> StarterFloorDefinition {
   starter_floor_definition()
@@ -407,6 +409,10 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
             amount: HealingAmount::THREE,
           },
         ),
+      ),
+      StarterItemPlacement::new(
+        ActorId::new(1),
+        Item::with_equipment_effect(ItemId::new(103), ItemDefinitionId::new(4), MeleeReach::TWO),
       ),
       StarterItemPlacement::new(
         ActorId::new(2),
@@ -442,6 +448,7 @@ pub fn starter_item_catalog_definition() -> ItemCatalogDefinition {
     ItemDefinitionId::new(1),
     ItemDefinitionId::new(2),
     ItemDefinitionId::new(3),
+    ItemDefinitionId::new(4),
   ])
 }
 

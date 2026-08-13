@@ -1,8 +1,8 @@
 //! Protocol projections of item instances, effects, and ground stacks.
 
 use dreadstep_core::{
-  AmmunitionResult as CoreAmmunitionResult, GroundItemStack as CoreGroundItemStack,
-  HealingResult as CoreHealingResult, Item as CoreItem,
+  AmmunitionResult as CoreAmmunitionResult, EquipmentEffect as CoreEquipmentEffect,
+  GroundItemStack as CoreGroundItemStack, HealingResult as CoreHealingResult, Item as CoreItem,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,18 @@ use crate::{HitPoints, ItemDefinitionId, ItemId, Position};
 pub struct ItemSnapshot {
   id: ItemId,
   definition: ItemDefinitionId,
+  equipment_effect: Option<EquipmentEffect>,
+}
+
+/// A protocol projection of the closed equipment effects supported by core.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EquipmentEffect {
+  /// Raise effective melee reach to at least the supplied value while equipped.
+  MinimumMeleeReach {
+    /// The minimum effective reach while equipped.
+    reach: crate::MeleeReach,
+  },
 }
 
 /// Protocol evidence for hit points restored by a healing item.
@@ -73,10 +85,17 @@ impl AmmunitionResult {
 }
 
 impl ItemSnapshot {
-  pub(crate) fn from_item(item: CoreItem) -> Self {
+  /// Projects one complete core item into the versioned wire shape.
+  #[must_use]
+  pub fn from_item(item: CoreItem) -> Self {
     Self {
       id: ItemId::new(item.id().value()),
       definition: ItemDefinitionId::new(item.definition().value()),
+      equipment_effect: item.equipment_effect().map(|effect| match effect {
+        CoreEquipmentEffect::MinimumMeleeReach { reach } => EquipmentEffect::MinimumMeleeReach {
+          reach: crate::MeleeReach::new(reach.value()).unwrap_or(crate::MeleeReach::DEFAULT),
+        },
+      }),
     }
   }
 
@@ -90,6 +109,12 @@ impl ItemSnapshot {
   #[must_use]
   pub const fn definition(self) -> ItemDefinitionId {
     self.definition
+  }
+
+  /// Returns the optional closed equipment effect.
+  #[must_use]
+  pub const fn equipment_effect(self) -> Option<EquipmentEffect> {
+    self.equipment_effect
   }
 }
 

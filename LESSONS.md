@@ -571,3 +571,16 @@ constructor cannot silently alter the default client path or lose owner/order da
   path.
 - Prevention: Test finalization with an in-world `AppExit` message and exercise Ctrl-C on an unlocked
   desktop host before claiming the visible shutdown checklist complete.
+
+## Keep equipment effects closed and authored
+
+- Context: The first item-derived combat decision needs a real mechanical effect without becoming a
+  generic stat or affix system.
+- Symptom: Treating every item as consumable would silently destroy a weapon, while hashing only
+  effective reach would lose the actor's authored fallback after unequip.
+- Resolution: Add one closed `MinimumMeleeReach` equipment effect, keep it separate from
+  consumable effects, reject `UseItem` atomically for equipment, and hash both base reach and item
+  effect alongside the existing equipment identity.
+- Prevention: Preserve the exact equip/unequip timing and replacement events, expose the closed
+  effect in protocol snapshots, and defer weapon classes, damage, armor, affixes, durability, and
+  identification until their own bounded contracts exist.
