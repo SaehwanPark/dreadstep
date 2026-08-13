@@ -6,6 +6,13 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added deterministic enemy ranged intent: scheduled enemies now expose clear-cardinal
+  `RangedAttack` candidates at distance 2–3 when ammunition and schedule capacity permit, while
+  preserving adjacent melee-first and chase fallback ordering. The shared Bevy intent projection
+  and desktop driver reuse that policy, the existing two-tick/ammunition/event evidence remains
+  authoritative, and display-free smoke now asserts an enemy-driver ranged command; ranged enemy
+  archetypes and richer AI remain deferred.
+
 - Added opt-in desktop procedural-run selection: visible runs accept `--procedural --depth <u32>`,
   journal the generated scenario/depth, and preserve that choice across same-seed restart. Default
   and display-free smoke startup remain on the authored item fixture. Procedural visible victory can

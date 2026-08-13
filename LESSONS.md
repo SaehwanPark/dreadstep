@@ -78,14 +78,17 @@ Update an existing lesson instead of adding a duplicate.
   JSON shape, accepted/rejected replay evidence, smoke coverage, and the visible control text
   together.
 
-## 2026-08-12 — Intent projections must reuse the actor driver's policy
+## 2026-08-13 — Intent projections must reuse the actor driver's policy
 
-- Context: The scheduled enemy exposes several legal movement commands before its preferred `Chase`
-  command, so presenting the first vector entry would disagree with the desktop enemy driver.
-- Resolution: Project the exact core command selected by the same deterministic chase-then-wait
-  preference used by the driver, with a first-legal fallback for future behavior families.
+- Context: The scheduled enemy exposes several legal movement and combat commands before its
+  preferred driver action, so presenting the first vector entry would disagree with the desktop
+  enemy driver.
+- Resolution: Project the exact core command selected by the same deterministic
+  attack-then-ranged-then-chase-then-wait preference used by the driver, with a first-legal fallback
+  for future behavior families.
 - Prevention: Keep intent projections read-only, test actor/target identity and replay stability,
-  and update the presentation policy whenever the driver selection policy changes.
+  exercise both melee and clear-ranged targets, and update the presentation policy whenever the
+  driver selection policy changes.
 
 ## 2026-08-12 — Legal discovery and execution must share reach predicates
 
@@ -373,9 +376,10 @@ constructor cannot silently alter the default client path or lose owner/order da
   coverage completed.
 - Cause: Core legal discovery is authoritative, while the smoke path is a finite evidence scenario
   rather than a full player-death loop.
-- Resolution: Share one core adjacent-attack predicate and one Bevy attack-before-chase selector;
-  keep the visible driver fully authoritative, but let the smoke helper choose legal `Wait` after a
-  low-health threshold so its deterministic coverage can finish.
+- Resolution: Share one core adjacent-attack predicate and one Bevy attack-before-ranged-before-
+  chase selector; keep the visible driver fully authoritative, but let the smoke helper choose
+  legal `Wait` after a low-health threshold for either damaging attack so its deterministic coverage
+  can finish.
 - Prevention: Test adjacent and distant legal ordering at the core boundary, test the exact Bevy
   selector, and treat smoke-only safety guards as diagnostic policy rather than simulation rules.
 

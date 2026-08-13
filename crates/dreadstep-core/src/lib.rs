@@ -2395,8 +2395,9 @@ impl WorldState {
   /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
   /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
   /// Player attacks include targets within the actor's melee reach and clear cardinal rays two or
-  /// three tiles away for the bounded ranged command; enemies attack adjacent living targets and
-  /// otherwise chase every distinct living target.
+  /// three tiles away for the bounded ranged command. Enemies attack adjacent living targets,
+  /// include clear ranged targets when ammunition and schedule capacity allow, and otherwise
+  /// retain chase commands for every distinct living target.
   /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   #[expect(
@@ -2509,6 +2510,18 @@ impl WorldState {
         Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
       }) {
         commands.push(Command::Attack {
+          actor: actor_id,
+          target: target.id(),
+        });
+      }
+      for target in living_targets.iter().copied().filter(|target| {
+        !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
+          && Self::is_ranged_distance(actor.position(), target.position())
+          && self.has_ranged_line_of_sight(actor.position(), target.position())
+          && actor.ranged_ammo() > 0
+          && actor.ready_at().checked_add(ActionCost::RANGED).is_some()
+      }) {
+        commands.push(Command::RangedAttack {
           actor: actor_id,
           target: target.id(),
         });
@@ -3268,6 +3281,47 @@ mod tests {
     );
     assert_eq!(result.current_time(), ActionTime::new(u64::MAX));
 
+    let before = world.clone();
+    assert_eq!(
+      world.execute(Command::RangedAttack {
+        actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }),
+      Err(CommandError::ScheduleOverflow(ActorId::new(1)))
+    );
+    assert_eq!(world, before);
+  }
+
+  #[test]
+  fn enemy_ranged_cost_overflow_is_filtered_while_standard_actions_remain_legal() {
+    let mut world = WorldState::new(
+      floor_map(5, 1),
+      vec![
+        Actor::new(ActorId::new(1), ActorKind::Enemy, Position::new(0, 0)),
+        Actor::new(ActorId::new(2), ActorKind::Player, Position::new(2, 0)),
+      ],
+    )
+    .expect("test world should be valid");
+    let near_max = ActionTime::new(u64::MAX - 1);
+    world.current_time = near_max;
+    world
+      .actors
+      .get_mut(&ActorId::new(1))
+      .expect("enemy exists")
+      .ready_at = near_max;
+    world
+      .actors
+      .get_mut(&ActorId::new(2))
+      .expect("target exists")
+      .ready_at = ActionTime::new(u64::MAX);
+
+    assert!(world.legal_commands().contains(&Command::Wait {
+      actor: ActorId::new(1),
+    }));
+    assert!(!world.legal_commands().contains(&Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    }));
     let before = world.clone();
     assert_eq!(
       world.execute(Command::RangedAttack {

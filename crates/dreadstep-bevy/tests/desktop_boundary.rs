@@ -217,6 +217,14 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
     .find(|record| record["kind"] == "smoke_complete")
     .expect("smoke completion record");
   assert_smoke_coverage(complete);
+  assert!(records.iter().any(|record| {
+    record["kind"] == "action_accepted"
+      && record["payload"]["extra"]["source"] == "enemy_driver"
+      && record["payload"]["extra"]["command"]["kind"] == "ranged_attack"
+      && record["payload"]["extra"]["events"]
+        .as_array()
+        .is_some_and(|events| events.iter().any(|event| event["kind"] == "attacked"))
+  }));
   assert_eq!(
     records.last().map(|record| &record["kind"]),
     Some(&Value::from("shutdown"))

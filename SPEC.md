@@ -4045,6 +4045,64 @@ Out of scope:
 - New controls, persistent progression, localization, accessibility metadata, and core outcome
   changes.
 
+### Milestone 4 slice: deterministic enemy ranged intent
+
+- Status: verified
+- Started: 2026-08-13
+- Completed: 2026-08-13
+
+Extend the existing ranged-attack contract to scheduled enemies without adding a new semantic
+command. Enemy legal-action discovery includes clear-cardinal targets at Manhattan distance 2–3
+when ammunition remains, and the shared desktop enemy driver selects adjacent melee first, then
+ranged attack, then chase, then wait/fallback. Accepted enemy ranged attacks reuse the existing
+fixed damage, two-tick action cost, ammunition decrement, attack/death events, replay evidence, and
+desktop journal mappings.
+
+Acceptance:
+
+- Core discovers enemy `RangedAttack` targets in stable `ActorId` order only when the target is
+  living, the distance is 2–3, the ray is clear, ammunition is non-zero, and the two-tick schedule
+  cannot overflow; adjacent melee targets remain in the first command group.
+- Executing an enemy ranged attack consumes one shot, advances the actor by two ticks, applies the
+  existing one-point ranged damage, and emits the existing typed attack/death evidence; rejected
+  no-ammunition, blocked-ray, diagonal, out-of-range, dead, self, and unscheduled requests remain
+  atomic and use existing errors.
+- The read-only Bevy intent projection and desktop driver choose the exact legal ranged command
+  after melee is unavailable, while preserving core snapshot/replay authority and all existing
+  player controls.
+- Display-free smoke and JSONL mappings observe an enemy ranged command and its existing event
+  evidence; no protocol version, command schema, replay format, media, or player control changes.
+
+Verification target:
+
+- Focused core and Bevy intent tests prove deterministic ordering, line-of-sight filtering,
+  ammunition/schedule boundaries, accepted event evidence, and selector preference.
+- Desktop-feature tests and display-free smoke cover the new enemy command while retaining the
+  existing exhaustive command/event lists; `scripts/verify.sh`, formatting, `git diff --check`,
+  and one semantic review pass are required before merge. A live test-player pass checks readable
+  enemy intent/feedback and clean recovery with the documented seed.
+
+Verification evidence:
+
+- `cargo test -p dreadstep-core --test enemy_ranged --locked` passes 7 focused tests covering
+  stable target ordering, clear-ray filtering, lethal event evidence, ammunition rejection, and
+  blocked-ray atomicity; the core unit suite passes 24 tests including the enemy ranged schedule
+  overflow boundary.
+- `cargo test -p dreadstep-bevy --test enemy_intent --all-features --locked` passes 7 tests,
+  including ranged preference and snapshot/replay read-only evidence. The desktop boundary suite
+  passes 8 tests and asserts an accepted enemy-driver ranged command with an `attacked` event in
+  the display-free smoke journal.
+- `scripts/verify.sh`, `cargo fmt --all -- --check`, `git diff --check`, and strict workspace
+  tests/lints/docs pass. The required live test-player route is blocked by the locked host Mac;
+  smoke and visible-process journals corroborate process behavior but do not substitute for visual
+  acceptance.
+
+Out of scope:
+
+- Ranged enemy archetypes, retreat or cover behavior, target policy beyond stable identity order,
+  ranged-specific presentation/audio/media, new protocol fields or errors, player controls, and
+  core-owned AI memory or procedural encounter changes.
+
 ## Future
 
 ### Remaining roadmap milestones

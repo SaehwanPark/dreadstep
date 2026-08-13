@@ -21,15 +21,15 @@ Dreadstep is continuing the transition from Milestone 3's human presentation bou
 Milestone 4 tactical combat and Milestone 5 environmental state.
 
 The scheduled ranged attack, clear-cardinal line-of-sight, distinct ranged action-cost, finite
-ammunition, walkable cover, deterministic scheduled-enemy intent presentation, typed melee reach,
-player-facing reload, item pickup/drop, healing and ammunition consumables, deterministic adjacent
+ammunition, walkable cover, deterministic scheduled-enemy melee-and-ranged intent presentation,
+typed melee reach, player-facing reload, item pickup/drop, healing and ammunition consumables, deterministic adjacent
 door interaction, one-shot floor traps, deterministic breakable terrain, kick-open door noise evidence, and canonical run-outcome projection are verified across
 the deterministic core, protocol/MCP/headless adapters, and desktop boundary. Reload restores the fixed
 three-shot capacity with `R` when ammo is partial; `I` opens a legal adjacent closed door; `X` drops the selected unequipped item and
 `Shift+R` restarts the same seed. Adjacent scheduled enemies use the existing fixed melee attack
-before falling back to chase; core and protocol snapshots now expose deterministic `in_progress`,
+before considering clear ranged attack and chase; core and protocol snapshots now expose deterministic `in_progress`,
 `defeat`, or `victory` outcomes, and the desktop showcase consumes that projection while keeping
-restart available. Ranged enemy AI, ammo pickups, cover damage modifiers, weapon effects beyond the
+restart available. Ranged enemy archetypes, ammo pickups, cover damage modifiers, weapon effects beyond the
 first healing and ammunition consumables, persistence, save/load, and replay playback remain deliberately deferred. Each desktop smoke or
 visible run now also writes a versioned `*.replay.json` evidence artifact beside its JSONL journal;
 the artifact is not a playback-compatible save file.

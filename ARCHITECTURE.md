@@ -521,7 +521,9 @@ translate the new typed request; the desktop binds `G` to the lowest-ID legal ta
 existing attack animation/audio cue families. A follow-up slice now adds a cardinal line-of-sight
 predicate over interior cells, where the terrain predicate decides whether `Cover` or `Wall` blocks;
 blocked and diagonal requests return typed rejection without mutating state or replay evidence.
-Weapon effects and enemy ranged behavior remain future rules.
+Weapon effects and ranged enemy archetypes remain future rules. The deterministic enemy driver may
+reuse the existing ranged attack command when a clear target is available, but it owns no AI memory
+or target policy beyond the core legal-command projection.
 
 The verified ranged-cost slice gives only `RangedAttack` a two-tick scheduler advance; all other
 player and enemy commands retain the standard one-tick cost. The cost is selected in core execution
@@ -545,9 +547,10 @@ future rules.
 
 The verified enemy-intent presentation slice reads core's current legal command projection for the
 scheduled living enemy and exposes the selected exact command as a disposable Bevy resource. The
-follow-up enemy-melee slice makes adjacent `Attack` legal before fallback `Chase`, and the Bevy
-intent/desktop drivers share that attack-before-chase policy while retaining core-owned damage,
-events, scheduling, and replay truth. Ranged enemy AI and new status behavior remain future rules.
+follow-up enemy-melee slice makes adjacent `Attack` legal before fallback `Chase`; this slice adds
+clear cardinal `RangedAttack` candidates and shares an attack-before-ranged-before-chase policy
+between the intent projection and desktop driver while retaining core-owned damage, ammunition,
+scheduling, and replay truth. Ranged enemy archetypes and new status behavior remain future rules.
 
 The verified player-defeat preparation keeps death semantics in core while the desktop boundary marks
 an accepted `Died { actor: PLAYER }` event as a terminal presentation status and records
