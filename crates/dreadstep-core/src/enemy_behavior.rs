@@ -12,4 +12,6 @@ pub enum EnemyBehavior {
   Brute,
   /// Apply the existing Chilled status along a clear cardinal ranged ray before other fallbacks.
   Frostcaster,
+  /// Hold position, attacking only when the controlled target enters melee reach.
+  Blocker,
 }

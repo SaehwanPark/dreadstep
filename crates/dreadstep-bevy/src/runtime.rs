@@ -284,6 +284,42 @@ impl PresentationRuntime {
     Ok(())
   }
 
+  /// Authors one distant Blocker in the display-free smoke fixture without replay evidence.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_blocker(
+    &mut self,
+    actor: ActorId,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self
+      .state
+      .world
+      .set_enemy_behavior(actor, EnemyBehavior::Blocker)
+      .is_none()
+    {
+      return Err(dreadstep_core::WorldError::UnknownActor(actor));
+    }
+    self.state.world.teleport(actor, position)
+  }
+
+  /// Restores one Brute fixture after the independent Blocker smoke evidence.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_brute(
+    &mut self,
+    actor: ActorId,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self
+      .state
+      .world
+      .set_enemy_behavior(actor, EnemyBehavior::Brute)
+      .is_none()
+    {
+      return Err(dreadstep_core::WorldError::UnknownActor(actor));
+    }
+    self.state.world.teleport(actor, position)
+  }
+
   /// Places one closed door for the display-free desktop smoke fixture.
   ///
   /// This setup-only mutation does not enter replay evidence; the smoke path then exercises the

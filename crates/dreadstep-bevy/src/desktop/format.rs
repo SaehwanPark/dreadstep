@@ -5,8 +5,8 @@ use bevy::ecs::query::With;
 use bevy::ecs::system::{Query, Res};
 use bevy::prelude::Text;
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, BlockReason, Command, Direction, EnemyBehavior, Event, Item, ItemId,
-  Position, RunOutcome, Tile,
+  Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position,
+  RunOutcome, Tile,
 };
 use serde_json::{Value, json};
 
@@ -15,6 +15,7 @@ use crate::{
   SceneRenderPlaceholder,
 };
 
+use super::behavior::{enemy_behavior_name, enemy_behavior_value};
 use super::journal::journal_path;
 use super::session::DesktopSession;
 use super::session::DesktopStatus;
@@ -78,6 +79,7 @@ pub(crate) fn actor_value(actor: &Actor) -> Value {
   json!({
     "id": actor.id().value(),
     "kind": actor_kind_name(actor.kind()),
+    "behavior": enemy_behavior_value(actor.enemy_behavior()),
     "position": position_value(actor.position()),
     "hit_points": actor.hit_points().value(),
     "melee_reach": actor.melee_reach().value(),
@@ -601,15 +603,6 @@ pub(crate) fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> 
     }
     (Some(actor), None) => format!("Intent: {behavior_name} {} no legal action", actor.value()),
     _ => "Intent: none".to_string(),
-  }
-}
-
-fn enemy_behavior_name(behavior: EnemyBehavior) -> &'static str {
-  match behavior {
-    EnemyBehavior::Pursuer => "Pursuer",
-    EnemyBehavior::Kiter => "Kiter",
-    EnemyBehavior::Brute => "Brute",
-    EnemyBehavior::Frostcaster => "Frostcaster",
   }
 }
 

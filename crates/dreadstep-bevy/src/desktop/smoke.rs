@@ -39,6 +39,14 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       json!({ "reason": "chill_fixture_setup", "error": error.to_string() }),
     );
   }
+  if let Err(error) = runtime.prepare_smoke_blocker(ActorId::new(4), Position::new(3, 3)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "blocker_fixture_setup", "error": error.to_string() }),
+    );
+  }
   failed |= !submit_command(
     &mut runtime,
     &mut session,
@@ -121,6 +129,14 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_brute(ActorId::new(4), Position::new(5, 3)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "brute_fixture_setup", "error": error.to_string() }),
+    );
+  }
   if let Err(error) = runtime.prepare_smoke_breakable(Position::new(2, 1)) {
     failed = true;
     let _ = record_session(

@@ -216,6 +216,16 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
     .iter()
     .find(|record| record["kind"] == "smoke_complete")
     .expect("smoke completion record");
+  assert!(records.iter().any(|record| {
+    record["kind"] == "run_started"
+      && record["payload"]["state"]["actors"]
+        .as_array()
+        .is_some_and(|actors| {
+          actors
+            .iter()
+            .any(|actor| actor["id"] == 4 && actor["behavior"] == "blocker")
+        })
+  }));
   assert_smoke_coverage(complete);
   assert!(records.iter().any(|record| {
     record["kind"] == "action_accepted"
@@ -227,6 +237,7 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
   }));
   assert_brute_break_observed(&records);
   assert_frostcaster_cast_observed(&records);
+  assert_blocker_wait_observed(&records);
   assert_eq!(
     records.last().map(|record| &record["kind"]),
     Some(&Value::from("shutdown"))
@@ -321,6 +332,27 @@ fn assert_frostcaster_cast_observed(records: &[Value]) {
                 "kind": "chill_cast",
                 "caster": 3,
                 "target": 1
+              })
+          })
+        })
+  }));
+}
+
+#[cfg(feature = "desktop")]
+fn assert_blocker_wait_observed(records: &[Value]) {
+  assert!(records.iter().any(|record| {
+    record["kind"] == "action_accepted"
+      && record["payload"]["extra"]["source"] == "enemy_driver"
+      && record["payload"]["extra"]["command"] == serde_json::json!({ "kind": "wait", "actor": 4 })
+      && record["payload"]["extra"]["events"]
+        .as_array()
+        .is_some_and(|events| {
+          events.iter().any(|event| {
+            event
+              == &serde_json::json!({
+                "kind": "waited",
+                "actor": 4,
+                "at": 0
               })
           })
         })

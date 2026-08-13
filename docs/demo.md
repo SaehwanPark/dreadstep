@@ -72,16 +72,18 @@ Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentatio
 command: an authored Kiter retreats from an adjacent actor
 when an escape tile exists, then enemies use adjacent `Attack`, a Frostcaster uses `CastChill` on a
 clear-cardinal target at distance 2–3, other enemies use clear-cardinal `RangedAttack`,
-one-use `Investigate` toward a nearby kick-noise position, a Brute `Break` when a Breakable blocks
+one-use `Investigate` toward a nearby kick-noise position; a Blocker instead `Wait`s outside melee
+reach and never investigates, shoots, or breaks; a Brute `Break`s when a Breakable blocks
 its next horizontal-first chase step, `Chase`, and finally `Wait`. The delay is never simulation
 time. A
 presentation-only “showcase complete” status appears after every enemy is dead and consumes core's
 canonical `RunOutcome` projection.
 
 The authored item showcase places a closed door at `(2,1)`, immediately east of player actor 1,
-a Frostcaster enemy as actor 3, and a Brute enemy with a Breakable obstacle at `(4,3)` so both
-archetype intents are visible during enemy turns. The display-free smoke specifically asserts
-actor 3's `CastChill`/`ChillCast` evidence and actor 4's enemy-driver `Break` with the matching
+a Frostcaster enemy as actor 3, and a Blocker enemy as actor 4. The display-free smoke first
+asserts actor 4's `Wait` intent, then temporarily re-authors it as a Brute with a Breakable
+obstacle at `(4,3)`. It specifically asserts actor 3's `CastChill`/`ChillCast` evidence and actor
+4's enemy-driver `Break` with the matching
 `BreakableBroken` event; later player actions do not substitute for those enemy-driver checks.
 Start the item showcase to exercise `I` (open) and `C` (close) without relying on the display-free
 smoke fixture; the item-free core starter floor remains the stable adapter test fixture.
@@ -147,7 +149,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 
 | Current player-facing surface | Visible/HUD | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster intent | map, scheduler, behavior + intent, messages | command + event + snapshots | yes |
+| Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster/Blocker intent | map, scheduler, behavior + intent, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped HUD rows, reach-weapon/Frost Flask effects, healing/ammo results, and ground stack | item/reload/throw events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/open-door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |

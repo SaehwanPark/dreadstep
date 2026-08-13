@@ -28,6 +28,7 @@ use crate::{
   PresentationRuntime, PresentationSpriteProjection, PresentationVisibility,
 };
 
+mod behavior;
 mod cli;
 pub(crate) mod format;
 pub(crate) mod input;
