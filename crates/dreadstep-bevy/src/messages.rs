@@ -97,6 +97,15 @@ pub enum PresentationMessage {
     /// The target's hit points after damage.
     remaining_hit_points: HitPoints,
   },
+  /// An actor threw and consumed an item against a living target.
+  ItemThrown {
+    /// The actor that threw the item.
+    actor: ActorId,
+    /// The consumed item identity.
+    item: ItemId,
+    /// The actor that received the throwable effect.
+    target: ActorId,
+  },
   /// An actor reached zero hit points.
   Died {
     /// The actor that died.
@@ -209,6 +218,15 @@ impl PresentationMessage {
         damage,
         remaining_hit_points,
       },
+      Event::ItemThrown {
+        actor,
+        item,
+        target,
+      } => Self::ItemThrown {
+        actor,
+        item,
+        target,
+      },
       Event::Died { actor } => Self::Died { actor },
       Event::ItemEquipped { actor, item } => Self::ItemEquipped { actor, item },
       Event::ItemUnequipped { actor, item } => Self::ItemUnequipped { actor, item },
@@ -247,6 +265,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::StatusApplied { .. } => "status_applied",
     Event::StatusExpired { .. } => "status_expired",
     Event::Attacked { .. } => "attacked",
+    Event::ItemThrown { .. } => "item_thrown",
     Event::Died { .. } => "died",
     Event::ItemEquipped { .. } => "item_equipped",
     Event::ItemUnequipped { .. } => "item_unequipped",

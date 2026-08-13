@@ -80,6 +80,13 @@ pub enum EquipmentEffect {
   },
 }
 
+/// The closed set of effects available from explicitly thrown items.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ThrowableEffect {
+  /// Apply a refreshed Chilled status to the living target.
+  Chill,
+}
+
 /// The observable result of applying an item effect.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct HealingResult {
@@ -147,6 +154,7 @@ pub struct Item {
   definition: ItemDefinitionId,
   effect: ItemEffect,
   equipment_effect: Option<EquipmentEffect>,
+  throwable_effect: Option<ThrowableEffect>,
 }
 
 impl Item {
@@ -158,6 +166,7 @@ impl Item {
       definition,
       effect: ItemEffect::None,
       equipment_effect: None,
+      throwable_effect: None,
     }
   }
 
@@ -169,6 +178,7 @@ impl Item {
       definition,
       effect,
       equipment_effect: None,
+      throwable_effect: None,
     }
   }
 
@@ -184,6 +194,23 @@ impl Item {
       definition,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MinimumMeleeReach { reach }),
+      throwable_effect: None,
+    }
+  }
+
+  /// Creates an item instance with one closed throwable effect.
+  #[must_use]
+  pub const fn with_throwable_effect(
+    id: ItemId,
+    definition: ItemDefinitionId,
+    effect: ThrowableEffect,
+  ) -> Self {
+    Self {
+      id,
+      definition,
+      effect: ItemEffect::None,
+      equipment_effect: None,
+      throwable_effect: Some(effect),
     }
   }
 
@@ -209,6 +236,12 @@ impl Item {
   #[must_use]
   pub const fn equipment_effect(self) -> Option<EquipmentEffect> {
     self.equipment_effect
+  }
+
+  /// Returns the optional closed throwable effect.
+  #[must_use]
+  pub const fn throwable_effect(self) -> Option<ThrowableEffect> {
+    self.throwable_effect
   }
 }
 

@@ -3,6 +3,7 @@
 use dreadstep_core::{
   AmmunitionResult as CoreAmmunitionResult, EquipmentEffect as CoreEquipmentEffect,
   GroundItemStack as CoreGroundItemStack, HealingResult as CoreHealingResult, Item as CoreItem,
+  ThrowableEffect as CoreThrowableEffect,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,7 @@ pub struct ItemSnapshot {
   id: ItemId,
   definition: ItemDefinitionId,
   equipment_effect: Option<EquipmentEffect>,
+  throwable_effect: Option<ThrowableEffect>,
 }
 
 /// A protocol projection of the closed equipment effects supported by core.
@@ -26,6 +28,14 @@ pub enum EquipmentEffect {
     /// The minimum effective reach while equipped.
     reach: crate::MeleeReach,
   },
+}
+
+/// A protocol projection of the closed throwable effects supported by core.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ThrowableEffect {
+  /// Apply a refreshed Chilled status to the living target.
+  Chill,
 }
 
 /// Protocol evidence for hit points restored by a healing item.
@@ -96,6 +106,9 @@ impl ItemSnapshot {
           reach: crate::MeleeReach::new(reach.value()).unwrap_or(crate::MeleeReach::DEFAULT),
         },
       }),
+      throwable_effect: item.throwable_effect().map(|effect| match effect {
+        CoreThrowableEffect::Chill => ThrowableEffect::Chill,
+      }),
     }
   }
 
@@ -115,6 +128,12 @@ impl ItemSnapshot {
   #[must_use]
   pub const fn equipment_effect(self) -> Option<EquipmentEffect> {
     self.equipment_effect
+  }
+
+  /// Returns the optional closed effect when this item is thrown.
+  #[must_use]
+  pub const fn throwable_effect(self) -> Option<ThrowableEffect> {
+    self.throwable_effect
   }
 }
 

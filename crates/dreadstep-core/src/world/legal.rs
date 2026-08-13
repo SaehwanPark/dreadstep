@@ -164,7 +164,7 @@ impl WorldState {
     &self,
     actor_id: ActorId,
     actor: &Actor,
-    living_targets: Vec<&Actor>,
+    living_targets: &[&Actor],
     commands: &mut Vec<Command>,
   ) {
     for target in living_targets {
@@ -185,6 +185,30 @@ impl WorldState {
           actor: actor_id,
           target: target.id(),
         });
+      }
+    }
+    if actor.kind() == ActorKind::Player {
+      let mut throwable_items = actor
+        .inventory()
+        .iter()
+        .filter(|item| {
+          actor.equipped_item() != Some(item.id()) && item.throwable_effect().is_some()
+        })
+        .copied()
+        .collect::<Vec<_>>();
+      throwable_items.sort_by_key(|item| item.id());
+      for item in throwable_items {
+        for target in living_targets {
+          if Self::is_ranged_distance(actor.position(), target.position())
+            && self.has_ranged_line_of_sight(actor.position(), target.position())
+          {
+            commands.push(Command::Throw {
+              actor: actor_id,
+              item: item.id(),
+              target: target.id(),
+            });
+          }
+        }
       }
     }
   }

@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 21);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 22);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -185,6 +185,23 @@ fn command_and_event_json_use_explicit_tagged_variants() {
   assert_eq!(
     serde_json::to_value(ranged).expect("ranged request should serialize"),
     serde_json::json!({"ranged_attack": {"actor": 3, "target": 4}})
+  );
+
+  let thrown = CommandRequest::Throw {
+    actor: ActorId::new(3),
+    item: ItemId::new(104),
+    target: ActorId::new(4),
+  };
+  assert_eq!(
+    serde_json::to_value(thrown).expect("throw request should serialize"),
+    serde_json::json!({"throw": {"actor": 3, "item": 104, "target": 4}})
+  );
+  assert_eq!(
+    serde_json::from_value::<CommandRequest>(serde_json::json!({
+      "throw": {"actor": 3, "item": 104, "target": 4}
+    }))
+    .expect("throw request should deserialize"),
+    thrown
   );
   assert_eq!(
     serde_json::from_value::<CommandRequest>(serde_json::json!({

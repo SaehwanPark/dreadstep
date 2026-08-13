@@ -153,6 +153,16 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u32(actor.value());
       hasher.write_u32(target.value());
     }
+    Command::Throw {
+      actor,
+      item,
+      target,
+    } => {
+      hasher.write_u8(16);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(item.value());
+      hasher.write_u32(target.value());
+    }
     Command::Chase { actor, target } => {
       hasher.write_u8(4);
       hasher.write_u32(actor.value());
@@ -206,6 +216,16 @@ pub(crate) fn hash_item_effect(hasher: &mut StableHasher, effect: ItemEffect) {
       hasher.write_u8(2);
       hasher.write_u16(amount.value());
     }
+  }
+}
+
+pub(crate) fn hash_throwable_effect(
+  hasher: &mut StableHasher,
+  effect: Option<crate::ThrowableEffect>,
+) {
+  match effect {
+    None => hasher.write_u8(0),
+    Some(crate::ThrowableEffect::Chill) => hasher.write_u8(1),
   }
 }
 

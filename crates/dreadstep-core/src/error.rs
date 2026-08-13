@@ -276,6 +276,24 @@ pub enum CommandError {
   RangedAttackNoAmmunition(ActorId),
   /// The actor already has the full ranged ammunition capacity.
   ReloadNotNeeded(ActorId),
+  /// A throw command must be issued by a player actor.
+  ThrowRequiresPlayer(ActorId),
+  /// A throw target cannot be the throwing actor.
+  CannotThrowSelf(ActorId),
+  /// The throw target is outside the bounded cardinal ranged interval.
+  ThrowOutOfRange {
+    /// The actor issuing the throw.
+    attacker: ActorId,
+    /// The actor outside throw range.
+    target: ActorId,
+  },
+  /// A throw target is not visible along a clear cardinal ray.
+  ThrowNoLineOfSight {
+    /// The actor issuing the throw.
+    attacker: ActorId,
+    /// The actor hidden by geometry.
+    target: ActorId,
+  },
   /// The actor does not own the requested item.
   ItemNotOwned {
     /// The actor whose inventory was searched.
@@ -306,6 +324,13 @@ pub enum CommandError {
     /// The actor whose inventory was queried.
     actor: ActorId,
     /// The non-consumable item identity.
+    item: ItemId,
+  },
+  /// The requested owned item has no throwable effect.
+  ItemNotThrowable {
+    /// The actor whose inventory was queried.
+    actor: ActorId,
+    /// The non-throwable item identity.
     item: ItemId,
   },
   /// The requested item is not in the actor's current ground stack.
@@ -446,6 +471,26 @@ impl fmt::Display for CommandError {
         "actor {} cannot reload with full ammunition",
         actor.value()
       ),
+      Self::ThrowRequiresPlayer(actor) => write!(
+        formatter,
+        "actor {} cannot throw because only players may throw",
+        actor.value()
+      ),
+      Self::CannotThrowSelf(actor) => {
+        write!(formatter, "actor {} cannot throw at itself", actor.value())
+      }
+      Self::ThrowOutOfRange { attacker, target } => write!(
+        formatter,
+        "actor {} cannot throw at target {} outside distance 2..=3",
+        attacker.value(),
+        target.value()
+      ),
+      Self::ThrowNoLineOfSight { attacker, target } => write!(
+        formatter,
+        "actor {} cannot throw at target {} without a clear cardinal line of sight",
+        attacker.value(),
+        target.value()
+      ),
       Self::ItemNotOwned { actor, item } => write!(
         formatter,
         "actor {} does not own item {}",
@@ -471,6 +516,12 @@ impl fmt::Display for CommandError {
       Self::ItemNotConsumable { actor, item } => write!(
         formatter,
         "actor {} cannot consume non-consumable item {}",
+        actor.value(),
+        item.value()
+      ),
+      Self::ItemNotThrowable { actor, item } => write!(
+        formatter,
+        "actor {} cannot throw non-throwable item {}",
         actor.value(),
         item.value()
       ),

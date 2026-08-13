@@ -17,11 +17,11 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v21**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v22**. Core owns deterministic combat, inventory, and
 environmental rules; protocol/MCP/headless/Bevy translate those values. The opt-in desktop
 showcase journals each run and can start an authored item fixture or a seeded procedural floor.
 
-- Verified: core rules, authored ChillTrap/Chilled status timing, terrain-aware kick-noise investigation, MCP/headless adapters, Bevy projections, desktop `--smoke`,
+- Verified: core rules, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, MCP/headless adapters, Bevy projections, desktop `--smoke`,
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).

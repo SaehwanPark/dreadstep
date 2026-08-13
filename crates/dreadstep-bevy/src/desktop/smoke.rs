@@ -12,7 +12,7 @@ use super::input::submit_command;
 use super::journal::{JournalHandle, export_replay, journal_path};
 use super::session::{DesktopSession, record_session};
 use super::{
-  ATTACK_TARGET, CONSUME_ITEM, EQUIP_ITEM, PICKUP_ITEM, PLAYER, RANGED_TARGET,
+  ATTACK_TARGET, CONSUME_ITEM, EQUIP_ITEM, FROST_FLASK, PICKUP_ITEM, PLAYER, RANGED_TARGET,
   SHOWCASE_COMMAND_KINDS, SHOWCASE_EVENT_KINDS, SMOKE_ENEMY_ATTACK_LIMIT,
 };
 
@@ -65,6 +65,25 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     "smoke",
     Command::RangedAttack {
       actor: PLAYER,
+      target: RANGED_TARGET,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_teleport(RANGED_TARGET, Position::new(3, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "throw_target_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Throw {
+      actor: PLAYER,
+      item: FROST_FLASK,
       target: RANGED_TARGET,
     },
   );

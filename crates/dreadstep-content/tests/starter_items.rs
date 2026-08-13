@@ -6,7 +6,7 @@ use dreadstep_content::{
 };
 use dreadstep_core::{
   ActorId, AmmunitionAmount, HealingAmount, Item, ItemDefinitionId, ItemEffect, ItemId, MeleeReach,
-  WorldState,
+  ThrowableEffect, WorldState,
 };
 
 #[test]
@@ -55,6 +55,11 @@ fn starter_item_floor_is_complete_and_repeatable() {
         ItemId::new(103),
         ItemDefinitionId::new(4),
         MeleeReach::new(2).expect("starter weapon reach should be positive"),
+      ),
+      Item::with_throwable_effect(
+        ItemId::new(104),
+        ItemDefinitionId::new(5),
+        ThrowableEffect::Chill,
       ),
       Item::with_effect(
         ItemId::new(102),

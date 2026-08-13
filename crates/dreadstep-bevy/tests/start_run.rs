@@ -79,7 +79,7 @@ fn item_run_startup_projects_complete_inventory_scene() {
   assert_complete_tile_scene(world, &snapshot);
   assert_complete_actor_scene(world, &snapshot);
   assert_eq!(world.query::<&SceneGroundItem>().iter(world).count(), 0);
-  assert_eq!(world.query::<&SceneInventoryItem>().iter(world).count(), 4);
+  assert_eq!(world.query::<&SceneInventoryItem>().iter(world).count(), 5);
   let inventory: BTreeMap<_, _> = world
     .query::<&SceneInventoryItem>()
     .iter(world)
@@ -103,11 +103,15 @@ fn item_run_startup_projects_complete_inventory_scene() {
       ),
       (
         ItemId::new(102),
-        (ActorId::new(1), ItemDefinitionId::new(3), 2),
+        (ActorId::new(1), ItemDefinitionId::new(3), 3),
       ),
       (
         ItemId::new(103),
         (ActorId::new(1), ItemDefinitionId::new(4), 1),
+      ),
+      (
+        ItemId::new(104),
+        (ActorId::new(1), ItemDefinitionId::new(5), 2),
       ),
     ])
   );

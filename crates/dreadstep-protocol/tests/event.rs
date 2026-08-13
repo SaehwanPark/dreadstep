@@ -63,6 +63,11 @@ fn maps_every_core_event_variant_to_protocol_values() {
       damage: CoreDamage::new(1),
       remaining_hit_points: CoreHitPoints::new(1),
     },
+    CoreEvent::ItemThrown {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(8),
+      target: CoreActorId::new(2),
+    },
     CoreEvent::Died {
       actor: CoreActorId::new(2),
     },
@@ -135,6 +140,11 @@ fn maps_every_core_event_variant_to_protocol_values() {
         target: ActorId::new(2),
         damage: Damage::new(1),
         remaining_hit_points: HitPoints::new(1),
+      },
+      Event::ItemThrown {
+        actor: ActorId::new(1),
+        item: ItemId::new(8),
+        target: ActorId::new(2),
       },
       Event::Died {
         actor: ActorId::new(2),

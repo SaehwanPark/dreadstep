@@ -107,6 +107,15 @@ pub enum Event {
     /// The target's hit points after damage.
     remaining_hit_points: HitPoints,
   },
+  /// A player consumed one throwable item against a living target.
+  ItemThrown {
+    /// The actor that threw the item.
+    actor: ActorId,
+    /// The consumed item identity.
+    item: ItemId,
+    /// The actor that received the throwable effect.
+    target: ActorId,
+  },
   /// An actor reached zero hit points and became dead.
   Died {
     /// The actor that died.

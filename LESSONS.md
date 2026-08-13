@@ -584,3 +584,19 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Preserve the exact equip/unequip timing and replacement events, expose the closed
   effect in protocol snapshots, and defer weapon classes, damage, armor, affixes, durability, and
   identification until their own bounded contracts exist.
+
+## Keep throw effects closed and status accounting actor-specific
+
+- Context: The first player-facing throwable reuses Chilled without opening a generic projectile
+  or effect system.
+- Symptom: A throw applies status to its target while the thrower may also be Chilled, so broad
+  event matching can accidentally treat the target's application as a refresh for the thrower and
+  skip the thrower's scheduler tick or expiry.
+- Cause: `WorldState::execute` owns action-cost/status accounting, while `ItemThrown` and
+  `StatusApplied` are shared semantic evidence for two different actors in one accepted command.
+- Resolution: Keep one closed `ThrowableEffect::Chill`, validate the player/item/target/ray in core,
+  and identify status refreshes by the command actor identity before consuming that actor's prior
+  status. Emit throw evidence before the target application and keep the target's refresh separate.
+- Prevention: Test a Chilled thrower and target together, assert the thrower pays the extra tick and
+  the target retains two actions, and defer splash, misses, projectile simulation, and generic
+  throw rules until each has its own typed contract.

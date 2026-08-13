@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use crate::{
   ActionCost, ActionResult, ActionTime, Actor, ActorId, ActorKind, Command, CommandError, Event,
   GridMap, GroundItemStack, Position, RunOutcome, StateDigest, StatusKind, Tile, WorldError,
-  replay::{StableHasher, hash_equipment_effect, hash_item_effect},
+  replay::{StableHasher, hash_equipment_effect, hash_item_effect, hash_throwable_effect},
 };
 
 mod combat;
@@ -220,6 +220,7 @@ impl WorldState {
         hasher.write_u32(item.definition().value());
         hash_item_effect(&mut hasher, item.effect());
         hash_equipment_effect(&mut hasher, item.equipment_effect());
+        hash_throwable_effect(&mut hasher, item.throwable_effect());
       }
       match actor.equipped_item() {
         Some(item) => {
@@ -240,6 +241,7 @@ impl WorldState {
           hasher.write_u32(item.definition().value());
           hash_item_effect(&mut hasher, item.effect());
           hash_equipment_effect(&mut hasher, item.equipment_effect());
+          hash_throwable_effect(&mut hasher, item.throwable_effect());
         }
       }
     }
@@ -288,15 +290,16 @@ impl WorldState {
     Self::push_standard_moves(actor_id, &mut commands);
     self.push_adjacent_terrain_commands(actor_id, actor, &mut commands);
     self.push_inventory_commands(actor_id, actor, &mut commands);
-    let living_targets = self
+    let mut living_targets = self
       .actors
       .values()
       .filter(|target| target.is_alive() && target.id() != actor_id)
       .collect::<Vec<_>>();
+    living_targets.sort_by_key(|target| target.id());
     if actor.kind() == ActorKind::Enemy {
       self.push_enemy_combat_commands(actor_id, actor, &living_targets, &mut commands);
     } else {
-      self.push_player_combat_commands(actor_id, actor, living_targets, &mut commands);
+      self.push_player_combat_commands(actor_id, actor, &living_targets, &mut commands);
     }
     commands
   }
@@ -365,6 +368,7 @@ impl WorldState {
       Command::Break { position, .. } => vec![self.break_terrain(actor_id, position)?],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
+      Command::Throw { item, target, .. } => self.throw_item(actor_id, item, target)?,
       Command::Chase { target, .. } => {
         let direction = self.chase_direction(actor_id, target)?;
         self.move_actor(actor_id, direction)?
@@ -389,7 +393,7 @@ impl WorldState {
     };
     let status_refreshed = events
       .iter()
-      .any(|event| matches!(event, Event::StatusApplied { .. }));
+      .any(|event| matches!(event, Event::StatusApplied { actor, .. } if *actor == actor_id));
     if status_affected
       && !status_refreshed
       && let Some(status) = self

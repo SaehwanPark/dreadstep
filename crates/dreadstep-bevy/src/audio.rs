@@ -82,6 +82,7 @@ impl PresentationAudioCue {
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
       Event::ItemDropped { .. }
+      | Event::ItemThrown { .. }
       | Event::Reloaded { .. }
       | Event::DoorOpened { .. }
       | Event::NoiseCreated { .. }

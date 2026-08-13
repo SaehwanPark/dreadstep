@@ -278,6 +278,11 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
     }),
+    ["throw", actor, item, target] => Ok(Command::Throw {
+      actor: parse_actor(Some(actor))?,
+      item: parse_item(Some(item))?,
+      target: parse_actor(Some(target))?,
+    }),
     ["chase", actor, target] => Ok(Command::Chase {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
@@ -390,6 +395,16 @@ fn fixed_scenario() -> Result<WorldState, RunError> {
       Item::with_equipment_effect(ItemId::new(103), ItemDefinitionId::new(4), MeleeReach::TWO),
     )
     .map_err(|error| RunError::Scenario(error.to_string()))?;
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_throwable_effect(
+        ItemId::new(104),
+        ItemDefinitionId::new(5),
+        dreadstep_core::ThrowableEffect::Chill,
+      ),
+    )
+    .map_err(|error| RunError::Scenario(error.to_string()))?;
   Ok(world)
 }
 
@@ -438,6 +453,26 @@ mod tests {
       input.commands(),
       &[Command::RangedAttack {
         actor: ActorId::new(1),
+        target: ActorId::new(2),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_throw_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "throw:1:104:2".to_owned(),
+    ])
+    .expect("throw command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Throw {
+        actor: ActorId::new(1),
+        item: ItemId::new(104),
         target: ActorId::new(2),
       }]
     );
@@ -654,7 +689,7 @@ event=ItemEquipped { actor: ActorId(1), item: ItemId(103) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 outcome=in_progress\n\
-digest=11809165154543602251\n"
+digest=12528403202020012428\n"
     );
   }
 
