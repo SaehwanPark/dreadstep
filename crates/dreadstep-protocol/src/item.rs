@@ -1,0 +1,127 @@
+//! Protocol projections of item instances, effects, and ground stacks.
+
+use dreadstep_core::{
+  AmmunitionResult as CoreAmmunitionResult, GroundItemStack as CoreGroundItemStack,
+  HealingResult as CoreHealingResult, Item as CoreItem,
+};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+use crate::{HitPoints, ItemDefinitionId, ItemId, Position};
+
+/// A protocol projection of one opaque item instance.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+pub struct ItemSnapshot {
+  id: ItemId,
+  definition: ItemDefinitionId,
+}
+
+/// Protocol evidence for hit points restored by a healing item.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+pub struct HealingResult {
+  amount: u16,
+  remaining_hit_points: HitPoints,
+}
+
+impl HealingResult {
+  pub(crate) fn from_core(result: CoreHealingResult) -> Self {
+    Self {
+      amount: result.amount(),
+      remaining_hit_points: HitPoints::new(result.remaining_hit_points().value()),
+    }
+  }
+
+  /// Returns the actual amount restored after maximum-hit-point clamping.
+  #[must_use]
+  pub const fn amount(self) -> u16 {
+    self.amount
+  }
+
+  /// Returns the actor's hit points after healing.
+  #[must_use]
+  pub const fn remaining_hit_points(self) -> HitPoints {
+    self.remaining_hit_points
+  }
+}
+
+/// Protocol evidence for ranged ammunition restored by an ammunition item.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+pub struct AmmunitionResult {
+  amount: u16,
+  remaining_ammunition: u16,
+}
+
+impl AmmunitionResult {
+  pub(crate) fn from_core(result: CoreAmmunitionResult) -> Self {
+    Self {
+      amount: result.amount(),
+      remaining_ammunition: result.remaining_ammunition(),
+    }
+  }
+
+  /// Returns the actual number of rounds restored after capacity clamping.
+  #[must_use]
+  pub const fn amount(self) -> u16 {
+    self.amount
+  }
+
+  /// Returns the actor's ammunition after restoration.
+  #[must_use]
+  pub const fn remaining_ammunition(self) -> u16 {
+    self.remaining_ammunition
+  }
+}
+
+impl ItemSnapshot {
+  pub(crate) fn from_item(item: CoreItem) -> Self {
+    Self {
+      id: ItemId::new(item.id().value()),
+      definition: ItemDefinitionId::new(item.definition().value()),
+    }
+  }
+
+  /// Returns the stable item instance identity.
+  #[must_use]
+  pub const fn id(self) -> ItemId {
+    self.id
+  }
+
+  /// Returns the opaque definition reference.
+  #[must_use]
+  pub const fn definition(self) -> ItemDefinitionId {
+    self.definition
+  }
+}
+
+/// A read-only protocol projection of one ground-item stack.
+#[derive(Clone, Debug, Eq, PartialEq, JsonSchema, Serialize)]
+pub struct GroundItemSnapshot {
+  position: Position,
+  items: Vec<ItemSnapshot>,
+}
+
+impl GroundItemSnapshot {
+  pub(crate) fn from_stack(stack: &CoreGroundItemStack) -> Self {
+    Self {
+      position: Position::new(stack.position().x(), stack.position().y()),
+      items: stack
+        .items()
+        .iter()
+        .copied()
+        .map(ItemSnapshot::from_item)
+        .collect(),
+    }
+  }
+
+  /// Returns the map position of this stack.
+  #[must_use]
+  pub const fn position(&self) -> Position {
+    self.position
+  }
+
+  /// Returns item snapshots in deterministic insertion order.
+  #[must_use]
+  pub fn items(&self) -> &[ItemSnapshot] {
+    &self.items
+  }
+}

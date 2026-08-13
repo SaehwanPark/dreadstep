@@ -107,6 +107,26 @@ check_local_media_policy() {
 
 check_local_media_policy
 
+# Production sources must stay reviewable. desktop/tests.rs is excluded because it is a
+# cfg(test) characterization suite, not a production module.
+check_source_line_budget() {
+  local path
+  local lines
+  local budget=800
+  while IFS= read -r path; do
+    case "${path}" in
+      *tests.rs) continue ;;
+    esac
+    lines="$(wc -l < "${path}" | tr -d ' ')"
+    if (( lines > budget )); then
+      echo "source file exceeds ${budget}-line budget (${lines} lines): ${path}" >&2
+      exit 1
+    fi
+  done < <(find crates -path '*/src/*.rs' -type f | sort)
+}
+
+check_source_line_budget
+
 check_forbidden_dependency() {
   local package="$1"
   local tree
