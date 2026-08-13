@@ -59,6 +59,7 @@ display-free smoke path.
 | E | Equip selected item | `Command::Equip` |
 | Q | Unequip | `Command::Unequip` |
 | U | Consume selected item | `Command::UseItem` |
+| T | Throw the selected Frost Flask at the lowest-ID legal target | `Command::Throw` |
 | P | Pick up the lowest-ID item at the player's position | `Command::Pickup` |
 | X | Drop the selected unequipped item at the player's position | `Command::Drop` |
 | R | Reload to the fixed three-shot capacity when ammo is below full | `Command::Reload` |
@@ -118,9 +119,10 @@ files are never overwritten; a suffix is allocated on filename collision.
 
 Actor snapshots include the fixed four-item inventory capacity. A full player's pickup action is
 omitted from legal actions and rejected atomically if requested directly. The authored item-run
-fixture's item `101` is a three-point healing consumable and item `102` is a two-round ammunition
-consumable; the journal records their actual capped recovery in the existing `item_consumed` event
-payload. Other item effects and capacity upgrades remain outside this showcase slice.
+fixture's item `101` is a three-point healing consumable, item `102` is a two-round ammunition
+consumable, item `103` is a reach weapon, and item `104` is the Frost Flask. The journal records
+capped recovery in `item_consumed` and ordered `item_thrown`/`status_applied` evidence. Other item
+effects and capacity upgrades remain outside this showcase slice.
 
 The journal is diagnostic evidence, not a protocol message or a replay playback format. At clean
 smoke or visible-run completion, the desktop boundary also writes a versioned sibling
@@ -134,7 +136,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | --- | --- | --- | --- |
 | Move / wait / enemy attack/ranged/investigate/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, reach-weapon effect, healing/ammo results, and ground stack | item/reload events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
+| Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped HUD rows, reach-weapon/Frost Flask effects, healing/ammo results, and ground stack | item/reload/throw events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Opt-in procedural floor and `N` advancement | seeded 13×9 floor and next-depth restart after victory | `run_started` depth and `floor_advanced` evidence | no; smoke keeps item fixture |
@@ -151,8 +153,9 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 ```
 
 The deterministic sequence first crosses a one-shot ChillTrap (recording the two-action Chilled
-status and expiry), then places a trap in the first enemy's chase path and uses `RangedAttack`
-against the distance-two authored enemy so the chase emits `TrapTriggered`, then adds a breakable-terrain
+status and expiry), uses `RangedAttack` against the distance-two authored enemy, then teleports that
+enemy to a clear distance-three throw fixture and throws Frost Flask item 104 (recording
+`ItemThrown` and an applied Chilled status), then adds a breakable-terrain
 smoke fixture and breaks it with `Break`, then adds a closed-door fixture and kicks it with `Kick`
 (including terrain-aware noise evidence and a nearby enemy `Investigate` turn), re-adds a door and opens it with
 `Interact`, then reloads the player's

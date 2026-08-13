@@ -105,6 +105,7 @@ pub(crate) fn desktop_input(
   let key = [
     KeyCode::KeyF,
     KeyCode::KeyG,
+    KeyCode::KeyT,
     KeyCode::KeyE,
     KeyCode::KeyQ,
     KeyCode::KeyU,
@@ -247,6 +248,20 @@ pub(crate) fn command_for_key(
       })
       .min_by_key(|(target, _)| *target)
       .map(|(_, command)| command),
+    KeyCode::KeyT => session.selected_item.and_then(|item| {
+      legal
+        .iter()
+        .filter_map(|command| match command {
+          Command::Throw {
+            item: candidate,
+            target,
+            ..
+          } if *candidate == item => Some((*target, *command)),
+          _ => None,
+        })
+        .min_by_key(|(target, _)| *target)
+        .map(|(_, command)| command)
+    }),
     KeyCode::KeyE => session.selected_item.map(|item| Command::Equip {
       actor: PLAYER,
       item,

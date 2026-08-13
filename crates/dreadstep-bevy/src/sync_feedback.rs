@@ -170,6 +170,7 @@ pub(crate) fn command_actor(command: Command) -> ActorId {
     | Command::Break { actor, .. }
     | Command::Attack { actor, .. }
     | Command::RangedAttack { actor, .. }
+    | Command::Throw { actor, .. }
     | Command::Chase { actor, .. }
     | Command::Investigate { actor, .. }
     | Command::Equip { actor, .. }

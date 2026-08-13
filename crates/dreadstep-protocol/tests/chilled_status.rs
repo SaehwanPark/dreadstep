@@ -5,7 +5,7 @@ use dreadstep_protocol::{Event, PROTOCOL_VERSION, StatusKind, WorldSnapshot};
 use serde_json::json;
 
 #[test]
-fn chilled_status_event_and_snapshot_use_v21_wire_values() {
+fn chilled_status_event_and_snapshot_use_v22_wire_values() {
   let mut world = WorldState::new(
     GridMap::from_tiles(2, 1, vec![Tile::Floor, Tile::ChillTrap]).unwrap(),
     vec![Actor::new(

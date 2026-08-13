@@ -225,6 +225,48 @@ fn ranged_key_selects_the_lowest_id_legal_target() {
 }
 
 #[test]
+fn throw_key_uses_the_selected_flask_and_lowest_id_legal_target() {
+  let directory = test_directory("throw-key");
+  let _ = fs::create_dir_all(&directory);
+  let journal = Arc::new(Mutex::new(
+    Journal::open(&directory).expect("journal opens"),
+  ));
+  let mut world = WorldState::new(
+    GridMap::filled(5, 1, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0)),
+      Actor::new(ActorId::new(5), ActorKind::Enemy, Position::new(2, 0)),
+      Actor::new(RANGED_TARGET, ActorKind::Enemy, Position::new(3, 0)),
+    ],
+  )
+  .expect("test world should be valid");
+  world
+    .give_item(
+      PLAYER,
+      Item::with_throwable_effect(
+        FROST_FLASK,
+        dreadstep_core::ItemDefinitionId::new(5),
+        dreadstep_core::ThrowableEffect::Chill,
+      ),
+    )
+    .expect("frost flask should be owned");
+  let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+  let mut session = DesktopSession::new(7, journal);
+  session.selected_item = Some(FROST_FLASK);
+  assert_eq!(
+    command_for_key(KeyCode::KeyT, &runtime, &session),
+    Some(Command::Throw {
+      actor: PLAYER,
+      item: FROST_FLASK,
+      target: RANGED_TARGET,
+    })
+  );
+  session.selected_item = None;
+  assert_eq!(command_for_key(KeyCode::KeyT, &runtime, &session), None);
+  let _ = fs::remove_dir_all(directory);
+}
+
+#[test]
 fn reload_key_selects_the_legal_player_reload() {
   let directory = test_directory("reload-key");
   let _ = fs::create_dir_all(&directory);
@@ -573,6 +615,20 @@ fn ammunition_consumption_is_visible_in_desktop_event_evidence() {
 }
 
 #[test]
+fn frost_flask_throw_is_visible_in_desktop_event_evidence() {
+  let event = Event::ItemThrown {
+    actor: PLAYER,
+    item: FROST_FLASK,
+    target: RANGED_TARGET,
+  };
+  assert_eq!(
+    event_value(event),
+    json!({ "kind": "item_thrown", "actor": 1, "item": 104, "target": 3 })
+  );
+  assert_eq!(event_message(event), "Actor 1 threw item 104 at 3.");
+}
+
+#[test]
 fn visibility_summary_distinguishes_active_and_full_map() {
   assert_eq!(visibility_summary_values(false, 0, 0), "FOV full map");
   assert_eq!(
@@ -692,6 +748,8 @@ fn terminal_hud_message_matches_outcome_and_avoids_depth_overflow() {
 fn controls_only_advertise_next_floor_for_procedural_runs() {
   assert!(controls_text(true).contains("N next procedural floor"));
   assert!(!controls_text(false).contains("next procedural floor"));
+  assert!(controls_text(true).contains("T throw selected"));
+  assert!(controls_text(false).contains("T throw selected"));
 }
 
 #[test]

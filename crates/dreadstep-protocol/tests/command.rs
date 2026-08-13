@@ -39,6 +39,11 @@ fn every_request_variant_round_trips_through_core() {
       actor: ActorId::new(1),
       target: ActorId::new(3),
     },
+    CommandRequest::Throw {
+      actor: ActorId::new(1),
+      item: ItemId::new(9),
+      target: ActorId::new(3),
+    },
     CommandRequest::Chase {
       actor: ActorId::new(2),
       target: ActorId::new(1),
@@ -98,6 +103,11 @@ fn every_core_command_round_trips_through_protocol() {
     },
     Command::RangedAttack {
       actor: CoreActorId::new(1),
+      target: CoreActorId::new(3),
+    },
+    Command::Throw {
+      actor: CoreActorId::new(1),
+      item: CoreItemId::new(9),
       target: CoreActorId::new(3),
     },
     Command::Chase {

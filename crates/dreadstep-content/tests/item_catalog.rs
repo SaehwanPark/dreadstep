@@ -14,6 +14,7 @@ fn starter_catalog_has_stable_order_and_known_unknown_lookup() {
       ItemDefinitionId::new(2),
       ItemDefinitionId::new(3),
       ItemDefinitionId::new(4),
+      ItemDefinitionId::new(5),
     ]
   );
   assert!(catalog.contains(ItemDefinitionId::new(2)));

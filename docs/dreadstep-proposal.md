@@ -1897,6 +1897,11 @@ path can advance an opt-in procedural victory to the next seeded depth with `N`;
 history and core-owned progression remain future work. The HUD exposes the current scenario/depth
 so this opt-in path remains legible during host playtesting.
 
+The first bounded cold interaction is now also verified: player-owned Frost Flask item 104 can be
+thrown at a living target on a clear cardinal distance-2..=3 ray, consumes the item, and applies
+the existing two-action Chilled status. Splash, misses, projectile simulation, other throwable
+effects, and generic throw rules remain future work.
+
 ### Introduce a deliberately small interaction set
 
 For example:

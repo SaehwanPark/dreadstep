@@ -104,6 +104,9 @@ pub(crate) fn item_value(item: Item) -> Value {
         json!({ "minimum_melee_reach": reach.value() })
       }
     }),
+    "throwable_effect": item.throwable_effect().map(|effect| match effect {
+      dreadstep_core::ThrowableEffect::Chill => "chill",
+    }),
   })
 }
 
@@ -158,6 +161,7 @@ pub(crate) fn command_name(command: Command) -> &'static str {
     Command::Kick { .. } => "kick",
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
+    Command::Throw { .. } => "throw",
     Command::Chase { .. } => "chase",
     Command::Investigate { .. } => "investigate",
     Command::Equip { .. } => "equip",
@@ -195,6 +199,13 @@ pub(crate) fn command_value(command: Command) -> Value {
     }
     Command::RangedAttack { actor, target } => {
       json!({ "kind": "ranged_attack", "actor": actor.value(), "target": target.value() })
+    }
+    Command::Throw {
+      actor,
+      item,
+      target,
+    } => {
+      json!({ "kind": "throw", "actor": actor.value(), "item": item.value(), "target": target.value() })
     }
     Command::Chase { actor, target } => {
       json!({ "kind": "chase", "actor": actor.value(), "target": target.value() })
@@ -308,6 +319,13 @@ pub(crate) fn event_value(event: Event) -> Value {
       "damage": damage.value(),
       "remaining_hit_points": remaining_hit_points.value(),
     }),
+    Event::ItemThrown {
+      actor,
+      item,
+      target,
+    } => {
+      json!({ "kind": "item_thrown", "actor": actor.value(), "item": item.value(), "target": target.value() })
+    }
     Event::Died { actor } => json!({ "kind": "died", "actor": actor.value() }),
     Event::ItemEquipped { actor, item } => {
       json!({ "kind": "item_equipped", "actor": actor.value(), "item": item.value() })
@@ -423,6 +441,16 @@ pub(crate) fn event_message(event: Event) -> String {
       attacker.value(),
       target.value(),
       remaining_hit_points.value()
+    ),
+    Event::ItemThrown {
+      actor,
+      item,
+      target,
+    } => format!(
+      "Actor {} threw item {} at {}.",
+      actor.value(),
+      item.value(),
+      target.value()
     ),
     Event::Died { actor } => format!("Actor {} died.", actor.value()),
     Event::ItemEquipped { actor, item } => {
@@ -548,9 +576,9 @@ pub(crate) fn terminal_hud_message(status: &DesktopStatus, procedural: bool, dep
 
 pub(crate) fn controls_text(procedural: bool) -> &'static str {
   if procedural {
-    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit"
+    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  T throw selected  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit"
   } else {
-    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit"
+    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  T throw selected  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit"
   }
 }
 
@@ -647,7 +675,7 @@ pub(crate) fn desktop_update_hud(
           let selected = session.selected_item == Some(item.id());
           let equipped = player.equipped_item() == Some(item.id());
           format!(
-            "{}item {} (def {}){}{}",
+            "{}item {} (def {}){}{}{}",
             if selected { "> " } else { "  " },
             item.id().value(),
             item.definition().value(),
@@ -658,6 +686,11 @@ pub(crate) fn desktop_update_hud(
                   format!(" [reach {}]", reach.value())
                 }
               },),
+            item
+              .throwable_effect()
+              .map_or_else(String::new, |effect| match effect {
+                dreadstep_core::ThrowableEffect::Chill => " [throw: chill]".to_string(),
+              }),
             if equipped { " [equipped]" } else { "" }
           )
         })

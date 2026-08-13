@@ -6,16 +6,24 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added the bounded player Frost Flask throw: authored item 104 (definition 5) is a closed
+  `ThrowableEffect::Chill` that a player may throw at a living target on a clear cardinal
+  distance-2..=3 ray. The accepted command consumes the flask, emits typed `ItemThrown` then
+  `StatusApplied` evidence, and applies or refreshes the existing two-action `Chilled` status.
+  Protocol v22, content, MCP, headless, Bevy/desktop HUD and journal mappings, and display-free
+  smoke coverage are synchronized; splash, misses, projectile simulation, and generic throw
+  effects remain deferred.
+
 - Added a one-shot authored `ChillTrap` that applies a two-action `Chilled` status. Chilled actors
-  pay one extra scheduler tick for each affected accepted action, with typed status events,
-  digest/snapshot projection, and protocol v21 mappings.
+  pay one extra scheduler tick for each affected accepted action, with typed status events and
+  digest/snapshot projection.
 
 ### Changed
 
 - Split oversized core, protocol, and Bevy production sources into cohesive modules with
   crate-root re-exports, added an 800-line CI budget (excluding `*tests.rs` characterization
   suites), and compacted SPEC/ARCHITECTURE/README so verified slice history lives in this
-  changelog rather than duplicated writeups. Protocol is now v20; workspace version remains
+  changelog rather than duplicated writeups. Workspace version remains
   `0.0.0`.
 
 ### Added

@@ -103,7 +103,7 @@ pub enum Event {
     /// The actor's hit points after trap damage.
     remaining_hit_points: HitPoints,
   },
-  /// An actor received chilled from a trap.
+  /// An actor received Chilled from a trap or thrown item.
   StatusApplied {
     /// The actor receiving the status.
     actor: ActorId,
@@ -129,6 +129,15 @@ pub enum Event {
     damage: Damage,
     /// The target's hit points after damage.
     remaining_hit_points: HitPoints,
+  },
+  /// A player consumed one throwable item against a living target.
+  ItemThrown {
+    /// The player that threw the item.
+    actor: ActorId,
+    /// The consumed item instance.
+    item: ItemId,
+    /// The actor that received the throwable effect.
+    target: ActorId,
   },
   /// An actor reached zero hit points.
   Died {
@@ -270,6 +279,15 @@ impl From<CoreEvent> for Event {
         target: ActorId::new(target.value()),
         damage: Damage::new(damage.value()),
         remaining_hit_points: HitPoints::new(remaining_hit_points.value()),
+      },
+      CoreEvent::ItemThrown {
+        actor,
+        item,
+        target,
+      } => Self::ItemThrown {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
+        target: ActorId::new(target.value()),
       },
       CoreEvent::Died { actor } => Self::Died {
         actor: ActorId::new(actor.value()),

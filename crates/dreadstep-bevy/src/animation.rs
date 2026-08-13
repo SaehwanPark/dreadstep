@@ -113,7 +113,8 @@ impl PresentationAnimationCue {
       Event::ItemUnequipped { actor, item } => Some(Self::ItemUnequipped { actor, item }),
       Event::ItemConsumed { actor, item, .. } => Some(Self::ItemConsumed { actor, item }),
       Event::ItemPickedUp { actor, item } => Some(Self::ItemPickedUp { actor, item }),
-      Event::DoorOpened { .. }
+      Event::ItemThrown { .. }
+      | Event::DoorOpened { .. }
       | Event::NoiseCreated { .. }
       | Event::ItemDropped { .. }
       | Event::Reloaded { .. }

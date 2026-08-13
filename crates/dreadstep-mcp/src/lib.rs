@@ -18,8 +18,8 @@ use serde::Serialize;
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, AmmunitionAmount, Command, GridMap, HealingAmount, HitPoints, Item,
-  ItemDefinitionId, ItemEffect, ItemId, MeleeReach as CoreMeleeReach, Position, ReplayTrace, Tile,
-  WorldState,
+  ItemDefinitionId, ItemEffect, ItemId, MeleeReach as CoreMeleeReach, Position, ReplayTrace,
+  ThrowableEffect, Tile, WorldState,
 };
 use dreadstep_protocol::{
   ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
@@ -527,6 +527,16 @@ fn item_scenario() -> Result<WorldState, SessionError> {
         ItemId::new(103),
         ItemDefinitionId::new(4),
         CoreMeleeReach::new(2).expect("reach should be positive"),
+      ),
+    )
+    .map_err(|error| SessionError::Scenario(error.into()))?;
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_throwable_effect(
+        ItemId::new(104),
+        ItemDefinitionId::new(5),
+        ThrowableEffect::Chill,
       ),
     )
     .map_err(|error| SessionError::Scenario(error.into()))?;

@@ -54,6 +54,7 @@ pub(crate) const PLAYER: ActorId = ActorId::new(1);
 pub(crate) const ATTACK_TARGET: ActorId = ActorId::new(2);
 pub(crate) const RANGED_TARGET: ActorId = ActorId::new(3);
 pub(crate) const EQUIP_ITEM: ItemId = ItemId::new(103);
+pub(crate) const FROST_FLASK: ItemId = ItemId::new(104);
 pub(crate) const CONSUME_ITEM: ItemId = ItemId::new(101);
 pub(crate) const PICKUP_ITEM: ItemId = ItemId::new(102);
 pub(crate) const SMOKE_ENEMY_ATTACK_LIMIT: usize = 32;
@@ -63,7 +64,7 @@ pub(crate) const HEALTH_BAR_WIDTH: usize = 10;
 pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 15] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 16] = [
   "move",
   "wait",
   "interact",
@@ -71,6 +72,7 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 15] = [
   "break",
   "attack",
   "ranged_attack",
+  "throw",
   "chase",
   "investigate",
   "equip",
@@ -82,7 +84,7 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 15] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 17] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 18] = [
   "moved",
   "movement_blocked",
   "waited",
@@ -93,6 +95,7 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 17] = [
   "status_applied",
   "status_expired",
   "attacked",
+  "item_thrown",
   "died",
   "item_equipped",
   "item_unequipped",

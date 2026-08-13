@@ -74,6 +74,15 @@ pub enum CommandRequest {
     /// The actor being targeted.
     target: ActorId,
   },
+  /// Throw one owned, unequipped throwable item at a living cardinal ranged target.
+  Throw {
+    /// The player issuing the request.
+    actor: ActorId,
+    /// The owned throwable item instance to consume.
+    item: ItemId,
+    /// The living actor receiving the throwable effect.
+    target: ActorId,
+  },
   /// Chase a living actor by one deterministic step.
   Chase {
     /// The enemy issuing the request.
@@ -163,6 +172,15 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
       },
+      CommandRequest::Throw {
+        actor,
+        item,
+        target,
+      } => Self::Throw {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        item: dreadstep_core::ItemId::new(item.value()),
+        target: dreadstep_core::ActorId::new(target.value()),
+      },
       CommandRequest::Chase { actor, target } => Self::Chase {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
@@ -230,6 +248,15 @@ impl From<CoreCommand> for CommandRequest {
       },
       CoreCommand::RangedAttack { actor, target } => Self::RangedAttack {
         actor: ActorId::new(actor.value()),
+        target: ActorId::new(target.value()),
+      },
+      CoreCommand::Throw {
+        actor,
+        item,
+        target,
+      } => Self::Throw {
+        actor: ActorId::new(actor.value()),
+        item: ItemId::new(item.value()),
         target: ActorId::new(target.value()),
       },
       CoreCommand::Chase { actor, target } => Self::Chase {

@@ -55,6 +55,15 @@ pub enum Command {
     /// The living actor being targeted.
     target: ActorId,
   },
+  /// Throw one owned authored item at a living cardinal ranged target.
+  Throw {
+    /// The player issuing the throw.
+    actor: ActorId,
+    /// The owned unequipped throwable item.
+    item: ItemId,
+    /// The living actor being targeted.
+    target: ActorId,
+  },
   /// Move an enemy one deterministic step toward a living target.
   Chase {
     /// The enemy issuing the chase command.
@@ -119,6 +128,7 @@ impl Command {
       | Self::Break { actor, .. }
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
+      | Self::Throw { actor, .. }
       | Self::Chase { actor, .. }
       | Self::Investigate { actor, .. }
       | Self::Equip { actor, .. }

@@ -10,8 +10,8 @@ use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, AmmunitionAmount, GridMap, HealingAmount, HitPoints, Item,
-  ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position, Tile, WorldError,
-  WorldState,
+  ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position, ThrowableEffect, Tile,
+  WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -426,6 +426,14 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
         Item::with_equipment_effect(ItemId::new(103), ItemDefinitionId::new(4), MeleeReach::TWO),
       ),
       StarterItemPlacement::new(
+        ActorId::new(1),
+        Item::with_throwable_effect(
+          ItemId::new(104),
+          ItemDefinitionId::new(5),
+          ThrowableEffect::Chill,
+        ),
+      ),
+      StarterItemPlacement::new(
         ActorId::new(2),
         Item::new(ItemId::new(100), ItemDefinitionId::new(1)),
       ),
@@ -460,6 +468,7 @@ pub fn starter_item_catalog_definition() -> ItemCatalogDefinition {
     ItemDefinitionId::new(2),
     ItemDefinitionId::new(3),
     ItemDefinitionId::new(4),
+    ItemDefinitionId::new(5),
   ])
 }
 

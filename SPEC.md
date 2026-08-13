@@ -124,10 +124,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 6 preparation slice: deterministic equipment-derived melee reach |
 | 2026-08-13 | Milestone 5 preparation slice: terrain-aware kick-noise propagation |
 | 2026-08-13 | Milestone 4 slice: deterministic Chilled status and authored ChillTrap |
+| 2026-08-13 | Milestone 4 slice: deterministic Frost Flask throw and Chilled application |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **21**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **22**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. Desktop controls and smoke coverage are
 documented in [`docs/demo.md`](docs/demo.md).
 
@@ -158,10 +159,10 @@ documented in [`docs/demo.md`](docs/demo.md).
 
 ## Active
 
-The current slice is complete: an authored walkable `ChillTrap` is consumed on entry and applies
-one closed `Chilled` status for two future accepted actions. Each affected action costs one extra
-deterministic scheduler tick; application and final expiry are typed events, hashed in core state,
-and projected through protocol v21, MCP, headless, Bevy, and the display-free desktop smoke path.
+The current slice is complete: a player may throw authored Frost Flask item 104 at a living target
+on a clear cardinal distance-2..=3 ray. The flask is consumed, applies or refreshes the existing
+two-action `Chilled` status, and emits typed throw/application events. Protocol v22, MCP, headless,
+Bevy, HUD/journal formatting, content, and display-free smoke project the same core-owned result.
 
 ## Future
 

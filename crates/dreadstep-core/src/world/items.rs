@@ -5,7 +5,7 @@
 
 use crate::{
   Actor, ActorId, ActorKind, AmmunitionResult, CommandError, Event, GroundItemStack, HealingResult,
-  HitPoints, Item, ItemEffect, ItemId, WorldError, WorldState,
+  HitPoints, Item, ItemEffect, ItemId, ThrowableEffect, WorldError, WorldState,
 };
 
 impl WorldState {
@@ -407,6 +407,95 @@ impl WorldState {
       healing,
       ammunition,
     })
+  }
+
+  pub(super) fn throw_item(
+    &mut self,
+    actor_id: ActorId,
+    item_id: ItemId,
+    target_id: ActorId,
+  ) -> Result<Vec<Event>, CommandError> {
+    let actor = self
+      .actors
+      .get(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let item = actor
+      .inventory()
+      .iter()
+      .find(|item| item.id() == item_id)
+      .copied()
+      .ok_or(CommandError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      })?;
+    if actor.equipped_item() == Some(item_id) {
+      return Err(CommandError::ItemEquipped {
+        actor: actor_id,
+        item: item_id,
+      });
+    }
+    let Some(ThrowableEffect::Chill) = item.throwable_effect() else {
+      return Err(CommandError::ItemNotThrowable {
+        actor: actor_id,
+        item: item_id,
+      });
+    };
+    if actor.kind() != ActorKind::Player {
+      return Err(CommandError::ThrowRequiresPlayer(actor_id));
+    }
+    if actor_id == target_id {
+      return Err(CommandError::CannotThrowSelf(actor_id));
+    }
+    let target = self
+      .actors
+      .get(&target_id)
+      .ok_or(CommandError::UnknownTarget(target_id))?;
+    if !target.is_alive() {
+      return Err(CommandError::TargetDead(target_id));
+    }
+    if !Self::is_ranged_distance(actor.position(), target.position()) {
+      return Err(CommandError::ThrowOutOfRange {
+        attacker: actor_id,
+        target: target_id,
+      });
+    }
+    if !self.has_ranged_line_of_sight(actor.position(), target.position()) {
+      return Err(CommandError::ThrowNoLineOfSight {
+        attacker: actor_id,
+        target: target_id,
+      });
+    }
+    let item_index = actor
+      .inventory()
+      .iter()
+      .position(|candidate| candidate.id() == item_id)
+      .ok_or(CommandError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      })?;
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .inventory
+      .remove(item_index);
+    let status = self
+      .actors
+      .get_mut(&target_id)
+      .ok_or(CommandError::UnknownTarget(target_id))?
+      .apply_chilled();
+    Ok(vec![
+      Event::ItemThrown {
+        actor: actor_id,
+        item: item_id,
+        target: target_id,
+      },
+      Event::StatusApplied {
+        actor: target_id,
+        status: status.kind(),
+        remaining_actions: status.remaining_actions(),
+      },
+    ])
   }
 
   pub(super) fn pickup_item_command(
