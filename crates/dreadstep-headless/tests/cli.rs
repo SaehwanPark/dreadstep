@@ -51,6 +51,18 @@ fn binary_smoke_test_runs_frost_flask_throw() {
 }
 
 #[test]
+fn binary_maps_cast_chill_to_the_typed_core_rejection() {
+  let output = run_binary("cast_chill:1:2");
+
+  assert_eq!(output.status.code(), Some(2));
+  assert!(output.stdout.is_empty());
+  assert_eq!(
+    String::from_utf8(output.stderr).expect("CLI errors should be UTF-8"),
+    "error: command 0 rejected: actor 1 cannot cast Chill because only Frostcasters may cast it\n"
+  );
+}
+
+#[test]
 fn binary_reports_malformed_input_with_structured_process_error() {
   let output = run_binary("bad");
 

@@ -10,4 +10,6 @@ pub enum EnemyBehavior {
   Kiter,
   /// Break a directly blocking breakable on the deterministic chase step before pursuing.
   Brute,
+  /// Apply the existing Chilled status along a clear cardinal ranged ray before other fallbacks.
+  Frostcaster,
 }

@@ -69,7 +69,8 @@ display-free smoke path.
 
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
 150 ms and chooses its core-ranked legal intent: an authored Kiter retreats from an adjacent actor
-when an escape tile exists, then enemies use adjacent `Attack`, clear-cardinal `RangedAttack`,
+when an escape tile exists, then enemies use adjacent `Attack`, a Frostcaster uses `CastChill` on a
+clear-cardinal target at distance 2–3, other enemies use clear-cardinal `RangedAttack`,
 one-use `Investigate` toward a nearby kick-noise position, a Brute `Break` when a Breakable blocks
 its next horizontal-first chase step, `Chase`, and finally `Wait`. The delay is never simulation
 time. A
@@ -77,9 +78,10 @@ presentation-only “showcase complete” status appears after every enemy is de
 canonical `RunOutcome` projection.
 
 The authored item showcase places a closed door at `(2,1)`, immediately east of player actor 1,
-and a Brute enemy with a Breakable obstacle at `(4,3)` so its break intent is visible during enemy
-turns. The display-free smoke specifically asserts actor 4's enemy-driver `Break` and the matching
-`BreakableBroken` event; the later player terrain route does not substitute for this Brute check.
+a Frostcaster enemy as actor 3, and a Brute enemy with a Breakable obstacle at `(4,3)` so both
+archetype intents are visible during enemy turns. The display-free smoke specifically asserts
+actor 3's `CastChill`/`ChillCast` evidence and actor 4's enemy-driver `Break` with the matching
+`BreakableBroken` event; later player actions do not substitute for those enemy-driver checks.
 Start the item showcase to exercise `I` (open) and `C` (close) without relying on the display-free
 smoke fixture; the item-free core starter floor remains the stable adapter test fixture.
 
@@ -144,7 +146,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 
 | Current player-facing surface | Visible/HUD | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy attack/ranged/investigate/chase; Kiter retreat | map, scheduler, messages | command + event + snapshots | yes |
+| Move / wait / enemy attack/ranged/investigate/chase; Kiter retreat; Frostcaster chill | map, scheduler, intent, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped HUD rows, reach-weapon/Frost Flask effects, healing/ammo results, and ground stack | item/reload/throw events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/open-door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |
@@ -174,7 +176,9 @@ drops authored item 102 into the player's current ground stack for smoke setup, 
 `Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 103, attacks enemy 2 from two tiles until death, then unequips it,
 consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between
 player actions. During the earlier enemy drive, a deterministic Kiter fixture retreats from
-adjacency; the smoke journal records its accepted `Retreat` command and `Moved` evidence.
+adjacency; the smoke journal records its accepted `Retreat` command and `Moved` evidence. That
+enemy is then re-authored as a Frostcaster at distance two so the driver records `CastChill`,
+`ChillCast`, and the ordered `StatusApplied` result.
 Exhaustive command/event mappings and the coverage lists make a new player-visible core variant
 fail desktop-feature compilation or smoke coverage until it is documented and mapped.
 
@@ -186,6 +190,7 @@ fail desktop-feature compilation or smoke coverage until it is documented and ma
   typed mirrors, and keeps adjacent wall edges readable;
 - movement, wait, adjacent door interaction, door closing, breakable terrain, trap triggering, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, procedural `N` floor advancement after victory, and enemy delay
   work as documented;
+- a clear distance-2 Frostcaster turn shows `CastChill` intent and chilled-status feedback;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
   and journal path;
 - missing, valid, and intentionally corrupt optional images fall back per family;

@@ -14,6 +14,8 @@ pub enum EnemyBehavior {
   Kiter,
   /// Break a directly blocking breakable before pursuing a living target.
   Brute,
+  /// Cast Chilled along a clear bounded cardinal ray before other combat fallbacks.
+  Frostcaster,
 }
 
 impl From<CoreEnemyBehavior> for EnemyBehavior {
@@ -22,6 +24,7 @@ impl From<CoreEnemyBehavior> for EnemyBehavior {
       CoreEnemyBehavior::Pursuer => Self::Pursuer,
       CoreEnemyBehavior::Kiter => Self::Kiter,
       CoreEnemyBehavior::Brute => Self::Brute,
+      CoreEnemyBehavior::Frostcaster => Self::Frostcaster,
     }
   }
 }
@@ -32,6 +35,7 @@ impl From<EnemyBehavior> for CoreEnemyBehavior {
       EnemyBehavior::Pursuer => Self::Pursuer,
       EnemyBehavior::Kiter => Self::Kiter,
       EnemyBehavior::Brute => Self::Brute,
+      EnemyBehavior::Frostcaster => Self::Frostcaster,
     }
   }
 }

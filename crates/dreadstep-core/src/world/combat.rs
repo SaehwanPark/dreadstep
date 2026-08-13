@@ -3,7 +3,10 @@
 //! Legal discovery and execution share the same reach and line-of-sight predicates so advertised
 //! commands cannot fail for a different geometric reason.
 
-use crate::{Actor, ActorId, CommandError, Damage, Event, MeleeReach, Position, Tile, WorldState};
+use crate::{
+  Actor, ActorId, ActorKind, CommandError, Damage, EnemyBehavior, Event, MeleeReach, Position,
+  Tile, WorldState,
+};
 
 impl WorldState {
   pub(super) fn attack(
@@ -37,6 +40,53 @@ impl WorldState {
       Damage::RANGED,
       true,
     )
+  }
+
+  pub(super) fn cast_chill(
+    &mut self,
+    caster: ActorId,
+    target: ActorId,
+  ) -> Result<Vec<Event>, CommandError> {
+    let caster_actor = self
+      .actors
+      .get(&caster)
+      .ok_or(CommandError::UnknownActor(caster))?;
+    if caster_actor.kind() != ActorKind::Enemy
+      || caster_actor.enemy_behavior() != EnemyBehavior::Frostcaster
+    {
+      return Err(CommandError::CastChillRequiresFrostcaster(caster));
+    }
+    if caster == target {
+      return Err(CommandError::CannotCastChillSelf(caster));
+    }
+    let caster_position = caster_actor.position();
+    let target_actor = self
+      .actors
+      .get(&target)
+      .ok_or(CommandError::CastChillUnknownTarget(target))?;
+    if !target_actor.is_alive() {
+      return Err(CommandError::CastChillTargetDead(target));
+    }
+    let target_position = target_actor.position();
+    if !Self::is_ranged_distance(caster_position, target_position) {
+      return Err(CommandError::CastChillOutOfRange { caster, target });
+    }
+    if !self.has_ranged_line_of_sight(caster_position, target_position) {
+      return Err(CommandError::CastChillNoLineOfSight { caster, target });
+    }
+    let status = self
+      .actors
+      .get_mut(&target)
+      .ok_or(CommandError::CastChillUnknownTarget(target))?
+      .apply_chilled();
+    Ok(vec![
+      Event::ChillCast { caster, target },
+      Event::StatusApplied {
+        actor: target,
+        status: status.kind(),
+        remaining_actions: status.remaining_actions(),
+      },
+    ])
   }
 
   pub(super) fn attack_with_distance(

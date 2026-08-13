@@ -287,6 +287,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       item: parse_item(Some(item))?,
       target: parse_actor(Some(target))?,
     }),
+    ["cast_chill", actor, target] => Ok(Command::CastChill {
+      actor: parse_actor(Some(actor))?,
+      target: parse_actor(Some(target))?,
+    }),
     ["retreat", actor, target] => Ok(Command::Retreat {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
@@ -482,6 +486,25 @@ mod tests {
         actor: ActorId::new(1),
         item: ItemId::new(104),
         target: ActorId::new(2),
+      }]
+    );
+  }
+
+  #[test]
+  fn parses_cast_chill_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "cast_chill:2:1".to_owned(),
+    ])
+    .expect("cast_chill command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::CastChill {
+        actor: ActorId::new(2),
+        target: ActorId::new(1),
       }]
     );
   }

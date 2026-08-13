@@ -43,6 +43,10 @@ fn every_request_variant_round_trips_through_core() {
       actor: ActorId::new(1),
       target: ActorId::new(3),
     },
+    CommandRequest::CastChill {
+      actor: ActorId::new(2),
+      target: ActorId::new(1),
+    },
     CommandRequest::Throw {
       actor: ActorId::new(1),
       item: ItemId::new(9),
@@ -116,6 +120,10 @@ fn every_core_command_round_trips_through_protocol() {
     Command::RangedAttack {
       actor: CoreActorId::new(1),
       target: CoreActorId::new(3),
+    },
+    Command::CastChill {
+      actor: CoreActorId::new(2),
+      target: CoreActorId::new(1),
     },
     Command::Throw {
       actor: CoreActorId::new(1),

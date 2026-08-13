@@ -72,6 +72,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
       item: CoreItemId::new(8),
       target: CoreActorId::new(2),
     },
+    CoreEvent::ChillCast {
+      caster: CoreActorId::new(2),
+      target: CoreActorId::new(1),
+    },
     CoreEvent::Died {
       actor: CoreActorId::new(2),
     },
@@ -153,6 +157,10 @@ fn maps_every_core_event_variant_to_protocol_values() {
         actor: ActorId::new(1),
         item: ItemId::new(8),
         target: ActorId::new(2),
+      },
+      Event::ChillCast {
+        caster: ActorId::new(2),
+        target: ActorId::new(1),
       },
       Event::Died {
         actor: ActorId::new(2),

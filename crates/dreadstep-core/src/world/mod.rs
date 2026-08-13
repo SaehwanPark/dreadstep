@@ -195,6 +195,7 @@ impl WorldState {
         EnemyBehavior::Pursuer => 1,
         EnemyBehavior::Kiter => 2,
         EnemyBehavior::Brute => 3,
+        EnemyBehavior::Frostcaster => 4,
       });
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
@@ -274,8 +275,9 @@ impl WorldState {
   /// consumable. The optional unequip action follows inventory order.
   /// Player attacks include targets within the actor's melee reach and clear cardinal rays two or
   /// three tiles away for the bounded ranged command. Enemies attack adjacent living targets,
-  /// include clear ranged targets when ammunition and schedule capacity allow, then consume
-  /// one-use noise investigations before retaining chase commands for every distinct living target.
+  /// include clear ranged targets when ammunition and schedule capacity allow, Frostcasters
+  /// replace those ranged attacks with Chilled casts, then consume one-use noise investigations
+  /// before retaining chase commands for every distinct living target.
   /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
@@ -341,6 +343,16 @@ impl WorldState {
         Command::Attack { actor, target } if *actor == actor_id && *target == target_id
       )
     }) {
+      return Some(*command);
+    }
+    if actor.enemy_behavior() == EnemyBehavior::Frostcaster
+      && let Some(command) = legal.iter().find(|command| {
+        matches!(
+          command,
+          Command::CastChill { actor, target } if *actor == actor_id && *target == target_id
+        )
+      })
+    {
       return Some(*command);
     }
     if let Some(command) = legal.iter().find(|command| {
@@ -434,7 +446,7 @@ impl WorldState {
     }
     let status_affected = actor.status().is_some();
     let base_cost = match command {
-      Command::RangedAttack { .. } => ActionCost::RANGED,
+      Command::RangedAttack { .. } | Command::CastChill { .. } => ActionCost::RANGED,
       _ => ActionCost::STANDARD,
     };
     let action_cost = self
@@ -455,6 +467,7 @@ impl WorldState {
       Command::Break { position, .. } => vec![self.break_terrain(actor_id, position)?],
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
+      Command::CastChill { target, .. } => self.cast_chill(actor_id, target)?,
       Command::Throw { item, target, .. } => self.throw_item(actor_id, item, target)?,
       Command::Retreat { target, .. } => self.retreat(actor_id, target)?,
       Command::Chase { target, .. } => {

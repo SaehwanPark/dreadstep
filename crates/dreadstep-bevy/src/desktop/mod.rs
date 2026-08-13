@@ -64,7 +64,7 @@ pub(crate) const HEALTH_BAR_WIDTH: usize = 10;
 pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 18] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 19] = [
   "move",
   "wait",
   "interact",
@@ -73,6 +73,7 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 18] = [
   "break",
   "attack",
   "ranged_attack",
+  "cast_chill",
   "throw",
   "retreat",
   "chase",
@@ -86,7 +87,7 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 18] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 19] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 20] = [
   "moved",
   "movement_blocked",
   "waited",
@@ -98,6 +99,7 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 19] = [
   "status_applied",
   "status_expired",
   "attacked",
+  "chill_cast",
   "item_thrown",
   "died",
   "item_equipped",

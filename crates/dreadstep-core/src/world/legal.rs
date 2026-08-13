@@ -151,16 +151,22 @@ impl WorldState {
       if !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
         && Self::is_ranged_distance(actor.position(), target.position())
         && self.has_ranged_line_of_sight(actor.position(), target.position())
-        && actor.ranged_ammo() > 0
         && self
           .action_cost(actor_id, ActionCost::RANGED)
           .and_then(|cost| actor.ready_at().checked_add(cost))
           .is_some()
       {
-        commands.push(Command::RangedAttack {
-          actor: actor_id,
-          target: target.id(),
-        });
+        if actor.enemy_behavior() == EnemyBehavior::Frostcaster {
+          commands.push(Command::CastChill {
+            actor: actor_id,
+            target: target.id(),
+          });
+        } else if actor.ranged_ammo() > 0 {
+          commands.push(Command::RangedAttack {
+            actor: actor_id,
+            target: target.id(),
+          });
+        }
       }
     }
     if let Some(position) = actor.heard_noise()

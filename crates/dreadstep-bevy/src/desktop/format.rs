@@ -163,6 +163,7 @@ pub(crate) fn command_name(command: Command) -> &'static str {
     Command::Close { .. } => "close",
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
+    Command::CastChill { .. } => "cast_chill",
     Command::Throw { .. } => "throw",
     Command::Retreat { .. } => "retreat",
     Command::Chase { .. } => "chase",
@@ -207,6 +208,9 @@ pub(crate) fn command_value(command: Command) -> Value {
     }
     Command::RangedAttack { actor, target } => {
       json!({ "kind": "ranged_attack", "actor": actor.value(), "target": target.value() })
+    }
+    Command::CastChill { actor, target } => {
+      json!({ "kind": "cast_chill", "actor": actor.value(), "target": target.value() })
     }
     Command::Throw {
       actor,
@@ -334,6 +338,11 @@ pub(crate) fn event_value(event: Event) -> Value {
       "target": target.value(),
       "damage": damage.value(),
       "remaining_hit_points": remaining_hit_points.value(),
+    }),
+    Event::ChillCast { caster, target } => json!({
+      "kind": "chill_cast",
+      "caster": caster.value(),
+      "target": target.value(),
     }),
     Event::ItemThrown {
       actor,
@@ -464,6 +473,11 @@ pub(crate) fn event_message(event: Event) -> String {
       target.value(),
       remaining_hit_points.value()
     ),
+    Event::ChillCast { caster, target } => format!(
+      "Actor {} cast chill on actor {}.",
+      caster.value(),
+      target.value()
+    ),
     Event::ItemThrown {
       actor,
       item,
@@ -575,6 +589,11 @@ pub(crate) fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> 
       actor.value(),
       position.x(),
       position.y()
+    ),
+    (Some(actor), Some(Command::CastChill { target, .. })) => format!(
+      "Intent: enemy {} casts chill on actor {}",
+      actor.value(),
+      target.value()
     ),
     (Some(actor), Some(command)) => format!("Intent: enemy {} {:?}", actor.value(), command),
     _ => "Intent: none".to_string(),

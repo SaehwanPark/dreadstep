@@ -215,6 +215,7 @@ impl Session {
             dreadstep_protocol::EnemyBehavior::Pursuer => CoreEnemyBehavior::Pursuer,
             dreadstep_protocol::EnemyBehavior::Kiter => CoreEnemyBehavior::Kiter,
             dreadstep_protocol::EnemyBehavior::Brute => CoreEnemyBehavior::Brute,
+            dreadstep_protocol::EnemyBehavior::Frostcaster => CoreEnemyBehavior::Frostcaster,
           },
         )
       })

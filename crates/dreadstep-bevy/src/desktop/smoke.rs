@@ -84,6 +84,14 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     );
   }
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_frostcaster(kiter) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "frostcaster_fixture_setup", "error": error.to_string() }),
+    );
+  }
   failed |= !submit_command(
     &mut runtime,
     &mut session,

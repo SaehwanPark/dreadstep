@@ -28,6 +28,14 @@ pub enum CommandError {
   TargetDead(ActorId),
   /// An actor cannot attack itself.
   CannotAttackSelf(ActorId),
+  /// A Chill cast request must come from a Frostcaster enemy.
+  CastChillRequiresFrostcaster(ActorId),
+  /// A Frostcaster cannot cast Chilled on itself.
+  CannotCastChillSelf(ActorId),
+  /// The Chill cast target is not present in the world.
+  CastChillUnknownTarget(ActorId),
+  /// The Chill cast target is already dead.
+  CastChillTargetDead(ActorId),
   /// A chase request must come from an enemy.
   ChaseRequiresEnemy(ActorId),
   /// A pickup request must come from a player actor.
@@ -117,6 +125,20 @@ pub enum CommandError {
   RangedAttackNoLineOfSight {
     /// The actor issuing the ranged attack.
     attacker: ActorId,
+    /// The actor hidden by a diagonal path or blocking terrain.
+    target: ActorId,
+  },
+  /// The Chill cast target is not two or three tiles away.
+  CastChillOutOfRange {
+    /// The Frostcaster issuing the cast.
+    caster: ActorId,
+    /// The actor outside the bounded cast interval.
+    target: ActorId,
+  },
+  /// The Chill cast target is not visible along a clear cardinal ray.
+  CastChillNoLineOfSight {
+    /// The Frostcaster issuing the cast.
+    caster: ActorId,
     /// The actor hidden by a diagonal path or blocking terrain.
     target: ActorId,
   },
