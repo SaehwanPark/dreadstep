@@ -82,7 +82,7 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 15] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 15] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 17] = [
   "moved",
   "movement_blocked",
   "waited",
@@ -90,6 +90,8 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 15] = [
   "noise_created",
   "breakable_broken",
   "trap_triggered",
+  "status_applied",
+  "status_expired",
   "attacked",
   "died",
   "item_equipped",

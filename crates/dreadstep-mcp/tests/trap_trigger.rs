@@ -48,3 +48,62 @@ fn tester_scenario_preserves_trap_and_projects_trigger_evidence() {
   assert_ne!(session.replay_digest(), before);
   assert_eq!(session.get_history().len(), 1);
 }
+
+#[test]
+fn tester_scenario_projects_chilled_status_and_action_expiry() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  session
+    .create_scenario(&Scenario::new(
+      3,
+      1,
+      vec![Tile::Floor, Tile::ChillTrap, Tile::Floor],
+      vec![ScenarioActor::new(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(5),
+      )],
+    ))
+    .expect("chill scenario should validate");
+  let output = session
+    .act(CommandRequest::Move {
+      actor: ActorId::new(1),
+      direction: dreadstep_protocol::Direction::East,
+    })
+    .expect("entering a chill trap should be accepted");
+  assert!(matches!(
+    output.events()[1],
+    Event::StatusApplied {
+      remaining_actions: 2,
+      ..
+    }
+  ));
+  assert_eq!(
+    output.snapshot().actors()[0]
+      .status()
+      .unwrap()
+      .remaining_actions(),
+    2
+  );
+  let first_wait = session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("the first chilled action should be accepted");
+  assert!(
+    first_wait
+      .events()
+      .iter()
+      .all(|event| !matches!(event, Event::StatusExpired { .. }))
+  );
+  let second_wait = session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("the second chilled action should be accepted");
+  assert!(matches!(
+    second_wait.events(),
+    [Event::Waited { .. }, Event::StatusExpired { .. }]
+  ));
+  assert!(second_wait.snapshot().actors()[0].status().is_none());
+}

@@ -3,7 +3,7 @@
 //! Ready time, inventory, and ammunition live on the actor record. World transitions mutate
 //! these fields; adapters must not invent a second copy.
 
-use crate::{ActorId, HitPoints, Item, ItemId, Position};
+use crate::{ActorId, HitPoints, Item, ItemId, Position, Status, StatusKind};
 
 /// The kind of actor represented in the world.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -141,6 +141,7 @@ pub struct Actor {
   pub(crate) ranged_ammo: u16,
   pub(crate) ready_at: ActionTime,
   pub(crate) heard_noise: Option<Position>,
+  pub(crate) status: Option<Status>,
 }
 
 impl Actor {
@@ -211,6 +212,7 @@ impl Actor {
       ranged_ammo,
       ready_at: ActionTime::new(0),
       heard_noise: None,
+      status: None,
     }
   }
 
@@ -322,5 +324,24 @@ impl Actor {
   #[must_use]
   pub const fn heard_noise(&self) -> Option<Position> {
     self.heard_noise
+  }
+
+  /// Returns the actor's currently active status, if any.
+  #[must_use]
+  pub const fn status(&self) -> Option<Status> {
+    self.status
+  }
+
+  pub(crate) fn apply_chilled(&mut self) -> Status {
+    let status = Status::chilled();
+    self.status = Some(status);
+    status
+  }
+
+  pub(crate) fn consume_status_action(&mut self) -> Option<StatusKind> {
+    let status = self.status?;
+    let remaining = status.after_action();
+    self.status = remaining;
+    remaining.is_none().then_some(status.kind())
   }
 }

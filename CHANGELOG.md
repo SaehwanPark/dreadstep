@@ -4,6 +4,12 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ## Unreleased
 
+### Added
+
+- Added a one-shot authored `ChillTrap` that applies a two-action `Chilled` status. Chilled actors
+  pay one extra scheduler tick for each affected accepted action, with typed status events,
+  digest/snapshot projection, and protocol v21 mappings.
+
 ### Changed
 
 - Split oversized core, protocol, and Bevy production sources into cohesive modules with

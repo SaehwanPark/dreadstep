@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use crate::{
   ActionCost, ActionResult, ActionTime, Actor, ActorId, ActorKind, Command, CommandError, Event,
-  GridMap, GroundItemStack, Position, RunOutcome, StateDigest, Tile, WorldError,
+  GridMap, GroundItemStack, Position, RunOutcome, StateDigest, StatusKind, Tile, WorldError,
   replay::{StableHasher, hash_equipment_effect, hash_item_effect},
 };
 
@@ -167,7 +167,7 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V5");
+    hasher.write_bytes(b"DREADSTEP-STATE-V6");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -178,6 +178,7 @@ impl WorldState {
         Tile::Door => 4,
         Tile::Breakable => 5,
         Tile::Trap => 6,
+        Tile::ChillTrap => 7,
       });
     }
     hasher.write_u64(self.current_time.value());
@@ -200,6 +201,16 @@ impl WorldState {
           hasher.write_u8(1);
           hasher.write_i32(position.x());
           hasher.write_i32(position.y());
+        }
+        None => hasher.write_u8(0),
+      }
+      match actor.status() {
+        Some(status) => {
+          hasher.write_u8(1);
+          hasher.write_u8(match status.kind() {
+            StatusKind::Chilled => 1,
+          });
+          hasher.write_u8(status.remaining_actions());
         }
         None => hasher.write_u8(0),
       }
@@ -265,7 +276,11 @@ impl WorldState {
     let Some(actor) = self.actors.get(&actor_id) else {
       return Vec::new();
     };
-    if actor.ready_at().checked_add(ActionCost::STANDARD).is_none() {
+    if self
+      .action_cost(actor_id, ActionCost::STANDARD)
+      .and_then(|cost| actor.ready_at().checked_add(cost))
+      .is_none()
+    {
       return Vec::new();
     }
 
@@ -295,6 +310,10 @@ impl WorldState {
   /// [`CommandError::ActorNotScheduled`] when a different actor must act first, an equipment or
   /// target error for invalid requests, or [`CommandError::ScheduleOverflow`] if the integer
   /// timeline cannot advance.
+  #[expect(
+    clippy::too_many_lines,
+    reason = "command execution keeps shared validation and event ordering together"
+  )]
   pub fn execute(&mut self, command: Command) -> Result<ActionResult, CommandError> {
     let actor_id = command.actor();
     let actor = self
@@ -324,14 +343,18 @@ impl WorldState {
         return Err(CommandError::ReloadNotNeeded(actor_id));
       }
     }
-    let action_cost = match command {
+    let status_affected = actor.status().is_some();
+    let base_cost = match command {
       Command::RangedAttack { .. } => ActionCost::RANGED,
       _ => ActionCost::STANDARD,
     };
+    let action_cost = self
+      .action_cost(actor_id, base_cost)
+      .ok_or(CommandError::ScheduleOverflow(actor_id))?;
     let next_ready_at = ready_at
       .checked_add(action_cost)
       .ok_or(CommandError::ScheduleOverflow(actor_id))?;
-    let events = match command {
+    let mut events = match command {
       Command::Move { direction, .. } => self.move_actor(actor_id, direction)?,
       Command::Wait { .. } => vec![Event::Waited {
         actor: actor_id,
@@ -364,6 +387,22 @@ impl WorldState {
         }]
       }
     };
+    let status_refreshed = events
+      .iter()
+      .any(|event| matches!(event, Event::StatusApplied { .. }));
+    if status_affected
+      && !status_refreshed
+      && let Some(status) = self
+        .actors
+        .get_mut(&actor_id)
+        .ok_or(CommandError::UnknownActor(actor_id))?
+        .consume_status_action()
+    {
+      events.push(Event::StatusExpired {
+        actor: actor_id,
+        status,
+      });
+    }
     if matches!(command, Command::RangedAttack { .. }) {
       self
         .actors
@@ -385,6 +424,11 @@ impl WorldState {
       next_actor: self.next_actor(),
       current_time: self.current_time,
     })
+  }
+
+  pub(super) fn action_cost(&self, actor_id: ActorId, base: ActionCost) -> Option<ActionCost> {
+    let extra = u64::from(self.actors.get(&actor_id)?.status().is_some());
+    base.value().checked_add(extra).map(ActionCost::new)
   }
 
   fn actor_at(&self, position: Position) -> Option<ActorId> {

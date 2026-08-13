@@ -17,6 +17,8 @@ pub enum Tile {
   Breakable,
   /// A walkable floor trap that triggers once when entered.
   Trap,
+  /// A walkable one-shot trap that applies chilled when entered.
+  ChillTrap,
 }
 
 /// One typed actor record in a tester scenario's initial world.

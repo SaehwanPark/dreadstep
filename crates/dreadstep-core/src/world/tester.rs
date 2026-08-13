@@ -147,6 +147,7 @@ impl WorldState {
     actor.hit_points = hit_points;
     if !hit_points.is_alive() {
       actor.heard_noise = None;
+      actor.status = None;
     }
     if !was_alive && hit_points.is_alive() {
       actor.ready_at = current_time;

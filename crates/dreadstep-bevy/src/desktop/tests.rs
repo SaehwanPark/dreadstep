@@ -7,8 +7,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::cli::ParseResult;
 use super::format::{
-  command_value, controls_text, enemy_intent_summary, event_message, event_value, format_hud_stats,
-  health_bar_text, scenario_label, terminal_hud_message, visibility_summary_values,
+  actor_value, command_value, controls_text, enemy_intent_summary, event_message, event_value,
+  format_hud_stats, health_bar_text, scenario_label, terminal_hud_message,
+  visibility_summary_values,
 };
 use super::input::{
   advance_procedural_floor, command_for_key, desktop_input, restart_requested, submit_command,
@@ -618,6 +619,46 @@ fn hud_stats_report_enemy_pressure_and_missing_player() {
   assert!(text.contains("HP [##########] 10/10"));
   assert!(text.contains("enemies 3"));
   assert!(text.contains("Intent: none"));
+  assert!(text.contains("Status: none"));
+}
+
+#[test]
+fn hud_and_journal_actor_state_show_active_chill_duration() {
+  let mut world = WorldState::new(
+    GridMap::from_tiles(2, 1, vec![Tile::Floor, Tile::ChillTrap]).unwrap(),
+    vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )],
+  )
+  .expect("chill fixture should validate");
+  world
+    .execute(Command::Move {
+      actor: ActorId::new(1),
+      direction: Direction::East,
+    })
+    .expect("entering the chill trap should succeed");
+  let snapshot = PresentationState::new(7, world).snapshot();
+  let actor = snapshot
+    .actors()
+    .iter()
+    .find(|actor| actor.id() == ActorId::new(1))
+    .expect("player exists");
+  let hud = format_hud_stats(
+    Some(actor),
+    &snapshot,
+    &DesktopStatus::Running,
+    "Chill fixture",
+    "",
+    None,
+    None,
+  );
+  assert!(hud.contains("Status: chilled (2 actions)"));
+  assert_eq!(
+    actor_value(actor)["status"],
+    json!({"kind": "chilled", "remaining_actions": 2})
+  );
 }
 
 #[test]

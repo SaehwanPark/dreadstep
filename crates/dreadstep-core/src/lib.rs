@@ -15,6 +15,7 @@ mod ids;
 mod item;
 mod map;
 mod replay;
+mod status;
 mod world;
 
 pub use actor::{ActionCost, ActionTime, Actor, ActorKind, Damage, MeleeReach, RunOutcome};
@@ -29,4 +30,5 @@ pub use item::{
 };
 pub use map::{Direction, GridMap, MapError, Position, Tile};
 pub use replay::{ReplayTrace, StateDigest};
+pub use status::{Status, StatusKind};
 pub use world::WorldState;

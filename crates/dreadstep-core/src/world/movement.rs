@@ -57,6 +57,7 @@ impl WorldState {
           actor.hit_points = remaining_hit_points;
           if !remaining_hit_points.is_alive() {
             actor.heard_noise = None;
+            actor.status = None;
           }
           remaining_hit_points
         };
@@ -69,6 +70,19 @@ impl WorldState {
         if !remaining_hit_points.is_alive() {
           events.push(Event::Died { actor: actor_id });
         }
+      }
+      if self.map.tile_at(to) == Some(Tile::ChillTrap) {
+        self.map.set_tile(to, Tile::Floor);
+        let status = self
+          .actors
+          .get_mut(&actor_id)
+          .ok_or(CommandError::UnknownActor(actor_id))?
+          .apply_chilled();
+        events.push(Event::StatusApplied {
+          actor: actor_id,
+          status: status.kind(),
+          remaining_actions: status.remaining_actions(),
+        });
       }
       Ok(events)
     }

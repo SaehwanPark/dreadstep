@@ -132,7 +132,10 @@ impl WorldState {
         && Self::is_ranged_distance(actor.position(), target.position())
         && self.has_ranged_line_of_sight(actor.position(), target.position())
         && actor.ranged_ammo() > 0
-        && actor.ready_at().checked_add(ActionCost::RANGED).is_some()
+        && self
+          .action_cost(actor_id, ActionCost::RANGED)
+          .and_then(|cost| actor.ready_at().checked_add(cost))
+          .is_some()
     }) {
       commands.push(Command::RangedAttack {
         actor: actor_id,
@@ -173,7 +176,10 @@ impl WorldState {
       } else if Self::is_ranged_distance(actor.position(), target.position())
         && self.has_ranged_line_of_sight(actor.position(), target.position())
         && actor.ranged_ammo() > 0
-        && actor.ready_at().checked_add(ActionCost::RANGED).is_some()
+        && self
+          .action_cost(actor_id, ActionCost::RANGED)
+          .and_then(|cost| actor.ready_at().checked_add(cost))
+          .is_some()
       {
         commands.push(Command::RangedAttack {
           actor: actor_id,

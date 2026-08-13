@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::{
   ActionTime, ActorId, ActorKind, GroundItemSnapshot, HitPoints, ItemId, ItemSnapshot, MeleeReach,
-  PROTOCOL_VERSION, Position, StateDigest,
+  PROTOCOL_VERSION, Position, StateDigest, StatusSnapshot,
 };
 
 /// Protocol life state for an actor record.
@@ -59,6 +59,7 @@ pub struct ActorSnapshot {
   inventory: Vec<ItemSnapshot>,
   equipped_item: Option<ItemId>,
   heard_noise: Option<Position>,
+  status: Option<StatusSnapshot>,
 }
 
 impl ActorSnapshot {
@@ -93,6 +94,7 @@ impl ActorSnapshot {
       heard_noise: actor
         .heard_noise()
         .map(|position| Position::new(position.x(), position.y())),
+      status: actor.status().map(StatusSnapshot::from_core),
     }
   }
 
@@ -172,6 +174,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn heard_noise(&self) -> Option<Position> {
     self.heard_noise
+  }
+
+  /// Returns the actor's active status, if any.
+  #[must_use]
+  pub const fn status(&self) -> Option<StatusSnapshot> {
+    self.status
   }
 }
 
