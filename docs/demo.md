@@ -23,6 +23,7 @@ fixture and its exhaustive command/event matrix.
 At a terminal outcome, the HUD names the available recovery action: procedural victory identifies the
 next depth and `N` when another depth is available, while authored victory and defeat identify
 `Shift+R` restart.
+The controls panel likewise shows the `N` progression action only for procedural sessions.
 
 The first launch creates `dreadstep-logs/` and a create-new JSONL journal. The directory is
 ignored by Git. A checkout does not need local art: readable nearest-neighbor placeholder pixels

@@ -43,6 +43,7 @@ startup still use the stable authored item fixture. The HUD names the active sce
 depth so a player can distinguish a fresh restart from a floor transition. Terminal outcomes also
 state the available next action: procedural victory points to `N` when a next depth is available,
 while authored victory and defeat point to `Shift+R`.
+The controls panel only advertises `N` for procedural sessions.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and

@@ -2513,6 +2513,14 @@ fn terminal_hud_message(status: &DesktopStatus, procedural: bool, depth: u32) ->
   }
 }
 
+fn controls_text(procedural: bool) -> &'static str {
+  if procedural {
+    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit"
+  } else {
+    "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit"
+  }
+}
+
 fn format_hud_stats(
   player: Option<&Actor>,
   snapshot: &PresentationSnapshot,
@@ -2623,7 +2631,7 @@ fn desktop_update_hud(
       .collect::<Vec<_>>()
       .join("\n")
   };
-  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit";
+  let controls = controls_text(session.procedural);
   let journal = format!(
     "{}\nseed {}",
     journal_path(&session.journal).display(),
@@ -3254,6 +3262,12 @@ mod tests {
       terminal_hud_message(&DesktopStatus::Victory, true, u32::MAX),
       "Floor cleared — next depth unavailable; press Shift+R to restart"
     );
+  }
+
+  #[test]
+  fn controls_only_advertise_next_floor_for_procedural_runs() {
+    assert!(controls_text(true).contains("N next procedural floor"));
+    assert!(!controls_text(false).contains("next procedural floor"));
   }
 
   #[test]
