@@ -26,7 +26,7 @@ use bevy::math::Vec2;
 use bevy::sprite::Sprite;
 use bevy::transform::components::Transform;
 use bevy::window::{PrimaryWindow, Window, WindowResolution};
-use dreadstep_content::{ContentError, starter_floor, starter_item_floor};
+use dreadstep_content::{ContentError, procedural_floor, starter_floor, starter_item_floor};
 use dreadstep_core::{
   ActionTime, Actor, ActorId, ActorKind, AmmunitionResult, BlockReason, Command, CommandError,
   Damage, Direction, Event, GridMap, GroundItemStack, HealingResult, HitPoints, Item,
@@ -2359,6 +2359,18 @@ impl PresentationState {
     Ok(Self::new(seed, starter_item_floor()?))
   }
 
+  /// Starts a presentation state from a deterministic seeded procedural floor.
+  ///
+  /// The content boundary owns generation and core still validates the resulting world. This
+  /// constructor is opt-in; the stable authored starter floor remains the default startup.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] when generated content fails core validation.
+  pub fn start_procedural_run(seed: u64, depth: u32) -> Result<Self, ContentError> {
+    Ok(Self::new(seed, procedural_floor(seed, depth)?))
+  }
+
   /// Creates a presentation state around an already validated core world.
   #[must_use]
   pub fn new(seed: u64, world: WorldState) -> Self {
@@ -2458,6 +2470,18 @@ impl PresentationRuntime {
   pub fn start_item_run(seed: u64) -> Result<Self, ContentError> {
     Ok(Self {
       state: PresentationState::start_item_run(seed)?,
+      output: None,
+    })
+  }
+
+  /// Starts a runtime from a deterministic seeded procedural floor.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] when generated content fails core validation.
+  pub fn start_procedural_run(seed: u64, depth: u32) -> Result<Self, ContentError> {
+    Ok(Self {
+      state: PresentationState::start_procedural_run(seed, depth)?,
       output: None,
     })
   }

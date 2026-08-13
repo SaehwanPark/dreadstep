@@ -15,6 +15,16 @@ Update an existing lesson instead of adding a duplicate.
   tile from the authored player start; do not move this presentation/content concern into core rules
   or rely on visual inspection alone.
 
+## 2026-08-12 — Keep procedural startup opt-in while smoke fixtures stay exhaustive
+
+- Context: Exposing generated terrain through the desktop launcher can accidentally replace the
+  authored item fixture that exercises inventory and environmental command coverage.
+- Resolution: Add explicit visible-run `--procedural`/`--depth` selection and preserve the default
+  and display-free smoke startup on the item-bearing fixture; carry scenario/depth evidence in the
+  journal and restart the selected mode from the same seed.
+- Prevention: Treat launcher scenario selection as an adapter concern, keep smoke fixtures stable
+  until their coverage is intentionally redesigned, and test both startup branches independently.
+
 ## 2026-08-12 — Derive terminal outcomes once at the core boundary
 
 - Context: The desktop showcase inferred victory by counting dead enemies locally while core

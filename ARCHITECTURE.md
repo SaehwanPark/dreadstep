@@ -275,6 +275,12 @@ the explicit seed/depth inputs, and `procedural_floor(seed, depth)` builds it th
 validates map and actor invariants and owns the resulting world truth. The procedural helper is not
 silently substituted into MCP, headless, or desktop startup and does not create a second authority.
 
+The desktop boundary now exposes that content through explicit opt-in
+`PresentationState::start_procedural_run` and `PresentationRuntime::start_procedural_run` constructors
+plus `--procedural`/`--depth` selection for visible runs. The default and display-free smoke paths
+continue to consume the authored item fixture, so procedural content is available to a human client
+without changing the established diagnostic command/event matrix.
+
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position
 and `ActorId`, preserves identity across updates, removes stale or duplicate keys deterministically,

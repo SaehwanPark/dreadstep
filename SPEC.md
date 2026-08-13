@@ -3876,6 +3876,40 @@ Out of scope:
 - Floor transitions, run progression, procedural loot, room templates beyond this corridor fixture,
   random encounter placement, save/load, replay playback, and player-facing renderer changes.
 
+### Milestone 5 preparation slice: opt-in desktop procedural run
+
+- Status: active
+- Started: 2026-08-12
+
+Expose the validated seeded floor through the desktop launch boundary without replacing the stable
+item-bearing smoke fixture. `--procedural` selects the generated floor for visible runs and
+`--depth <u32>` selects its authored depth; restart preserves the same seed, scenario, and depth.
+
+Acceptance:
+
+- `PresentationState` and `PresentationRuntime` expose deterministic procedural-run constructors
+  that delegate to `dreadstep-content::procedural_floor` and start with an empty replay trace.
+- The desktop parser accepts `--procedural` and `--depth`; visible startup and `Shift+R` use the
+  same procedural seed/depth, while `--smoke` continues to use the item-bearing fixture so current
+  command/event coverage remains exhaustive.
+- `run_started` journal evidence names `procedural_floor` and records depth for visible procedural
+  runs; default and smoke runs retain `starter_item_floor` evidence.
+- No core rules, protocol/MCP schema, replay format, procedural progression, or production media
+  changes are introduced.
+
+Verification target:
+
+- Bevy startup and parser tests prove content parity, seed/depth preservation, empty replay state,
+  option validation, and unchanged item-run scene coverage.
+- Desktop-feature tests, `scripts/verify.sh`, formatting, `git diff --check`, and a semantic review
+  pass; visual playtesting remains a manual host checklist because the new mode is an opt-in startup
+  path and the display-free smoke contract intentionally stays on the authored fixture.
+
+Out of scope:
+
+- Floor transitions, depth progression, procedural loot, visible-run balance, new protocol/MCP
+  scenario selection, save/load, replay playback, and production renderer changes.
+
 ## Future
 
 ### Remaining roadmap milestones

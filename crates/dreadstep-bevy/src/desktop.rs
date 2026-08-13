@@ -41,6 +41,7 @@ use bevy::prelude::{
 use bevy::time::Time;
 use bevy::ui::{FlexDirection, JustifyContent, Overflow, UiRect, px};
 use bevy::window::{ClosingWindow, PrimaryWindow, Window};
+use dreadstep_content::ContentError;
 use dreadstep_core::{
   Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position,
   RunOutcome, StateDigest, Tile,
@@ -107,13 +108,17 @@ pub const SHOWCASE_EVENT_KINDS: [&str; 15] = [
   "reloaded",
 ];
 
-const USAGE: &str = "Usage: dreadstep [--seed <u64>] [--log-dir <path>] [--smoke] [--help]";
+const USAGE: &str = "Usage: dreadstep [--seed <u64>] [--procedural] [--depth <u32>] [--log-dir <path>] [--smoke] [--help]";
 
 /// Parsed command-line options for the desktop process.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DesktopOptions {
   /// Seed passed to the deterministic starter-item scenario.
   pub seed: u64,
+  /// Start the visible client from the seeded procedural floor instead of the item fixture.
+  pub procedural: bool,
+  /// One-based authored depth passed to the procedural floor generator.
+  pub depth: u32,
   /// Directory in which this run's JSONL journal is created.
   pub log_dir: PathBuf,
   /// Run the display-free deterministic showcase sequence.
@@ -124,6 +129,8 @@ impl Default for DesktopOptions {
   fn default() -> Self {
     Self {
       seed: 7,
+      procedural: false,
+      depth: 1,
       log_dir: PathBuf::from("dreadstep-logs"),
       smoke: false,
     }
@@ -156,12 +163,18 @@ enum ParseResult {
   Options(DesktopOptions),
 }
 
+#[expect(
+  clippy::too_many_lines,
+  reason = "the desktop process keeps its small exhaustive CLI grammar in one parser"
+)]
 fn parse_options<I>(arguments: I) -> Result<ParseResult, String>
 where
   I: IntoIterator<Item = OsString>,
 {
   let mut options = DesktopOptions::default();
   let mut seed_seen = false;
+  let mut procedural_seen = false;
+  let mut depth_seen = false;
   let mut log_dir_seen = false;
   let mut smoke_seen = false;
   let mut help_seen = false;
@@ -182,6 +195,14 @@ where
       options.smoke = true;
       continue;
     }
+    if argument == "--procedural" {
+      if procedural_seen {
+        return Err("duplicate --procedural".to_string());
+      }
+      procedural_seen = true;
+      options.procedural = true;
+      continue;
+    }
     if argument == "--seed" {
       if seed_seen {
         return Err("duplicate --seed".to_string());
@@ -192,7 +213,7 @@ where
         .ok_or_else(|| "--seed requires a value".to_string())?;
       if matches!(
         value.to_str(),
-        Some("--help" | "-h" | "--seed" | "--log-dir" | "--smoke")
+        Some("--help" | "-h" | "--seed" | "--procedural" | "--depth" | "--log-dir" | "--smoke",)
       ) {
         return Err("--seed requires a value".to_string());
       }
@@ -202,6 +223,28 @@ where
       options.seed = value
         .parse::<u64>()
         .map_err(|_| "--seed must be an unsigned integer".to_string())?;
+      continue;
+    }
+    if argument == "--depth" {
+      if depth_seen {
+        return Err("duplicate --depth".to_string());
+      }
+      depth_seen = true;
+      let value = iter
+        .next()
+        .ok_or_else(|| "--depth requires a value".to_string())?;
+      if matches!(
+        value.to_str(),
+        Some("--help" | "-h" | "--seed" | "--procedural" | "--depth" | "--log-dir" | "--smoke",)
+      ) {
+        return Err("--depth requires a value".to_string());
+      }
+      let value = value
+        .into_string()
+        .map_err(|_| "--depth must be an unsigned integer".to_string())?;
+      options.depth = value
+        .parse::<u32>()
+        .map_err(|_| "--depth must be an unsigned integer".to_string())?;
       continue;
     }
     if argument == "--log-dir" {
@@ -215,7 +258,7 @@ where
       if value.is_empty()
         || matches!(
           value.to_str(),
-          Some("--help" | "-h" | "--seed" | "--log-dir" | "--smoke")
+          Some("--help" | "-h" | "--seed" | "--procedural" | "--depth" | "--log-dir" | "--smoke",)
         )
       {
         return Err("--log-dir requires a path".to_string());
@@ -260,7 +303,8 @@ fn run_with_panic_boundary(options: DesktopOptions) -> ExitCode {
 }
 
 fn run_with_journal(options: DesktopOptions, journal: JournalHandle) -> ExitCode {
-  let initial_runtime = match PresentationRuntime::start_item_run(options.seed) {
+  let scenario = options.procedural && !options.smoke;
+  let initial_runtime = match start_runtime(&options) {
     Ok(runtime) => runtime,
     Err(error) => {
       eprintln!("dreadstep: starter scenario failed: {error}");
@@ -280,7 +324,12 @@ fn run_with_journal(options: DesktopOptions, journal: JournalHandle) -> ExitCode
       json!({
         "seed": options.seed,
         "mode": if options.smoke { "smoke" } else { "desktop" },
-        "scenario": "starter_item_floor",
+        "scenario": if scenario {
+          "procedural_floor"
+        } else {
+          "starter_item_floor"
+        },
+        "depth": scenario.then_some(options.depth),
       }),
     ),
   ) {
@@ -292,12 +341,26 @@ fn run_with_journal(options: DesktopOptions, journal: JournalHandle) -> ExitCode
     return run_smoke(initial_runtime, journal);
   }
 
-  match run_visible(initial_runtime, options.seed, journal) {
+  match run_visible(
+    initial_runtime,
+    options.seed,
+    scenario,
+    options.depth,
+    journal,
+  ) {
     Ok(()) => ExitCode::SUCCESS,
     Err(error) => {
       eprintln!("dreadstep: runtime failure: {error}");
       ExitCode::from(1)
     }
+  }
+}
+
+fn start_runtime(options: &DesktopOptions) -> Result<PresentationRuntime, ContentError> {
+  if options.procedural && !options.smoke {
+    PresentationRuntime::start_procedural_run(options.seed, options.depth)
+  } else {
+    PresentationRuntime::start_item_run(options.seed)
   }
 }
 
@@ -484,6 +547,8 @@ enum DesktopStatus {
 #[derive(Resource)]
 struct DesktopSession {
   seed: u64,
+  procedural: bool,
+  depth: u32,
   journal: JournalHandle,
   status: DesktopStatus,
   selected_item: Option<ItemId>,
@@ -496,8 +561,14 @@ struct DesktopSession {
 
 impl DesktopSession {
   fn new(seed: u64, journal: JournalHandle) -> Self {
+    Self::new_with_scenario(seed, false, 1, journal)
+  }
+
+  fn new_with_scenario(seed: u64, procedural: bool, depth: u32, journal: JournalHandle) -> Self {
     Self {
       seed,
+      procedural,
+      depth,
       journal,
       status: DesktopStatus::Running,
       selected_item: Some(EQUIP_ITEM),
@@ -1119,7 +1190,12 @@ fn desktop_input(
       exit.write(AppExit::error());
       return;
     }
-    match PresentationRuntime::start_item_run(session.seed) {
+    let restarted = if session.procedural {
+      PresentationRuntime::start_procedural_run(session.seed, session.depth)
+    } else {
+      PresentationRuntime::start_item_run(session.seed)
+    };
+    match restarted {
       Ok(restarted) => {
         let payload = state_payload(&restarted, json!({ "seed": session.seed }));
         *runtime = restarted;
@@ -1426,6 +1502,8 @@ fn submit_command(
 fn run_visible(
   runtime: PresentationRuntime,
   seed: u64,
+  procedural: bool,
+  depth: u32,
   journal: JournalHandle,
 ) -> Result<(), String> {
   let tile_size = crate::PresentationTileSize::new(32, 32)
@@ -1461,7 +1539,12 @@ fn run_visible(
       }),
   );
   app.insert_resource(runtime);
-  app.insert_resource(DesktopSession::new(seed, journal.clone()));
+  app.insert_resource(DesktopSession::new_with_scenario(
+    seed,
+    procedural,
+    depth,
+    journal.clone(),
+  ));
   app.insert_resource(PresentationInput::new(PLAYER));
   app.insert_resource(PresentationKeyboardMode::External);
   app.insert_resource(PresentationFocus::new(PLAYER));
@@ -2442,6 +2525,8 @@ mod tests {
       parsed,
       ParseResult::Options(DesktopOptions {
         seed: 12,
+        procedural: false,
+        depth: 1,
         log_dir: PathBuf::from("logs"),
         smoke: true,
       })
@@ -2451,6 +2536,52 @@ mod tests {
     assert!(parse_options([OsString::from("--help"), OsString::from("--unknown")]).is_err());
     assert!(parse_options([OsString::from("--help"), OsString::from("--help")]).is_err());
     assert!(parse_options([OsString::from("--log-dir"), OsString::from("--smoke")]).is_err());
+    let procedural = parse_options([
+      OsString::from("--procedural"),
+      OsString::from("--depth"),
+      OsString::from("4"),
+    ])
+    .expect("procedural options parse");
+    assert_eq!(
+      procedural,
+      ParseResult::Options(DesktopOptions {
+        procedural: true,
+        depth: 4,
+        ..DesktopOptions::default()
+      })
+    );
+    assert!(
+      parse_options([
+        OsString::from("--procedural"),
+        OsString::from("--procedural")
+      ])
+      .is_err()
+    );
+    assert!(parse_options([OsString::from("--depth")]).is_err());
+  }
+
+  #[test]
+  fn startup_selection_keeps_procedural_visible_and_item_smoke_fixtures_distinct() {
+    let procedural = start_runtime(&DesktopOptions {
+      procedural: true,
+      depth: 3,
+      ..DesktopOptions::default()
+    })
+    .expect("procedural startup should validate");
+    assert_eq!(procedural.snapshot().width(), 13);
+    assert_eq!(procedural.snapshot().height(), 9);
+    assert_eq!(procedural.snapshot().actors()[1].hit_points().value(), 6);
+
+    let smoke = start_runtime(&DesktopOptions {
+      procedural: true,
+      smoke: true,
+      depth: 3,
+      ..DesktopOptions::default()
+    })
+    .expect("smoke startup should validate");
+    assert_eq!(smoke.snapshot().width(), 7);
+    assert_eq!(smoke.snapshot().height(), 5);
+    assert_eq!(smoke.snapshot().ground_items().len(), 0);
   }
 
   #[test]
