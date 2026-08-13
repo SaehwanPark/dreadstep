@@ -7,7 +7,7 @@ use dreadstep_bevy::{
   PresentationPlugin, PresentationRuntime, PresentationSnapshot, PresentationState, SceneActor,
   SceneGroundItem, SceneInventoryItem, SceneTile,
 };
-use dreadstep_content::{starter_floor, starter_item_floor};
+use dreadstep_content::{procedural_floor, starter_floor, starter_item_floor};
 use dreadstep_core::{ActorId, ItemDefinitionId, ItemId, ReplayTrace};
 
 #[test]
@@ -41,6 +41,27 @@ fn start_item_run_delegates_to_shared_content_and_preserves_seed() {
   assert_eq!(runtime.snapshot(), expected.snapshot());
   assert_eq!(state.replay_digest(), ReplayTrace::new(seed).digest());
   assert_eq!(runtime.replay_digest(), ReplayTrace::new(seed).digest());
+}
+
+#[test]
+fn start_procedural_run_delegates_to_seeded_content_and_preserves_seed_and_depth() {
+  let seed = 47;
+  let depth = 3;
+  let state = PresentationState::start_procedural_run(seed, depth)
+    .expect("procedural content should validate");
+  let expected = PresentationState::new(
+    seed,
+    procedural_floor(seed, depth).expect("same procedural content should validate"),
+  );
+  let runtime = PresentationRuntime::start_procedural_run(seed, depth)
+    .expect("procedural runtime should validate");
+
+  assert_eq!(state.seed(), seed);
+  assert_eq!(state.snapshot(), expected.snapshot());
+  assert_eq!(runtime.snapshot(), expected.snapshot());
+  assert_eq!(state.replay_digest(), ReplayTrace::new(seed).digest());
+  assert_eq!(runtime.replay_digest(), ReplayTrace::new(seed).digest());
+  assert_eq!(state.snapshot().actors()[1].hit_points().value(), 6);
 }
 
 #[test]

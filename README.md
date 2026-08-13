@@ -253,6 +253,17 @@ Run the human-testable 2D showcase (optional local images are documented in
 cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
 ```
 
+To launch the opt-in seeded procedural floor in the visible client, pass `--procedural` and an
+authored depth (the default is depth 1):
+
+```sh
+cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
+  --procedural --depth 1 --seed 7
+```
+
+The default and `--smoke` paths retain the authored item fixture so inventory and command coverage
+remain stable.
+
 Use `--smoke` for the display-free deterministic sequence and inspect the flushed JSONL file in
 `dreadstep-logs/` or the supplied `--log-dir`.
 

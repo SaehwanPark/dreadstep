@@ -6,6 +6,18 @@ The current player-facing slice is available as a Cargo-runnable Bevy desktop pr
 cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
 ```
 
+An opt-in procedural floor can be launched visibly with the same deterministic seed and an authored
+depth:
+
+```sh
+cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
+  --procedural --depth 1 --seed 7
+```
+
+The run journal names this scenario `procedural_floor` and records its depth. `Shift+R` restarts
+the same procedural seed/depth. The display-free `--smoke` path intentionally remains on the
+authored item fixture and its exhaustive command/event matrix.
+
 The first launch creates `dreadstep-logs/` and a create-new JSONL journal. The directory is
 ignored by Git. A checkout does not need local art: readable nearest-neighbor placeholder pixels
 are used for every family until an optional image loads.
