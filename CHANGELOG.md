@@ -15,12 +15,17 @@ All notable contributor- and user-visible project changes are recorded here.
 ### Added
 
 - Added deterministic kick-noise enemy investigation: a successful `Kick` arms a one-use,
-  Manhattan-radius-3 hearing target on each eligible living enemy; the scheduled enemy now
+  terrain-aware radius-3 hearing target on each eligible living enemy; the scheduled enemy now
   exposes and may consume an `Investigate` command between ranged attack and chase, moving with
   the existing deterministic horizontal-first step and clearing hearing even on a blocked step.
   Core digest/replay, protocol v19 snapshots and errors, headless parsing, and Bevy intent/journal
-  mappings are synchronized; generic sound propagation, falloff, persistence, and hearing
+  mappings are synchronized; persistent sound fields, falloff, multiple sources, and hearing
   archetypes remain deferred.
+
+- Added deterministic terrain-aware kick-noise propagation: the fixed radius-three source now
+  expands through walkable cells in stable North/South/West/East breadth-first order. Walls,
+  closed doors, and breakables occlude the source while actor occupancy does not; the existing
+  one-use `Investigate` target, event ordering, protocol v19, and adapter mappings remain intact.
 
 - Added deterministic enemy ranged intent: scheduled enemies now expose clear-cardinal
   `RangedAttack` candidates at distance 2–3 when ammunition and schedule capacity permit, while
@@ -56,14 +61,14 @@ restart-only recovery message.
 - Verified deterministic kick-open doors with noise evidence: a scheduled adjacent `Kick` opens a
   closed `Door` with standard action cost, ordered `DoorOpened` then fixed-radius `NoiseCreated`
   evidence, and atomic rejection. Protocol v18, MCP, headless, Bevy/desktop mappings, `K` control,
-  and display-free smoke/journal coverage are synchronized; noise propagation, enemy attraction,
-  durability, and generic interactions remain deferred.
+  and display-free smoke/journal coverage are synchronized; durability and generic interactions
+  remain deferred.
 
 - Verified deterministic adjacent breakable terrain: blocking `Breakable` tiles stop movement and
   ranged sight until a scheduled `Break` changes one adjacent tile to `Floor` and emits typed
   `BreakableBroken` evidence with standard action cost and atomic rejection. Protocol v18, MCP,
   headless, Bevy/desktop mappings, `B` control, and display-free smoke/journal coverage are
-  synchronized; damage/tool stats, durability, procedural placement, and noise propagation remain
+  synchronized; damage/tool stats, durability, procedural placement, and persistent noise fields remain
   deferred.
 
 - Verified deterministic one-shot floor traps: walkable `Trap` terrain is consumed when a scheduled
