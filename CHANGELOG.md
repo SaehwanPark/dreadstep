@@ -16,6 +16,10 @@ All notable contributor- and user-visible project changes are recorded here.
   before Bevy consumes the app world; Escape, window-close, and runtime-fault paths now share the
   same pre-exit finalizer.
 
+- Added contextual terminal HUD guidance: procedural victory names the next depth and `N`, while
+  authored victory and defeat point to `Shift+R`; maximum-depth victory avoids overflow and gives a
+  restart-only recovery message.
+
 - Added a deterministic seeded corridor-floor content preparation slice: `procedural_floor` and
   `procedural_floor_definition` generate a validated 13×9 floor with three single-gap wall
   partitions, stable actor placement, small depth-scaled enemy durability, and a tested guarantee

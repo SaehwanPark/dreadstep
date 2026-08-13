@@ -20,6 +20,10 @@ with the same seed and records `floor_advanced`; the transition resets the dispo
 state and replay trace. The display-free `--smoke` path intentionally remains on the authored item
 fixture and its exhaustive command/event matrix.
 
+At a terminal outcome, the HUD names the available recovery action: procedural victory identifies the
+next depth and `N` when another depth is available, while authored victory and defeat identify
+`Shift+R` restart.
+
 The first launch creates `dreadstep-logs/` and a create-new JSONL journal. The directory is
 ignored by Git. A checkout does not need local art: readable nearest-neighbor placeholder pixels
 are used for every family until an optional image loads.

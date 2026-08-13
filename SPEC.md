@@ -4011,6 +4011,38 @@ Out of scope:
 - Enemy/floor balance, persistent floor history, map previews, progression rewards, localization,
   accessibility metadata beyond readable text, and agent-facing scenario selection.
 
+### Milestone 5 preparation slice: contextual terminal HUD guidance
+
+- Status: verified
+- Started: 2026-08-13
+- Completed: 2026-08-13
+
+Give terminal desktop outcomes a direct recovery/action message. Procedural victory identifies the
+next checked depth and `N` action, authored victory and defeat offer `Shift+R`, and running sessions
+keep the HUD free of terminal call-to-action text. A depth-overflow victory must remain actionable
+without wrapping or panicking.
+
+Acceptance:
+
+- Procedural victory at depth `N` says `N` starts depth `N+1`; authored victory never advertises
+  procedural progression; defeat offers restart; running has no terminal CTA.
+- `u32::MAX` procedural victory uses a safe restart-only message.
+- Copy is a read-only presentation projection over `DesktopSession`; core, input dispatch, and
+  journal/replay schemas remain unchanged.
+
+Verification target:
+
+- Pure formatter tests cover procedural/authored victory, defeat, running, and depth overflow;
+  existing desktop tests, smoke, formatting, `scripts/verify.sh`, and semantic review remain green.
+
+Evidence: `cargo test -p dreadstep-bevy --lib --all-features --locked` (41 passed), strict Bevy
+clippy, and `git diff --check`; the formatter covers all four outcomes and checked depth overflow.
+
+Out of scope:
+
+- New controls, persistent progression, localization, accessibility metadata, and core outcome
+  changes.
+
 ## Future
 
 ### Remaining roadmap milestones

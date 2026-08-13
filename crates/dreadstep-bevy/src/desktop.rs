@@ -2499,14 +2499,34 @@ fn scenario_label(procedural: bool, depth: u32) -> String {
   }
 }
 
+fn terminal_hud_message(status: &DesktopStatus, procedural: bool, depth: u32) -> String {
+  match status {
+    DesktopStatus::Victory if procedural => match depth.checked_add(1) {
+      Some(next_depth) => {
+        format!("Floor cleared — press N for depth {next_depth}, or Shift+R to restart")
+      }
+      None => "Floor cleared — next depth unavailable; press Shift+R to restart".to_string(),
+    },
+    DesktopStatus::Victory => "Showcase complete — press Shift+R to restart".to_string(),
+    DesktopStatus::Defeat => "Showcase failed — press Shift+R to restart".to_string(),
+    _ => String::new(),
+  }
+}
+
 fn format_hud_stats(
   player: Option<&Actor>,
   snapshot: &PresentationSnapshot,
   status: &DesktopStatus,
   scenario: &str,
+  terminal: &str,
   visibility: Option<&PresentationVisibility>,
   intent: Option<&PresentationEnemyIntent>,
 ) -> String {
+  let terminal_line = if terminal.is_empty() {
+    String::new()
+  } else {
+    format!("{terminal}\n")
+  };
   let enemies_remaining = snapshot
     .actors()
     .iter()
@@ -2514,7 +2534,7 @@ fn format_hud_stats(
     .count();
   let Some(player) = player else {
     return format!(
-      "{}\nPlayer unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\n{}\nStatus: {:?}",
+      "{}\nPlayer unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\n{}\n{}Status: {:?}",
       scenario,
       snapshot.current_time().value(),
       snapshot
@@ -2523,12 +2543,13 @@ fn format_hud_stats(
       enemies_remaining,
       visibility_summary(visibility),
       enemy_intent_summary(intent),
+      terminal_line,
       status
     );
   };
   let hit_points = i32::from(player.hit_points().value());
   format!(
-    "{}\nHP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\nStatus: {:?}",
+    "{}\nHP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\n{}Status: {:?}",
     scenario,
     health_bar_text(hit_points),
     hit_points.clamp(0, SHOWCASE_MAX_HIT_POINTS),
@@ -2542,6 +2563,7 @@ fn format_hud_stats(
     enemies_remaining,
     visibility_summary(visibility),
     enemy_intent_summary(intent),
+    terminal_line,
     status
   )
 }
@@ -2562,6 +2584,7 @@ fn desktop_update_hud(
     &snapshot,
     &session.status,
     &scenario_label(session.procedural, session.depth),
+    &terminal_hud_message(&session.status, session.procedural, session.depth),
     visibility.as_deref(),
     intent.as_deref(),
   );
@@ -3177,6 +3200,7 @@ mod tests {
       &snapshot,
       &status,
       &scenario_label(false, 1),
+      "",
       None,
       Some(&empty_intent),
     );
@@ -3184,6 +3208,7 @@ mod tests {
     assert!(text.contains("Enemies remaining: 3"));
     assert!(text.contains("FOV full map"));
     assert!(text.contains("Intent: none"));
+    assert!(!text.contains("press N"));
 
     let player = snapshot
       .actors()
@@ -3195,6 +3220,7 @@ mod tests {
       &snapshot,
       &status,
       &scenario_label(false, 1),
+      "",
       None,
       Some(&empty_intent),
     );
@@ -3207,6 +3233,27 @@ mod tests {
   fn hud_scenario_label_distinguishes_procedural_depth_and_item_fixture() {
     assert_eq!(scenario_label(true, 4), "Procedural floor · depth 4");
     assert_eq!(scenario_label(false, 1), "Starter item floor");
+  }
+
+  #[test]
+  fn terminal_hud_message_matches_outcome_and_avoids_depth_overflow() {
+    assert_eq!(
+      terminal_hud_message(&DesktopStatus::Victory, true, 4),
+      "Floor cleared — press N for depth 5, or Shift+R to restart"
+    );
+    assert_eq!(
+      terminal_hud_message(&DesktopStatus::Victory, false, 4),
+      "Showcase complete — press Shift+R to restart"
+    );
+    assert_eq!(
+      terminal_hud_message(&DesktopStatus::Defeat, true, 4),
+      "Showcase failed — press Shift+R to restart"
+    );
+    assert!(terminal_hud_message(&DesktopStatus::Running, true, 4).is_empty());
+    assert_eq!(
+      terminal_hud_message(&DesktopStatus::Victory, true, u32::MAX),
+      "Floor cleared — next depth unavailable; press Shift+R to restart"
+    );
   }
 
   #[test]
