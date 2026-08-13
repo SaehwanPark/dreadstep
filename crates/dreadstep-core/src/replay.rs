@@ -158,6 +158,12 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u32(actor.value());
       hasher.write_u32(target.value());
     }
+    Command::Investigate { actor, position } => {
+      hasher.write_u8(15);
+      hasher.write_u32(actor.value());
+      hasher.write_i32(position.x());
+      hasher.write_i32(position.y());
+    }
     Command::Equip { actor, item } => {
       hasher.write_u8(5);
       hasher.write_u32(actor.value());

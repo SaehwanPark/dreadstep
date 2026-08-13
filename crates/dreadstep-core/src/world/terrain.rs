@@ -99,6 +99,18 @@ impl WorldState {
         actor: actor_id,
         position,
       })?;
+    for enemy in self.actors.values_mut().filter(|actor| {
+      actor.is_alive()
+        && actor.kind() == crate::ActorKind::Enemy
+        && actor
+          .position()
+          .x()
+          .abs_diff(position.x())
+          .saturating_add(actor.position().y().abs_diff(position.y()))
+          <= 3
+    }) {
+      enemy.heard_noise = Some(position);
+    }
     Ok(vec![
       Event::DoorOpened {
         actor: actor_id,

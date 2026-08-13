@@ -178,6 +178,69 @@ fn scheduled_distant_enemy_intent_prefers_ranged_attack_before_chase() {
 }
 
 #[test]
+fn scheduled_enemy_intent_investigates_a_kick_noise_before_chase() {
+  let world = WorldState::new(
+    GridMap::from_tiles(
+      8,
+      3,
+      vec![
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Floor,
+        Tile::Door,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+        Tile::Wall,
+      ],
+    )
+    .expect("noise map validates"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(1, 1)),
+      Actor::new(ActorId::new(2), ActorKind::Enemy, Position::new(5, 1)),
+    ],
+  )
+  .expect("noise world validates");
+  let mut runtime = PresentationRuntime::new(PresentationState::new(7, world));
+  runtime
+    .execute(Command::Kick {
+      actor: ActorId::new(1),
+      position: Position::new(2, 1),
+    })
+    .expect("kick should be accepted");
+  let mut app = App::new();
+  app.insert_resource(runtime);
+  app.insert_resource(PresentationInput::new(ActorId::new(1)));
+  app.insert_resource(PresentationEnemyIntent::new());
+  app.add_plugins(PresentationPlugin);
+  app.update();
+
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().command(),
+    Some(Command::Investigate {
+      actor: ActorId::new(2),
+      position: Position::new(2, 1),
+    })
+  );
+}
+
+#[test]
 fn missing_runtime_clears_enemy_intent_without_panicking() {
   let mut app = intent_app();
   app

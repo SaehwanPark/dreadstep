@@ -60,9 +60,10 @@ materially more efficient in Rust.
 ## Current Invariants
 
 - `dreadstep-core` owns `WorldState` transitions, occupancy, scheduling, combat, inventory,
-  environmental tiles, canonical `RunOutcome`, replay traces, and the stable state digest.
+  environmental tiles, one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
+  the stable state digest.
   The digest uses an explicit deterministic byte order, not a process-randomized hasher.
-- Protocol v18 projects those values. MCP, headless, and Bevy convert types and shape I/O;
+- Protocol v19 projects those values. MCP, headless, and Bevy convert types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.
 - Bevy ECS mirrors, FOV, enemy-intent, HUD, and desktop session state are presentation-only.
   Missing optional resources are no-ops or recorded fallbacks.

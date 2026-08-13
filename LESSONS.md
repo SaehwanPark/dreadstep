@@ -498,6 +498,21 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Test ordered event evidence, standard timing, replay participation, and atomic target
   rejection before adding noise state, falloff, enemy interest, or interaction composition.
 
+## Keep kick-noise investigation one-use and core-owned
+
+- Context: The kick-open-door slice intentionally stopped at ordered `NoiseCreated` evidence, but
+  the next tactical consequence needs to remain deterministic and bounded while broader sound
+  propagation is unresolved.
+- Symptom: Letting Bevy infer an enemy's attraction or retaining a global sound field would create
+  adapter-owned AI state and make replay/snapshot behavior depend on presentation timing.
+- Resolution: Core arms one optional hearing position directly on each living enemy within the
+  fixed radius, advertises `Investigate` between ranged and chase priorities, reuses deterministic
+  movement, and clears the target after one accepted attempt (including blocked movement). Digest,
+  protocol snapshot, and replay evidence include the optional target.
+- Prevention: Keep generic sound sources, falloff, persistence, wall-aware propagation, and hearing
+  archetypes out of this preparation slice; share the exact legal/execution predicate and test
+  replacement, distance boundary, dead actors, stale targets, and blocked steps.
+
 ## Keep floor progression at the presentation boundary until core state exists
 
 - Context: The seeded procedural corridor now needs a small visible multi-floor loop without

@@ -62,7 +62,7 @@ pub(crate) const HEALTH_BAR_WIDTH: usize = 10;
 pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 14] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 15] = [
   "move",
   "wait",
   "interact",
@@ -71,6 +71,7 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 14] = [
   "attack",
   "ranged_attack",
   "chase",
+  "investigate",
   "equip",
   "unequip",
   "use_item",

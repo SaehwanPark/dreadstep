@@ -137,6 +137,14 @@ impl WorldState {
         target: target.id(),
       });
     }
+    if let Some(position) = actor.heard_noise()
+      && actor.position() != position
+    {
+      commands.push(Command::Investigate {
+        actor: actor_id,
+        position,
+      });
+    }
     for target in living_targets.iter().copied().filter(|target| {
       !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
     }) {

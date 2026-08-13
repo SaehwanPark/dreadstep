@@ -137,6 +137,7 @@ pub struct Actor {
   pub(crate) equipped: Option<ItemId>,
   pub(crate) ranged_ammo: u16,
   pub(crate) ready_at: ActionTime,
+  pub(crate) heard_noise: Option<Position>,
 }
 
 impl Actor {
@@ -206,6 +207,7 @@ impl Actor {
       equipped: None,
       ranged_ammo,
       ready_at: ActionTime::new(0),
+      heard_noise: None,
     }
   }
 
@@ -292,5 +294,11 @@ impl Actor {
   #[must_use]
   pub const fn ready_at(&self) -> ActionTime {
     self.ready_at
+  }
+
+  /// Returns the one-use noise position currently heard by this actor, if any.
+  #[must_use]
+  pub const fn heard_noise(&self) -> Option<Position> {
+    self.heard_noise
   }
 }

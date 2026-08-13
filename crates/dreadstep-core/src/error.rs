@@ -240,6 +240,17 @@ pub enum CommandError {
   },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
+  /// A noise investigation request must come from an enemy actor.
+  InvestigateRequiresEnemy(ActorId),
+  /// The enemy has no pending one-use noise target.
+  NoNoiseToInvestigate(ActorId),
+  /// The requested position does not match the enemy's pending noise target.
+  InvestigateTargetInvalid {
+    /// The enemy issuing the investigation.
+    actor: ActorId,
+    /// The requested noise position.
+    position: Position,
+  },
   /// The attack target is outside the attacker's melee reach.
   AttackOutOfRange {
     /// The actor issuing the attack.
@@ -381,6 +392,25 @@ impl fmt::Display for CommandError {
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }
+      Self::InvestigateRequiresEnemy(actor) => write!(
+        formatter,
+        "actor {} cannot investigate noise because only enemies may investigate",
+        actor.value()
+      ),
+      Self::NoNoiseToInvestigate(actor) => {
+        write!(
+          formatter,
+          "actor {} has no pending noise to investigate",
+          actor.value()
+        )
+      }
+      Self::InvestigateTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot investigate noise at ({}, {}): target is stale",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
       Self::AttackOutOfRange { attacker, target } => write!(
         formatter,
         "actor {} cannot attack non-adjacent target {}",

@@ -160,13 +160,14 @@ impl WorldState {
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
   /// identity, kind, life, position, current and maximum hit points, ranged ammunition, ready
-  /// time, ordered inventory item identities, definition references and effects, optional equipped
-  /// item identity, and ordered ground-item stacks. It is deterministic regression evidence, not a
-  /// cryptographic integrity check or serialized state format.
+  /// time, optional one-use hearing target, ordered inventory item identities, definition
+  /// references and effects, optional equipped item identity, and ordered ground-item stacks. It
+  /// is deterministic regression evidence, not a cryptographic integrity check or serialized state
+  /// format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V3");
+    hasher.write_bytes(b"DREADSTEP-STATE-V4");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -194,6 +195,14 @@ impl WorldState {
       hasher.write_u8(actor.melee_reach().value());
       hasher.write_u16(actor.ranged_ammo());
       hasher.write_u64(actor.ready_at().value());
+      match actor.heard_noise() {
+        Some(position) => {
+          hasher.write_u8(1);
+          hasher.write_i32(position.x());
+          hasher.write_i32(position.y());
+        }
+        None => hasher.write_u8(0),
+      }
       hasher.write_u64(u64::try_from(actor.inventory().len()).unwrap_or(u64::MAX));
       for item in actor.inventory() {
         hasher.write_u32(item.id().value());
@@ -242,8 +251,8 @@ impl WorldState {
   /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
   /// Player attacks include targets within the actor's melee reach and clear cardinal rays two or
   /// three tiles away for the bounded ranged command. Enemies attack adjacent living targets,
-  /// include clear ranged targets when ammunition and schedule capacity allow, and otherwise
-  /// retain chase commands for every distinct living target.
+  /// include clear ranged targets when ammunition and schedule capacity allow, then consume
+  /// one-use noise investigations before retaining chase commands for every distinct living target.
   /// Results follow the fixed direction, inventory, and then stable actor identity order.
   #[must_use]
   pub fn legal_commands(&self) -> Vec<Command> {
@@ -334,6 +343,7 @@ impl WorldState {
         let direction = self.chase_direction(actor_id, target)?;
         self.move_actor(actor_id, direction)?
       }
+      Command::Investigate { position, .. } => self.investigate(actor_id, position)?,
       Command::Equip { item, .. } => self.equip_item(actor_id, item)?,
       Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
       Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],

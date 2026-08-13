@@ -81,8 +81,9 @@ pub(crate) fn sync_enemy_intent(world: &mut World) {
 
 /// Selects the shared deterministic enemy-driver preference from core's legal commands.
 ///
-/// Adjacent melee is preferred over clear ranged attacks; chase then wait preserve the existing
-/// movement fallback. The first command for the actor remains a forward-compatible final fallback.
+/// Adjacent melee is preferred over clear ranged attacks; one-use noise investigation then chase
+/// and wait preserve the deterministic movement fallback. The first command for the actor remains
+/// a forward-compatible final fallback.
 pub(crate) fn select_enemy_command(
   legal: &[Command],
   actor: ActorId,
@@ -110,6 +111,20 @@ pub(crate) fn select_enemy_command(
               actor: candidate,
               target: candidate_target,
             } if *candidate == actor && *candidate_target == target
+          )
+        })
+        .copied()
+    })
+    .or_else(|| {
+      legal
+        .iter()
+        .find(|command| {
+          matches!(
+            command,
+            Command::Investigate {
+              actor: candidate,
+              ..
+            } if *candidate == actor
           )
         })
         .copied()
@@ -154,6 +169,7 @@ pub(crate) fn command_actor(command: Command) -> ActorId {
     | Command::Attack { actor, .. }
     | Command::RangedAttack { actor, .. }
     | Command::Chase { actor, .. }
+    | Command::Investigate { actor, .. }
     | Command::Equip { actor, .. }
     | Command::Unequip { actor }
     | Command::UseItem { actor, .. }

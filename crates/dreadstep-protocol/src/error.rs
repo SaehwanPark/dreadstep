@@ -415,6 +415,17 @@ pub enum CommandError {
   },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
+  /// A noise investigation must come from an enemy actor.
+  InvestigateRequiresEnemy(ActorId),
+  /// The enemy has no pending noise target.
+  NoNoiseToInvestigate(ActorId),
+  /// The requested noise target is stale or does not match the pending target.
+  InvestigateTargetInvalid {
+    /// The enemy issuing the request.
+    actor: ActorId,
+    /// The requested noise position.
+    position: Position,
+  },
   /// The attack target is not adjacent.
   AttackOutOfRange {
     /// The actor issuing the attack.
@@ -520,6 +531,18 @@ impl From<CoreCommandError> for CommandError {
       },
       CoreCommandError::CannotChaseSelf(actor) => {
         Self::CannotChaseSelf(ActorId::new(actor.value()))
+      }
+      CoreCommandError::InvestigateRequiresEnemy(actor) => {
+        Self::InvestigateRequiresEnemy(ActorId::new(actor.value()))
+      }
+      CoreCommandError::NoNoiseToInvestigate(actor) => {
+        Self::NoNoiseToInvestigate(ActorId::new(actor.value()))
+      }
+      CoreCommandError::InvestigateTargetInvalid { actor, position } => {
+        Self::InvestigateTargetInvalid {
+          actor: ActorId::new(actor.value()),
+          position: Position::new(position.x(), position.y()),
+        }
       }
       CoreCommandError::AttackOutOfRange { attacker, target } => Self::AttackOutOfRange {
         attacker: ActorId::new(attacker.value()),
@@ -651,6 +674,25 @@ impl fmt::Display for CommandError {
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
       }
+      Self::InvestigateRequiresEnemy(actor) => write!(
+        formatter,
+        "actor {} cannot investigate noise because only enemies may investigate",
+        actor.value()
+      ),
+      Self::NoNoiseToInvestigate(actor) => {
+        write!(
+          formatter,
+          "actor {} has no pending noise to investigate",
+          actor.value()
+        )
+      }
+      Self::InvestigateTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot investigate noise at ({}, {}): target is stale",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
       Self::AttackOutOfRange { attacker, target } => write!(
         formatter,
         "actor {} cannot attack non-adjacent target {}",

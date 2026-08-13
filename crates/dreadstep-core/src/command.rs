@@ -62,6 +62,13 @@ pub enum Command {
     /// The living actor being pursued.
     target: ActorId,
   },
+  /// Move one step toward a one-use noise position heard by an enemy.
+  Investigate {
+    /// The enemy issuing the investigation.
+    actor: ActorId,
+    /// The exact noise position to approach.
+    position: Position,
+  },
   /// Equip one item already owned by the actor, replacing any previous equipment.
   Equip {
     /// The actor issuing the command.
@@ -113,6 +120,7 @@ impl Command {
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
       | Self::Chase { actor, .. }
+      | Self::Investigate { actor, .. }
       | Self::Equip { actor, .. }
       | Self::Unequip { actor }
       | Self::UseItem { actor, .. }

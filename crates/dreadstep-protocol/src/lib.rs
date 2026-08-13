@@ -16,7 +16,7 @@ mod scenario;
 mod snapshot;
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 18;
+pub const PROTOCOL_VERSION: u16 = 19;
 
 pub use command::{CommandRequest, Direction};
 pub use error::{CommandError, MapError, ScenarioError, WorldError};

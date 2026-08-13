@@ -58,6 +58,7 @@ pub struct ActorSnapshot {
   inventory_capacity: u16,
   inventory: Vec<ItemSnapshot>,
   equipped_item: Option<ItemId>,
+  heard_noise: Option<Position>,
 }
 
 impl ActorSnapshot {
@@ -89,6 +90,9 @@ impl ActorSnapshot {
         .map(ItemSnapshot::from_item)
         .collect(),
       equipped_item: actor.equipped_item().map(|item| ItemId::new(item.value())),
+      heard_noise: actor
+        .heard_noise()
+        .map(|position| Position::new(position.x(), position.y())),
     }
   }
 
@@ -162,6 +166,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn equipped_item(&self) -> Option<ItemId> {
     self.equipped_item
+  }
+
+  /// Returns the one-use noise position currently heard by this actor, if any.
+  #[must_use]
+  pub const fn heard_noise(&self) -> Option<Position> {
+    self.heard_noise
   }
 }
 

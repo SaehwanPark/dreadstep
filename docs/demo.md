@@ -67,7 +67,8 @@ display-free smoke path.
 
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
 150 ms and chooses its legal adjacent `Attack` toward actor 1, otherwise a clear-cardinal
-`RangedAttack`, then `Chase`, then legal `Wait`. The delay is never simulation time. A
+`RangedAttack`, then one-use `Investigate` toward a nearby kick-noise position, then `Chase`, then
+legal `Wait`. The delay is never simulation time. A
 presentation-only “showcase complete” status appears after every enemy is dead and consumes core's
 canonical `RunOutcome` projection.
 
@@ -131,7 +132,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 
 | Current player-facing surface | Visible/HUD | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy attack/ranged/chase | map, scheduler, messages | command + event + snapshots | yes |
+| Move / wait / enemy attack/ranged/investigate/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, healing/ammo results, and ground stack | item/reload events, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door, trap, breakable, noise, and actor blocking | distinct wall/cover/floor/door/trap/breakable/actor pixels | `movement_blocked`, `door_opened`, ordered `noise_created`/`trap_triggered`, and `breakable_broken` evidence | yes |
@@ -152,7 +153,8 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 The deterministic sequence first places a trap in the first enemy's chase path and uses `RangedAttack`
 against the distance-two authored enemy so the chase emits `TrapTriggered`, then adds a breakable-terrain
 smoke fixture and breaks it with `Break`, then adds a closed-door fixture and kicks it with `Kick`
-(including noise evidence), re-adds a door and opens it with `Interact`, then reloads the player's
+(including noise evidence and a nearby enemy `Investigate` turn), re-adds a door and opens it with
+`Interact`, then reloads the player's
 partial ammunition,
 drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
 `Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,

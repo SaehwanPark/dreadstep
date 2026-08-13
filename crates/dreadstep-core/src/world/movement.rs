@@ -1,7 +1,8 @@
 //! Movement, chase direction, and trap entry as a consequence of a successful step.
 
 use crate::{
-  Actor, ActorId, ActorKind, BlockReason, CommandError, Damage, Direction, Event, Tile, WorldState,
+  Actor, ActorId, ActorKind, BlockReason, CommandError, Damage, Direction, Event, Position, Tile,
+  WorldState,
 };
 
 impl WorldState {
@@ -54,6 +55,9 @@ impl WorldState {
             .ok_or(CommandError::UnknownActor(actor_id))?;
           let remaining_hit_points = actor.hit_points.reduced_by(damage);
           actor.hit_points = remaining_hit_points;
+          if !remaining_hit_points.is_alive() {
+            actor.heard_noise = None;
+          }
           remaining_hit_points
         };
         events.push(Event::TrapTriggered {
@@ -91,16 +95,52 @@ impl WorldState {
     if !target_actor.is_alive() {
       return Err(CommandError::TargetDead(target));
     }
-    let from = chaser.position();
-    let to = target_actor.position();
+    Ok(Self::direction_toward(
+      chaser.position(),
+      target_actor.position(),
+    ))
+  }
+
+  pub(super) fn investigate(
+    &mut self,
+    actor_id: ActorId,
+    position: Position,
+  ) -> Result<Vec<Event>, CommandError> {
+    let actor = self
+      .actors
+      .get(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    if actor.kind() != ActorKind::Enemy {
+      return Err(CommandError::InvestigateRequiresEnemy(actor_id));
+    }
+    let Some(heard_noise) = actor.heard_noise() else {
+      return Err(CommandError::NoNoiseToInvestigate(actor_id));
+    };
+    if heard_noise != position || actor.position() == position {
+      return Err(CommandError::InvestigateTargetInvalid {
+        actor: actor_id,
+        position,
+      });
+    }
+    let direction = Self::direction_toward(actor.position(), position);
+    let events = self.move_actor(actor_id, direction)?;
+    self
+      .actors
+      .get_mut(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?
+      .heard_noise = None;
+    Ok(events)
+  }
+
+  pub(super) fn direction_toward(from: Position, to: Position) -> Direction {
     if from.x() < to.x() {
-      Ok(Direction::East)
+      Direction::East
     } else if from.x() > to.x() {
-      Ok(Direction::West)
+      Direction::West
     } else if from.y() < to.y() {
-      Ok(Direction::South)
+      Direction::South
     } else {
-      Ok(Direction::North)
+      Direction::North
     }
   }
 }

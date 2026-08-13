@@ -282,6 +282,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
     }),
+    ["investigate", actor, x, y] => Ok(Command::Investigate {
+      actor: parse_actor(Some(actor))?,
+      position: Position::new(parse_coordinate(Some(x))?, parse_coordinate(Some(y))?),
+    }),
     ["reload", actor] => Ok(Command::Reload {
       actor: parse_actor(Some(actor))?,
     }),
@@ -517,6 +521,25 @@ mod tests {
   }
 
   #[test]
+  fn parses_investigate_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "investigate:2:4:1".to_owned(),
+    ])
+    .expect("investigation command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Investigate {
+        actor: ActorId::new(2),
+        position: Position::new(4, 1),
+      }]
+    );
+  }
+
+  #[test]
   fn rejects_duplicate_and_unknown_arguments() {
     assert_eq!(
       parse_args([
@@ -585,7 +608,7 @@ mod tests {
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
 outcome=in_progress\n\
-digest=9203069779232099541\n"
+digest=14278702377284616588\n"
     );
   }
 
