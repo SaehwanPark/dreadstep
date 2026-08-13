@@ -161,7 +161,8 @@ documented in [`docs/demo.md`](docs/demo.md).
 
 The current slice is complete: a player may throw authored Frost Flask item 104 at a living target
 on a clear cardinal distance-2..=3 ray. The flask is consumed, applies or refreshes the existing
-two-action `Chilled` status, and emits typed throw/application events. Protocol v22, MCP, headless,
+two-action `Chilled` status, and emits typed throw/application events. Authored Kiter enemies expose
+deterministic adjacent retreat before their existing combat fallbacks. Protocol v23, MCP, headless,
 Bevy, HUD/journal formatting, content, and display-free smoke project the same core-owned result.
 
 ## Future

@@ -1,8 +1,8 @@
 //! Movement, chase direction, and trap entry as a consequence of a successful step.
 
 use crate::{
-  Actor, ActorId, ActorKind, BlockReason, CommandError, Damage, Direction, Event, Position, Tile,
-  WorldState,
+  Actor, ActorId, ActorKind, BlockReason, CommandError, Damage, Direction, EnemyBehavior, Event,
+  Position, Tile, WorldState,
 };
 
 impl WorldState {
@@ -113,6 +113,77 @@ impl WorldState {
       chaser.position(),
       target_actor.position(),
     ))
+  }
+
+  pub(super) fn retreat(
+    &mut self,
+    actor_id: ActorId,
+    target_id: ActorId,
+  ) -> Result<Vec<Event>, CommandError> {
+    let direction = self.retreat_direction(actor_id, target_id)?;
+    self.move_actor(actor_id, direction)
+  }
+
+  pub(super) fn retreat_direction(
+    &self,
+    actor_id: ActorId,
+    target_id: ActorId,
+  ) -> Result<Direction, CommandError> {
+    let actor = self
+      .actors
+      .get(&actor_id)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    if actor.kind() != ActorKind::Enemy || actor.enemy_behavior() != EnemyBehavior::Kiter {
+      return Err(CommandError::RetreatRequiresKiter(actor_id));
+    }
+    if actor_id == target_id {
+      return Err(CommandError::CannotRetreatSelf(actor_id));
+    }
+    let actor_position = actor.position();
+    let target = self
+      .actors
+      .get(&target_id)
+      .ok_or(CommandError::UnknownTarget(target_id))?;
+    if !target.is_alive() {
+      return Err(CommandError::TargetDead(target_id));
+    }
+    let target_position = target.position();
+    let current_distance = Self::manhattan_distance(actor_position, target_position);
+    if current_distance != 1 {
+      return Err(CommandError::RetreatTargetNotAdjacent {
+        actor: actor_id,
+        target: target_id,
+      });
+    }
+    let mut best: Option<(Direction, u32)> = None;
+    for direction in [
+      Direction::North,
+      Direction::South,
+      Direction::West,
+      Direction::East,
+    ] {
+      let position = actor_position.translated(direction);
+      if !self.map.is_walkable(position) || self.actor_at(position).is_some() {
+        continue;
+      }
+      let distance = Self::manhattan_distance(position, target_position);
+      if distance > current_distance
+        && best.is_none_or(|(_, best_distance)| distance > best_distance)
+      {
+        best = Some((direction, distance));
+      }
+    }
+    let Some((direction, _)) = best else {
+      return Err(CommandError::RetreatNoEscape(actor_id));
+    };
+    Ok(direction)
+  }
+
+  pub(super) fn manhattan_distance(first: Position, second: Position) -> u32 {
+    first
+      .x()
+      .abs_diff(second.x())
+      .saturating_add(first.y().abs_diff(second.y()))
   }
 
   pub(super) fn investigate(

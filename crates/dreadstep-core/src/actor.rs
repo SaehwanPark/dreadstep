@@ -3,7 +3,7 @@
 //! Ready time, inventory, and ammunition live on the actor record. World transitions mutate
 //! these fields; adapters must not invent a second copy.
 
-use crate::{ActorId, HitPoints, Item, ItemId, Position, Status, StatusKind};
+use crate::{ActorId, EnemyBehavior, HitPoints, Item, ItemId, Position, Status, StatusKind};
 
 /// The kind of actor represented in the world.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -132,6 +132,7 @@ impl Default for MeleeReach {
 pub struct Actor {
   id: ActorId,
   kind: ActorKind,
+  enemy_behavior: EnemyBehavior,
   pub(crate) position: Position,
   pub(crate) hit_points: HitPoints,
   max_hit_points: HitPoints,
@@ -158,6 +159,18 @@ impl Actor {
   #[must_use]
   pub const fn new(id: ActorId, kind: ActorKind, position: Position) -> Self {
     Self::with_hit_points(id, kind, position, HitPoints::new(10))
+  }
+
+  /// Creates a default-hit-point enemy with an authored behavior policy.
+  #[must_use]
+  pub const fn with_enemy_behavior(
+    id: ActorId,
+    position: Position,
+    enemy_behavior: EnemyBehavior,
+  ) -> Self {
+    let mut actor = Self::new(id, ActorKind::Enemy, position);
+    actor.enemy_behavior = enemy_behavior;
+    actor
   }
 
   /// Creates an actor with explicit hit points that is ready at the beginning of the timeline.
@@ -203,6 +216,7 @@ impl Actor {
     Self {
       id,
       kind,
+      enemy_behavior: EnemyBehavior::Pursuer,
       position,
       hit_points,
       max_hit_points: hit_points,
@@ -235,6 +249,21 @@ impl Actor {
     )
   }
 
+  /// Creates an actor with explicit hit points, melee reach, and authored enemy behavior.
+  #[must_use]
+  pub const fn with_melee_reach_and_behavior(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+    melee_reach: MeleeReach,
+    enemy_behavior: EnemyBehavior,
+  ) -> Self {
+    let mut actor = Self::with_melee_reach(id, kind, position, hit_points, melee_reach);
+    actor.enemy_behavior = enemy_behavior;
+    actor
+  }
+
   /// Returns this actor's stable identity.
   #[must_use]
   pub const fn id(&self) -> ActorId {
@@ -245,6 +274,18 @@ impl Actor {
   #[must_use]
   pub const fn kind(&self) -> ActorKind {
     self.kind
+  }
+
+  /// Returns the closed behavior policy authored for this actor.
+  #[must_use]
+  pub const fn enemy_behavior(&self) -> EnemyBehavior {
+    self.enemy_behavior
+  }
+
+  pub(crate) fn set_enemy_behavior(&mut self, behavior: EnemyBehavior) -> EnemyBehavior {
+    let previous = self.enemy_behavior;
+    self.enemy_behavior = behavior;
+    previous
   }
 
   /// Returns this actor's current position.

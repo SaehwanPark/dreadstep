@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 22);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 23);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -67,6 +67,7 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["ground_items"], serde_json::json!([]));
   assert_eq!(value["actors"][0]["id"], 1);
   assert_eq!(value["actors"][0]["kind"], "player");
+  assert_eq!(value["actors"][0]["behavior"], "pursuer");
   assert_eq!(value["actors"][0]["life"], "alive");
   assert_eq!(value["actors"][0]["melee_reach"], 1);
   assert_eq!(value["actors"][0]["ranged_ammo"], 3);

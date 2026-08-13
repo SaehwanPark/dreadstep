@@ -6,11 +6,18 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added the bounded authored Kiter enemy behavior. A scheduled Kiter adjacent to a living target
+  advertises and executes typed `Retreat` before attack/ranged/investigate/chase fallbacks, choosing
+  the farthest unoccupied walkable cardinal tile with stable N/S/W/E ties. Protocol v23 snapshots
+  the closed behavior identity; MCP, headless, Bevy/desktop intent, and replay/digest coverage stay
+  core-backed. Group tactics, pathfinding, exact-range preferences, and behavior memory remain
+  deferred.
+
 - Added the bounded player Frost Flask throw: authored item 104 (definition 5) is a closed
   `ThrowableEffect::Chill` that a player may throw at a living target on a clear cardinal
   distance-2..=3 ray. The accepted command consumes the flask, emits typed `ItemThrown` then
   `StatusApplied` evidence, and applies or refreshes the existing two-action `Chilled` status.
-  Protocol v22, content, MCP, headless, Bevy/desktop HUD and journal mappings, and display-free
+  Protocol v23, content, MCP, headless, Bevy/desktop HUD and journal mappings, and display-free
   smoke coverage are synchronized; splash, misses, projectile simulation, and generic throw
   effects remain deferred.
 

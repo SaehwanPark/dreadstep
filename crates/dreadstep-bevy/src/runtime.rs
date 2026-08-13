@@ -5,8 +5,8 @@ use dreadstep_content::{
   ContentError, chill_trap_floor, procedural_floor, starter_floor, starter_item_floor,
 };
 use dreadstep_core::{
-  ActorId, Command, CommandError, GridMap, ItemId, Position, ReplayTrace, StateDigest, Tile,
-  WorldState,
+  ActorId, Command, CommandError, EnemyBehavior, GridMap, ItemId, Position, ReplayTrace,
+  StateDigest, Tile, WorldState,
 };
 
 use crate::{PresentationOutput, PresentationSnapshot};
@@ -241,6 +241,23 @@ impl PresentationRuntime {
     position: Position,
   ) -> Result<(), dreadstep_core::WorldError> {
     self.state.world.teleport(actor, position)
+  }
+
+  /// Authors one Kiter in the display-free smoke fixture without entering replay evidence.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_kiter(
+    &mut self,
+    actor: ActorId,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self
+      .state
+      .world
+      .set_enemy_behavior(actor, EnemyBehavior::Kiter)
+      .is_none()
+    {
+      return Err(dreadstep_core::WorldError::UnknownActor(actor));
+    }
+    Ok(())
   }
 
   /// Places one closed door for the display-free desktop smoke fixture.

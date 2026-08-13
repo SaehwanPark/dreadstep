@@ -1891,8 +1891,10 @@ breakable terrain, kick-open door noise evidence, terrain-aware radius-three pro
 one-use nearby-enemy investigation are verified in the core simulation and its protocol, MCP,
 headless, and Bevy boundaries. The content
 boundary also has a seeded 13×9 corridor-floor generator with deterministic partition gaps and
-authored actor placement. Persistent/multi-source noise fields, richer procedural generation,
-damage/tool interactions, and enemy archetypes remain future Milestone 5 work. The visible desktop preparation
+authored actor placement. The first closed enemy archetype is also verified: authored Kiter enemies
+retreat from adjacent living targets using a farthest-cardinal deterministic escape policy, with
+protocol/MCP/headless/Bevy projections. Persistent/multi-source noise fields, richer procedural
+generation, damage/tool interactions, and broader archetype families remain future Milestone 5 work. The visible desktop preparation
 path can advance an opt-in procedural victory to the next seeded depth with `N`; persistent floor
 history and core-owned progression remain future work. The HUD exposes the current scenario/depth
 so this opt-in path remains legible during host playtesting.
@@ -1982,9 +1984,9 @@ protocol/MCP and the desktop showcase expose the same contract. Effects, capacit
 enemy pickup, and richer inventory UX remain future work.
 
 The current roadmap includes a verified presentation preparation slice: the desktop HUD reads the
-currently scheduled living enemy's exact core command using the same deterministic chase-then-wait
-preference as the enemy driver. This exposes intent without reserving commands or changing enemy
-behavior; ranged enemy AI, retreat, status effects, and richer intent policy remain future work.
+currently scheduled living enemy's exact core command using the same deterministic intent ordering
+as the enemy driver. This exposes intent without reserving commands or changing enemy behavior;
+broader ranged AI, retreat variants, status effects, and richer intent policy remain future work.
 
 The bounded combat-preparation slice for typed actor melee reach is now verified: actors default to
 one Manhattan tile while authored/test scenarios may opt into an extended reach. Legal discovery and

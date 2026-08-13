@@ -162,6 +162,7 @@ pub(crate) fn command_name(command: Command) -> &'static str {
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
     Command::Throw { .. } => "throw",
+    Command::Retreat { .. } => "retreat",
     Command::Chase { .. } => "chase",
     Command::Investigate { .. } => "investigate",
     Command::Equip { .. } => "equip",
@@ -206,6 +207,9 @@ pub(crate) fn command_value(command: Command) -> Value {
       target,
     } => {
       json!({ "kind": "throw", "actor": actor.value(), "item": item.value(), "target": target.value() })
+    }
+    Command::Retreat { actor, target } => {
+      json!({ "kind": "retreat", "actor": actor.value(), "target": target.value() })
     }
     Command::Chase { actor, target } => {
       json!({ "kind": "chase", "actor": actor.value(), "target": target.value() })
@@ -534,6 +538,13 @@ pub(crate) fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> 
     return "Intent unavailable".to_string();
   };
   match (intent.actor(), intent.command()) {
+    (Some(actor), Some(Command::Retreat { target, .. })) => {
+      format!(
+        "Intent: enemy {} retreats from actor {}",
+        actor.value(),
+        target.value()
+      )
+    }
     (Some(actor), Some(Command::Chase { target, .. })) => {
       format!(
         "Intent: enemy {} chases actor {}",

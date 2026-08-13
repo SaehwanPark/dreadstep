@@ -67,9 +67,10 @@ display-free smoke path.
 | Escape, close button, Ctrl-C | Shut down | process boundary only |
 
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
-150 ms and chooses its legal adjacent `Attack` toward actor 1, otherwise a clear-cardinal
-`RangedAttack`, then one-use `Investigate` toward a nearby kick-noise position, then `Chase`, then
-legal `Wait`. The delay is never simulation time. A
+150 ms and chooses its core-ranked legal intent: an authored Kiter retreats from an adjacent actor
+when an escape tile exists, then enemies use adjacent `Attack`, clear-cardinal `RangedAttack`,
+one-use `Investigate` toward a nearby kick-noise position, `Chase`, and finally `Wait`. The delay
+is never simulation time. A
 presentation-only “showcase complete” status appears after every enemy is dead and consumes core's
 canonical `RunOutcome` projection.
 
@@ -134,7 +135,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 
 | Current player-facing surface | Visible/HUD | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy attack/ranged/investigate/chase | map, scheduler, messages | command + event + snapshots | yes |
+| Move / wait / enemy attack/ranged/investigate/chase; Kiter retreat | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped HUD rows, reach-weapon/Frost Flask effects, healing/ammo results, and ground stack | item/reload/throw events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |
@@ -163,8 +164,10 @@ partial ammunition,
 drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
 `Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 103, attacks enemy 2 from two tiles until death, then unequips it,
 consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between
-player actions. Exhaustive command/event mappings and the coverage lists make a new player-visible
-core variant fail desktop-feature compilation or smoke coverage until it is documented and mapped.
+player actions. During the earlier enemy drive, a deterministic Kiter fixture retreats from
+adjacency; the smoke journal records its accepted `Retreat` command and `Moved` evidence.
+Exhaustive command/event mappings and the coverage lists make a new player-visible core variant
+fail desktop-feature compilation or smoke coverage until it is documented and mapped.
 
 ## Manual checklist
 

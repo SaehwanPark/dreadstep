@@ -83,6 +83,13 @@ pub enum CommandRequest {
     /// The living actor receiving the throwable effect.
     target: ActorId,
   },
+  /// Move one authored kiter one tile away from an adjacent living target.
+  Retreat {
+    /// The kiter issuing the request.
+    actor: ActorId,
+    /// The adjacent living actor being escaped.
+    target: ActorId,
+  },
   /// Chase a living actor by one deterministic step.
   Chase {
     /// The enemy issuing the request.
@@ -181,6 +188,10 @@ impl From<CommandRequest> for CoreCommand {
         item: dreadstep_core::ItemId::new(item.value()),
         target: dreadstep_core::ActorId::new(target.value()),
       },
+      CommandRequest::Retreat { actor, target } => Self::Retreat {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        target: dreadstep_core::ActorId::new(target.value()),
+      },
       CommandRequest::Chase { actor, target } => Self::Chase {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
@@ -257,6 +268,10 @@ impl From<CoreCommand> for CommandRequest {
       } => Self::Throw {
         actor: ActorId::new(actor.value()),
         item: ItemId::new(item.value()),
+        target: ActorId::new(target.value()),
+      },
+      CoreCommand::Retreat { actor, target } => Self::Retreat {
+        actor: ActorId::new(actor.value()),
         target: ActorId::new(target.value()),
       },
       CoreCommand::Chase { actor, target } => Self::Chase {

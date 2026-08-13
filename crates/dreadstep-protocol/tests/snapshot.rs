@@ -6,7 +6,7 @@ use dreadstep_core::{
   WorldState,
 };
 use dreadstep_protocol::{
-  ActionTime, ActorId, ActorKind, ActorSnapshot, HitPoints, LifeState, MeleeReach,
+  ActionTime, ActorId, ActorKind, ActorSnapshot, EnemyBehavior, HitPoints, LifeState, MeleeReach,
   PROTOCOL_VERSION, Position, WorldSnapshot,
 };
 
@@ -51,6 +51,25 @@ fn snapshot_has_version_and_stable_actor_order() {
   assert_eq!(player.ready_at(), ActionTime::new(0));
   assert_eq!(player.melee_reach(), MeleeReach::DEFAULT);
   assert_eq!(player.ranged_ammo(), 3);
+  assert_eq!(player.behavior(), EnemyBehavior::Pursuer);
+}
+
+#[test]
+fn snapshot_projects_authored_kiter_behavior() {
+  let world = WorldState::new(
+    GridMap::filled(3, 1, Tile::Floor).expect("test map should be valid"),
+    vec![dreadstep_core::Actor::with_enemy_behavior(
+      CoreActorId::new(1),
+      dreadstep_core::Position::new(1, 0),
+      dreadstep_core::EnemyBehavior::Kiter,
+    )],
+  )
+  .expect("world should be valid");
+
+  assert_eq!(
+    WorldSnapshot::from_world(&world).actors()[0].behavior(),
+    EnemyBehavior::Kiter
+  );
 }
 
 #[test]

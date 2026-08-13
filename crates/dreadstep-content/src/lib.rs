@@ -9,9 +9,9 @@
 use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, AmmunitionAmount, GridMap, HealingAmount, HitPoints, Item,
-  ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position, ThrowableEffect, Tile,
-  WorldError, WorldState,
+  Actor, ActorId, ActorKind, AmmunitionAmount, EnemyBehavior, GridMap, HealingAmount, HitPoints,
+  Item, ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position, ThrowableEffect,
+  Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -374,11 +374,13 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
         Position::new(11, 7),
         enemy_hit_points,
       ),
-      Actor::with_hit_points(
+      Actor::with_melee_reach_and_behavior(
         ActorId::new(4),
         ActorKind::Enemy,
         Position::new(1, 7),
         enemy_hit_points,
+        MeleeReach::DEFAULT,
+        EnemyBehavior::Kiter,
       ),
     ],
   )

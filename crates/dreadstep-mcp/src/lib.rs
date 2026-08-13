@@ -17,9 +17,9 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, AmmunitionAmount, Command, GridMap, HealingAmount, HitPoints, Item,
-  ItemDefinitionId, ItemEffect, ItemId, MeleeReach as CoreMeleeReach, Position, ReplayTrace,
-  ThrowableEffect, Tile, WorldState,
+  Actor, ActorId, ActorKind, AmmunitionAmount, Command, EnemyBehavior as CoreEnemyBehavior,
+  GridMap, HealingAmount, HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId,
+  MeleeReach as CoreMeleeReach, Position, ReplayTrace, ThrowableEffect, Tile, WorldState,
 };
 use dreadstep_protocol::{
   ActorId as ProtocolActorId, ActorKind as ProtocolActorKind, ActorSnapshot, CommandError,
@@ -202,7 +202,7 @@ impl Session {
           ProtocolActorKind::Player => ActorKind::Player,
           ProtocolActorKind::Enemy => ActorKind::Enemy,
         };
-        Actor::with_melee_reach(
+        Actor::with_melee_reach_and_behavior(
           ActorId::new(actor.id().value()),
           kind,
           Position::new(actor.position().x(), actor.position().y()),
@@ -210,6 +210,10 @@ impl Session {
           // `ProtocolMeleeReach` is private-field and constructor validated; the fallback keeps
           // this adapter panic-free if a future wire decoder changes that invariant.
           CoreMeleeReach::new(actor.melee_reach().value()).unwrap_or_default(),
+          match actor.behavior() {
+            dreadstep_protocol::EnemyBehavior::Pursuer => CoreEnemyBehavior::Pursuer,
+            dreadstep_protocol::EnemyBehavior::Kiter => CoreEnemyBehavior::Kiter,
+          },
         )
       })
       .collect();

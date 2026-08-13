@@ -8,6 +8,7 @@
 
 mod command;
 mod command_error;
+mod enemy_behavior;
 mod error;
 mod event;
 mod ids;
@@ -18,9 +19,10 @@ mod snapshot;
 mod status;
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 22;
+pub const PROTOCOL_VERSION: u16 = 23;
 
 pub use command::{CommandRequest, Direction};
+pub use enemy_behavior::EnemyBehavior;
 pub use error::{CommandError, MapError, ScenarioError, WorldError};
 pub use event::{BlockReason, Damage, Event};
 pub use ids::{ActorId, ActorKind, HitPoints, ItemDefinitionId, ItemId, MeleeReach, Position};
