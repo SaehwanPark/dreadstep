@@ -1,7 +1,9 @@
 //! Typed HUD status and scheduled-enemy intent projections.
 
 use bevy::ecs::resource::Resource;
-use dreadstep_core::{ActionTime, ActorId, ActorKind, Command, HitPoints, Position, Status};
+use dreadstep_core::{
+  ActionTime, ActorId, ActorKind, Command, EnemyBehavior, HitPoints, Position, Status,
+};
 
 /// A typed status projection for a future HUD.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Resource)]
@@ -21,6 +23,7 @@ pub struct PresentationHud {
 #[derive(Clone, Debug, Eq, PartialEq, Resource)]
 pub struct PresentationEnemyIntent {
   pub(crate) actor: Option<ActorId>,
+  pub(crate) behavior: Option<EnemyBehavior>,
   pub(crate) command: Option<Command>,
 }
 
@@ -30,6 +33,7 @@ impl PresentationEnemyIntent {
   pub const fn new() -> Self {
     Self {
       actor: None,
+      behavior: None,
       command: None,
     }
   }
@@ -38,6 +42,12 @@ impl PresentationEnemyIntent {
   #[must_use]
   pub const fn actor(&self) -> Option<ActorId> {
     self.actor
+  }
+
+  /// Returns the authored behavior of the scheduled enemy, when core has one.
+  #[must_use]
+  pub const fn behavior(&self) -> Option<EnemyBehavior> {
+    self.behavior
   }
 
   /// Returns the exact legal command selected for presentation from core's current projection.

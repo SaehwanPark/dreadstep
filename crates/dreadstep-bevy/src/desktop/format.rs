@@ -5,8 +5,8 @@ use bevy::ecs::query::With;
 use bevy::ecs::system::{Query, Res};
 use bevy::prelude::Text;
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position,
-  RunOutcome, Tile,
+  Actor, ActorId, ActorKind, BlockReason, Command, Direction, EnemyBehavior, Event, Item, ItemId,
+  Position, RunOutcome, Tile,
 };
 use serde_json::{Value, json};
 
@@ -569,34 +569,47 @@ pub(crate) fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> 
   let Some(intent) = intent else {
     return "Intent unavailable".to_string();
   };
+  let behavior_name = intent.behavior().map_or("enemy", enemy_behavior_name);
   match (intent.actor(), intent.command()) {
     (Some(actor), Some(Command::Retreat { target, .. })) => {
       format!(
-        "Intent: enemy {} retreats from actor {}",
+        "Intent: {behavior_name} {} retreats from actor {}",
         actor.value(),
         target.value()
       )
     }
     (Some(actor), Some(Command::Chase { target, .. })) => {
       format!(
-        "Intent: enemy {} chases actor {}",
+        "Intent: {behavior_name} {} chases actor {}",
         actor.value(),
         target.value()
       )
     }
     (Some(actor), Some(Command::Investigate { position, .. })) => format!(
-      "Intent: enemy {} investigates noise at ({}, {})",
+      "Intent: {behavior_name} {} investigates noise at ({}, {})",
       actor.value(),
       position.x(),
       position.y()
     ),
     (Some(actor), Some(Command::CastChill { target, .. })) => format!(
-      "Intent: enemy {} casts chill on actor {}",
+      "Intent: {behavior_name} {} casts chill on actor {}",
       actor.value(),
       target.value()
     ),
-    (Some(actor), Some(command)) => format!("Intent: enemy {} {:?}", actor.value(), command),
+    (Some(actor), Some(command)) => {
+      format!("Intent: {behavior_name} {} {:?}", actor.value(), command)
+    }
+    (Some(actor), None) => format!("Intent: {behavior_name} {} no legal action", actor.value()),
     _ => "Intent: none".to_string(),
+  }
+}
+
+fn enemy_behavior_name(behavior: EnemyBehavior) -> &'static str {
+  match behavior {
+    EnemyBehavior::Pursuer => "Pursuer",
+    EnemyBehavior::Kiter => "Kiter",
+    EnemyBehavior::Brute => "Brute",
+    EnemyBehavior::Frostcaster => "Frostcaster",
   }
 }
 

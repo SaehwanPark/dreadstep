@@ -67,7 +67,7 @@ materially more efficient in Rust.
   effects, and typed throw/status events. MCP,
   headless, and Bevy convert types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.
-- Bevy ECS mirrors, FOV, enemy-intent, HUD, and desktop session state are presentation-only.
+- Bevy ECS mirrors, FOV, enemy-intent, behavior-named HUD, and desktop session state are presentation-only.
   Missing optional resources are no-ops or recorded fallbacks.
 - Content validates authored and generated floors into core values; connectivity checks stay
   at that boundary.

@@ -68,7 +68,8 @@ display-free smoke path.
 | Escape, close button, Ctrl-C | Shut down | process boundary only |
 
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
-150 ms and chooses its core-ranked legal intent: an authored Kiter retreats from an adjacent actor
+150 ms and chooses its core-ranked legal intent. The HUD names the authored behavior next to the
+command: an authored Kiter retreats from an adjacent actor
 when an escape tile exists, then enemies use adjacent `Attack`, a Frostcaster uses `CastChill` on a
 clear-cardinal target at distance 2–3, other enemies use clear-cardinal `RangedAttack`,
 one-use `Investigate` toward a nearby kick-noise position, a Brute `Break` when a Breakable blocks
@@ -146,7 +147,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 
 | Current player-facing surface | Visible/HUD | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy attack/ranged/investigate/chase; Kiter retreat; Frostcaster chill | map, scheduler, intent, messages | command + event + snapshots | yes |
+| Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster intent | map, scheduler, behavior + intent, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped HUD rows, reach-weapon/Frost Flask effects, healing/ammo results, and ground stack | item/reload/throw events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/open-door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |

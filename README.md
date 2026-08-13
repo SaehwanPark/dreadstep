@@ -25,7 +25,7 @@ Workspace version `0.0.0`, protocol **v26**. Core owns deterministic combat, inv
 environmental rules; protocol/MCP/headless/Bevy translate those values. The opt-in desktop
 showcase journals each run and can start an authored item fixture or a seeded procedural floor.
 
-- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat and Brute break behavior, MCP/headless adapters, Bevy projections, desktop `--smoke`,
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, and Frostcaster behavior, named desktop enemy intent HUD, MCP/headless adapters, Bevy projections, desktop `--smoke`,
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
