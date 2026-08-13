@@ -47,8 +47,8 @@ use bevy::time::Time;
 use bevy::transform::components::Transform;
 use bevy::window::ClosingWindow;
 use dreadstep_core::{
-  Actor, ActorKind, BlockReason, Command, Direction, Event, GridMap, Item, Position, RunOutcome,
-  Tile, WorldState,
+  Actor, ActorKind, BlockReason, Command, Direction, EnemyBehavior, Event, GridMap, Item, Position,
+  RunOutcome, Tile, WorldState,
 };
 use serde_json::{Value, json};
 
@@ -1111,11 +1111,41 @@ fn hud_intent_summary_has_missing_and_generic_command_fallbacks() {
   assert_eq!(enemy_intent_summary(None), "Intent unavailable");
   let intent = PresentationEnemyIntent {
     actor: Some(ActorId::new(2)),
+    behavior: Some(EnemyBehavior::Frostcaster),
     command: Some(Command::Wait {
       actor: ActorId::new(2),
     }),
   };
-  assert!(enemy_intent_summary(Some(&intent)).contains("Intent: enemy 2 Wait"));
+  assert!(enemy_intent_summary(Some(&intent)).contains("Intent: Frostcaster 2 Wait"));
+}
+
+#[test]
+fn hud_intent_summary_names_each_authored_behavior_and_no_action() {
+  for (behavior, label) in [
+    (EnemyBehavior::Pursuer, "Pursuer"),
+    (EnemyBehavior::Kiter, "Kiter"),
+    (EnemyBehavior::Brute, "Brute"),
+    (EnemyBehavior::Frostcaster, "Frostcaster"),
+  ] {
+    let intent = PresentationEnemyIntent {
+      actor: Some(ActorId::new(4)),
+      behavior: Some(behavior),
+      command: Some(Command::Wait {
+        actor: ActorId::new(4),
+      }),
+    };
+    assert!(enemy_intent_summary(Some(&intent)).starts_with(&format!("Intent: {label} 4 Wait")));
+  }
+
+  let no_action = PresentationEnemyIntent {
+    actor: Some(ActorId::new(4)),
+    behavior: Some(EnemyBehavior::Brute),
+    command: None,
+  };
+  assert_eq!(
+    enemy_intent_summary(Some(&no_action)),
+    "Intent: Brute 4 no legal action"
+  );
 }
 
 #[test]

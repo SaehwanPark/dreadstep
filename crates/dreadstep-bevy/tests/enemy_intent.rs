@@ -43,6 +43,7 @@ fn player_turn_has_no_enemy_intent_and_preserves_authority() {
   let app = intent_app();
   let intent = app.world().resource::<PresentationEnemyIntent>();
   assert_eq!(intent.actor(), None);
+  assert_eq!(intent.behavior(), None);
   assert_eq!(intent.command(), None);
   assert_eq!(
     app
@@ -74,6 +75,7 @@ fn scheduled_enemy_intent_preserves_core_chase_command() {
 
   let intent = app.world().resource::<PresentationEnemyIntent>();
   assert_eq!(intent.actor(), Some(ActorId::new(2)));
+  assert_eq!(intent.behavior(), Some(EnemyBehavior::Pursuer));
   assert_eq!(
     intent.command(),
     Some(Command::Chase {
@@ -91,6 +93,7 @@ fn intent_is_empty_when_the_world_has_no_enemy() {
   let app = no_enemy_app();
   let intent = app.world().resource::<PresentationEnemyIntent>();
   assert_eq!(intent.actor(), None);
+  assert_eq!(intent.behavior(), None);
   assert_eq!(intent.command(), None);
 }
 
@@ -189,6 +192,10 @@ fn scheduled_brute_intent_prefers_breaking_its_chase_step() {
     })
   );
   assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().behavior(),
+    Some(EnemyBehavior::Brute)
+  );
+  assert_eq!(
     app.world().resource::<PresentationRuntime>().snapshot(),
     before_snapshot
   );
@@ -222,6 +229,10 @@ fn scheduled_adjacent_kiter_intent_prefers_core_retreat() {
       actor: ActorId::new(1),
       target: ActorId::new(2),
     })
+  );
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().behavior(),
+    Some(EnemyBehavior::Kiter)
   );
   let runtime = app.world().resource::<PresentationRuntime>();
   assert_eq!(runtime.snapshot(), before_snapshot);
@@ -294,6 +305,10 @@ fn scheduled_frostcaster_intent_prefers_cast_chill_at_clear_range() {
       actor: ActorId::new(1),
       target: ActorId::new(2),
     })
+  );
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().behavior(),
+    Some(EnemyBehavior::Frostcaster)
   );
   let runtime = app.world().resource::<PresentationRuntime>();
   assert_eq!(runtime.snapshot(), before_snapshot);
@@ -382,5 +397,29 @@ fn missing_runtime_clears_enemy_intent_without_panicking() {
   app.update();
   let intent = app.world().resource::<PresentationEnemyIntent>();
   assert_eq!(intent.actor(), None);
+  assert_eq!(intent.behavior(), None);
+  assert_eq!(intent.command(), None);
+}
+
+#[test]
+fn missing_input_clears_enemy_intent_without_panicking() {
+  let mut app = intent_app();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("player wait should schedule the enemy");
+  app.update();
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().actor(),
+    Some(ActorId::new(2))
+  );
+  app.world_mut().remove_resource::<PresentationInput>();
+  app.update();
+  let intent = app.world().resource::<PresentationEnemyIntent>();
+  assert_eq!(intent.actor(), None);
+  assert_eq!(intent.behavior(), None);
   assert_eq!(intent.command(), None);
 }

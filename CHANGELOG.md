@@ -6,6 +6,11 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added behavior names to the desktop enemy-intent HUD. Scheduled enemies now display their
+  authored Pursuer, Kiter, Brute, or Frostcaster identity alongside the exact core-selected
+  intent; missing input/runtime state clears the projection together. This is presentation-only
+  and does not change protocol, replay, scheduling, or AI policy.
+
 - Added the authored Brute enemy behavior. A scheduled Brute breaks the existing adjacent
   Breakable that blocks its deterministic horizontal-first chase step, then resumes ordinary
   pursuit. Core intent, protocol v25 behavior snapshots, MCP, Bevy, and desktop smoke evidence

@@ -49,6 +49,7 @@ pub(crate) fn sync_enemy_intent(world: &mut World) {
   let Some(runtime) = world.get_resource::<PresentationRuntime>() else {
     if let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() {
       intent.actor = None;
+      intent.behavior = None;
       intent.command = None;
     }
     return;
@@ -59,22 +60,26 @@ pub(crate) fn sync_enemy_intent(world: &mut World) {
   else {
     if let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() {
       intent.actor = None;
+      intent.behavior = None;
       intent.command = None;
     }
     return;
   };
   let snapshot = runtime.snapshot();
-  let scheduled_enemy = snapshot.next_actor().filter(|actor| {
+  let scheduled_enemy = snapshot.next_actor().and_then(|actor| {
     snapshot
       .actors()
       .iter()
-      .any(|record| record.id() == *actor && record.kind() == ActorKind::Enemy && record.is_alive())
+      .find(|record| record.id() == actor && record.kind() == ActorKind::Enemy && record.is_alive())
+      .map(|record| (record.id(), record.enemy_behavior()))
   });
-  let command = scheduled_enemy.and_then(|actor| runtime.preferred_enemy_command(actor, target));
+  let command =
+    scheduled_enemy.and_then(|(actor, _)| runtime.preferred_enemy_command(actor, target));
   let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() else {
     return;
   };
-  intent.actor = scheduled_enemy;
+  intent.actor = scheduled_enemy.map(|(actor, _)| actor);
+  intent.behavior = scheduled_enemy.map(|(_, behavior)| behavior);
   intent.command = command;
 }
 

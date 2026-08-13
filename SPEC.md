@@ -128,6 +128,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: deterministic reclosable doors |
 | 2026-08-13 | Milestone 5 preparation slice: deterministic Brute break behavior |
 | 2026-08-13 | Milestone 4 slice: deterministic Frostcaster Chilled casting |
+| 2026-08-13 | Milestone 4 slice: behavior-named enemy intent HUD |
 
 ## Present
 
@@ -179,6 +180,8 @@ Authored Frostcaster enemies retain adjacent attacks and otherwise select `CastC
 cardinal distance-2..=3 targets, applying the existing two-action Chilled status without ammo;
 the typed `ChillCast` event, protocol v26, MCP/headless mappings, Bevy intent, and display-free
 smoke are synchronized.
+The desktop HUD names the authored behavior (`Pursuer`, `Kiter`, `Brute`, or `Frostcaster`)
+alongside that core-selected intent; this remains a read-only presentation projection.
 
 ## Future
 
