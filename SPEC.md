@@ -4029,6 +4029,8 @@ Acceptance:
 - `u32::MAX` procedural victory uses a safe restart-only message.
 - Copy is a read-only presentation projection over `DesktopSession`; core, input dispatch, and
   journal/replay schemas remain unchanged.
+- The always-visible controls advertise `N` only for procedural sessions; authored item runs keep
+  the shared restart and quit controls without a misleading progression action.
 
 Verification target:
 

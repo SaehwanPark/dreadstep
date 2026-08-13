@@ -18,7 +18,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 - Added contextual terminal HUD guidance: procedural victory names the next depth and `N`, while
   authored victory and defeat point to `Shift+R`; maximum-depth victory avoids overflow and gives a
-  restart-only recovery message.
+restart-only recovery message.
+
+- Contextualized the controls panel so authored item runs do not advertise the procedural-only `N`
+  action.
 
 - Added a deterministic seeded corridor-floor content preparation slice: `procedural_floor` and
   `procedural_floor_definition` generate a validated 13×9 floor with three single-gap wall
