@@ -513,6 +513,20 @@ constructor cannot silently alter the default client path or lose owner/order da
   archetypes out of this preparation slice; share the exact legal/execution predicate and test
   replacement, distance boundary, dead actors, stale targets, and blocked steps.
 
+## Keep bounded noise propagation terrain-aware and deterministic
+
+- Context: The one-use kick-noise target was useful tactically, but direct Manhattan eligibility
+  allowed a wall, closed door, or breakable to transmit sound as if it were open floor.
+- Symptom: An enemy could investigate a kick through blocking terrain, while adding a global sound
+  field would introduce unnecessary lifetime and source-policy decisions.
+- Cause: The source has a fixed radius and a single origin, so its next bounded step is a local
+  reachability query rather than persistent world state or adapter-owned hearing.
+- Resolution: Expand from the opened door through walkable cells only with a fixed radius-three
+  North/South/West/East BFS. Ignore actor occupancy, preserve one source position, and arm living
+  enemies only when their cells are reached.
+- Prevention: Keep traversal order explicit, test exact boundaries, occlusion, short detours, and
+  actor occupancy, and defer falloff, persistence, multiple sources, and hearing archetypes.
+
 ## Keep floor progression at the presentation boundary until core state exists
 
 - Context: The seeded procedural corridor now needs a small visible multi-floor loop without

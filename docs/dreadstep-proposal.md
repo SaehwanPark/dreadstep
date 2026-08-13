@@ -1886,11 +1886,12 @@ AI agents demonstrate more than one viable encounter strategy.
 Establish the NetHack-inspired systemic identity.
 
 Repository status note: the deterministic preparation slices for doors, one-shot traps, adjacent
-breakable terrain, kick-open door noise evidence, and one-use nearby-enemy investigation are
-verified in the core simulation and its protocol, MCP, headless, and Bevy boundaries. The content
+breakable terrain, kick-open door noise evidence, terrain-aware radius-three propagation, and
+one-use nearby-enemy investigation are verified in the core simulation and its protocol, MCP,
+headless, and Bevy boundaries. The content
 boundary also has a seeded 13×9 corridor-floor generator with deterministic partition gaps and
-authored actor placement. Generic noise propagation, richer procedural generation, damage/tool
-interactions, and enemy archetypes remain future Milestone 5 work. The visible desktop preparation
+authored actor placement. Persistent/multi-source noise fields, richer procedural generation,
+damage/tool interactions, and enemy archetypes remain future Milestone 5 work. The visible desktop preparation
 path can advance an opt-in procedural victory to the next seeded depth with `N`; persistent floor
 history and core-owned progression remain future work. The HUD exposes the current scenario/depth
 so this opt-in path remains legible during host playtesting.

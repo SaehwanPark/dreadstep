@@ -1,6 +1,10 @@
 //! Scheduled terrain verbs: open, kick, and break one adjacent cell.
 
-use crate::{Actor, ActorId, CommandError, Event, Position, Tile, WorldState};
+use std::collections::VecDeque;
+
+use crate::{Actor, ActorId, CommandError, Direction, Event, GridMap, Position, Tile, WorldState};
+
+const KICK_NOISE_RADIUS: u8 = 3;
 
 impl WorldState {
   pub(super) fn interact(
@@ -99,15 +103,11 @@ impl WorldState {
         actor: actor_id,
         position,
       })?;
+    let audible_positions = audible_positions(&self.map, position);
     for enemy in self.actors.values_mut().filter(|actor| {
       actor.is_alive()
         && actor.kind() == crate::ActorKind::Enemy
-        && actor
-          .position()
-          .x()
-          .abs_diff(position.x())
-          .saturating_add(actor.position().y().abs_diff(position.y()))
-          <= 3
+        && audible_positions.contains(&actor.position())
     }) {
       enemy.heard_noise = Some(position);
     }
@@ -119,8 +119,39 @@ impl WorldState {
       Event::NoiseCreated {
         actor: actor_id,
         position,
-        radius: 3,
+        radius: KICK_NOISE_RADIUS,
       },
     ])
   }
+}
+
+/// Returns the walkable cells reached by a kick's sound in stable cardinal BFS order.
+///
+/// Terrain, not actor occupancy, determines whether sound crosses a cell. Keeping this bounded
+/// to the fixed kick radius avoids introducing a persistent sound field or a second source model.
+fn audible_positions(map: &GridMap, source: Position) -> Vec<Position> {
+  if !map.is_walkable(source) {
+    return Vec::new();
+  }
+  let mut reached = vec![source];
+  let mut pending = VecDeque::from([(source, 0_u8)]);
+  while let Some((position, distance)) = pending.pop_front() {
+    if distance == KICK_NOISE_RADIUS {
+      continue;
+    }
+    for direction in [
+      Direction::North,
+      Direction::South,
+      Direction::West,
+      Direction::East,
+    ] {
+      let next = position.translated(direction);
+      if !map.is_walkable(next) || reached.contains(&next) {
+        continue;
+      }
+      reached.push(next);
+      pending.push_back((next, distance + 1));
+    }
+  }
+  reached
 }

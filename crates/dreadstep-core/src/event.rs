@@ -58,7 +58,7 @@ pub enum Event {
     actor: ActorId,
     /// The position where the noise originated.
     position: Position,
-    /// The fixed radius carried as future propagation evidence.
+    /// The fixed radius used by the terrain-aware propagation query.
     radius: u8,
   },
   /// An actor broke one adjacent breakable terrain cell into floor.

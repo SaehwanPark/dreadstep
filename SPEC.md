@@ -121,6 +121,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: contextual terminal HUD guidance |
 | 2026-08-13 | Milestone 4 slice: deterministic enemy ranged intent |
 | 2026-08-13 | Milestone 5 preparation slice: deterministic kick-noise enemy investigation |
+| 2026-08-13 | Milestone 5 preparation slice: terrain-aware kick-noise propagation |
 
 ## Present
 
@@ -131,7 +132,7 @@ documented in [`docs/demo.md`](docs/demo.md).
 ### Core
 
 - Typed map, actors, scheduling, melee and ranged combat, chase/investigation, inventory, equipment,
-  pickup/drop, consumables, doors, traps, breakables, kick noise, cover, reach, reload,
+  pickup/drop, consumables, doors, traps, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, and state digests.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
