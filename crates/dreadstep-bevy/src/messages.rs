@@ -3,7 +3,7 @@
 use bevy::ecs::resource::Resource;
 use dreadstep_core::{
   ActionTime, ActorId, AmmunitionResult, BlockReason, Damage, Event, HealingResult, HitPoints,
-  ItemId, Position,
+  ItemId, Position, StatusKind,
 };
 
 /// A typed message projection of one core semantic event.
@@ -69,6 +69,22 @@ pub enum PresentationMessage {
     damage: Damage,
     /// The actor's hit points after trap damage.
     remaining_hit_points: HitPoints,
+  },
+  /// An actor received a chilled status.
+  StatusApplied {
+    /// The actor receiving the status.
+    actor: ActorId,
+    /// The applied status kind.
+    status: StatusKind,
+    /// The number of affected actions remaining.
+    remaining_actions: u8,
+  },
+  /// An actor's chilled status expired.
+  StatusExpired {
+    /// The actor whose status expired.
+    actor: ActorId,
+    /// The expired status kind.
+    status: StatusKind,
   },
   /// An attack reduced a target's hit points.
   Attacked {
@@ -172,6 +188,16 @@ impl PresentationMessage {
         damage,
         remaining_hit_points,
       },
+      Event::StatusApplied {
+        actor,
+        status,
+        remaining_actions,
+      } => Self::StatusApplied {
+        actor,
+        status,
+        remaining_actions,
+      },
+      Event::StatusExpired { actor, status } => Self::StatusExpired { actor, status },
       Event::Attacked {
         attacker,
         target,
@@ -218,6 +244,8 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::NoiseCreated { .. } => "noise_created",
     Event::BreakableBroken { .. } => "breakable_broken",
     Event::TrapTriggered { .. } => "trap_triggered",
+    Event::StatusApplied { .. } => "status_applied",
+    Event::StatusExpired { .. } => "status_expired",
     Event::Attacked { .. } => "attacked",
     Event::Died { .. } => "died",
     Event::ItemEquipped { .. } => "item_equipped",

@@ -14,9 +14,10 @@ mod item;
 mod replay;
 mod scenario;
 mod snapshot;
+mod status;
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 20;
+pub const PROTOCOL_VERSION: u16 = 21;
 
 pub use command::{CommandRequest, Direction};
 pub use error::{CommandError, MapError, ScenarioError, WorldError};
@@ -28,3 +29,4 @@ pub use item::{
 pub use replay::{ActionTime, ReplayEvidence, StateDigest};
 pub use scenario::{Scenario, ScenarioActor, Tile};
 pub use snapshot::{ActorSnapshot, LifeState, RunOutcome, WorldSnapshot};
+pub use status::{StatusKind, StatusSnapshot};

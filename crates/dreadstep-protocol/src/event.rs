@@ -4,7 +4,9 @@ use dreadstep_core::{BlockReason as CoreBlockReason, Event as CoreEvent};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{ActionTime, ActorId, AmmunitionResult, HealingResult, HitPoints, ItemId, Position};
+use crate::{
+  ActionTime, ActorId, AmmunitionResult, HealingResult, HitPoints, ItemId, Position, StatusKind,
+};
 
 /// A protocol damage value.
 #[derive(
@@ -101,6 +103,22 @@ pub enum Event {
     /// The actor's hit points after trap damage.
     remaining_hit_points: HitPoints,
   },
+  /// An actor received chilled from a trap.
+  StatusApplied {
+    /// The actor receiving the status.
+    actor: ActorId,
+    /// The applied status kind.
+    status: StatusKind,
+    /// The number of affected actions remaining.
+    remaining_actions: u8,
+  },
+  /// An actor's chilled status expired after its affected action.
+  StatusExpired {
+    /// The actor whose status expired.
+    actor: ActorId,
+    /// The expired status kind.
+    status: StatusKind,
+  },
   /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
@@ -175,6 +193,10 @@ impl From<CoreBlockReason> for BlockReason {
 }
 
 impl From<CoreEvent> for Event {
+  #[expect(
+    clippy::too_many_lines,
+    reason = "the protocol event projection is intentionally exhaustive"
+  )]
   fn from(event: CoreEvent) -> Self {
     match event {
       CoreEvent::Moved { actor, from, to } => Self::Moved {
@@ -224,6 +246,19 @@ impl From<CoreEvent> for Event {
         position: Position::new(position.x(), position.y()),
         damage: Damage::new(damage.value()),
         remaining_hit_points: HitPoints::new(remaining_hit_points.value()),
+      },
+      CoreEvent::StatusApplied {
+        actor,
+        status,
+        remaining_actions,
+      } => Self::StatusApplied {
+        actor: ActorId::new(actor.value()),
+        status: status.into(),
+        remaining_actions,
+      },
+      CoreEvent::StatusExpired { actor, status } => Self::StatusExpired {
+        actor: ActorId::new(actor.value()),
+        status: status.into(),
       },
       CoreEvent::Attacked {
         attacker,

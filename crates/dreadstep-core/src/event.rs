@@ -4,6 +4,7 @@
 
 use crate::{
   ActionTime, ActorId, AmmunitionResult, Damage, HealingResult, HitPoints, ItemId, Position,
+  StatusKind,
 };
 
 /// The reason a movement command could not enter its destination.
@@ -78,6 +79,22 @@ pub enum Event {
     damage: Damage,
     /// The actor's hit points after trap damage.
     remaining_hit_points: HitPoints,
+  },
+  /// An actor entered a one-shot chill trap or otherwise received chilled.
+  StatusApplied {
+    /// The actor whose status changed.
+    actor: ActorId,
+    /// The applied status kind.
+    status: StatusKind,
+    /// The refreshed number of affected actions.
+    remaining_actions: u8,
+  },
+  /// An actor's final affected action consumed a status.
+  StatusExpired {
+    /// The actor whose status expired.
+    actor: ActorId,
+    /// The expired status kind.
+    status: StatusKind,
   },
   /// An attack reduced a living target's hit points.
   Attacked {

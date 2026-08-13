@@ -188,6 +188,7 @@ impl Session {
         ProtocolTile::Door => Tile::Door,
         ProtocolTile::Breakable => Tile::Breakable,
         ProtocolTile::Trap => Tile::Trap,
+        ProtocolTile::ChillTrap => Tile::ChillTrap,
       })
       .collect();
     let map = GridMap::from_tiles(scenario.width(), scenario.height(), tiles)

@@ -86,7 +86,9 @@ impl PresentationAudioCue {
       | Event::DoorOpened { .. }
       | Event::NoiseCreated { .. }
       | Event::BreakableBroken { .. }
-      | Event::TrapTriggered { .. } => None,
+      | Event::TrapTriggered { .. }
+      | Event::StatusApplied { .. }
+      | Event::StatusExpired { .. } => None,
     }
   }
 }

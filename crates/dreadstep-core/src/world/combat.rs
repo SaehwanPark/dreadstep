@@ -85,6 +85,11 @@ impl WorldState {
         .get_mut(&target)
         .ok_or(CommandError::UnknownTarget(target))?
         .heard_noise = None;
+      self
+        .actors
+        .get_mut(&target)
+        .ok_or(CommandError::UnknownTarget(target))?
+        .status = None;
     }
     let mut events = vec![Event::Attacked {
       attacker,

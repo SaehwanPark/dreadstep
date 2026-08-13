@@ -135,7 +135,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | Move / wait / enemy attack/ranged/investigate/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, reach-weapon effect, healing/ammo results, and ground stack | item/reload events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
-| Terrain, door, trap, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/trap/breakable/actor pixels | `movement_blocked`, `door_opened`, ordered `noise_created`/`trap_triggered`, and `breakable_broken` evidence | yes |
+| Terrain, door, trap, ChillTrap/Chilled, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/trap/chill-trap/breakable/actor pixels plus status duration | typed status application/expiry and terrain event evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Opt-in procedural floor and `N` advancement | seeded 13×9 floor and next-depth restart after victory | `run_started` depth and `floor_advanced` evidence | no; smoke keeps item fixture |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
@@ -150,7 +150,8 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
   --smoke --seed 7 --log-dir target/dreadstep-smoke-logs
 ```
 
-The deterministic sequence first places a trap in the first enemy's chase path and uses `RangedAttack`
+The deterministic sequence first crosses a one-shot ChillTrap (recording the two-action Chilled
+status and expiry), then places a trap in the first enemy's chase path and uses `RangedAttack`
 against the distance-two authored enemy so the chase emits `TrapTriggered`, then adds a breakable-terrain
 smoke fixture and breaks it with `Break`, then adds a closed-door fixture and kicks it with `Kick`
 (including terrain-aware noise evidence and a nearby enemy `Investigate` turn), re-adds a door and opens it with

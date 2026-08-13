@@ -31,6 +31,34 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       json!({ "reason": "trap_fixture_setup", "error": error.to_string() }),
     );
   }
+  if let Err(error) = runtime.prepare_smoke_chill_trap(Position::new(1, 2)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "chill_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Move {
+      actor: PLAYER,
+      direction: Direction::South,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Move {
+      actor: PLAYER,
+      direction: Direction::North,
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
   failed |= !submit_command(
     &mut runtime,
     &mut session,
@@ -150,7 +178,15 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
-  if let Err(error) = runtime.prepare_smoke_teleport(ATTACK_TARGET, Position::new(4, 1)) {
+  let player_position = runtime
+    .snapshot()
+    .actors()
+    .iter()
+    .find(|actor| actor.id() == PLAYER)
+    .map_or(Position::new(1, 1), dreadstep_core::Actor::position);
+  let reach_target_position =
+    Position::new(player_position.x().saturating_add(2), player_position.y());
+  if let Err(error) = runtime.prepare_smoke_teleport(ATTACK_TARGET, reach_target_position) {
     failed = true;
     let _ = record_session(
       &mut session,

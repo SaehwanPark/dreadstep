@@ -1,7 +1,9 @@
 //! Core-backed presentation state and the Bevy runtime resource.
 
 use bevy::ecs::resource::Resource;
-use dreadstep_content::{ContentError, procedural_floor, starter_floor, starter_item_floor};
+use dreadstep_content::{
+  ContentError, chill_trap_floor, procedural_floor, starter_floor, starter_item_floor,
+};
 use dreadstep_core::{
   ActorId, Command, CommandError, GridMap, ItemId, Position, ReplayTrace, StateDigest, Tile,
   WorldState,
@@ -34,6 +36,15 @@ impl PresentationState {
   /// Returns [`ContentError`] when the authored item floor fails core or catalog validation.
   pub fn start_item_run(seed: u64) -> Result<Self, ContentError> {
     Ok(Self::new(seed, starter_item_floor()?))
+  }
+
+  /// Starts the authored chilled-status showcase floor.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`ContentError`] if the authored floor fails validation.
+  pub fn start_chill_run(seed: u64) -> Result<Self, ContentError> {
+    Ok(Self::new(seed, chill_trap_floor()?))
   }
 
   /// Starts a presentation state from a deterministic seeded procedural floor.
@@ -284,6 +295,26 @@ impl PresentationRuntime {
     position: Position,
   ) -> Result<(), dreadstep_core::WorldError> {
     if self.state.world.set_tile(position, Tile::Trap).is_none() {
+      return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
+        actor: ActorId::new(1),
+        position,
+      });
+    }
+    Ok(())
+  }
+
+  /// Places a one-shot chill trap for the display-free smoke fixture.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_chill_trap(
+    &mut self,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    if self
+      .state
+      .world
+      .set_tile(position, Tile::ChillTrap)
+      .is_none()
+    {
       return Err(dreadstep_core::WorldError::TeleportOutOfBounds {
         actor: ActorId::new(1),
         position,

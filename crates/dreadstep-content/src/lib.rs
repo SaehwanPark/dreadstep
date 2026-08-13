@@ -308,6 +308,17 @@ pub fn starter_floor() -> Result<WorldState, ContentError> {
   starter_floor_definition().build()
 }
 
+/// Builds the authored chilled-status showcase floor.
+///
+/// # Errors
+///
+/// Returns [`ContentError`] if the authored starter floor cannot be validated.
+pub fn chill_trap_floor() -> Result<WorldState, ContentError> {
+  let mut world = starter_floor()?;
+  world.set_tile(Position::new(2, 1), Tile::ChillTrap);
+  Ok(world)
+}
+
 /// Returns a deterministic seeded corridor-floor definition.
 ///
 /// This is the first procedural-content boundary: it varies only authored terrain and enemy

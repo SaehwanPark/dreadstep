@@ -84,6 +84,12 @@ pub(crate) fn actor_value(actor: &Actor) -> Value {
     "ranged_ammo": actor.ranged_ammo(),
     "alive": actor.is_alive(),
     "ready_at": actor.ready_at().value(),
+    "status": actor.status().map(|status| json!({
+      "kind": match status.kind() {
+        dreadstep_core::StatusKind::Chilled => "chilled",
+      },
+      "remaining_actions": status.remaining_actions(),
+    })),
     "equipped": actor.equipped_item().map(ItemId::value),
     "inventory": actor.inventory().iter().copied().map(item_value).collect::<Vec<_>>(),
   })
@@ -113,6 +119,7 @@ pub(crate) fn tile_name(tile: Tile) -> &'static str {
     Tile::Door => "door",
     Tile::Breakable => "breakable",
     Tile::Trap => "trap",
+    Tile::ChillTrap => "chill_trap",
   }
 }
 
@@ -223,6 +230,10 @@ pub(crate) fn direction_name(direction: Direction) -> &'static str {
   }
 }
 
+#[expect(
+  clippy::too_many_lines,
+  reason = "the desktop journal keeps exhaustive event payloads together"
+)]
 pub(crate) fn event_value(event: Event) -> Value {
   match event {
     Event::Moved { actor, from, to } => {
@@ -274,6 +285,16 @@ pub(crate) fn event_value(event: Event) -> Value {
       "position": position_value(position),
       "damage": damage.value(),
       "remaining_hit_points": remaining_hit_points.value(),
+    }),
+    Event::StatusApplied {
+      actor,
+      status,
+      remaining_actions,
+    } => json!({
+      "kind": "status_applied", "actor": actor.value(), "status": format!("{status:?}").to_lowercase(), "remaining_actions": remaining_actions,
+    }),
+    Event::StatusExpired { actor, status } => json!({
+      "kind": "status_expired", "actor": actor.value(), "status": format!("{status:?}").to_lowercase(),
     }),
     Event::Attacked {
       attacker,
@@ -333,6 +354,10 @@ pub(crate) fn block_reason_value(reason: BlockReason) -> Value {
   }
 }
 
+#[expect(
+  clippy::too_many_lines,
+  reason = "the desktop journal keeps exhaustive event messages together"
+)]
 pub(crate) fn event_message(event: Event) -> String {
   match event {
     Event::Moved { actor, to, .. } => {
@@ -378,6 +403,16 @@ pub(crate) fn event_message(event: Event) -> String {
       damage.value(),
       remaining_hit_points.value()
     ),
+    Event::StatusApplied {
+      actor,
+      remaining_actions,
+      ..
+    } => format!(
+      "Actor {} is chilled for {} actions.",
+      actor.value(),
+      remaining_actions
+    ),
+    Event::StatusExpired { actor, .. } => format!("Actor {} is no longer chilled.", actor.value()),
     Event::Attacked {
       attacker,
       target,
@@ -554,8 +589,16 @@ pub(crate) fn format_hud_stats(
     );
   };
   let hit_points = i32::from(player.hit_points().value());
+  let status_text = player.status().map_or_else(
+    || "none".to_string(),
+    |active| match active.kind() {
+      dreadstep_core::StatusKind::Chilled => {
+        format!("chilled ({} actions)", active.remaining_actions())
+      }
+    },
+  );
   format!(
-    "{}\nHP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\n{}Status: {:?}",
+    "{}\nHP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\n{}Status: {}",
     scenario,
     health_bar_text(hit_points),
     hit_points.clamp(0, SHOWCASE_MAX_HIT_POINTS),
@@ -570,7 +613,7 @@ pub(crate) fn format_hud_stats(
     visibility_summary(visibility),
     enemy_intent_summary(intent),
     terminal_line,
-    status
+    status_text
   )
 }
 

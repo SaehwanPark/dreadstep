@@ -32,11 +32,13 @@ pub(crate) fn sync_hud(world: &mut World) {
     hud.position = Some(record.position());
     hud.hit_points = Some(record.hit_points());
     hud.ready_at = Some(record.ready_at());
+    hud.status = record.status();
   } else {
     hud.kind = None;
     hud.position = None;
     hud.hit_points = None;
     hud.ready_at = None;
+    hud.status = None;
   }
 }
 

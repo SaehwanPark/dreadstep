@@ -118,7 +118,9 @@ impl PresentationAnimationCue {
       | Event::ItemDropped { .. }
       | Event::Reloaded { .. }
       | Event::BreakableBroken { .. }
-      | Event::TrapTriggered { .. } => None,
+      | Event::TrapTriggered { .. }
+      | Event::StatusApplied { .. }
+      | Event::StatusExpired { .. } => None,
     }
   }
 }

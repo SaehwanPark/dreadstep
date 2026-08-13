@@ -123,17 +123,18 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: deterministic kick-noise enemy investigation |
 | 2026-08-13 | Milestone 6 preparation slice: deterministic equipment-derived melee reach |
 | 2026-08-13 | Milestone 5 preparation slice: terrain-aware kick-noise propagation |
+| 2026-08-13 | Milestone 4 slice: deterministic Chilled status and authored ChillTrap |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **20**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **21**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. Desktop controls and smoke coverage are
 documented in [`docs/demo.md`](docs/demo.md).
 
 ### Core
 
 - Typed map, actors, scheduling, melee and ranged combat, chase/investigation, inventory, equipment,
-  pickup/drop, consumables, equipment effects, doors, traps, breakables, terrain-aware kick noise, cover, reach, reload,
+  pickup/drop, consumables, equipment effects, doors, traps, ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, and state digests.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
@@ -157,7 +158,10 @@ documented in [`docs/demo.md`](docs/demo.md).
 
 ## Active
 
-Add the next slice here before implementation.
+The current slice is complete: an authored walkable `ChillTrap` is consumed on entry and applies
+one closed `Chilled` status for two future accepted actions. Each affected action costs one extra
+deterministic scheduler tick; application and final expiry are typed events, hashed in core state,
+and projected through protocol v21, MCP, headless, Bevy, and the display-free desktop smoke path.
 
 ## Future
 

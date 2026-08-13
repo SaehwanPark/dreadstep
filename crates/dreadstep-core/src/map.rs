@@ -81,13 +81,18 @@ pub enum Tile {
   Breakable,
   /// A walkable floor trap that triggers once when an actor enters it.
   Trap,
+  /// A walkable one-shot trap that refreshes the chilled status when entered.
+  ChillTrap,
 }
 
 impl Tile {
   /// Returns whether this tile permits an actor to enter it.
   #[must_use]
   pub const fn is_walkable(self) -> bool {
-    matches!(self, Self::Floor | Self::Cover | Self::Trap)
+    matches!(
+      self,
+      Self::Floor | Self::Cover | Self::Trap | Self::ChillTrap
+    )
   }
 
   /// Returns whether this tile blocks a ranged line of sight.
