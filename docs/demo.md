@@ -15,7 +15,7 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 ```
 
 The run journal names this scenario `procedural_floor` and records its depth. `Shift+R` restarts
-the same procedural seed/depth. After a procedural run reaches victory, `N` starts the next depth
+the same procedural seed/depth. The HUD shows the active scenario and depth. After a procedural run reaches victory, `N` starts the next depth
 with the same seed and records `floor_advanced`; the transition resets the disposable presentation
 state and replay trace. The display-free `--smoke` path intentionally remains on the authored item
 fixture and its exhaustive command/event matrix.
@@ -167,6 +167,7 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
   and journal path;
 - missing, valid, and intentionally corrupt optional images fall back per family;
 - Escape, Ctrl-C, and the close button leave a final shutdown record.
+- Ctrl-C finalization also writes the sibling replay-evidence artifact before process exit.
 
 ## Deliberate exclusions
 

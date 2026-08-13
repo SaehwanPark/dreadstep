@@ -482,3 +482,32 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Test victory-only and procedural-only guards, exact seed/depth runtime parity, empty
   replay reset, journal evidence, depth overflow/content faults, and item/smoke no-op behavior before
   introducing floor history, loot progression, or agent-facing scenario selection.
+
+## Show scenario context from the adapter session, not inferred world state
+
+- Context: Procedural and authored starter runs share the same HUD, while only the former carries a
+  meaningful depth that changes on visible floor advancement.
+- Symptom: Inferring the active scenario from map dimensions or journal records makes the HUD brittle
+  and can hide whether a restart or floor transition occurred.
+- Cause: Scenario selection and authored depth are already explicit desktop-session inputs; core
+  snapshots intentionally do not own presentation scenario metadata.
+- Resolution: Render a plain-language scenario/depth line directly from the session fields and keep
+  the JSONL/journal schema unchanged. Procedural sessions show the current depth; item sessions show
+  the stable fixture name.
+- Prevention: Unit-test both labels, refresh them after restart/advancement, and do not derive
+  presentation context from map shape or diagnostic paths.
+
+## Finalize Bevy diagnostics before `App::run` consumes the world
+
+- Context: The desktop showcase must export replay evidence and a final shutdown record for
+  window-close, Escape, Ctrl-C, victory, defeat, and fault paths.
+- Symptom: Reading `PresentationRuntime` from `app.world()` after `App::run()` reports a missing
+  resource because Bevy replaces the caller's app with an empty world when its runner returns.
+- Cause: Cleanup evidence was scheduled after the runner boundary even though the authoritative
+  runtime and session only exist inside the consumed app world.
+- Resolution: Observe `AppExit` in a finalizer system, export replay/shutdown records while resources
+  are present, and communicate only a small error report through an external `Arc<Mutex<...>>`.
+  Ctrl-C remains a clean diagnostic shutdown; export or journal failures retain the existing fault
+  path.
+- Prevention: Test finalization with an in-world `AppExit` message and exercise Ctrl-C on an unlocked
+  desktop host before claiming the visible shutdown checklist complete.

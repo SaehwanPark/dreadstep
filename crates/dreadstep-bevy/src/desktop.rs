@@ -20,12 +20,13 @@ use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use bevy::app::{AppExit, PanicHandlerPlugin, Plugin, PluginGroup, Startup, Update};
+use bevy::app::{AppExit, Last, PanicHandlerPlugin, Plugin, PluginGroup, Startup, Update};
 use bevy::asset::{AssetServer, Handle, LoadState};
 use bevy::audio::{AudioPlayer, AudioSource, PlaybackSettings};
 use bevy::color::Color;
 use bevy::ecs::component::Component;
 use bevy::ecs::entity::Entity;
+use bevy::ecs::message::MessageReader;
 use bevy::ecs::query::With;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::schedule::IntoScheduleConfigs;
@@ -595,6 +596,30 @@ impl DesktopSession {
   }
 }
 
+#[derive(Default)]
+struct FinalizationReport {
+  complete: bool,
+  error: Option<String>,
+}
+
+#[derive(Clone, Resource)]
+struct FinalizationHandle(Arc<Mutex<FinalizationReport>>);
+
+impl FinalizationHandle {
+  fn new() -> Self {
+    Self(Arc::new(Mutex::new(FinalizationReport::default())))
+  }
+
+  fn finish(&self, error: Option<String>) {
+    let mut report = match self.0.lock() {
+      Ok(report) => report,
+      Err(poisoned) => poisoned.into_inner(),
+    };
+    report.complete = true;
+    report.error = error;
+  }
+}
+
 fn record_session(session: &mut DesktopSession, kind: &str, payload: Value) -> bool {
   match record(&session.journal, kind, payload) {
     Ok(()) => true,
@@ -618,6 +643,7 @@ impl Plugin for DesktopPresentationPlugin {
       desktop_enemy_driver.before(PresentationSet::Projection),
     );
     app.add_systems(Update, (desktop_fault_exit, desktop_observe_close));
+    app.add_systems(Last, desktop_finalize);
     app.add_systems(
       Update,
       (
@@ -1138,6 +1164,75 @@ fn desktop_fault_exit(
   exit.write(AppExit::error());
 }
 
+/// Flushes final journal/replay evidence while the Bevy world still owns the runtime.
+///
+/// [`App::run`](bevy::app::App::run) consumes the app and replaces the caller's world with an
+/// empty one, so shutdown work cannot safely inspect resources after the runner returns. This
+/// system observes the exit message before that handoff and reports only the final error through a
+/// small external handle.
+fn desktop_finalize(
+  mut exits: MessageReader<AppExit>,
+  runtime: Option<Res<PresentationRuntime>>,
+  session: Option<ResMut<DesktopSession>>,
+  handle: Option<Res<FinalizationHandle>>,
+) {
+  if exits.read().next().is_none() {
+    return;
+  }
+  let Some(handle) = handle else { return };
+  {
+    let report = match handle.0.lock() {
+      Ok(report) => report,
+      Err(poisoned) => poisoned.into_inner(),
+    };
+    if report.complete {
+      return;
+    }
+  }
+  let Some(runtime) = runtime else {
+    handle.finish(Some(
+      "desktop runtime resource missing before finalization".to_string(),
+    ));
+    return;
+  };
+  let Some(mut session) = session else {
+    handle.finish(Some(
+      "desktop session resource missing before finalization".to_string(),
+    ));
+    return;
+  };
+  let mut error = None;
+  if let Err(export_error) = export_replay(&runtime, &session.journal) {
+    let _ = record_session(
+      &mut session,
+      "terminal_fault",
+      state_payload(&runtime, json!({ "error": export_error })),
+    );
+    error = Some(export_error);
+  }
+  let status = session.status.clone();
+  let reason = if error.is_some() || matches!(status, DesktopStatus::Faulted(_)) {
+    "runtime_fault".to_string()
+  } else {
+    match &status {
+      DesktopStatus::Shutdown(reason) => reason.clone(),
+      DesktopStatus::Victory => "showcase_complete".to_string(),
+      DesktopStatus::Defeat => "showcase_defeat".to_string(),
+      DesktopStatus::Running => "window_closed_or_ctrl_c".to_string(),
+      DesktopStatus::Faulted(_) => "runtime_fault".to_string(),
+    }
+  };
+  if let Err(journal_error) = record(&session.journal, "shutdown", json!({ "reason": reason })) {
+    error.get_or_insert_with(|| journal_error.to_string());
+  }
+  if error.is_none()
+    && let DesktopStatus::Faulted(status_error) = status
+  {
+    error = Some(status_error);
+  }
+  handle.finish(error);
+}
+
 fn desktop_observe_close(
   closing_windows: Query<Entity, With<ClosingWindow>>,
   mut session: ResMut<DesktopSession>,
@@ -1562,6 +1657,7 @@ fn run_visible(
   let window = crate::PresentationWindow::new(640, 360, 2)
     .ok_or_else(|| "invalid 640x360 window".to_string())?;
   let manifest = build_manifest()?;
+  let finalization = FinalizationHandle::new();
   let mut app = App::new();
   app.add_plugins(
     DefaultPlugins
@@ -1588,6 +1684,7 @@ fn run_visible(
       }),
   );
   app.insert_resource(runtime);
+  app.insert_resource(finalization.clone());
   app.insert_resource(DesktopSession::new_with_scenario(
     seed,
     procedural,
@@ -1619,40 +1716,17 @@ fn run_visible(
   app.insert_resource(PresentationRenderAssetProjection::new());
   app.insert_resource(manifest);
   app.add_plugins((PresentationPlugin, DesktopPresentationPlugin));
-  app.run();
-
-  let status = match app.world().get_resource::<DesktopSession>() {
-    Some(session) => session.status.clone(),
-    None => DesktopStatus::Shutdown("window_closed".to_string()),
+  let _exit = app.run();
+  let report = match finalization.0.lock() {
+    Ok(report) => report,
+    Err(poisoned) => poisoned.into_inner(),
   };
-  let runtime = app
-    .world()
-    .get_resource::<PresentationRuntime>()
-    .ok_or_else(|| "desktop runtime resource missing after app exit".to_string())?;
-  export_replay(runtime, &journal)?;
-  match status {
-    DesktopStatus::Faulted(error) => {
-      record(&journal, "shutdown", json!({ "reason": "runtime_fault" }))
-        .map_err(|journal_error| journal_error.to_string())?;
-      Err(error)
-    }
-    DesktopStatus::Shutdown(reason) => {
-      record(&journal, "shutdown", json!({ "reason": reason })).map_err(|error| error.to_string())
-    }
-    DesktopStatus::Victory => record(
-      &journal,
-      "shutdown",
-      json!({ "reason": "showcase_complete" }),
-    )
-    .map_err(|error| error.to_string()),
-    DesktopStatus::Defeat => record(&journal, "shutdown", json!({ "reason": "showcase_defeat" }))
-      .map_err(|error| error.to_string()),
-    DesktopStatus::Running => record(
-      &journal,
-      "shutdown",
-      json!({ "reason": "window_closed_or_ctrl_c" }),
-    )
-    .map_err(|error| error.to_string()),
+  if let Some(error) = &report.error {
+    Err(error.clone())
+  } else if report.complete {
+    Ok(())
+  } else {
+    Err("desktop exited before finalization".to_string())
   }
 }
 
@@ -2417,10 +2491,19 @@ fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> String {
   }
 }
 
+fn scenario_label(procedural: bool, depth: u32) -> String {
+  if procedural {
+    format!("Procedural floor · depth {depth}")
+  } else {
+    "Starter item floor".to_string()
+  }
+}
+
 fn format_hud_stats(
   player: Option<&Actor>,
   snapshot: &PresentationSnapshot,
   status: &DesktopStatus,
+  scenario: &str,
   visibility: Option<&PresentationVisibility>,
   intent: Option<&PresentationEnemyIntent>,
 ) -> String {
@@ -2431,7 +2514,8 @@ fn format_hud_stats(
     .count();
   let Some(player) = player else {
     return format!(
-      "Player unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\n{}\nStatus: {:?}",
+      "{}\nPlayer unavailable\nTurn t={} next={}\nEnemies remaining: {}\n{}\n{}\nStatus: {:?}",
+      scenario,
       snapshot.current_time().value(),
       snapshot
         .next_actor()
@@ -2444,7 +2528,8 @@ fn format_hud_stats(
   };
   let hit_points = i32::from(player.hit_points().value());
   format!(
-    "HP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\nStatus: {:?}",
+    "{}\nHP {} {}/{}  pos ({},{})\nTurn t={} next={}  enemies {}\n{}\n{}\nStatus: {:?}",
+    scenario,
     health_bar_text(hit_points),
     hit_points.clamp(0, SHOWCASE_MAX_HIT_POINTS),
     SHOWCASE_MAX_HIT_POINTS,
@@ -2476,6 +2561,7 @@ fn desktop_update_hud(
     player,
     &snapshot,
     &session.status,
+    &scenario_label(session.procedural, session.depth),
     visibility.as_deref(),
     intent.as_deref(),
   );
@@ -2546,6 +2632,7 @@ mod tests {
   use bevy::asset::{AssetApp, AssetPlugin};
   use bevy::audio::PlaybackMode;
   use bevy::camera::visibility::Visibility;
+  use bevy::ecs::message::MessageWriter;
   use bevy::transform::components::Transform;
   use dreadstep_core::{GridMap, WorldState};
 
@@ -3085,7 +3172,14 @@ mod tests {
     let snapshot = state.snapshot();
     let status = DesktopStatus::Running;
     let empty_intent = PresentationEnemyIntent::new();
-    let text = format_hud_stats(None, &snapshot, &status, None, Some(&empty_intent));
+    let text = format_hud_stats(
+      None,
+      &snapshot,
+      &status,
+      &scenario_label(false, 1),
+      None,
+      Some(&empty_intent),
+    );
     assert!(text.contains("Player unavailable"));
     assert!(text.contains("Enemies remaining: 3"));
     assert!(text.contains("FOV full map"));
@@ -3096,10 +3190,57 @@ mod tests {
       .iter()
       .find(|actor| actor.id() == PLAYER)
       .expect("player exists");
-    let text = format_hud_stats(Some(player), &snapshot, &status, None, Some(&empty_intent));
+    let text = format_hud_stats(
+      Some(player),
+      &snapshot,
+      &status,
+      &scenario_label(false, 1),
+      None,
+      Some(&empty_intent),
+    );
     assert!(text.contains("HP [##########] 10/10"));
     assert!(text.contains("enemies 3"));
     assert!(text.contains("Intent: none"));
+  }
+
+  #[test]
+  fn hud_scenario_label_distinguishes_procedural_depth_and_item_fixture() {
+    assert_eq!(scenario_label(true, 4), "Procedural floor · depth 4");
+    assert_eq!(scenario_label(false, 1), "Starter item floor");
+  }
+
+  #[test]
+  fn finalization_exports_replay_and_shutdown_before_app_exit() {
+    let directory = test_directory("finalization");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let handle = FinalizationHandle::new();
+    let mut app = App::new();
+    app.add_message::<AppExit>();
+    app.insert_resource(PresentationRuntime::start_run(7).expect("starter run validates"));
+    app.insert_resource(DesktopSession::new(7, journal.clone()));
+    app.insert_resource(handle.clone());
+    app.add_systems(Update, |mut exits: MessageWriter<AppExit>| {
+      exits.write(AppExit::Success);
+    });
+    app.add_systems(Last, desktop_finalize);
+    app.update();
+
+    let report = handle.0.lock().expect("finalization report lock");
+    assert!(report.complete);
+    assert!(report.error.is_none());
+    drop(report);
+    let journal_text = fs::read_dir(&directory)
+      .expect("journal directory reads")
+      .map(|entry| fs::read_to_string(entry.expect("journal entry reads").path()))
+      .collect::<Result<Vec<_>, _>>()
+      .expect("journal files read");
+    let joined = journal_text.join("\n");
+    assert!(joined.contains("\"kind\":\"replay_exported\""));
+    assert!(joined.contains("\"kind\":\"shutdown\""));
+    let _ = fs::remove_dir_all(directory);
   }
 
   #[test]

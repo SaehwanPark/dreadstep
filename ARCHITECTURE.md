@@ -282,8 +282,10 @@ continue to consume the authored item fixture, so procedural content is availabl
 without changing the established diagnostic command/event matrix. After a procedural visible run
 reaches the core-projected `Victory`, the desktop-only `N` input requests the next checked depth with
 the same seed; the adapter replaces its disposable runtime, clears its presentation/replay evidence,
-and records `floor_advanced`. This is a presentation transition, not a second progression authority;
-core, protocol, MCP, and headless scenarios remain unchanged.
+and records `floor_advanced`. The HUD reads the same session scenario/depth fields as a plain-language
+status label; it does not infer depth from core snapshots or journal paths. This is a presentation
+transition, not a second progression authority; core, protocol, MCP, and headless scenarios remain
+unchanged.
 
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position
