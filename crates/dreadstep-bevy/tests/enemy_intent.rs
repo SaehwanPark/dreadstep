@@ -146,6 +146,55 @@ fn scheduled_adjacent_enemy_intent_prefers_attack_before_chase() {
 }
 
 #[test]
+fn scheduled_brute_intent_prefers_breaking_its_chase_step() {
+  let world = WorldState::new(
+    GridMap::from_tiles(
+      5,
+      1,
+      vec![
+        Tile::Floor,
+        Tile::Breakable,
+        Tile::Floor,
+        Tile::Floor,
+        Tile::Floor,
+      ],
+    )
+    .expect("brute map should validate"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_enemy_behavior(ActorId::new(2), Position::new(2, 0), EnemyBehavior::Brute),
+    ],
+  )
+  .expect("brute world should validate");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(ActorId::new(1)));
+  app.insert_resource(PresentationEnemyIntent::new());
+  app.add_plugins(PresentationPlugin);
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("player should yield to brute");
+  app.update();
+  let before_snapshot = app.world().resource::<PresentationRuntime>().snapshot();
+
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().command(),
+    Some(Command::Break {
+      actor: ActorId::new(2),
+      position: Position::new(1, 0),
+    })
+  );
+  assert_eq!(
+    app.world().resource::<PresentationRuntime>().snapshot(),
+    before_snapshot
+  );
+}
+
+#[test]
 fn scheduled_adjacent_kiter_intent_prefers_core_retreat() {
   let world = WorldState::new(
     GridMap::filled(4, 3, Tile::Floor).expect("test map should be valid"),

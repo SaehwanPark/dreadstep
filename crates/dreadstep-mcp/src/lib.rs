@@ -214,6 +214,7 @@ impl Session {
           match actor.behavior() {
             dreadstep_protocol::EnemyBehavior::Pursuer => CoreEnemyBehavior::Pursuer,
             dreadstep_protocol::EnemyBehavior::Kiter => CoreEnemyBehavior::Kiter,
+            dreadstep_protocol::EnemyBehavior::Brute => CoreEnemyBehavior::Brute,
           },
         )
       })

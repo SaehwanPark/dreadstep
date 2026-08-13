@@ -58,7 +58,7 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       direction: Direction::North,
     },
   );
-  let kiter = ActorId::new(4);
+  let kiter = ActorId::new(3);
   if let Err(error) = runtime.prepare_smoke_kiter(kiter) {
     failed = true;
     let _ = record_session(
@@ -94,14 +94,6 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
-  if let Err(error) = runtime.prepare_smoke_teleport(kiter, Position::new(5, 3)) {
-    failed = true;
-    let _ = record_session(
-      &mut session,
-      "smoke_fault",
-      json!({ "reason": "kiter_cleanup_fixture_setup", "error": error.to_string() }),
-    );
-  }
   if let Err(error) = runtime.prepare_smoke_teleport(RANGED_TARGET, Position::new(3, 1)) {
     failed = true;
     let _ = record_session(
@@ -479,7 +471,7 @@ pub(crate) fn drive_smoke_enemies(
       return true;
     };
     let legal = runtime.legal_commands();
-    let command = crate::select_enemy_command(&legal, actor, PLAYER).and_then(|command| {
+    let command = runtime.preferred_enemy_command(actor, PLAYER).and_then(|command| {
       let player_is_low = runtime
         .snapshot()
         .actors()

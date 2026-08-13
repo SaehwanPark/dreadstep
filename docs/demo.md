@@ -70,12 +70,16 @@ display-free smoke path.
 Only actor 1 acts from the keyboard. When an enemy is scheduled, the presentation driver waits
 150 ms and chooses its core-ranked legal intent: an authored Kiter retreats from an adjacent actor
 when an escape tile exists, then enemies use adjacent `Attack`, clear-cardinal `RangedAttack`,
-one-use `Investigate` toward a nearby kick-noise position, `Chase`, and finally `Wait`. The delay
-is never simulation time. A
+one-use `Investigate` toward a nearby kick-noise position, a Brute `Break` when a Breakable blocks
+its next horizontal-first chase step, `Chase`, and finally `Wait`. The delay is never simulation
+time. A
 presentation-only “showcase complete” status appears after every enemy is dead and consumes core's
 canonical `RunOutcome` projection.
 
-The authored item showcase places a closed door at `(2,1)`, immediately east of player actor 1.
+The authored item showcase places a closed door at `(2,1)`, immediately east of player actor 1,
+and a Brute enemy with a Breakable obstacle at `(4,3)` so its break intent is visible during enemy
+turns. The display-free smoke specifically asserts actor 4's enemy-driver `Break` and the matching
+`BreakableBroken` event; the later player terrain route does not substitute for this Brute check.
 Start the item showcase to exercise `I` (open) and `C` (close) without relying on the display-free
 smoke fixture; the item-free core starter floor remains the stable adapter test fixture.
 

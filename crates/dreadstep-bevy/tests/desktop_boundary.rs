@@ -225,6 +225,7 @@ fn smoke_binary_is_display_free_and_emits_complete_ordered_jsonl() {
         .as_array()
         .is_some_and(|events| events.iter().any(|event| event["kind"] == "attacked"))
   }));
+  assert_brute_break_observed(&records);
   assert_eq!(
     records.last().map(|record| &record["kind"]),
     Some(&Value::from("shutdown"))
@@ -271,6 +272,32 @@ fn assert_smoke_coverage(complete: &Value) {
         .any(|value| value == kind)
     );
   }
+}
+
+#[cfg(feature = "desktop")]
+fn assert_brute_break_observed(records: &[Value]) {
+  assert!(records.iter().any(|record| {
+    record["kind"] == "action_accepted"
+      && record["payload"]["extra"]["source"] == "enemy_driver"
+      && record["payload"]["extra"]["command"]
+        == serde_json::json!({
+          "kind": "break",
+          "actor": 4,
+          "position": { "x": 4, "y": 3 }
+        })
+      && record["payload"]["extra"]["events"]
+        .as_array()
+        .is_some_and(|events| {
+          events.iter().any(|event| {
+            event
+              == &serde_json::json!({
+                "kind": "breakable_broken",
+                "actor": 4,
+                "position": { "x": 4, "y": 3 }
+              })
+          })
+        })
+  }));
 }
 
 #[cfg(feature = "desktop")]

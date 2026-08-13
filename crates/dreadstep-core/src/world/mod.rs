@@ -194,6 +194,7 @@ impl WorldState {
       hasher.write_u8(match actor.enemy_behavior() {
         EnemyBehavior::Pursuer => 1,
         EnemyBehavior::Kiter => 2,
+        EnemyBehavior::Brute => 3,
       });
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
@@ -308,6 +309,85 @@ impl WorldState {
       self.push_player_combat_commands(actor_id, actor, &living_targets, &mut commands);
     }
     commands
+  }
+
+  /// Selects the deterministic enemy intent from the scheduled actor's legal commands.
+  ///
+  /// This read-only policy is shared by presentation intent and the desktop enemy driver. A
+  /// Brute breaks only the breakable tile that blocks its canonical horizontal-first chase step;
+  /// all other behavior identities retain their existing priorities.
+  #[must_use]
+  pub fn preferred_enemy_command(&self, actor_id: ActorId, target_id: ActorId) -> Option<Command> {
+    let actor = self.actors.get(&actor_id)?;
+    if actor.kind() != ActorKind::Enemy || !actor.is_alive() || self.next_actor() != Some(actor_id)
+    {
+      return None;
+    }
+    let legal = self.legal_commands();
+    let matches_actor = |command: &&Command| command.actor() == actor_id;
+    if actor.enemy_behavior() == EnemyBehavior::Kiter
+      && let Some(command) = legal.iter().find(|command| {
+        matches!(
+          command,
+          Command::Retreat { actor, target } if *actor == actor_id && *target == target_id
+        )
+      })
+    {
+      return Some(*command);
+    }
+    if let Some(command) = legal.iter().find(|command| {
+      matches!(
+        command,
+        Command::Attack { actor, target } if *actor == actor_id && *target == target_id
+      )
+    }) {
+      return Some(*command);
+    }
+    if let Some(command) = legal.iter().find(|command| {
+      matches!(
+        command,
+        Command::RangedAttack { actor, target } if *actor == actor_id && *target == target_id
+      )
+    }) {
+      return Some(*command);
+    }
+    if let Some(command) = legal
+      .iter()
+      .find(|command| matches!(command, Command::Investigate { actor, .. } if *actor == actor_id))
+    {
+      return Some(*command);
+    }
+    if actor.enemy_behavior() == EnemyBehavior::Brute
+      && let Ok(direction) = self.chase_direction(actor_id, target_id)
+    {
+      let position = actor.position().translated(direction);
+      if self.map.tile_at(position) == Some(Tile::Breakable)
+        && let Some(command) = legal.iter().find(|command| {
+          matches!(
+            command,
+            Command::Break { actor, position: candidate }
+              if *actor == actor_id && *candidate == position
+          )
+        })
+      {
+        return Some(*command);
+      }
+    }
+    if let Some(command) = legal.iter().find(|command| {
+      matches!(
+        command,
+        Command::Chase { actor, target } if *actor == actor_id && *target == target_id
+      )
+    }) {
+      return Some(*command);
+    }
+    if let Some(command) = legal
+      .iter()
+      .find(|command| matches!(command, Command::Wait { actor } if *actor == actor_id))
+    {
+      return Some(*command);
+    }
+    legal.iter().find(matches_actor).copied()
   }
 
   /// Applies one command from the deterministically scheduled actor.

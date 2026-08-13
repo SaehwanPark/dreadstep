@@ -1891,9 +1891,9 @@ breakable terrain, kick-open door noise evidence, terrain-aware radius-three pro
 one-use nearby-enemy investigation are verified in the core simulation and its protocol, MCP,
 headless, and Bevy boundaries. The content
 boundary also has a seeded 13×9 corridor-floor generator with deterministic partition gaps and
-authored actor placement. The first closed enemy archetype is also verified: authored Kiter enemies
-retreat from adjacent living targets using a farthest-cardinal deterministic escape policy, with
-protocol/MCP/headless/Bevy projections. Persistent/multi-source noise fields, richer procedural
+authored actor placement. The first closed enemy archetypes are also verified: authored Kiter enemies
+retreat from adjacent living targets using a farthest-cardinal deterministic escape policy, while
+authored Brute enemies break directly blocking Breakables before pursuit, with protocol/MCP/headless/Bevy projections. Persistent/multi-source noise fields, richer procedural
 generation, damage/tool interactions, and broader archetype families remain future Milestone 5 work. The visible desktop preparation
 path can advance an opt-in procedural victory to the next seeded depth with `N`; persistent floor
 history and core-owned progression remain future work. The HUD exposes the current scenario/depth
