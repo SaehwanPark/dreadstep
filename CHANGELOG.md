@@ -10,7 +10,11 @@ All notable contributor- and user-visible project changes are recorded here.
   journal the generated scenario/depth, and preserve that choice across same-seed restart. Default
   and display-free smoke startup remain on the authored item fixture. Procedural visible victory can
   advance with `N` to the next depth using the same seed and a fresh presentation/replay trace;
-  protocol/MCP selection and procedural loot remain deferred.
+  the HUD names the active scenario/depth; protocol/MCP selection and procedural loot remain deferred.
+
+- Fixed visible desktop Ctrl-C finalization so replay export and `shutdown` journal evidence flush
+  before Bevy consumes the app world; Escape, window-close, and runtime-fault paths now share the
+  same pre-exit finalizer.
 
 - Added a deterministic seeded corridor-floor content preparation slice: `procedural_floor` and
   `procedural_floor_definition` generate a validated 13×9 floor with three single-gap wall

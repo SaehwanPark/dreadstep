@@ -1892,7 +1892,8 @@ corridor-floor generator with deterministic partition gaps and authored actor pl
 progression, richer procedural generation, damage/tool interactions, noise propagation, and enemy
 attraction remain future Milestone 5 work. The visible desktop preparation path can now advance an
 opt-in procedural victory to the next seeded depth with `N`; persistent floor history and core-owned
-progression remain future work.
+progression remain future work. The HUD exposes the current scenario/depth so this opt-in path remains
+legible during host playtesting.
 
 ### Introduce a deliberately small interaction set
 

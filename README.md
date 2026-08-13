@@ -39,7 +39,8 @@ dungeon preparation. Identical seed/depth inputs produce the same validated 13×
 roster; every generated walkable tile is reachable from the player; different inputs vary partition
 gaps or authored enemy durability. The visible client can opt into that floor with `--procedural`;
 after victory, `N` advances to the next depth with the same seed. Default and display-free smoke
-startup still use the stable authored item fixture.
+startup still use the stable authored item fixture. The HUD names the active scenario and procedural
+depth so a player can distinguish a fresh restart from a floor transition.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and

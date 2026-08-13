@@ -3968,6 +3968,49 @@ Out of scope:
 - Multi-floor core state, floor history, procedural encounter/loot progression, depth balancing,
   save/load, replay playback, agent-facing scenario selection, and new gameplay verbs.
 
+### Milestone 5 preparation slice: readable procedural depth status
+
+- Status: verified
+- Started: 2026-08-13
+- Completed: 2026-08-13
+
+Make the opt-in procedural run's current scenario and depth explicit in the desktop HUD. The HUD
+shows `Procedural floor · depth N` for procedural visible sessions and `Starter item floor` for the
+default/item fixture, including after `N` advances or `Shift+R` restarts; this is a read-only
+presentation projection over the session's existing seed/depth fields.
+
+Acceptance:
+
+- The visible HUD status contains an unambiguous scenario/depth line for procedural and item runs;
+  it updates deterministically after floor advancement and restart without reading or mutating core
+  state.
+- Missing session/runtime resources preserve the existing safe no-op behavior; the display-free
+  smoke path and JSONL schema remain unchanged.
+- The label uses plain language and does not require a player to infer depth from journal paths or
+  implementation terms; controls and terminal/recovery behavior remain unchanged.
+- Ctrl-C, Escape, and window-close exits flush the final replay artifact and `shutdown` journal
+  record before the Bevy app runner consumes its world; a runtime/journal fault remains typed and
+  non-panicking.
+- No core/protocol/MCP/replay schema, map generation, progression authority, or production media is
+  introduced.
+
+Verification target:
+
+- Desktop unit tests cover procedural/item labels and depth changes; existing desktop boundary,
+  smoke, formatting, `scripts/verify.sh`, and semantic review checks remain green.
+
+Evidence: `cargo test -p dreadstep-bevy --lib --all-features --locked` (40 passed),
+`cargo test -p dreadstep-bevy --test desktop_boundary --all-features --locked` (8 passed), strict
+workspace clippy, `scripts/verify.sh`, and a finalizer regression test that emits `AppExit` in the
+same update and observes replay/shutdown records before world consumption. The test-player pass
+confirmed the smoke fixture and procedural startup/journal; graphical Victory→`N` inspection was
+blocked by the locked desktop host.
+
+Out of scope:
+
+- Enemy/floor balance, persistent floor history, map previews, progression rewards, localization,
+  accessibility metadata beyond readable text, and agent-facing scenario selection.
+
 ## Future
 
 ### Remaining roadmap milestones
