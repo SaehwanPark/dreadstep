@@ -66,8 +66,8 @@ pub use window::{PresentationTileSize, PresentationWindow};
 pub(crate) use scene::{SceneCameraState, SceneViewportState, SceneWindowState};
 pub(crate) use sync::sync_runtime_scene;
 pub(crate) use sync_feedback::{
-  select_enemy_command, sync_animation_cues, sync_audio_asset_projection, sync_audio_cues,
-  sync_enemy_intent, sync_hud, sync_messages,
+  sync_animation_cues, sync_audio_asset_projection, sync_audio_cues, sync_enemy_intent, sync_hud,
+  sync_messages,
 };
 pub(crate) use sync_render::{
   placeholder_sprite, sync_bevy_sprite_projection, sync_bevy_sprite_transform_projection,

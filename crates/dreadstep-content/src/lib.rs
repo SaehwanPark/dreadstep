@@ -421,7 +421,17 @@ pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentErro
 /// equipment-derived reach weapon.
 #[must_use]
 pub fn starter_item_floor_definition() -> StarterFloorDefinition {
-  starter_floor_definition()
+  let mut definition = starter_floor_definition();
+  definition.tiles[(3 * definition.width + 4) as usize] = Tile::Breakable;
+  definition.actors[3] = Actor::with_melee_reach_and_behavior(
+    ActorId::new(4),
+    ActorKind::Enemy,
+    Position::new(5, 3),
+    HitPoints::new(3),
+    MeleeReach::DEFAULT,
+    EnemyBehavior::Brute,
+  );
+  definition
     .with_item_catalog(starter_item_catalog_definition())
     .with_items(vec![
       StarterItemPlacement::new(

@@ -8,4 +8,6 @@ pub enum EnemyBehavior {
   Pursuer,
   /// Retreat one tile when adjacent to the controlled target before other combat fallbacks.
   Kiter,
+  /// Break a directly blocking breakable on the deterministic chase step before pursuing.
+  Brute,
 }

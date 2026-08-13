@@ -61,9 +61,9 @@ materially more efficient in Rust.
 
 - `dreadstep-core` owns `WorldState` transitions, occupancy, scheduling, combat, inventory,
   environmental tiles, terrain-aware one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
-  the stable state digest.
+  the stable state digest, including authored Kiter and Brute enemy intent preferences.
   The digest uses an explicit deterministic byte order, not a process-randomized hasher.
-- Protocol v24 projects those values, including OpenDoor/Close terrain commands, actor behavior/status snapshots, throwable item
+- Protocol v25 projects those values, including OpenDoor/Close terrain commands, actor behavior/status snapshots, Brute enemy behavior, throwable item
   effects, and typed throw/status events. MCP,
   headless, and Bevy convert types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.

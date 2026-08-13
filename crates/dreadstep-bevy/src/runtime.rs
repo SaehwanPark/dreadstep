@@ -216,6 +216,12 @@ impl PresentationRuntime {
     self.state.legal_commands()
   }
 
+  /// Returns core's read-only deterministic preference for a scheduled enemy intent.
+  #[must_use]
+  pub fn preferred_enemy_command(&self, actor: ActorId, target: ActorId) -> Option<Command> {
+    self.state.world.preferred_enemy_command(actor, target)
+  }
+
   /// Places one authored item on the ground for the display-free desktop smoke fixture.
   ///
   /// This setup-only mutation is intentionally not exposed as a player command and does not

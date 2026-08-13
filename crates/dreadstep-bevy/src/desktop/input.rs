@@ -337,8 +337,7 @@ pub(crate) fn desktop_enemy_driver(
   let Some(actor) = actor else {
     return;
   };
-  let legal = runtime.legal_commands();
-  let command = crate::select_enemy_command(&legal, actor, input.actor());
+  let command = runtime.preferred_enemy_command(actor, input.actor());
   if let Some(command) = command {
     let _ = submit_command(&mut runtime, &mut session, "enemy_driver", command);
   } else {

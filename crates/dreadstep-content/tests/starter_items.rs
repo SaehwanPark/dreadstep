@@ -19,7 +19,13 @@ fn starter_item_floor_is_complete_and_repeatable() {
   let actors: Vec<_> = from_definition.actors().collect();
 
   assert_eq!(from_wrapper, from_definition);
-  assert_eq!(from_definition.map(), default.map());
+  assert_ne!(from_definition.map(), default.map());
+  assert_eq!(
+    from_definition
+      .map()
+      .tile_at(dreadstep_core::Position::new(4, 3)),
+    Some(dreadstep_core::Tile::Breakable)
+  );
   let actor_projection = |world: &WorldState| {
     world
       .actors()
@@ -75,6 +81,10 @@ fn starter_item_floor_is_complete_and_repeatable() {
     &[Item::new(ItemId::new(100), ItemDefinitionId::new(1))]
   );
   assert!(actors[2..].iter().all(|actor| actor.inventory().is_empty()));
+  assert_eq!(
+    actors[3].enemy_behavior(),
+    dreadstep_core::EnemyBehavior::Brute
+  );
   assert!(from_definition.ground_items().is_empty());
   assert_eq!(
     from_definition.digest(),

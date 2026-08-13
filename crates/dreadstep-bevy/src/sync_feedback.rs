@@ -1,7 +1,7 @@
 //! HUD, enemy-intent, message, audio, and animation synchronization.
 
 use bevy::ecs::world::World;
-use dreadstep_core::{ActorId, ActorKind, Command};
+use dreadstep_core::ActorKind;
 
 use crate::{
   PresentationAnimationCue, PresentationAnimationCues, PresentationAudioAssetManifest,
@@ -70,132 +70,12 @@ pub(crate) fn sync_enemy_intent(world: &mut World) {
       .iter()
       .any(|record| record.id() == *actor && record.kind() == ActorKind::Enemy && record.is_alive())
   });
-  let command = scheduled_enemy.and_then(|actor| {
-    let legal = runtime.legal_commands();
-    select_enemy_command(&legal, actor, target)
-  });
+  let command = scheduled_enemy.and_then(|actor| runtime.preferred_enemy_command(actor, target));
   let Some(mut intent) = world.get_resource_mut::<PresentationEnemyIntent>() else {
     return;
   };
   intent.actor = scheduled_enemy;
   intent.command = command;
-}
-
-/// Selects the shared deterministic enemy-driver preference from core's legal commands.
-///
-/// A legal Kiter retreat is preferred before adjacent melee and clear ranged attacks; one-use
-/// noise investigation then chase and wait preserve the deterministic movement fallback. The
-/// first command for the actor remains a forward-compatible final fallback.
-pub(crate) fn select_enemy_command(
-  legal: &[Command],
-  actor: ActorId,
-  target: ActorId,
-) -> Option<Command> {
-  legal
-    .iter()
-    .find(|command| {
-      matches!(
-        command,
-        Command::Retreat {
-          actor: candidate,
-          target: candidate_target,
-        } if *candidate == actor && *candidate_target == target
-      )
-    })
-    .copied()
-    .or_else(|| {
-      legal
-        .iter()
-        .find(|command| {
-          matches!(
-            command,
-            Command::Attack {
-              actor: candidate,
-              target: candidate_target,
-            } if *candidate == actor && *candidate_target == target
-          )
-        })
-        .copied()
-    })
-    .or_else(|| {
-      legal
-        .iter()
-        .find(|command| {
-          matches!(
-            command,
-            Command::RangedAttack {
-              actor: candidate,
-              target: candidate_target,
-            } if *candidate == actor && *candidate_target == target
-          )
-        })
-        .copied()
-    })
-    .or_else(|| {
-      legal
-        .iter()
-        .find(|command| {
-          matches!(
-            command,
-            Command::Investigate {
-              actor: candidate,
-              ..
-            } if *candidate == actor
-          )
-        })
-        .copied()
-    })
-    .or_else(|| {
-      legal
-        .iter()
-        .find(|command| {
-          matches!(
-            command,
-            Command::Chase {
-              actor: candidate,
-              target: candidate_target,
-            } if *candidate == actor && *candidate_target == target
-          )
-        })
-        .copied()
-    })
-    .or_else(|| {
-      legal
-        .iter()
-        .find(
-          |command| matches!(command, Command::Wait { actor: candidate } if *candidate == actor),
-        )
-        .copied()
-    })
-    .or_else(|| {
-      legal
-        .iter()
-        .copied()
-        .find(|command| command_actor(*command) == actor)
-    })
-}
-
-pub(crate) fn command_actor(command: Command) -> ActorId {
-  match command {
-    Command::Move { actor, .. }
-    | Command::Wait { actor }
-    | Command::Interact { actor, .. }
-    | Command::Kick { actor, .. }
-    | Command::Close { actor, .. }
-    | Command::Break { actor, .. }
-    | Command::Attack { actor, .. }
-    | Command::RangedAttack { actor, .. }
-    | Command::Throw { actor, .. }
-    | Command::Retreat { actor, .. }
-    | Command::Chase { actor, .. }
-    | Command::Investigate { actor, .. }
-    | Command::Equip { actor, .. }
-    | Command::Unequip { actor }
-    | Command::UseItem { actor, .. }
-    | Command::Pickup { actor, .. }
-    | Command::Drop { actor, .. }
-    | Command::Reload { actor } => actor,
-  }
 }
 
 pub(crate) fn sync_messages(world: &mut World) {

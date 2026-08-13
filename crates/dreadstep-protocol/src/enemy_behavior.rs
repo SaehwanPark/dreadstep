@@ -12,6 +12,8 @@ pub enum EnemyBehavior {
   Pursuer,
   /// Retreat from an adjacent living target when an escape tile exists.
   Kiter,
+  /// Break a directly blocking breakable before pursuing a living target.
+  Brute,
 }
 
 impl From<CoreEnemyBehavior> for EnemyBehavior {
@@ -19,6 +21,7 @@ impl From<CoreEnemyBehavior> for EnemyBehavior {
     match behavior {
       CoreEnemyBehavior::Pursuer => Self::Pursuer,
       CoreEnemyBehavior::Kiter => Self::Kiter,
+      CoreEnemyBehavior::Brute => Self::Brute,
     }
   }
 }
@@ -28,6 +31,7 @@ impl From<EnemyBehavior> for CoreEnemyBehavior {
     match behavior {
       EnemyBehavior::Pursuer => Self::Pursuer,
       EnemyBehavior::Kiter => Self::Kiter,
+      EnemyBehavior::Brute => Self::Brute,
     }
   }
 }
