@@ -125,17 +125,19 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: terrain-aware kick-noise propagation |
 | 2026-08-13 | Milestone 4 slice: deterministic Chilled status and authored ChillTrap |
 | 2026-08-13 | Milestone 4 slice: deterministic Frost Flask throw and Chilled application |
+| 2026-08-13 | Milestone 5 preparation slice: deterministic reclosable doors |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **22**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **24**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. Desktop controls and smoke coverage are
 documented in [`docs/demo.md`](docs/demo.md).
 
 ### Core
 
 - Typed map, actors, scheduling, melee and ranged combat, chase/investigation, inventory, equipment,
-  pickup/drop, consumables, equipment effects, doors, traps, ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
+  pickup/drop, consumables, equipment effects, doors, reclosable OpenDoor terrain, traps,
+  ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, and state digests.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
@@ -149,7 +151,8 @@ documented in [`docs/demo.md`](docs/demo.md).
 ### Content
 
 - Authored starter and starter-item floors, item catalog, and a seeded corridor-floor
-  generator with reachability checks.
+  generator with reachability checks. The starter-item showcase includes a closed door beside the
+  player for the documented open/close controls; the item-free starter remains unchanged.
 
 ### Bevy and desktop
 
@@ -159,10 +162,13 @@ documented in [`docs/demo.md`](docs/demo.md).
 
 ## Active
 
-The current slice is complete: a player may throw authored Frost Flask item 104 at a living target
+The current slice is complete: a scheduled living actor may close an adjacent unoccupied OpenDoor
+with typed `Close`, returning it to blocking `Door` terrain. Existing `Interact` and `Kick` actions
+retain the opened-door identity. Protocol v24, MCP, headless, Bevy, HUD/journal formatting, content,
+and display-free smoke project the same core-owned result. A player may also throw authored Frost Flask item 104 at a living target
 on a clear cardinal distance-2..=3 ray. The flask is consumed, applies or refreshes the existing
 two-action `Chilled` status, and emits typed throw/application events. Authored Kiter enemies expose
-deterministic adjacent retreat before their existing combat fallbacks. Protocol v23, MCP, headless,
+deterministic adjacent retreat before their existing combat fallbacks. MCP, headless,
 Bevy, HUD/journal formatting, content, and display-free smoke project the same core-owned result.
 
 ## Future

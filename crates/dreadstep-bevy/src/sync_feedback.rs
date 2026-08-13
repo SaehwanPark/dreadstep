@@ -181,6 +181,7 @@ pub(crate) fn command_actor(command: Command) -> ActorId {
     | Command::Wait { actor }
     | Command::Interact { actor, .. }
     | Command::Kick { actor, .. }
+    | Command::Close { actor, .. }
     | Command::Break { actor, .. }
     | Command::Attack { actor, .. }
     | Command::RangedAttack { actor, .. }

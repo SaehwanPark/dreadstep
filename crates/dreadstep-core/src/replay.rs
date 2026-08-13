@@ -137,6 +137,12 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_i32(position.x());
       hasher.write_i32(position.y());
     }
+    Command::Close { actor, position } => {
+      hasher.write_u8(18);
+      hasher.write_u32(actor.value());
+      hasher.write_i32(position.x());
+      hasher.write_i32(position.y());
+    }
     Command::Break { actor, position } => {
       hasher.write_u8(13);
       hasher.write_u32(actor.value());

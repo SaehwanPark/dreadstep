@@ -43,6 +43,13 @@ pub enum PresentationMessage {
     /// The opened door position.
     position: Position,
   },
+  /// An actor closed an adjacent open door.
+  DoorClosed {
+    /// The actor that closed the door.
+    actor: ActorId,
+    /// The closed door position.
+    position: Position,
+  },
   /// A kick opened a door and created a fixed-radius noise source.
   NoiseCreated {
     /// The actor whose action created the noise.
@@ -176,6 +183,7 @@ impl PresentationMessage {
       },
       Event::Waited { actor, at } => Self::Waited { actor, at },
       Event::DoorOpened { actor, position } => Self::DoorOpened { actor, position },
+      Event::DoorClosed { actor, position } => Self::DoorClosed { actor, position },
       Event::NoiseCreated {
         actor,
         position,
@@ -259,6 +267,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::MovementBlocked { .. } => "movement_blocked",
     Event::Waited { .. } => "waited",
     Event::DoorOpened { .. } => "door_opened",
+    Event::DoorClosed { .. } => "door_closed",
     Event::NoiseCreated { .. } => "noise_created",
     Event::BreakableBroken { .. } => "breakable_broken",
     Event::TrapTriggered { .. } => "trap_triggered",

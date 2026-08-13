@@ -43,3 +43,42 @@ fn tester_scenario_preserves_door_and_projects_opening_event() {
   assert_ne!(session.replay_digest(), before);
   assert_eq!(session.get_history().len(), 1);
 }
+
+#[test]
+fn opened_door_becomes_closeable_and_projects_the_closed_event() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  session
+    .create_scenario(&Scenario::new(
+      3,
+      1,
+      vec![Tile::Floor, Tile::Door, Tile::Floor],
+      vec![ScenarioActor::new(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(5),
+      )],
+    ))
+    .expect("door scenario should validate");
+  session
+    .act(CommandRequest::Interact {
+      actor: ActorId::new(1),
+      position: Position::new(1, 0),
+    })
+    .expect("door should open");
+
+  let close = CommandRequest::Close {
+    actor: ActorId::new(1),
+    position: Position::new(1, 0),
+  };
+  assert!(session.legal_actions().contains(&close));
+  let output = session.act(close).expect("open door should close");
+  assert_eq!(
+    output.events(),
+    &[Event::DoorClosed {
+      actor: ActorId::new(1),
+      position: Position::new(1, 0),
+    }]
+  );
+  assert_eq!(session.get_history().last(), Some(&close));
+}

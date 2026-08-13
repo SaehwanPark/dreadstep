@@ -53,6 +53,12 @@ impl WorldState {
           position,
         });
       }
+      if self.map.tile_at(position) == Some(Tile::OpenDoor) && self.actor_at(position).is_none() {
+        commands.push(Command::Close {
+          actor: actor_id,
+          position,
+        });
+      }
       if self.map.tile_at(position) == Some(Tile::Breakable) {
         commands.push(Command::Break {
           actor: actor_id,

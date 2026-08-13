@@ -403,6 +403,19 @@ impl From<CoreCommandError> for CommandError {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
       },
+      CoreCommandError::CloseTargetInvalid { actor, position } => Self::CloseTargetInvalid {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+      },
+      CoreCommandError::DoorCloseOccupied {
+        actor,
+        position,
+        occupant,
+      } => Self::DoorCloseOccupied {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
+        occupant: ActorId::new(occupant.value()),
+      },
       CoreCommandError::BreakTargetInvalid { actor, position } => Self::BreakTargetInvalid {
         actor: ActorId::new(actor.value()),
         position: Position::new(position.x(), position.y()),
@@ -578,6 +591,25 @@ impl fmt::Display for CommandError {
         actor.value(),
         position.x(),
         position.y()
+      ),
+      Self::CloseTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot close ({}, {}): target is not an adjacent open door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::DoorCloseOccupied {
+        actor,
+        position,
+        occupant,
+      } => write!(
+        formatter,
+        "actor {} cannot close occupied door at ({}, {}): actor {} blocks it",
+        actor.value(),
+        position.x(),
+        position.y(),
+        occupant.value()
       ),
       Self::BreakTargetInvalid { actor, position } => write!(
         formatter,

@@ -13,6 +13,8 @@ pub enum Tile {
   Wall,
   /// A closed door that blocks movement until opened.
   Door,
+  /// An open door that actors may enter and adjacent actors may close.
+  OpenDoor,
   /// A blocking terrain cell that an adjacent actor may break into floor.
   Breakable,
   /// A walkable floor trap that triggers once when entered.

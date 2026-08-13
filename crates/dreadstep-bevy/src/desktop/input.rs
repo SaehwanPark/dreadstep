@@ -106,6 +106,7 @@ pub(crate) fn desktop_input(
     KeyCode::KeyF,
     KeyCode::KeyG,
     KeyCode::KeyT,
+    KeyCode::KeyC,
     KeyCode::KeyE,
     KeyCode::KeyQ,
     KeyCode::KeyU,
@@ -302,6 +303,10 @@ pub(crate) fn command_for_key(
       .iter()
       .copied()
       .find(|command| matches!(command, Command::Kick { actor: PLAYER, .. })),
+    KeyCode::KeyC => legal
+      .iter()
+      .copied()
+      .find(|command| matches!(command, Command::Close { actor: PLAYER, .. })),
     KeyCode::KeyB => legal
       .iter()
       .copied()

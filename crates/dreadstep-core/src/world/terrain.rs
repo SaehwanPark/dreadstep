@@ -1,4 +1,4 @@
-//! Scheduled terrain verbs: open, kick, and break one adjacent cell.
+//! Scheduled terrain verbs: open, kick, close, and break one adjacent cell.
 
 use std::collections::VecDeque;
 
@@ -30,7 +30,7 @@ impl WorldState {
     }
     self
       .map
-      .set_tile(position, Tile::Floor)
+      .set_tile(position, Tile::OpenDoor)
       .ok_or(CommandError::InteractTargetInvalid {
         actor: actor_id,
         position,
@@ -75,6 +75,47 @@ impl WorldState {
     })
   }
 
+  pub(super) fn close_door(
+    &mut self,
+    actor_id: ActorId,
+    position: Position,
+  ) -> Result<Event, CommandError> {
+    let actor_position = self
+      .actors
+      .get(&actor_id)
+      .map(Actor::position)
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    let adjacent = actor_position
+      .x()
+      .abs_diff(position.x())
+      .checked_add(actor_position.y().abs_diff(position.y()))
+      == Some(1);
+    if !adjacent || self.map.tile_at(position) != Some(Tile::OpenDoor) {
+      return Err(CommandError::CloseTargetInvalid {
+        actor: actor_id,
+        position,
+      });
+    }
+    if let Some(occupant) = self.actor_at(position) {
+      return Err(CommandError::DoorCloseOccupied {
+        actor: actor_id,
+        position,
+        occupant,
+      });
+    }
+    self
+      .map
+      .set_tile(position, Tile::Door)
+      .ok_or(CommandError::CloseTargetInvalid {
+        actor: actor_id,
+        position,
+      })?;
+    Ok(Event::DoorClosed {
+      actor: actor_id,
+      position,
+    })
+  }
+
   pub(super) fn kick_door(
     &mut self,
     actor_id: ActorId,
@@ -98,7 +139,7 @@ impl WorldState {
     }
     self
       .map
-      .set_tile(position, Tile::Floor)
+      .set_tile(position, Tile::OpenDoor)
       .ok_or(CommandError::KickTargetInvalid {
         actor: actor_id,
         position,

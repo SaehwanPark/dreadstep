@@ -452,6 +452,7 @@ pub(crate) fn desktop_style_sprites(
       crate::SceneSpriteKey::Terrain(Tile::Cover) => Color::srgb(0.36, 0.25, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::Wall) => Color::srgb(0.04, 0.06, 0.08),
       crate::SceneSpriteKey::Terrain(Tile::Door) => Color::srgb(0.48, 0.25, 0.08),
+      crate::SceneSpriteKey::Terrain(Tile::OpenDoor) => Color::srgb(0.65, 0.4, 0.14),
       crate::SceneSpriteKey::Terrain(Tile::Breakable) => Color::srgb(0.36, 0.22, 0.08),
       crate::SceneSpriteKey::Terrain(Tile::Trap) => Color::srgb(0.58, 0.1, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::ChillTrap) => Color::srgb(0.18, 0.65, 0.9),

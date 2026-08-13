@@ -28,7 +28,10 @@ fn kick_opens_adjacent_door_emits_ordered_noise_and_uses_standard_time() {
       position: Position::new(1, 0),
     })
     .expect("adjacent closed door should be kickable");
-  assert_eq!(world.map().tile_at(Position::new(1, 0)), Some(Tile::Floor));
+  assert_eq!(
+    world.map().tile_at(Position::new(1, 0)),
+    Some(Tile::OpenDoor)
+  );
   assert_eq!(
     result.events(),
     &[

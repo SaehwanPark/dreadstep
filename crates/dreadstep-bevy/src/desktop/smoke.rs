@@ -67,6 +67,14 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       json!({ "reason": "kiter_fixture_setup", "error": error.to_string() }),
     );
   }
+  if let Err(error) = runtime.prepare_smoke_floor(Position::new(2, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "kiter_floor_fixture_setup", "error": error.to_string() }),
+    );
+  }
   if let Err(error) = runtime.prepare_smoke_teleport(kiter, Position::new(2, 1)) {
     failed = true;
     let _ = record_session(
@@ -171,6 +179,16 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     &mut runtime,
     &mut session,
     "smoke",
+    Command::Close {
+      actor: PLAYER,
+      position: Position::new(2, 1),
+    },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
     Command::Reload { actor: PLAYER },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
@@ -230,6 +248,16 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     .map_or(Position::new(1, 1), dreadstep_core::Actor::position);
   let reach_target_position =
     Position::new(player_position.x().saturating_add(2), player_position.y());
+  // The Frost Flask smoke step may leave the ranged target on the later reach-weapon square.
+  // Move it to the authored empty lower-right corridor cell before placing the melee target.
+  if let Err(error) = runtime.prepare_smoke_teleport(RANGED_TARGET, Position::new(5, 2)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "reach_target_clearance_fixture_setup", "error": error.to_string() }),
+    );
+  }
   if let Err(error) = runtime.prepare_smoke_teleport(ATTACK_TARGET, reach_target_position) {
     failed = true;
     let _ = record_session(

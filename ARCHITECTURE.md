@@ -63,7 +63,7 @@ materially more efficient in Rust.
   environmental tiles, terrain-aware one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
   the stable state digest.
   The digest uses an explicit deterministic byte order, not a process-randomized hasher.
-- Protocol v23 projects those values, including actor behavior/status snapshots, throwable item
+- Protocol v24 projects those values, including OpenDoor/Close terrain commands, actor behavior/status snapshots, throwable item
   effects, and typed throw/status events. MCP,
   headless, and Bevy convert types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.

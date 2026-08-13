@@ -82,12 +82,12 @@ pub(crate) fn visible_positions(
         Some(Tile::Wall | Tile::Door | Tile::Breakable) => {
           visible.insert((neighbor.x(), neighbor.y()));
         }
-        Some(Tile::Floor | Tile::Cover | Tile::Trap | Tile::ChillTrap)
+        Some(Tile::Floor | Tile::Cover | Tile::OpenDoor | Tile::Trap | Tile::ChillTrap)
           if distance < radius && visited_walkable.insert((neighbor.x(), neighbor.y())) =>
         {
           queue.push_back((neighbor, distance + 1));
         }
-        Some(Tile::Floor | Tile::Cover | Tile::Trap | Tile::ChillTrap) | None => {}
+        Some(Tile::Floor | Tile::Cover | Tile::OpenDoor | Tile::Trap | Tile::ChillTrap) | None => {}
       }
     }
   }

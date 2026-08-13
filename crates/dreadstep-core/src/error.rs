@@ -231,6 +231,22 @@ pub enum CommandError {
     /// The requested door position.
     position: Position,
   },
+  /// A close did not target an adjacent open door.
+  CloseTargetInvalid {
+    /// The actor issuing the close command.
+    actor: ActorId,
+    /// The requested open-door position.
+    position: Position,
+  },
+  /// A living actor occupies the open doorway being closed.
+  DoorCloseOccupied {
+    /// The actor issuing the close command.
+    actor: ActorId,
+    /// The occupied doorway position.
+    position: Position,
+    /// The actor preventing the close.
+    occupant: ActorId,
+  },
   /// A break command did not target an adjacent breakable terrain cell.
   BreakTargetInvalid {
     /// The actor issuing the break command.
@@ -426,6 +442,25 @@ impl fmt::Display for CommandError {
         actor.value(),
         position.x(),
         position.y()
+      ),
+      Self::CloseTargetInvalid { actor, position } => write!(
+        formatter,
+        "actor {} cannot close ({}, {}): target is not an adjacent open door",
+        actor.value(),
+        position.x(),
+        position.y()
+      ),
+      Self::DoorCloseOccupied {
+        actor,
+        position,
+        occupant,
+      } => write!(
+        formatter,
+        "actor {} cannot close ({}, {}): actor {} occupies the doorway",
+        actor.value(),
+        position.x(),
+        position.y(),
+        occupant.value()
       ),
       Self::BreakTargetInvalid { actor, position } => write!(
         formatter,

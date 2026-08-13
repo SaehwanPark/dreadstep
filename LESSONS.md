@@ -527,6 +527,21 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Keep traversal order explicit, test exact boundaries, occlusion, short detours, and
   actor occupancy, and defer falloff, persistence, multiple sources, and hearing archetypes.
 
+## Preserve reversible terrain identity in the core
+
+- Context: The one-way door interaction was sufficient for the first environment slice, but later
+  combat positioning needs an opened doorway to remain distinguishable from ordinary floor.
+- Symptom: Converting an opened door directly to `Floor` made a future close action impossible and
+  forced adapters to invent presentation-only door state.
+- Cause: Terrain identity, walkability, line-of-sight, occupancy checks, action timing, and replay
+  evidence all belong to the core transition boundary.
+- Resolution: Add a distinct `OpenDoor` tile with the same walkability and transparency semantics as
+  an open passage. Keep `Interact` and `Kick` as the existing open verbs, add a typed adjacent
+  `Close` command, reject occupied doorways atomically, and hash/snapshot the distinct terrain.
+- Prevention: Preserve reversible authored terrain states before introducing locks, keys, durability,
+  diagonal closing, or adapter-owned visual state; test open/close identity, occupancy, legal order,
+  digest/replay participation, and boundary mappings together.
+
 ## Keep floor progression at the presentation boundary until core state exists
 
 - Context: The seeded procedural corridor now needs a small visible multi-floor loop without

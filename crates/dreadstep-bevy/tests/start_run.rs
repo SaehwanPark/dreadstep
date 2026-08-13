@@ -7,7 +7,7 @@ use dreadstep_bevy::{
   PresentationPlugin, PresentationRuntime, PresentationSnapshot, PresentationState, SceneActor,
   SceneGroundItem, SceneInventoryItem, SceneTile,
 };
-use dreadstep_content::{procedural_floor, starter_floor, starter_item_floor};
+use dreadstep_content::{procedural_floor, starter_floor, starter_item_showcase_floor};
 use dreadstep_core::{ActorId, ItemDefinitionId, ItemId, ReplayTrace};
 
 #[test]
@@ -31,7 +31,7 @@ fn start_item_run_delegates_to_shared_content_and_preserves_seed() {
     PresentationState::start_item_run(seed).expect("starter item content should validate");
   let expected = PresentationState::new(
     seed,
-    starter_item_floor().expect("same starter item content should validate"),
+    starter_item_showcase_floor().expect("same starter item showcase content should validate"),
   );
   let runtime =
     PresentationRuntime::start_item_run(seed).expect("starter item runtime should validate");

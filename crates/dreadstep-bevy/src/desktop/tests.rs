@@ -319,6 +319,31 @@ fn interact_key_selects_the_adjacent_legal_door() {
 }
 
 #[test]
+fn close_key_selects_the_adjacent_legal_open_door() {
+  let directory = test_directory("close-key");
+  let _ = fs::create_dir_all(&directory);
+  let journal = Arc::new(Mutex::new(
+    Journal::open(&directory).expect("journal opens"),
+  ));
+  let world = WorldState::new(
+    GridMap::from_tiles(3, 1, vec![Tile::Floor, Tile::OpenDoor, Tile::Floor])
+      .expect("test map should be valid"),
+    vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+  )
+  .expect("test world should be valid");
+  let runtime = PresentationRuntime::new(PresentationState::new(7, world));
+  let session = DesktopSession::new(7, journal);
+  assert_eq!(
+    command_for_key(KeyCode::KeyC, &runtime, &session),
+    Some(Command::Close {
+      actor: PLAYER,
+      position: Position::new(1, 0),
+    })
+  );
+  let _ = fs::remove_dir_all(directory);
+}
+
+#[test]
 fn break_key_selects_the_adjacent_legal_breakable_terrain() {
   let directory = test_directory("break-key");
   let _ = fs::create_dir_all(&directory);
@@ -626,6 +651,19 @@ fn frost_flask_throw_is_visible_in_desktop_event_evidence() {
     json!({ "kind": "item_thrown", "actor": 1, "item": 104, "target": 3 })
   );
   assert_eq!(event_message(event), "Actor 1 threw item 104 at 3.");
+}
+
+#[test]
+fn door_close_is_visible_in_desktop_event_evidence() {
+  let event = Event::DoorClosed {
+    actor: PLAYER,
+    position: Position::new(2, 1),
+  };
+  assert_eq!(
+    event_value(event),
+    json!({ "kind": "door_closed", "actor": 1, "position": { "x": 2, "y": 1 } })
+  );
+  assert_eq!(event_message(event), "Actor 1 closed the door at (2, 1).");
 }
 
 #[test]

@@ -64,11 +64,12 @@ pub(crate) const HEALTH_BAR_WIDTH: usize = 10;
 pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
-pub const SHOWCASE_COMMAND_KINDS: [&str; 17] = [
+pub const SHOWCASE_COMMAND_KINDS: [&str; 18] = [
   "move",
   "wait",
   "interact",
   "kick",
+  "close",
   "break",
   "attack",
   "ranged_attack",
@@ -85,11 +86,12 @@ pub const SHOWCASE_COMMAND_KINDS: [&str; 17] = [
 ];
 
 /// Every current event kind that must remain observable in the desktop smoke path.
-pub const SHOWCASE_EVENT_KINDS: [&str; 18] = [
+pub const SHOWCASE_EVENT_KINDS: [&str; 19] = [
   "moved",
   "movement_blocked",
   "waited",
   "door_opened",
+  "door_closed",
   "noise_created",
   "breakable_broken",
   "trap_triggered",

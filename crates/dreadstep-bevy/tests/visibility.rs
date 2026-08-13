@@ -173,6 +173,39 @@ fn bounded_traversal_keeps_cover_walkable_and_reveals_wall_boundary() {
 }
 
 #[test]
+fn open_door_remains_visible_and_allows_field_of_view_beyond_it() {
+  let world = WorldState::new(
+    GridMap::from_tiles(
+      4,
+      1,
+      vec![Tile::Floor, Tile::OpenDoor, Tile::Floor, Tile::Wall],
+    )
+    .expect("open-door map should validate"),
+    vec![Actor::new(PLAYER, ActorKind::Player, Position::new(0, 0))],
+  )
+  .expect("open-door world should validate");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(PLAYER));
+  app.insert_resource(PresentationVisibility::new(PLAYER, 3));
+  app.add_plugins(PresentationPlugin);
+  app.update();
+
+  assert_eq!(
+    app
+      .world()
+      .resource::<PresentationVisibility>()
+      .visible_positions(),
+    [
+      Position::new(0, 0),
+      Position::new(1, 0),
+      Position::new(2, 0),
+      Position::new(3, 0),
+    ]
+  );
+}
+
+#[test]
 fn out_of_view_nodes_are_hidden_without_despawning_typed_mirrors() {
   let mut app = visibility_app();
   let player = actor_node(&mut app, PLAYER);
