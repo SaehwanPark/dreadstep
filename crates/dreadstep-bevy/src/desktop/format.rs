@@ -144,6 +144,7 @@ pub(crate) fn command_name(command: Command) -> &'static str {
     Command::Attack { .. } => "attack",
     Command::RangedAttack { .. } => "ranged_attack",
     Command::Chase { .. } => "chase",
+    Command::Investigate { .. } => "investigate",
     Command::Equip { .. } => "equip",
     Command::Unequip { .. } => "unequip",
     Command::UseItem { .. } => "use_item",
@@ -183,6 +184,11 @@ pub(crate) fn command_value(command: Command) -> Value {
     Command::Chase { actor, target } => {
       json!({ "kind": "chase", "actor": actor.value(), "target": target.value() })
     }
+    Command::Investigate { actor, position } => json!({
+      "kind": "investigate",
+      "actor": actor.value(),
+      "position": position_value(position),
+    }),
     Command::Equip { actor, item } => {
       json!({ "kind": "equip", "actor": actor.value(), "item": item.value() })
     }
@@ -464,6 +470,12 @@ pub(crate) fn enemy_intent_summary(intent: Option<&PresentationEnemyIntent>) -> 
         target.value()
       )
     }
+    (Some(actor), Some(Command::Investigate { position, .. })) => format!(
+      "Intent: enemy {} investigates noise at ({}, {})",
+      actor.value(),
+      position.x(),
+      position.y()
+    ),
     (Some(actor), Some(command)) => format!("Intent: enemy {} {:?}", actor.value(), command),
     _ => "Intent: none".to_string(),
   }

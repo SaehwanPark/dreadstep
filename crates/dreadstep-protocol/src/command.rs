@@ -81,6 +81,13 @@ pub enum CommandRequest {
     /// The actor being pursued.
     target: ActorId,
   },
+  /// Move one step toward a one-use noise position heard by an enemy.
+  Investigate {
+    /// The enemy issuing the request.
+    actor: ActorId,
+    /// The exact noise position to approach.
+    position: Position,
+  },
   /// Equip one owned item, replacing any previous equipment.
   Equip {
     /// The actor issuing the request.
@@ -160,6 +167,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
       },
+      CommandRequest::Investigate { actor, position } => Self::Investigate {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        position: dreadstep_core::Position::new(position.x(), position.y()),
+      },
       CommandRequest::Equip { actor, item } => Self::Equip {
         actor: dreadstep_core::ActorId::new(actor.value()),
         item: dreadstep_core::ItemId::new(item.value()),
@@ -224,6 +235,10 @@ impl From<CoreCommand> for CommandRequest {
       CoreCommand::Chase { actor, target } => Self::Chase {
         actor: ActorId::new(actor.value()),
         target: ActorId::new(target.value()),
+      },
+      CoreCommand::Investigate { actor, position } => Self::Investigate {
+        actor: ActorId::new(actor.value()),
+        position: Position::new(position.x(), position.y()),
       },
       CoreCommand::Equip { actor, item } => Self::Equip {
         actor: ActorId::new(actor.value()),

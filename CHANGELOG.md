@@ -9,10 +9,18 @@ All notable contributor- and user-visible project changes are recorded here.
 - Split oversized core, protocol, and Bevy production sources into cohesive modules with
   crate-root re-exports, added an 800-line CI budget (excluding `*tests.rs` characterization
   suites), and compacted SPEC/ARCHITECTURE/README so verified slice history lives in this
-  changelog rather than duplicated writeups. Protocol remains v18; workspace version remains
+  changelog rather than duplicated writeups. Protocol is now v19; workspace version remains
   `0.0.0`.
 
 ### Added
+
+- Added deterministic kick-noise enemy investigation: a successful `Kick` arms a one-use,
+  Manhattan-radius-3 hearing target on each eligible living enemy; the scheduled enemy now
+  exposes and may consume an `Investigate` command between ranged attack and chase, moving with
+  the existing deterministic horizontal-first step and clearing hearing even on a blocked step.
+  Core digest/replay, protocol v19 snapshots and errors, headless parsing, and Bevy intent/journal
+  mappings are synchronized; generic sound propagation, falloff, persistence, and hearing
+  archetypes remain deferred.
 
 - Added deterministic enemy ranged intent: scheduled enemies now expose clear-cardinal
   `RangedAttack` candidates at distance 2–3 when ammunition and schedule capacity permit, while

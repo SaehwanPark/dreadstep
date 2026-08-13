@@ -145,6 +145,9 @@ impl WorldState {
       .get_mut(&actor_id)
       .ok_or(WorldError::UnknownActor(actor_id))?;
     actor.hit_points = hit_points;
+    if !hit_points.is_alive() {
+      actor.heard_noise = None;
+    }
     if !was_alive && hit_points.is_alive() {
       actor.ready_at = current_time;
     } else if was_alive
