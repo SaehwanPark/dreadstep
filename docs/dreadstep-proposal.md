@@ -1890,7 +1890,9 @@ breakable terrain, and kick-open door noise evidence are verified in the core si
 protocol, MCP, headless, and Bevy boundaries. The content boundary now also has a seeded 13×9
 corridor-floor generator with deterministic partition gaps and authored actor placement. Floor
 progression, richer procedural generation, damage/tool interactions, noise propagation, and enemy
-attraction remain future Milestone 5 work.
+attraction remain future Milestone 5 work. The visible desktop preparation path can now advance an
+opt-in procedural victory to the next seeded depth with `N`; persistent floor history and core-owned
+progression remain future work.
 
 ### Introduce a deliberately small interaction set
 

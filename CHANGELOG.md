@@ -8,8 +8,9 @@ All notable contributor- and user-visible project changes are recorded here.
 
 - Added opt-in desktop procedural-run selection: visible runs accept `--procedural --depth <u32>`,
   journal the generated scenario/depth, and preserve that choice across same-seed restart. Default
-  and display-free smoke startup remain on the authored item fixture; progression, protocol/MCP
-  selection, and procedural loot remain deferred.
+  and display-free smoke startup remain on the authored item fixture. Procedural visible victory can
+  advance with `N` to the next depth using the same seed and a fresh presentation/replay trace;
+  protocol/MCP selection and procedural loot remain deferred.
 
 - Added a deterministic seeded corridor-floor content preparation slice: `procedural_floor` and
   `procedural_floor_definition` generate a validated 13×9 floor with three single-gap wall

@@ -15,8 +15,10 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 ```
 
 The run journal names this scenario `procedural_floor` and records its depth. `Shift+R` restarts
-the same procedural seed/depth. The display-free `--smoke` path intentionally remains on the
-authored item fixture and its exhaustive command/event matrix.
+the same procedural seed/depth. After a procedural run reaches victory, `N` starts the next depth
+with the same seed and records `floor_advanced`; the transition resets the disposable presentation
+state and replay trace. The display-free `--smoke` path intentionally remains on the authored item
+fixture and its exhaustive command/event matrix.
 
 The first launch creates `dreadstep-logs/` and a create-new JSONL journal. The directory is
 ignored by Git. A checkout does not need local art: readable nearest-neighbor placeholder pixels
@@ -129,6 +131,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, healing/ammo results, and ground stack | item/reload events, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door, trap, breakable, noise, and actor blocking | distinct wall/cover/floor/door/trap/breakable/actor pixels | `movement_blocked`, `door_opened`, ordered `noise_created`/`trap_triggered`, and `breakable_broken` evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
+| Opt-in procedural floor and `N` advancement | seeded 13×9 floor and next-depth restart after victory | `run_started` depth and `floor_advanced` evidence | no; smoke keeps item fixture |
 | Camera and 640×360 logical window | one primary window, centered camera | startup configuration | startup path |
 | Optional art fallback | per-family placeholder | warning/outcome records | no display required |
 
@@ -158,7 +161,7 @@ core variant fail desktop-feature compilation or smoke coverage until it is docu
 - floor, cover, wall, door, trap, breakable, player, enemy, dead actor, and ground item placeholders are visibly distinct;
 - radius-3 field of view follows the controlled actor, hides distant nodes without removing their
   typed mirrors, and keeps adjacent wall edges readable;
-- movement, wait, adjacent door interaction, breakable terrain, trap triggering, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, and enemy delay
+- movement, wait, adjacent door interaction, breakable terrain, trap triggering, combat, inventory selection, equip/unequip, consume, pickup, drop, reload, restart, procedural `N` floor advancement after victory, and enemy delay
   work as documented;
 - HUD shows HP/position, scheduler time/turn, inventory, controls, eight recent messages, status,
   and journal path;

@@ -1212,6 +1212,17 @@ fn desktop_input(
     }
     return;
   }
+  if keys.just_pressed(KeyCode::KeyN) {
+    if matches!(session.status, DesktopStatus::Victory) && session.procedural {
+      let _ = record_session(
+        &mut session,
+        "input_request",
+        json!({ "key": "KeyN", "action": "next_floor" }),
+      );
+      let _ = advance_procedural_floor(&mut runtime, &mut session);
+    }
+    return;
+  }
   if keys.just_pressed(KeyCode::Tab) {
     let reverse = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
     select_inventory_item(&runtime, &mut session, reverse);
@@ -1283,6 +1294,44 @@ fn desktop_input(
 fn restart_requested(keys: &ButtonInput<KeyCode>) -> bool {
   keys.just_pressed(KeyCode::KeyR)
     && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight))
+}
+
+fn advance_procedural_floor(
+  runtime: &mut PresentationRuntime,
+  session: &mut DesktopSession,
+) -> bool {
+  if !session.procedural || !matches!(session.status, DesktopStatus::Victory) {
+    return false;
+  }
+  let Some(next_depth) = session.depth.checked_add(1) else {
+    session.fault("procedural floor depth overflow");
+    return false;
+  };
+  let next_runtime = match PresentationRuntime::start_procedural_run(session.seed, next_depth) {
+    Ok(runtime) => runtime,
+    Err(error) => {
+      session.fault(format!("procedural floor advance failed: {error}"));
+      return false;
+    }
+  };
+  let payload = state_payload(
+    &next_runtime,
+    json!({
+      "seed": session.seed,
+      "scenario": "procedural_floor",
+      "depth": next_depth,
+    }),
+  );
+  *runtime = next_runtime;
+  session.depth = next_depth;
+  session.status = DesktopStatus::Running;
+  session.messages.clear();
+  session.selected_item = None;
+  session.enemy_timer.reset();
+  session.command_kinds.clear();
+  session.event_kinds.clear();
+  session.terminal_recorded = false;
+  record_session(session, "floor_advanced", payload)
 }
 
 fn select_inventory_item(
@@ -2465,7 +2514,7 @@ fn desktop_update_hud(
       .collect::<Vec<_>>()
       .join("\n")
   };
-  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart\nEsc/close quit";
+  let controls = "Arrows/WASD move  Space/Enter wait\nF attack  G ranged  Tab select  E equip  P pickup  X drop\nQ unequip  U consume  R reload  Shift+R restart  N next procedural floor after victory\nEsc/close quit";
   let journal = format!(
     "{}\nseed {}",
     journal_path(&session.journal).display(),
@@ -2818,6 +2867,110 @@ mod tests {
     assert!(!restart_requested(&keys));
     keys.press(KeyCode::ShiftLeft);
     assert!(restart_requested(&keys));
+  }
+
+  #[test]
+  fn procedural_victory_can_advance_to_the_next_seeded_floor() {
+    let directory = test_directory("procedural-floor-advance");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut runtime =
+      PresentationRuntime::start_procedural_run(7, 2).expect("procedural floor should validate");
+    let before_digest = runtime.snapshot().digest();
+    let mut session = DesktopSession::new_with_scenario(7, true, 2, journal.clone());
+    session.status = DesktopStatus::Victory;
+
+    assert!(advance_procedural_floor(&mut runtime, &mut session));
+    let expected = PresentationRuntime::start_procedural_run(7, 3)
+      .expect("next procedural floor should validate");
+    assert_eq!(session.status, DesktopStatus::Running);
+    assert_eq!(session.seed, 7);
+    assert_eq!(session.depth, 3);
+    assert_ne!(runtime.snapshot().digest(), before_digest);
+    assert_eq!(runtime.snapshot().digest(), expected.snapshot().digest());
+    assert_eq!(runtime.replay_digest(), expected.replay_digest());
+    let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
+    assert!(journal_text.contains("\"kind\":\"floor_advanced\""));
+    assert!(journal_text.contains("\"depth\":3"));
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn procedural_floor_advance_is_guarded_to_victory_and_procedural_sessions() {
+    let directory = test_directory("procedural-floor-advance-guards");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut runtime =
+      PresentationRuntime::start_procedural_run(7, 2).expect("procedural floor should validate");
+    let original_digest = runtime.snapshot().digest();
+    let mut running = DesktopSession::new_with_scenario(7, true, 2, journal.clone());
+    assert!(!advance_procedural_floor(&mut runtime, &mut running));
+    assert_eq!(runtime.snapshot().digest(), original_digest);
+    assert_eq!(running.depth, 2);
+
+    let mut item_runtime = PresentationRuntime::start_item_run(7).expect("item run validates");
+    let item_digest = item_runtime.snapshot().digest();
+    let mut item_session = DesktopSession::new(7, journal.clone());
+    item_session.status = DesktopStatus::Victory;
+    assert!(!advance_procedural_floor(
+      &mut item_runtime,
+      &mut item_session
+    ));
+    assert_eq!(item_runtime.snapshot().digest(), item_digest);
+    assert_eq!(item_session.depth, 1);
+
+    let mut overflow_runtime =
+      PresentationRuntime::start_procedural_run(7, 1).expect("procedural floor should validate");
+    let mut overflow_session =
+      DesktopSession::new_with_scenario(7, true, u32::MAX, journal.clone());
+    overflow_session.status = DesktopStatus::Victory;
+    assert!(!advance_procedural_floor(
+      &mut overflow_runtime,
+      &mut overflow_session
+    ));
+    assert!(matches!(overflow_session.status, DesktopStatus::Faulted(_)));
+    let _ = fs::remove_dir_all(directory);
+  }
+
+  #[test]
+  fn next_floor_key_dispatches_only_from_procedural_victory() {
+    let directory = test_directory("procedural-floor-key");
+    let _ = fs::create_dir_all(&directory);
+    let journal = Arc::new(Mutex::new(
+      Journal::open(&directory).expect("journal opens"),
+    ));
+    let mut app = App::new();
+    app.add_message::<AppExit>();
+    app.insert_resource(ButtonInput::<KeyCode>::default());
+    app.insert_resource(
+      PresentationRuntime::start_procedural_run(7, 2).expect("procedural floor should validate"),
+    );
+    let mut session = DesktopSession::new_with_scenario(7, true, 2, journal.clone());
+    session.status = DesktopStatus::Victory;
+    app.insert_resource(session);
+    app.add_systems(Update, desktop_input);
+    app
+      .world_mut()
+      .resource_mut::<ButtonInput<KeyCode>>()
+      .press(KeyCode::KeyN);
+    app.update();
+
+    let session = app.world().resource::<DesktopSession>();
+    assert_eq!(session.status, DesktopStatus::Running);
+    assert_eq!(session.depth, 3);
+    assert_eq!(session.seed, 7);
+    let runtime = app.world().resource::<PresentationRuntime>();
+    let expected = PresentationRuntime::start_procedural_run(7, 3)
+      .expect("next procedural floor should validate");
+    assert_eq!(runtime.snapshot().digest(), expected.snapshot().digest());
+    let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
+    assert!(journal_text.contains("\"action\":\"next_floor\""));
+    assert!(journal_text.contains("\"kind\":\"floor_advanced\""));
+    let _ = fs::remove_dir_all(directory);
   }
 
   #[test]

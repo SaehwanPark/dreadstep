@@ -37,8 +37,9 @@ the artifact is not a playback-compatible save file.
 The content boundary now also exposes a deterministic seeded corridor-floor generator for procedural
 dungeon preparation. Identical seed/depth inputs produce the same validated 13×9 floor and actor
 roster; every generated walkable tile is reachable from the player; different inputs vary partition
-gaps or authored enemy durability. The desktop showcase still
-uses the stable authored starter floor until floor progression and presentation selection are designed.
+gaps or authored enemy durability. The visible client can opt into that floor with `--procedural`;
+after victory, `N` advances to the next depth with the same seed. Default and display-free smoke
+startup still use the stable authored item fixture.
 
 - Verified foundations
   - Deterministic core rules, replay evidence, the headless CLI, protocol/MCP observation and
@@ -147,8 +148,8 @@ uses the stable authored starter floor until floor progression and presentation 
     and mastering remain deferred.
 - Still deferred
   - production texture/media adoption, anchor policy beyond centering, animation playback,
-    production audio assets/mastering/music, multiple floors, and richer gameplay item semantics such as
-    effects, modifiers, and additional slots.
+    production audio assets/mastering/music, core-owned floor history/progression, and richer gameplay
+    item semantics such as effects, modifiers, and additional slots.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
@@ -262,7 +263,8 @@ cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
 ```
 
 The default and `--smoke` paths retain the authored item fixture so inventory and command coverage
-remain stable.
+remain stable. In an opt-in procedural visible run, press `N` after victory to start the next
+deterministic depth with the same seed; `Shift+R` restarts the current depth.
 
 Use `--smoke` for the display-free deterministic sequence and inspect the flushed JSONL file in
 `dreadstep-logs/` or the supplied `--log-dir`.
