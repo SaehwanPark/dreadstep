@@ -2,7 +2,34 @@
 
 Read this file before implementation and again before final review. Record only verified,
 recurring traps that are not already obvious from code, tests, or canonical documentation.
-Update an existing lesson instead of adding a duplicate.
+Update an existing lesson instead of adding a duplicate. Package ownership lives in
+[`ARCHITECTURE.md`](ARCHITECTURE.md), not here.
+
+## Index
+
+- Content and procedural floors: connectivity checks; opt-in desktop startup; keep progression
+  at the presentation boundary until core owns it.
+- Core outcomes, replay, inventory, reach, ranged cost/ammo, and legal discovery: derive
+  terminals once; export from the accepted trace; share predicates between discovery and
+  execution.
+- Adapter goldens and public commands: refresh snapshots after digest or command-set changes;
+  keep protocol/control reconciliation in one slice.
+- Bevy presentation: keep engine features at the boundary; key ECS mirrors by domain identity;
+  snapshot before exclusive projection; never order input from a button set; finalize journals
+  before `App::run` consumes the world.
+- Items and environment: opaque ids vs catalog membership; atomic tester transfers; exclusive
+  consumable results; typed environmental commands; reuse movement as the trap trigger.
+- Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
+  keep compiling without import-path churn.
+
+## 2026-08-13 — Keep crate-root re-exports when splitting production modules
+
+- Context: Moving types out of a crate root made sibling modules lose private-field access and
+  broke `use dreadstep_*::{...}` characterization tests even though behavior was unchanged.
+- Resolution: Re-export the previous public surface from `lib.rs`, mark intra-crate fields and
+  helpers `pub(crate)`, and leave integration-test import paths alone.
+- Prevention: After a split, compile `--all-targets` before touching golden command order,
+  digests, or smoke matrices.
 
 ## 2026-08-12 — Test procedural content connectivity at the authored boundary
 

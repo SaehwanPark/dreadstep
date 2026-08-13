@@ -4,6 +4,14 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ## Unreleased
 
+### Changed
+
+- Split oversized core, protocol, and Bevy production sources into cohesive modules with
+  crate-root re-exports, added an 800-line CI budget (excluding `*tests.rs` characterization
+  suites), and compacted SPEC/ARCHITECTURE/README so verified slice history lives in this
+  changelog rather than duplicated writeups. Protocol remains v18; workspace version remains
+  `0.0.0`.
+
 ### Added
 
 - Added deterministic enemy ranged intent: scheduled enemies now expose clear-cardinal
