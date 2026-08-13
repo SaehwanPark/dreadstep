@@ -2030,7 +2030,7 @@ fn drive_smoke_enemies(runtime: &mut PresentationRuntime, session: &mut DesktopS
         .iter()
         .find(|record| record.id() == PLAYER)
         .is_some_and(|record| record.hit_points().value() <= 3);
-      if player_is_low && matches!(command, Command::Attack { .. }) {
+      if player_is_low && matches!(command, Command::Attack { .. } | Command::RangedAttack { .. }) {
         legal
           .iter()
           .copied()
