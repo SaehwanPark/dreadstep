@@ -3878,8 +3878,9 @@ Out of scope:
 
 ### Milestone 5 preparation slice: opt-in desktop procedural run
 
-- Status: active
+- Status: verified
 - Started: 2026-08-12
+- Completed: 2026-08-12
 
 Expose the validated seeded floor through the desktop launch boundary without replacing the stable
 item-bearing smoke fixture. `--procedural` selects the generated floor for visible runs and
@@ -3904,6 +3905,17 @@ Verification target:
 - Desktop-feature tests, `scripts/verify.sh`, formatting, `git diff --check`, and a semantic review
   pass; visual playtesting remains a manual host checklist because the new mode is an opt-in startup
   path and the display-free smoke contract intentionally stays on the authored fixture.
+
+Verification evidence:
+
+- `cargo test -p dreadstep-bevy --lib --all-features --locked` passes the startup-selection and
+  item-fixture coverage; `cargo test -p dreadstep-bevy --test start_run --locked` passes the
+  procedural constructor parity checks.
+- The display-free subprocess smoke path exits successfully with `--smoke --procedural --depth 4`
+  while retaining the authored item fixture and `starter_item_floor` journal evidence; visible
+  procedural startup records `procedural_floor` and its depth.
+- `scripts/verify.sh`, formatting, `git diff --check`, and the focused semantic review pass on PR
+  #109, merged as `ce9ccc9`; visual playtesting remains the documented host checklist item.
 
 Out of scope:
 
