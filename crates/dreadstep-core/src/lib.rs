@@ -8,6 +8,7 @@
 
 mod actor;
 mod command;
+mod enemy_behavior;
 mod error;
 mod event;
 mod hit_points;
@@ -20,6 +21,7 @@ mod world;
 
 pub use actor::{ActionCost, ActionTime, Actor, ActorKind, Damage, MeleeReach, RunOutcome};
 pub use command::Command;
+pub use enemy_behavior::EnemyBehavior;
 pub use error::{ActionResult, CommandError, WorldError};
 pub use event::{BlockReason, Event};
 pub use hit_points::HitPoints;

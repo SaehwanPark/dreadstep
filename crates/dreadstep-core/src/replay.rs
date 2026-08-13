@@ -163,6 +163,11 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
       hasher.write_u32(item.value());
       hasher.write_u32(target.value());
     }
+    Command::Retreat { actor, target } => {
+      hasher.write_u8(17);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(target.value());
+    }
     Command::Chase { actor, target } => {
       hasher.write_u8(4);
       hasher.write_u32(actor.value());

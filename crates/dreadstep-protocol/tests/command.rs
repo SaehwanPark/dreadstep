@@ -44,6 +44,10 @@ fn every_request_variant_round_trips_through_core() {
       item: ItemId::new(9),
       target: ActorId::new(3),
     },
+    CommandRequest::Retreat {
+      actor: ActorId::new(2),
+      target: ActorId::new(1),
+    },
     CommandRequest::Chase {
       actor: ActorId::new(2),
       target: ActorId::new(1),
@@ -109,6 +113,10 @@ fn every_core_command_round_trips_through_protocol() {
       actor: CoreActorId::new(1),
       item: CoreItemId::new(9),
       target: CoreActorId::new(3),
+    },
+    Command::Retreat {
+      actor: CoreActorId::new(2),
+      target: CoreActorId::new(1),
     },
     Command::Chase {
       actor: CoreActorId::new(2),

@@ -5,7 +5,9 @@ use dreadstep_bevy::{
   PresentationEnemyIntent, PresentationInput, PresentationPlugin, PresentationRuntime,
   PresentationState,
 };
-use dreadstep_core::{Actor, ActorId, ActorKind, Command, GridMap, Position, Tile, WorldState};
+use dreadstep_core::{
+  Actor, ActorId, ActorKind, Command, EnemyBehavior, GridMap, Position, Tile, WorldState,
+};
 
 fn intent_app() -> App {
   let mut app = App::new();
@@ -141,6 +143,40 @@ fn scheduled_adjacent_enemy_intent_prefers_attack_before_chase() {
       target: ActorId::new(2),
     })
   );
+}
+
+#[test]
+fn scheduled_adjacent_kiter_intent_prefers_core_retreat() {
+  let world = WorldState::new(
+    GridMap::filled(4, 3, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::with_enemy_behavior(ActorId::new(1), Position::new(1, 1), EnemyBehavior::Kiter),
+      Actor::new(ActorId::new(2), ActorKind::Player, Position::new(2, 1)),
+    ],
+  )
+  .expect("adjacent kiter world validates");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(ActorId::new(2)));
+  app.insert_resource(PresentationEnemyIntent::new());
+  app.add_plugins(PresentationPlugin);
+  let before_snapshot = app.world().resource::<PresentationRuntime>().snapshot();
+  let before_replay = app
+    .world()
+    .resource::<PresentationRuntime>()
+    .replay_digest();
+  app.update();
+
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().command(),
+    Some(Command::Retreat {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+  );
+  let runtime = app.world().resource::<PresentationRuntime>();
+  assert_eq!(runtime.snapshot(), before_snapshot);
+  assert_eq!(runtime.replay_digest(), before_replay);
 }
 
 #[test]

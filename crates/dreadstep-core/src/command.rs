@@ -64,6 +64,13 @@ pub enum Command {
     /// The living actor being targeted.
     target: ActorId,
   },
+  /// Move an authored kiter one tile away from an adjacent living target.
+  Retreat {
+    /// The kiter issuing the retreat.
+    actor: ActorId,
+    /// The living actor whose adjacency triggered the retreat.
+    target: ActorId,
+  },
   /// Move an enemy one deterministic step toward a living target.
   Chase {
     /// The enemy issuing the chase command.
@@ -129,6 +136,7 @@ impl Command {
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
       | Self::Throw { actor, .. }
+      | Self::Retreat { actor, .. }
       | Self::Chase { actor, .. }
       | Self::Investigate { actor, .. }
       | Self::Equip { actor, .. }

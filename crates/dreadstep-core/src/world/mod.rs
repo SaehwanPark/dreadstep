@@ -6,8 +6,9 @@
 use std::collections::BTreeMap;
 
 use crate::{
-  ActionCost, ActionResult, ActionTime, Actor, ActorId, ActorKind, Command, CommandError, Event,
-  GridMap, GroundItemStack, Position, RunOutcome, StateDigest, StatusKind, Tile, WorldError,
+  ActionCost, ActionResult, ActionTime, Actor, ActorId, ActorKind, Command, CommandError,
+  EnemyBehavior, Event, GridMap, GroundItemStack, Position, RunOutcome, StateDigest, StatusKind,
+  Tile, WorldError,
   replay::{StableHasher, hash_equipment_effect, hash_item_effect, hash_throwable_effect},
 };
 
@@ -159,7 +160,7 @@ impl WorldState {
   /// Returns a stable digest of all semantic world state.
   ///
   /// The digest includes map dimensions and terrain, current action time, and every actor's
-  /// identity, kind, life, position, current and maximum hit points, ranged ammunition, ready
+  /// identity, kind, enemy behavior, life, position, current and maximum hit points, ranged ammunition, ready
   /// time, optional one-use hearing target, ordered inventory item identities, definition
   /// references and effects, optional equipped item identity, and ordered ground-item stacks. It
   /// is deterministic regression evidence, not a cryptographic integrity check or serialized state
@@ -167,7 +168,7 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V6");
+    hasher.write_bytes(b"DREADSTEP-STATE-V7");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -188,6 +189,10 @@ impl WorldState {
       hasher.write_u8(match actor.kind() {
         ActorKind::Player => 1,
         ActorKind::Enemy => 2,
+      });
+      hasher.write_u8(match actor.enemy_behavior() {
+        EnemyBehavior::Pursuer => 1,
+        EnemyBehavior::Kiter => 2,
       });
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
@@ -369,6 +374,7 @@ impl WorldState {
       Command::Attack { target, .. } => self.attack(actor_id, target)?,
       Command::RangedAttack { target, .. } => self.ranged_attack(actor_id, target)?,
       Command::Throw { item, target, .. } => self.throw_item(actor_id, item, target)?,
+      Command::Retreat { target, .. } => self.retreat(actor_id, target)?,
       Command::Chase { target, .. } => {
         let direction = self.chase_direction(actor_id, target)?;
         self.move_actor(actor_id, direction)?

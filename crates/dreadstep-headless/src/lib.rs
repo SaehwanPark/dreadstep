@@ -283,6 +283,10 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
       item: parse_item(Some(item))?,
       target: parse_actor(Some(target))?,
     }),
+    ["retreat", actor, target] => Ok(Command::Retreat {
+      actor: parse_actor(Some(actor))?,
+      target: parse_actor(Some(target))?,
+    }),
     ["chase", actor, target] => Ok(Command::Chase {
       actor: parse_actor(Some(actor))?,
       target: parse_actor(Some(target))?,
@@ -620,6 +624,25 @@ mod tests {
   }
 
   #[test]
+  fn parses_retreat_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "retreat:2:1".to_owned(),
+    ])
+    .expect("retreat command should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[Command::Retreat {
+        actor: ActorId::new(2),
+        target: ActorId::new(1),
+      }]
+    );
+  }
+
+  #[test]
   fn rejects_duplicate_and_unknown_arguments() {
     assert_eq!(
       parse_args([
@@ -689,7 +712,7 @@ event=ItemEquipped { actor: ActorId(1), item: ItemId(103) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 outcome=in_progress\n\
-digest=12528403202020012428\n"
+digest=13796731742059069417\n"
     );
   }
 

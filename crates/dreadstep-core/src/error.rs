@@ -240,6 +240,19 @@ pub enum CommandError {
   },
   /// An enemy cannot chase itself.
   CannotChaseSelf(ActorId),
+  /// A retreat request must come from a kiter enemy.
+  RetreatRequiresKiter(ActorId),
+  /// A kiter cannot retreat from itself.
+  CannotRetreatSelf(ActorId),
+  /// The retreat target is not adjacent to the kiter.
+  RetreatTargetNotAdjacent {
+    /// The kiter issuing the retreat.
+    actor: ActorId,
+    /// The actor that should be adjacent.
+    target: ActorId,
+  },
+  /// No walkable unoccupied tile increases distance from the retreat target.
+  RetreatNoEscape(ActorId),
   /// A noise investigation request must come from an enemy actor.
   InvestigateRequiresEnemy(ActorId),
   /// The enemy has no pending one-use noise target.
@@ -423,6 +436,31 @@ impl fmt::Display for CommandError {
       ),
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
+      }
+      Self::RetreatRequiresKiter(actor) => write!(
+        formatter,
+        "actor {} cannot retreat because only kiters may retreat",
+        actor.value()
+      ),
+      Self::CannotRetreatSelf(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot retreat from itself",
+          actor.value()
+        )
+      }
+      Self::RetreatTargetNotAdjacent { actor, target } => write!(
+        formatter,
+        "kiter {} cannot retreat from non-adjacent target {}",
+        actor.value(),
+        target.value()
+      ),
+      Self::RetreatNoEscape(actor) => {
+        write!(
+          formatter,
+          "kiter {} has no valid retreat tile",
+          actor.value()
+        )
       }
       Self::InvestigateRequiresEnemy(actor) => write!(
         formatter,

@@ -1021,6 +1021,25 @@ fn hud_intent_summary_reports_the_exact_chase_target() {
 }
 
 #[test]
+fn retreat_command_and_intent_are_readable_in_desktop_diagnostics() {
+  let command = Command::Retreat {
+    actor: ActorId::new(2),
+    target: PLAYER,
+  };
+  assert_eq!(
+    command_value(command),
+    json!({ "kind": "retreat", "actor": 2, "target": 1 })
+  );
+  let mut intent = PresentationEnemyIntent::new();
+  intent.actor = Some(ActorId::new(2));
+  intent.command = Some(command);
+  assert_eq!(
+    enemy_intent_summary(Some(&intent)),
+    "Intent: enemy 2 retreats from actor 1"
+  );
+}
+
+#[test]
 fn hud_intent_summary_has_missing_and_generic_command_fallbacks() {
   assert_eq!(enemy_intent_summary(None), "Intent unavailable");
   let intent = PresentationEnemyIntent {

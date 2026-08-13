@@ -1,6 +1,6 @@
 //! Tester scenario values converted into core maps and actors.
 
-use crate::{ActorId, ActorKind, HitPoints, MeleeReach, Position};
+use crate::{ActorId, ActorKind, EnemyBehavior, HitPoints, MeleeReach, Position};
 
 /// Protocol terrain for tester scenario construction.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -29,6 +29,7 @@ pub struct ScenarioActor {
   position: Position,
   hit_points: HitPoints,
   melee_reach: MeleeReach,
+  behavior: EnemyBehavior,
 }
 
 impl ScenarioActor {
@@ -52,12 +53,33 @@ impl ScenarioActor {
     hit_points: HitPoints,
     melee_reach: MeleeReach,
   ) -> Self {
+    Self::with_melee_reach_and_behavior(
+      id,
+      kind,
+      position,
+      hit_points,
+      melee_reach,
+      EnemyBehavior::Pursuer,
+    )
+  }
+
+  /// Creates one initial actor record with explicit melee reach and enemy behavior.
+  #[must_use]
+  pub const fn with_melee_reach_and_behavior(
+    id: ActorId,
+    kind: ActorKind,
+    position: Position,
+    hit_points: HitPoints,
+    melee_reach: MeleeReach,
+    behavior: EnemyBehavior,
+  ) -> Self {
     Self {
       id,
       kind,
       position,
       hit_points,
       melee_reach,
+      behavior,
     }
   }
 
@@ -89,6 +111,12 @@ impl ScenarioActor {
   #[must_use]
   pub const fn melee_reach(self) -> MeleeReach {
     self.melee_reach
+  }
+
+  /// Returns the authored enemy behavior policy.
+  #[must_use]
+  pub const fn behavior(self) -> EnemyBehavior {
+    self.behavior
   }
 }
 

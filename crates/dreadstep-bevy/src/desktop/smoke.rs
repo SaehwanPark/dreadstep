@@ -2,7 +2,7 @@
 
 use std::process::ExitCode;
 
-use dreadstep_core::{Actor, Command, Direction, Position};
+use dreadstep_core::{Actor, ActorId, Command, Direction, Position};
 use serde_json::json;
 
 use crate::PresentationRuntime;
@@ -58,6 +58,23 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       direction: Direction::North,
     },
   );
+  let kiter = ActorId::new(4);
+  if let Err(error) = runtime.prepare_smoke_kiter(kiter) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "kiter_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  if let Err(error) = runtime.prepare_smoke_teleport(kiter, Position::new(2, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "kiter_target_fixture_setup", "error": error.to_string() }),
+    );
+  }
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
   failed |= !submit_command(
     &mut runtime,
@@ -69,6 +86,14 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_teleport(kiter, Position::new(5, 3)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "kiter_cleanup_fixture_setup", "error": error.to_string() }),
+    );
+  }
   if let Err(error) = runtime.prepare_smoke_teleport(RANGED_TARGET, Position::new(3, 1)) {
     failed = true;
     let _ = record_session(

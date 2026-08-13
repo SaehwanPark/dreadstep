@@ -7,8 +7,8 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::{
-  ActionTime, ActorId, ActorKind, GroundItemSnapshot, HitPoints, ItemId, ItemSnapshot, MeleeReach,
-  PROTOCOL_VERSION, Position, StateDigest, StatusSnapshot,
+  ActionTime, ActorId, ActorKind, EnemyBehavior, GroundItemSnapshot, HitPoints, ItemId,
+  ItemSnapshot, MeleeReach, PROTOCOL_VERSION, Position, StateDigest, StatusSnapshot,
 };
 
 /// Protocol life state for an actor record.
@@ -48,6 +48,7 @@ impl From<CoreRunOutcome> for RunOutcome {
 pub struct ActorSnapshot {
   id: ActorId,
   kind: ActorKind,
+  behavior: EnemyBehavior,
   position: Position,
   hit_points: HitPoints,
   life: LifeState,
@@ -70,6 +71,7 @@ impl ActorSnapshot {
         CoreActorKind::Player => ActorKind::Player,
         CoreActorKind::Enemy => ActorKind::Enemy,
       },
+      behavior: actor.enemy_behavior().into(),
       position: Position::new(actor.position().x(), actor.position().y()),
       hit_points: HitPoints::new(actor.hit_points().value()),
       life: if actor.is_alive() {
@@ -108,6 +110,12 @@ impl ActorSnapshot {
   #[must_use]
   pub const fn kind(&self) -> ActorKind {
     self.kind
+  }
+
+  /// Returns the authored enemy behavior policy.
+  #[must_use]
+  pub const fn behavior(&self) -> EnemyBehavior {
+    self.behavior
   }
 
   /// Returns the actor position.

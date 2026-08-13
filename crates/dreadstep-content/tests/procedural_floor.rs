@@ -1,7 +1,7 @@
 //! Seeded procedural-floor content invariants.
 
 use dreadstep_content::{procedural_floor, procedural_floor_definition};
-use dreadstep_core::{ActorId, ActorKind, Position, Tile};
+use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, Position, Tile};
 
 #[test]
 fn identical_seed_and_depth_produce_identical_valid_worlds() {
@@ -96,6 +96,7 @@ fn generated_actor_roster_is_stable_and_walkable() {
       .iter()
       .all(|actor| world.map().is_walkable(actor.position()))
   );
+  assert_eq!(actors[3].enemy_behavior(), EnemyBehavior::Kiter);
   assert_eq!(
     actors
       .iter()

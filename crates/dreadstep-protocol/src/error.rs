@@ -410,6 +410,21 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::CannotChaseSelf(actor) => {
         Self::CannotChaseSelf(ActorId::new(actor.value()))
       }
+      CoreCommandError::RetreatRequiresKiter(actor) => {
+        Self::RetreatRequiresKiter(ActorId::new(actor.value()))
+      }
+      CoreCommandError::CannotRetreatSelf(actor) => {
+        Self::CannotRetreatSelf(ActorId::new(actor.value()))
+      }
+      CoreCommandError::RetreatTargetNotAdjacent { actor, target } => {
+        Self::RetreatTargetNotAdjacent {
+          actor: ActorId::new(actor.value()),
+          target: ActorId::new(target.value()),
+        }
+      }
+      CoreCommandError::RetreatNoEscape(actor) => {
+        Self::RetreatNoEscape(ActorId::new(actor.value()))
+      }
       CoreCommandError::InvestigateRequiresEnemy(actor) => {
         Self::InvestigateRequiresEnemy(ActorId::new(actor.value()))
       }
@@ -573,6 +588,31 @@ impl fmt::Display for CommandError {
       ),
       Self::CannotChaseSelf(actor) => {
         write!(formatter, "actor {} cannot chase itself", actor.value())
+      }
+      Self::RetreatRequiresKiter(actor) => write!(
+        formatter,
+        "actor {} cannot retreat because only kiters may retreat",
+        actor.value()
+      ),
+      Self::CannotRetreatSelf(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot retreat from itself",
+          actor.value()
+        )
+      }
+      Self::RetreatTargetNotAdjacent { actor, target } => write!(
+        formatter,
+        "kiter {} cannot retreat from non-adjacent target {}",
+        actor.value(),
+        target.value()
+      ),
+      Self::RetreatNoEscape(actor) => {
+        write!(
+          formatter,
+          "kiter {} has no valid retreat tile",
+          actor.value()
+        )
       }
       Self::InvestigateRequiresEnemy(actor) => write!(
         formatter,

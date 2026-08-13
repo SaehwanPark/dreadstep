@@ -110,6 +110,18 @@ fn throw_error_maps_to_a_typed_protocol_variant_and_stable_json() {
 }
 
 #[test]
+fn retreat_error_has_a_tagged_json_and_schema_contract() {
+  let error = CommandError::RetreatNoEscape(ActorId::new(2));
+  assert_eq!(
+    serde_json::to_value(error).expect("error should serialize"),
+    serde_json::json!({ "retreat_no_escape": 2 })
+  );
+  let schema = schemars::schema_for!(CommandError);
+  let schema_json = serde_json::to_value(schema).expect("schema should serialize");
+  assert!(schema_json.to_string().contains("retreat_no_escape"));
+}
+
+#[test]
 fn non_throwable_item_error_is_typed() {
   assert_eq!(
     CommandError::from(CoreCommandError::ItemNotThrowable {

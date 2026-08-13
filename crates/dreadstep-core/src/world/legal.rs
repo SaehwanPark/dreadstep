@@ -3,7 +3,9 @@
 //! These builders exist only to keep discovery order explicit and readable. Player and enemy
 //! combat policies stay separate because their advertised command families differ.
 
-use crate::{ActionCost, Actor, ActorId, ActorKind, Command, Direction, Tile, WorldState};
+use crate::{
+  ActionCost, Actor, ActorId, ActorKind, Command, Direction, EnemyBehavior, Tile, WorldState,
+};
 
 impl WorldState {
   pub(super) fn push_standard_moves(actor_id: ActorId, commands: &mut Vec<Command>) {
@@ -119,16 +121,28 @@ impl WorldState {
     living_targets: &[&Actor],
     commands: &mut Vec<Command>,
   ) {
-    for target in living_targets.iter().copied().filter(|target| {
-      Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
-    }) {
-      commands.push(Command::Attack {
-        actor: actor_id,
-        target: target.id(),
-      });
+    if actor.enemy_behavior() == EnemyBehavior::Kiter {
+      for target in living_targets {
+        if Self::manhattan_distance(actor.position(), target.position()) == 1
+          && self.retreat_direction(actor_id, target.id()).is_ok()
+        {
+          commands.push(Command::Retreat {
+            actor: actor_id,
+            target: target.id(),
+          });
+        }
+      }
     }
-    for target in living_targets.iter().copied().filter(|target| {
-      !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
+    for target in living_targets {
+      if Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach()) {
+        commands.push(Command::Attack {
+          actor: actor_id,
+          target: target.id(),
+        });
+      }
+    }
+    for target in living_targets {
+      if !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
         && Self::is_ranged_distance(actor.position(), target.position())
         && self.has_ranged_line_of_sight(actor.position(), target.position())
         && actor.ranged_ammo() > 0
@@ -136,11 +150,12 @@ impl WorldState {
           .action_cost(actor_id, ActionCost::RANGED)
           .and_then(|cost| actor.ready_at().checked_add(cost))
           .is_some()
-    }) {
-      commands.push(Command::RangedAttack {
-        actor: actor_id,
-        target: target.id(),
-      });
+      {
+        commands.push(Command::RangedAttack {
+          actor: actor_id,
+          target: target.id(),
+        });
+      }
     }
     if let Some(position) = actor.heard_noise()
       && actor.position() != position
@@ -150,13 +165,13 @@ impl WorldState {
         position,
       });
     }
-    for target in living_targets.iter().copied().filter(|target| {
-      !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach())
-    }) {
-      commands.push(Command::Chase {
-        actor: actor_id,
-        target: target.id(),
-      });
+    for target in living_targets {
+      if !Self::is_melee_distance(actor.position(), target.position(), actor.melee_reach()) {
+        commands.push(Command::Chase {
+          actor: actor_id,
+          target: target.id(),
+        });
+      }
     }
   }
 

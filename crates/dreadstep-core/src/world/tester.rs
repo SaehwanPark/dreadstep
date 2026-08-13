@@ -3,9 +3,26 @@
 //! These operations are deterministic and atomic, but they do not record accepted player
 //! history. Protocol and MCP only convert requests into these methods.
 
-use crate::{Actor, ActorId, HitPoints, Position, WorldError, WorldState};
+use crate::{Actor, ActorId, EnemyBehavior, HitPoints, Position, WorldError, WorldState};
 
 impl WorldState {
+  /// Sets an authored enemy behavior for an explicit presentation/tester fixture.
+  ///
+  /// This mutation does not consume time or enter replay evidence. Player-facing behavior still
+  /// goes through the semantic command projection; the method exists only for deterministic
+  /// adapter smoke fixtures that need to place a closed archetype into an existing world.
+  pub fn set_enemy_behavior(
+    &mut self,
+    actor_id: ActorId,
+    behavior: EnemyBehavior,
+  ) -> Option<EnemyBehavior> {
+    let actor = self.actors.get_mut(&actor_id)?;
+    if actor.kind() != crate::ActorKind::Enemy {
+      return None;
+    }
+    Some(actor.set_enemy_behavior(behavior))
+  }
+
   /// Validates and inserts one living actor for an explicit tester operation.
   ///
   /// Dead actor records do not occupy tiles, so a new living actor may use a position retained by

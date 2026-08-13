@@ -600,3 +600,19 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Test a Chilled thrower and target together, assert the thrower pays the extra tick and
   the target retains two actions, and defer splash, misses, projectile simulation, and generic
   throw rules until each has its own typed contract.
+
+## Keep enemy archetype selection core-owned and spatially bounded
+
+- Context: The first retreating enemy should create a tactical difference without introducing a
+  general behavior tree, pathfinding, or adapter-owned AI policy.
+- Symptom: Letting Bevy infer a Kiter from proximity can diverge from MCP/headless legal actions,
+  while an unconstrained retreat may oscillate or choose a process-dependent tile.
+- Cause: Enemy behavior is semantic actor state, and movement legality already knows terrain and
+  living occupancy; presentation should only select the exact command the core advertises.
+- Resolution: Store a closed `EnemyBehavior` on the actor, advertise `Retreat` only for a scheduled
+  Kiter with an adjacent living target, and choose the farthest unoccupied walkable cardinal tile
+  with explicit North/South/West/East tie order. Keep the standard `Moved`/`MovementBlocked`
+  evidence and action cost.
+- Prevention: Hash and snapshot behavior identities, test atomic no-escape/non-adjacent/dead-target
+  rejections, and keep factions, pathfinding, memory, exact-range preferences, and group tactics
+  out of the first archetype slice.
