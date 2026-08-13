@@ -466,3 +466,19 @@ constructor cannot silently alter the default client path or lose owner/order da
   transition; map both events exhaustively and defer propagation/attraction explicitly.
 - Prevention: Test ordered event evidence, standard timing, replay participation, and atomic target
   rejection before adding noise state, falloff, enemy interest, or interaction composition.
+
+## Keep floor progression at the presentation boundary until core state exists
+
+- Context: The seeded procedural corridor now needs a small visible multi-floor loop without
+  prematurely adding persistent progression state to the simulation or agent contracts.
+- Symptom: Letting desktop input mutate a depth field in isolation could create a second source of
+  progression truth, while replacing the authored smoke fixture would remove exhaustive coverage.
+- Cause: The generator already accepts explicit seed/depth inputs and the core outcome projection
+  identifies a canonical victory, but no core floor-history or transition contract exists yet.
+- Resolution: Permit only procedural visible `Victory` to accept `N`; start the next floor through
+  `PresentationRuntime::start_procedural_run` with the same seed and checked incremented depth,
+  reset disposable presentation/replay state, and record `floor_advanced`. Keep item startup,
+  smoke, protocol/MCP scenarios, and future core progression unchanged.
+- Prevention: Test victory-only and procedural-only guards, exact seed/depth runtime parity, empty
+  replay reset, journal evidence, depth overflow/content faults, and item/smoke no-op behavior before
+  introducing floor history, loot progression, or agent-facing scenario selection.

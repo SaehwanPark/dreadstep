@@ -3922,6 +3922,52 @@ Out of scope:
 - Floor transitions, depth progression, procedural loot, visible-run balance, new protocol/MCP
   scenario selection, save/load, replay playback, and production renderer changes.
 
+### Milestone 5 preparation slice: deterministic procedural floor advancement
+
+- Status: verified
+- Started: 2026-08-13
+- Completed: 2026-08-13
+
+Give an opt-in visible procedural run one explicit floor transition after a canonical `Victory`.
+The desktop-only `N` input starts `procedural_floor(seed, depth + 1)` with the same seed, resets
+the disposable presentation state, and records the new depth; authored item runs, display-free
+smoke, replay format, protocol/MCP scenarios, and core outcome semantics remain unchanged.
+
+Acceptance:
+
+- A procedural visible session at `Victory` accepts `N` exactly once for a checked next depth,
+  starts a fresh deterministic runtime with the original seed and incremented depth, clears the
+  prior terminal presentation state, and records `floor_advanced` journal evidence.
+- The next floor has the content generator's deterministic map/actor values and an empty replay
+  trace; a depth overflow or content failure becomes the existing typed desktop fault path.
+- `N` is ignored for the authored item fixture and while a procedural run is not in `Victory`;
+  `Shift+R`, Escape, command dispatch, smoke coverage, and all existing journal mappings retain
+  their behavior.
+- No core/protocol/MCP schema, progression authority, procedural loot, persistence, or production
+  media change is introduced.
+
+Verification target:
+
+- Desktop-feature tests prove the victory-only guard, seed/depth advancement, deterministic
+  runtime parity, replay reset, journal evidence, and item/smoke no-op behavior.
+- `scripts/verify.sh`, formatting, `git diff --check`, and one semantic review pass are required;
+  visible interaction remains a host checklist because the transition is an opt-in renderer path.
+
+Verification evidence:
+
+- Desktop-feature tests pass 38/38, including victory-only/procedural-only guards, same-seed depth
+  parity, empty replay reset, journal evidence, key dispatch, and depth-overflow fault handling;
+  the existing `start_run` integration tests pass 4/4.
+- `cargo clippy -p dreadstep-bevy --all-targets --all-features --locked -- -D warnings`,
+  `scripts/verify.sh`, formatting, and `git diff --check` pass. The display-free smoke path remains
+  on the authored item fixture, and the semantic review's HUD-label finding was corrected before
+  handoff.
+
+Out of scope:
+
+- Multi-floor core state, floor history, procedural encounter/loot progression, depth balancing,
+  save/load, replay playback, agent-facing scenario selection, and new gameplay verbs.
+
 ## Future
 
 ### Remaining roadmap milestones

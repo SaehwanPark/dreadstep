@@ -279,7 +279,11 @@ The desktop boundary now exposes that content through explicit opt-in
 `PresentationState::start_procedural_run` and `PresentationRuntime::start_procedural_run` constructors
 plus `--procedural`/`--depth` selection for visible runs. The default and display-free smoke paths
 continue to consume the authored item fixture, so procedural content is available to a human client
-without changing the established diagnostic command/event matrix.
+without changing the established diagnostic command/event matrix. After a procedural visible run
+reaches the core-projected `Victory`, the desktop-only `N` input requests the next checked depth with
+the same seed; the adapter replaces its disposable runtime, clears its presentation/replay evidence,
+and records `floor_advanced`. This is a presentation transition, not a second progression authority;
+core, protocol, MCP, and headless scenarios remain unchanged.
 
 The headless scene-synchronization slice projects a complete `PresentationSnapshot` into disposable
 `SceneTile` and `SceneActor` ECS components. The synchronizer keys entities by stable map position
