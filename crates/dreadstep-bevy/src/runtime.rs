@@ -219,6 +219,19 @@ impl PresentationRuntime {
     self.state.world.drop_item(actor, item)
   }
 
+  /// Repositions one authored actor for the display-free smoke fixture.
+  ///
+  /// This setup-only mutation does not enter replay evidence; it makes the reach-weapon smoke
+  /// assertion independent of enemy chase timing while preserving the normal attack command.
+  #[cfg(feature = "desktop")]
+  pub(crate) fn prepare_smoke_teleport(
+    &mut self,
+    actor: ActorId,
+    position: Position,
+  ) -> Result<(), dreadstep_core::WorldError> {
+    self.state.world.teleport(actor, position)
+  }
+
   /// Places one closed door for the display-free desktop smoke fixture.
   ///
   /// This setup-only mutation does not enter replay evidence; the smoke path then exercises the

@@ -13,7 +13,7 @@ fn run_binary(commands: &str) -> Output {
 
 #[test]
 fn binary_smoke_test_runs_a_valid_scenario() {
-  let output = run_binary("attack:1:2,wait:2,attack:1:2");
+  let output = run_binary("equip:1:103,wait:2,attack:1:2,wait:2,attack:1:2");
 
   assert!(output.status.success());
   let stdout = String::from_utf8(output.stdout).expect("CLI output should be UTF-8");

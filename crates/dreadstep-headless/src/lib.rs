@@ -9,7 +9,7 @@ use std::{error::Error, fmt, fmt::Write as _};
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, CommandError, Direction, GridMap, HitPoints, Item,
-  ItemDefinitionId, ItemId, Position, RunOutcome, StateDigest, Tile, WorldState,
+  ItemDefinitionId, ItemId, MeleeReach, Position, RunOutcome, StateDigest, Tile, WorldState,
 };
 
 /// Parsed command-line input for the fixed developer scenario.
@@ -289,6 +289,17 @@ fn parse_command(token: &str) -> Result<Command, CliError> {
     ["reload", actor] => Ok(Command::Reload {
       actor: parse_actor(Some(actor))?,
     }),
+    ["equip", actor, item] => Ok(Command::Equip {
+      actor: parse_actor(Some(actor))?,
+      item: parse_item(Some(item))?,
+    }),
+    ["unequip", actor] => Ok(Command::Unequip {
+      actor: parse_actor(Some(actor))?,
+    }),
+    ["use", actor, item] => Ok(Command::UseItem {
+      actor: parse_actor(Some(actor))?,
+      item: parse_item(Some(item))?,
+    }),
     ["drop", actor, item] => Ok(Command::Drop {
       actor: parse_actor(Some(actor))?,
       item: parse_item(Some(item))?,
@@ -361,7 +372,7 @@ fn fixed_scenario() -> Result<WorldState, RunError> {
       Actor::with_hit_points(
         ActorId::new(2),
         ActorKind::Enemy,
-        Position::new(1, 0),
+        Position::new(2, 0),
         HitPoints::new(2),
       ),
     ],
@@ -371,6 +382,12 @@ fn fixed_scenario() -> Result<WorldState, RunError> {
     .give_item(
       ActorId::new(1),
       Item::new(ItemId::new(101), ItemDefinitionId::new(1)),
+    )
+    .map_err(|error| RunError::Scenario(error.to_string()))?;
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_equipment_effect(ItemId::new(103), ItemDefinitionId::new(4), MeleeReach::TWO),
     )
     .map_err(|error| RunError::Scenario(error.to_string()))?;
   Ok(world)
@@ -460,6 +477,34 @@ mod tests {
         actor: ActorId::new(1),
         item: ItemId::new(101),
       }]
+    );
+  }
+
+  #[test]
+  fn parses_equipment_command_tokens() {
+    let input = parse_args([
+      "--seed".to_owned(),
+      "7".to_owned(),
+      "--commands".to_owned(),
+      "equip:1:103,unequip:1,use:1:103".to_owned(),
+    ])
+    .expect("equipment commands should parse");
+
+    assert_eq!(
+      input.commands(),
+      &[
+        Command::Equip {
+          actor: ActorId::new(1),
+          item: ItemId::new(103),
+        },
+        Command::Unequip {
+          actor: ActorId::new(1),
+        },
+        Command::UseItem {
+          actor: ActorId::new(1),
+          item: ItemId::new(103),
+        },
+      ]
     );
   }
 
@@ -594,21 +639,22 @@ mod tests {
       "--seed".to_owned(),
       "7".to_owned(),
       "--commands".to_owned(),
-      "attack:1:2,wait:2".to_owned(),
+      "equip:1:103,wait:2,attack:1:2".to_owned(),
     ])
     .unwrap();
     let output = run(input).expect("valid commands should run");
     let rendered = output.render();
 
     assert_eq!(output.seed(), 7);
-    assert_eq!(output.events().len(), 2);
+    assert_eq!(output.events().len(), 3);
     assert_eq!(
       rendered,
       "seed=7\n\
-event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
+event=ItemEquipped { actor: ActorId(1), item: ItemId(103) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
+event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 outcome=in_progress\n\
-digest=14278702377284616588\n"
+digest=6462313501704556950\n"
     );
   }
 

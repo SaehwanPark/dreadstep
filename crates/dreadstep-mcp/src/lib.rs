@@ -519,5 +519,15 @@ fn item_scenario() -> Result<WorldState, SessionError> {
       ),
     )
     .map_err(|error| SessionError::Scenario(error.into()))?;
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_equipment_effect(
+        ItemId::new(103),
+        ItemDefinitionId::new(4),
+        CoreMeleeReach::new(2).expect("reach should be positive"),
+      ),
+    )
+    .map_err(|error| SessionError::Scenario(error.into()))?;
   Ok(world)
 }

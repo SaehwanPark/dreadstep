@@ -105,6 +105,9 @@ impl MeleeReach {
   /// The default adjacent melee reach.
   pub const DEFAULT: Self = Self(1);
 
+  /// The authored reach used by the starter weapon.
+  pub const TWO: Self = Self(2);
+
   /// Creates a melee reach, rejecting zero because it cannot target another tile.
   #[must_use]
   pub const fn new(value: u8) -> Option<Self> {
@@ -262,7 +265,26 @@ impl Actor {
 
   /// Returns this actor's non-zero Manhattan melee reach.
   #[must_use]
-  pub const fn melee_reach(&self) -> MeleeReach {
+  pub fn melee_reach(&self) -> MeleeReach {
+    self
+      .equipped
+      .and_then(|equipped| {
+        self
+          .inventory
+          .iter()
+          .find(|item| item.id() == equipped)
+          .and_then(|item| {
+            item
+              .equipment_effect()
+              .map(|crate::EquipmentEffect::MinimumMeleeReach { reach }| reach)
+          })
+      })
+      .map_or(self.melee_reach, |minimum| self.melee_reach.max(minimum))
+  }
+
+  /// Returns this actor's authored reach before equipment effects.
+  #[must_use]
+  pub const fn base_melee_reach(&self) -> MeleeReach {
     self.melee_reach
   }
 

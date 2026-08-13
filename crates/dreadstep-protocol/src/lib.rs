@@ -16,13 +16,15 @@ mod scenario;
 mod snapshot;
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 19;
+pub const PROTOCOL_VERSION: u16 = 20;
 
 pub use command::{CommandRequest, Direction};
 pub use error::{CommandError, MapError, ScenarioError, WorldError};
 pub use event::{BlockReason, Damage, Event};
 pub use ids::{ActorId, ActorKind, HitPoints, ItemDefinitionId, ItemId, MeleeReach, Position};
-pub use item::{AmmunitionResult, GroundItemSnapshot, HealingResult, ItemSnapshot};
+pub use item::{
+  AmmunitionResult, EquipmentEffect, GroundItemSnapshot, HealingResult, ItemSnapshot,
+};
 pub use replay::{ActionTime, ReplayEvidence, StateDigest};
 pub use scenario::{Scenario, ScenarioActor, Tile};
 pub use snapshot::{ActorSnapshot, LifeState, RunOutcome, WorldSnapshot};

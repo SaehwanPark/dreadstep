@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 19);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 20);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -97,6 +97,21 @@ fn snapshot_json_projects_explicit_melee_reach() {
   let value =
     serde_json::to_value(WorldSnapshot::from_world(&world)).expect("snapshot should serialize");
   assert_eq!(value["actors"][0]["melee_reach"], 2);
+}
+
+#[test]
+fn snapshot_json_projects_snake_case_equipment_effect() {
+  let item = CoreItem::with_equipment_effect(
+    CoreItemId::new(103),
+    CoreItemDefinitionId::new(4),
+    CoreMeleeReach::new(2).expect("two is a valid reach"),
+  );
+  let value = serde_json::to_value(dreadstep_protocol::ItemSnapshot::from_item(item))
+    .expect("item should serialize");
+  assert_eq!(
+    value["equipment_effect"],
+    serde_json::json!({"minimum_melee_reach": {"reach": 2}})
+  );
 }
 
 #[test]

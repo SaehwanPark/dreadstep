@@ -12,8 +12,8 @@ use super::input::submit_command;
 use super::journal::{JournalHandle, export_replay, journal_path};
 use super::session::{DesktopSession, record_session};
 use super::{
-  ATTACK_TARGET, EQUIP_ITEM, PICKUP_ITEM, PLAYER, RANGED_TARGET, SHOWCASE_COMMAND_KINDS,
-  SHOWCASE_EVENT_KINDS, SMOKE_ENEMY_ATTACK_LIMIT,
+  ATTACK_TARGET, CONSUME_ITEM, EQUIP_ITEM, PICKUP_ITEM, PLAYER, RANGED_TARGET,
+  SHOWCASE_COMMAND_KINDS, SHOWCASE_EVENT_KINDS, SMOKE_ENEMY_ATTACK_LIMIT,
 };
 
 #[expect(
@@ -150,15 +150,43 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);
-  failed |= !submit_command(
-    &mut runtime,
-    &mut session,
-    "smoke",
-    Command::Unequip { actor: PLAYER },
-  );
-  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+  if let Err(error) = runtime.prepare_smoke_teleport(ATTACK_TARGET, Position::new(4, 1)) {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "reach_attack_fixture_setup", "error": error.to_string() }),
+    );
+  }
+  let reach_fixture_valid = runtime
+    .snapshot()
+    .actors()
+    .iter()
+    .find(|actor| actor.id() == PLAYER)
+    .zip(
+      runtime
+        .snapshot()
+        .actors()
+        .iter()
+        .find(|actor| actor.id() == ATTACK_TARGET),
+    )
+    .is_some_and(|(player, target)| {
+      player.melee_reach().value() >= 2
+        && (player.position().x() - target.position().x()).unsigned_abs()
+          + (player.position().y() - target.position().y()).unsigned_abs()
+          == 2
+    });
+  if !reach_fixture_valid {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "reach_attack_fixture_invalid" }),
+    );
+  }
 
   let mut attacks = 0;
+  let mut extended_attack_observed = false;
   while runtime
     .snapshot()
     .actors()
@@ -177,6 +205,14 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       )
     });
     let Some(command) = command else {
+      if attacks == 0 {
+        failed = true;
+        let _ = record_session(
+          &mut session,
+          "smoke_fault",
+          json!({ "reason": "reach_attack_not_legal" }),
+        );
+      }
       let _ = submit_command(
         &mut runtime,
         &mut session,
@@ -187,6 +223,9 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
       attacks = attacks.saturating_add(1);
       continue;
     };
+    if attacks == 0 {
+      extended_attack_observed = true;
+    }
     failed |= !submit_command(&mut runtime, &mut session, "smoke", command);
     failed |= !drive_smoke_enemies(&mut runtime, &mut session);
     attacks = attacks.saturating_add(1);
@@ -208,13 +247,30 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
     }
   }
 
+  if !extended_attack_observed {
+    failed = true;
+    let _ = record_session(
+      &mut session,
+      "smoke_fault",
+      json!({ "reason": "reach_attack_not_observed" }),
+    );
+  }
+
+  failed |= !submit_command(
+    &mut runtime,
+    &mut session,
+    "smoke",
+    Command::Unequip { actor: PLAYER },
+  );
+  failed |= !drive_smoke_enemies(&mut runtime, &mut session);
+
   failed |= !submit_command(
     &mut runtime,
     &mut session,
     "smoke",
     Command::UseItem {
       actor: PLAYER,
-      item: EQUIP_ITEM,
+      item: CONSUME_ITEM,
     },
   );
   failed |= !drive_smoke_enemies(&mut runtime, &mut session);

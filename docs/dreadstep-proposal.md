@@ -1985,6 +1985,11 @@ one Manhattan tile while authored/test scenarios may opt into an extended reach.
 execution share the same predicate and preserve fixed damage, action cost, events, replay, and
 desktop behavior; weapon classes and equipment-derived effects remain future work.
 
+The first equipment-derived mechanical effect is now verified: authored item 103 raises effective
+melee reach to at least two while equipped, preserves the existing equipment action contract, and
+is explicitly non-consumable. Weapon classes, damage/accuracy changes, armor, affixes, durability,
+identification, and randomized loot remain future work.
+
 The following bounded combat slice is also verified: a scheduled player may reload partial ranged
 ammunition to the fixed three-shot capacity through a typed `Reload` command. It preserves standard
 action timing, replay/snapshot evidence, versioned protocol/MCP/headless mappings, and desktop `R`

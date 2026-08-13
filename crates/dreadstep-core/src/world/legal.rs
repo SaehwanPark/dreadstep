@@ -99,10 +99,12 @@ impl WorldState {
           actor: actor_id,
           item: item.id(),
         });
-        commands.push(Command::UseItem {
-          actor: actor_id,
-          item: item.id(),
-        });
+        if item.equipment_effect().is_none() {
+          commands.push(Command::UseItem {
+            actor: actor_id,
+            item: item.id(),
+          });
+        }
       }
     }
     if actor.equipped_item().is_some() {

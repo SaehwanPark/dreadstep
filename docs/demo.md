@@ -134,7 +134,7 @@ the log directory or a mid-run write/flush fault is reported and returns exit 1.
 | --- | --- | --- | --- |
 | Move / wait / enemy attack/ranged/investigate/chase | map, scheduler, messages | command + event + snapshots | yes |
 | Attack / damage / death | actor colors, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, healing/ammo results, and ground stack | item/reload events, optional healing/ammo evidence, and full actor snapshots | yes |
+| Inventory / equip / unequip / consume / pickup / drop / reload | selected/equipped HUD rows, reach-weapon effect, healing/ammo results, and ground stack | item/reload events, equipment effect, optional healing/ammo evidence, and full actor snapshots | yes |
 | Terrain, door, trap, breakable, terrain-aware noise, and actor blocking | distinct wall/cover/floor/door/trap/breakable/actor pixels | `movement_blocked`, `door_opened`, ordered `noise_created`/`trap_triggered`, and `breakable_broken` evidence | yes |
 | Presentation field of view | radius-3 floor reach plus readable wall edge | complete scene remains projected | no display required |
 | Opt-in procedural floor and `N` advancement | seeded 13×9 floor and next-depth restart after victory | `run_started` depth and `floor_advanced` evidence | no; smoke keeps item fixture |
@@ -157,7 +157,7 @@ smoke fixture and breaks it with `Break`, then adds a closed-door fixture and ki
 `Interact`, then reloads the player's
 partial ammunition,
 drops authored item 102 into the player's current ground stack for smoke setup, picks it up with
-`Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 101, unequips it, attacks enemy 2 until death,
+`Pickup`, drops it again with `Drop`, moves east, drives enemy turns, equips item 103, attacks enemy 2 from two tiles until death, then unequips it,
 consumes item 101, attempts north into terrain, then waits with scheduled enemy chase turns between
 player actions. Exhaustive command/event mappings and the coverage lists make a new player-visible
 core variant fail desktop-feature compilation or smoke coverage until it is documented and mapped.

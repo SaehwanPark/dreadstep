@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use crate::{
   ActionCost, ActionResult, ActionTime, Actor, ActorId, ActorKind, Command, CommandError, Event,
   GridMap, GroundItemStack, Position, RunOutcome, StateDigest, Tile, WorldError,
-  replay::{StableHasher, hash_item_effect},
+  replay::{StableHasher, hash_equipment_effect, hash_item_effect},
 };
 
 mod combat;
@@ -167,7 +167,7 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V4");
+    hasher.write_bytes(b"DREADSTEP-STATE-V5");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -192,7 +192,7 @@ impl WorldState {
       hasher.write_i32(actor.position().y());
       hasher.write_u16(actor.hit_points().value());
       hasher.write_u16(actor.max_hit_points().value());
-      hasher.write_u8(actor.melee_reach().value());
+      hasher.write_u8(actor.base_melee_reach().value());
       hasher.write_u16(actor.ranged_ammo());
       hasher.write_u64(actor.ready_at().value());
       match actor.heard_noise() {
@@ -208,6 +208,7 @@ impl WorldState {
         hasher.write_u32(item.id().value());
         hasher.write_u32(item.definition().value());
         hash_item_effect(&mut hasher, item.effect());
+        hash_equipment_effect(&mut hasher, item.equipment_effect());
       }
       match actor.equipped_item() {
         Some(item) => {
@@ -227,6 +228,7 @@ impl WorldState {
           hasher.write_u32(item.id().value());
           hasher.write_u32(item.definition().value());
           hash_item_effect(&mut hasher, item.effect());
+          hash_equipment_effect(&mut hasher, item.equipment_effect());
         }
       }
     }
@@ -248,7 +250,8 @@ impl WorldState {
   ///
   /// Cardinal movement and waiting are always listed because blocked movement still produces an
   /// accepted semantic action. Each owned item that is not already equipped contributes an Equip
-  /// action followed by a `UseItem` action; the optional unequip action follows inventory order.
+  /// action, and each owned consumable contributes a `UseItem` action; equipment effects are not
+  /// consumable. The optional unequip action follows inventory order.
   /// Player attacks include targets within the actor's melee reach and clear cardinal rays two or
   /// three tiles away for the bounded ranged command. Enemies attack adjacent living targets,
   /// include clear ranged targets when ammunition and schedule capacity allow, then consume

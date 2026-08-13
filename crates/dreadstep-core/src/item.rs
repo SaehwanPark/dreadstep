@@ -70,6 +70,16 @@ pub enum ItemEffect {
   },
 }
 
+/// The closed set of mechanical effects available from equipped items.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum EquipmentEffect {
+  /// Raise the actor's effective melee reach to at least the supplied value.
+  MinimumMeleeReach {
+    /// The minimum effective reach while this item is equipped.
+    reach: crate::MeleeReach,
+  },
+}
+
 /// The observable result of applying an item effect.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct HealingResult {
@@ -136,6 +146,7 @@ pub struct Item {
   id: ItemId,
   definition: ItemDefinitionId,
   effect: ItemEffect,
+  equipment_effect: Option<EquipmentEffect>,
 }
 
 impl Item {
@@ -146,6 +157,7 @@ impl Item {
       id,
       definition,
       effect: ItemEffect::None,
+      equipment_effect: None,
     }
   }
 
@@ -156,6 +168,22 @@ impl Item {
       id,
       definition,
       effect,
+      equipment_effect: None,
+    }
+  }
+
+  /// Creates a non-consumable item instance with one closed equipment effect.
+  #[must_use]
+  pub const fn with_equipment_effect(
+    id: ItemId,
+    definition: ItemDefinitionId,
+    reach: crate::MeleeReach,
+  ) -> Self {
+    Self {
+      id,
+      definition,
+      effect: ItemEffect::None,
+      equipment_effect: Some(EquipmentEffect::MinimumMeleeReach { reach }),
     }
   }
 
@@ -175,6 +203,12 @@ impl Item {
   #[must_use]
   pub const fn effect(self) -> ItemEffect {
     self.effect
+  }
+
+  /// Returns the optional closed equipment effect.
+  #[must_use]
+  pub const fn equipment_effect(self) -> Option<EquipmentEffect> {
+    self.equipment_effect
   }
 }
 

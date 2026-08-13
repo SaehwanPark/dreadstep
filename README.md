@@ -17,7 +17,7 @@ not need to care about the testing architecture to enjoy it.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v19**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v20**. Core owns deterministic combat, inventory, and
 environmental rules; protocol/MCP/headless/Bevy translate those values. The opt-in desktop
 showcase journals each run and can start an authored item fixture or a seeded procedural floor.
 
