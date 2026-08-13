@@ -129,10 +129,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: deterministic Brute break behavior |
 | 2026-08-13 | Milestone 4 slice: deterministic Frostcaster Chilled casting |
 | 2026-08-13 | Milestone 4 slice: behavior-named enemy intent HUD |
+| 2026-08-13 | Milestone 5 preparation slice: deterministic stationary Blocker behavior |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **26**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **27**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. Desktop controls and smoke coverage are
 documented in [`docs/demo.md`](docs/demo.md).
 
@@ -167,7 +168,7 @@ documented in [`docs/demo.md`](docs/demo.md).
 
 The current slice is complete: a scheduled living actor may close an adjacent unoccupied OpenDoor
 with typed `Close`, returning it to blocking `Door` terrain. Existing `Interact` and `Kick` actions
-retain the opened-door identity. Protocol v26, MCP, headless, Bevy, HUD/journal formatting, content,
+retain the opened-door identity. Protocol v27, MCP, headless, Bevy, HUD/journal formatting, content,
 and display-free smoke project the same core-owned result. A player may also throw authored Frost Flask item 104 at a living target
 on a clear cardinal distance-2..=3 ray. The flask is consumed, applies or refreshes the existing
 two-action `Chilled` status, and emits typed throw/application events. Authored Kiter enemies expose
@@ -176,11 +177,14 @@ Bevy, HUD/journal formatting, content, and display-free smoke project the same c
 Authored Brute enemies now select the existing `Break` command when a directly blocking Breakable
 is their deterministic next horizontal-first chase step, then resume ordinary pursuit. Their
 behavior identity and enemy intent are projected through protocol, MCP, and Bevy boundaries.
+Authored Blocker enemies now select the existing `Attack` command only within melee reach and
+otherwise select `Wait`, holding their position without new commands or events. Protocol v27,
+MCP, content, Bevy intent, actor-state JSON, and display-free smoke project the same identity.
 Authored Frostcaster enemies retain adjacent attacks and otherwise select `CastChill` on clear
 cardinal distance-2..=3 targets, applying the existing two-action Chilled status without ammo;
-the typed `ChillCast` event, protocol v26, MCP/headless mappings, Bevy intent, and display-free
+the typed `ChillCast` event, protocol v27, MCP/headless mappings, Bevy intent, and display-free
 smoke are synchronized.
-The desktop HUD names the authored behavior (`Pursuer`, `Kiter`, `Brute`, or `Frostcaster`)
+The desktop HUD names the authored behavior (`Pursuer`, `Kiter`, `Brute`, `Frostcaster`, or `Blocker`)
 alongside that core-selected intent; this remains a read-only presentation projection.
 
 ## Future

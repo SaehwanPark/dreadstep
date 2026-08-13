@@ -196,6 +196,7 @@ impl WorldState {
         EnemyBehavior::Kiter => 2,
         EnemyBehavior::Brute => 3,
         EnemyBehavior::Frostcaster => 4,
+        EnemyBehavior::Blocker => 5,
       });
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
@@ -317,7 +318,8 @@ impl WorldState {
   ///
   /// This read-only policy is shared by presentation intent and the desktop enemy driver. A
   /// Brute breaks only the breakable tile that blocks its canonical horizontal-first chase step;
-  /// all other behavior identities retain their existing priorities.
+  /// a Blocker attacks its requested melee target or waits before movement-oriented fallbacks.
+  /// All other behavior identities retain their existing priorities.
   #[must_use]
   pub fn preferred_enemy_command(&self, actor_id: ActorId, target_id: ActorId) -> Option<Command> {
     let actor = self.actors.get(&actor_id)?;
@@ -336,6 +338,23 @@ impl WorldState {
       })
     {
       return Some(*command);
+    }
+    if actor.enemy_behavior() == EnemyBehavior::Blocker {
+      if let Some(command) = legal.iter().find(|command| {
+        matches!(
+          command,
+          Command::Attack { actor, target } if *actor == actor_id && *target == target_id
+        )
+      }) {
+        return Some(*command);
+      }
+      if let Some(command) = legal
+        .iter()
+        .find(|command| matches!(command, Command::Wait { actor } if *actor == actor_id))
+      {
+        return Some(*command);
+      }
+      return None;
     }
     if let Some(command) = legal.iter().find(|command| {
       matches!(

@@ -29,8 +29,8 @@ fn showcase_authors_actor_three_as_frostcaster_without_changing_item_fixture() {
   assert_eq!(
     showcase
       .actor(ActorId::new(4))
-      .expect("showcase Brute should exist")
+      .expect("showcase Blocker should exist")
       .enemy_behavior(),
-    EnemyBehavior::Brute
+    EnemyBehavior::Blocker
   );
 }

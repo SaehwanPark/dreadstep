@@ -486,7 +486,7 @@ pub fn starter_item_floor() -> Result<WorldState, ContentError> {
 /// Builds the desktop-authored item showcase with a reachable closed door beside the player.
 ///
 /// The underlying item fixture remains stable for adapter tests; this presentation fixture adds
-/// the authored door and Frostcaster identity exercised by the desktop showcase.
+/// the authored door, Frostcaster, and Blocker identities exercised by the desktop showcase.
 ///
 /// # Errors
 ///
@@ -501,6 +501,14 @@ pub fn starter_item_showcase_floor() -> Result<WorldState, ContentError> {
     HitPoints::new(3),
     MeleeReach::DEFAULT,
     EnemyBehavior::Frostcaster,
+  );
+  definition.actors[3] = Actor::with_melee_reach_and_behavior(
+    ActorId::new(4),
+    ActorKind::Enemy,
+    Position::new(3, 3),
+    HitPoints::new(3),
+    MeleeReach::DEFAULT,
+    EnemyBehavior::Blocker,
   );
   definition.build()
 }

@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 async fn in_memory_tools_return_structured_versioned_outputs() {
   let server = DreadstepMcpServer::new(7).expect("fixed scenario should be valid");
   let observe = server.observe().await.expect("observe should succeed");
-  assert_eq!(observe.0.protocol_version(), 26);
+  assert_eq!(observe.0.protocol_version(), 27);
   assert_eq!(observe.0.protocol_version(), PROTOCOL_VERSION);
   let restarted = server
     .start_run(Parameters(StartRunParams { seed: 11 }))
@@ -445,7 +445,7 @@ fn subprocess_stdio_round_trip_discovers_and_calls_typed_tools() {
   let history_after_rejection_output = &history_after_rejection["result"]["structuredContent"];
   let replay_after_rejection_output = &replay_after_rejection["result"]["structuredContent"];
   let after_rejection_snapshot = &after_rejection["result"]["structuredContent"];
-  assert_eq!(started_snapshot["protocol_version"], 26);
+  assert_eq!(started_snapshot["protocol_version"], 27);
   assert_eq!(started_snapshot["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(started_snapshot["outcome"], "in_progress");
   assert_eq!(started_snapshot["actors"][0]["melee_reach"], 1);

@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added the stationary `Blocker` enemy behavior. A scheduled Blocker attacks only when its
+  controlled target is within melee reach and otherwise waits in place; protocol v27, content,
+  MCP, Bevy intent, desktop actor-state JSON, and display-free smoke project the authored identity.
+
 - Added behavior names to the desktop enemy-intent HUD. Scheduled enemies now display their
   authored Pursuer, Kiter, Brute, or Frostcaster identity alongside the exact core-selected
   intent; missing input/runtime state clears the projection together. This is presentation-only

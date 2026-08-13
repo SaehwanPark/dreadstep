@@ -16,6 +16,8 @@ pub enum EnemyBehavior {
   Brute,
   /// Cast Chilled along a clear bounded cardinal ray before other combat fallbacks.
   Frostcaster,
+  /// Hold position, attacking only when a target is already within melee reach.
+  Blocker,
 }
 
 impl From<CoreEnemyBehavior> for EnemyBehavior {
@@ -25,6 +27,7 @@ impl From<CoreEnemyBehavior> for EnemyBehavior {
       CoreEnemyBehavior::Kiter => Self::Kiter,
       CoreEnemyBehavior::Brute => Self::Brute,
       CoreEnemyBehavior::Frostcaster => Self::Frostcaster,
+      CoreEnemyBehavior::Blocker => Self::Blocker,
     }
   }
 }
@@ -36,6 +39,7 @@ impl From<EnemyBehavior> for CoreEnemyBehavior {
       EnemyBehavior::Kiter => Self::Kiter,
       EnemyBehavior::Brute => Self::Brute,
       EnemyBehavior::Frostcaster => Self::Frostcaster,
+      EnemyBehavior::Blocker => Self::Blocker,
     }
   }
 }
