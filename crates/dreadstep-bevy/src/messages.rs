@@ -104,6 +104,13 @@ pub enum PresentationMessage {
     /// The target's hit points after damage.
     remaining_hit_points: HitPoints,
   },
+  /// A Frostcaster applied chill to a target at range.
+  ChillCast {
+    /// The enemy that cast chill.
+    caster: ActorId,
+    /// The actor that received the spell.
+    target: ActorId,
+  },
   /// An actor threw and consumed an item against a living target.
   ItemThrown {
     /// The actor that threw the item.
@@ -226,6 +233,7 @@ impl PresentationMessage {
         damage,
         remaining_hit_points,
       },
+      Event::ChillCast { caster, target } => Self::ChillCast { caster, target },
       Event::ItemThrown {
         actor,
         item,
@@ -274,6 +282,7 @@ pub const fn showcase_event_name(event: Event) -> &'static str {
     Event::StatusApplied { .. } => "status_applied",
     Event::StatusExpired { .. } => "status_expired",
     Event::Attacked { .. } => "attacked",
+    Event::ChillCast { .. } => "chill_cast",
     Event::ItemThrown { .. } => "item_thrown",
     Event::Died { .. } => "died",
     Event::ItemEquipped { .. } => "item_equipped",

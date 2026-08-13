@@ -21,7 +21,7 @@ fixture.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v25**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v26**. Core owns deterministic combat, inventory, and
 environmental rules; protocol/MCP/headless/Bevy translate those values. The opt-in desktop
 showcase journals each run and can start an authored item fixture or a seeded procedural floor.
 

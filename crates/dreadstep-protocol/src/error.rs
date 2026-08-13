@@ -2,12 +2,11 @@
 
 use std::fmt;
 
+pub use crate::command_error::CommandError;
 use crate::{ActorId, ItemId, Position};
 use dreadstep_core::{
   CommandError as CoreCommandError, MapError as CoreMapError, WorldError as CoreWorldError,
 };
-
-pub use crate::command_error::CommandError;
 
 /// A protocol map-construction error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -38,7 +37,6 @@ pub enum MapError {
     actual: usize,
   },
 }
-
 impl From<CoreMapError> for MapError {
   fn from(error: CoreMapError) -> Self {
     match error {
@@ -74,9 +72,7 @@ impl fmt::Display for MapError {
     }
   }
 }
-
 impl std::error::Error for MapError {}
-
 /// A protocol-owned scenario construction error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScenarioError {
@@ -85,7 +81,6 @@ pub enum ScenarioError {
   /// Core rejected one of the initial actors.
   World(WorldError),
 }
-
 impl From<CoreMapError> for ScenarioError {
   fn from(error: CoreMapError) -> Self {
     Self::Map(error.into())
@@ -115,7 +110,6 @@ impl std::error::Error for ScenarioError {
     }
   }
 }
-
 /// A protocol-owned world validation error returned by tester mutation operations.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorldError {
@@ -200,7 +194,6 @@ pub enum WorldError {
     actor: ActorId,
   },
 }
-
 impl From<CoreWorldError> for WorldError {
   fn from(error: CoreWorldError) -> Self {
     match error {
@@ -262,7 +255,6 @@ impl From<CoreWorldError> for WorldError {
     }
   }
 }
-
 impl fmt::Display for WorldError {
   fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
@@ -356,9 +348,7 @@ impl fmt::Display for WorldError {
     }
   }
 }
-
 impl std::error::Error for WorldError {}
-
 impl From<CoreCommandError> for CommandError {
   #[expect(
     clippy::too_many_lines,
@@ -382,6 +372,18 @@ impl From<CoreCommandError> for CommandError {
       CoreCommandError::TargetDead(target) => Self::TargetDead(ActorId::new(target.value())),
       CoreCommandError::CannotAttackSelf(actor) => {
         Self::CannotAttackSelf(ActorId::new(actor.value()))
+      }
+      CoreCommandError::CastChillRequiresFrostcaster(actor) => {
+        Self::CastChillRequiresFrostcaster(ActorId::new(actor.value()))
+      }
+      CoreCommandError::CannotCastChillSelf(actor) => {
+        Self::CannotCastChillSelf(ActorId::new(actor.value()))
+      }
+      CoreCommandError::CastChillUnknownTarget(target) => {
+        Self::CastChillUnknownTarget(ActorId::new(target.value()))
+      }
+      CoreCommandError::CastChillTargetDead(target) => {
+        Self::CastChillTargetDead(ActorId::new(target.value()))
       }
       CoreCommandError::ChaseRequiresEnemy(actor) => {
         Self::ChaseRequiresEnemy(ActorId::new(actor.value()))
@@ -466,6 +468,14 @@ impl From<CoreCommandError> for CommandError {
           target: ActorId::new(target.value()),
         }
       }
+      CoreCommandError::CastChillOutOfRange { caster, target } => Self::CastChillOutOfRange {
+        caster: ActorId::new(caster.value()),
+        target: ActorId::new(target.value()),
+      },
+      CoreCommandError::CastChillNoLineOfSight { caster, target } => Self::CastChillNoLineOfSight {
+        caster: ActorId::new(caster.value()),
+        target: ActorId::new(target.value()),
+      },
       CoreCommandError::RangedAttackNoAmmunition(actor) => {
         Self::RangedAttackNoAmmunition(ActorId::new(actor.value()))
       }
@@ -517,7 +527,6 @@ impl From<CoreCommandError> for CommandError {
     }
   }
 }
-
 impl fmt::Display for CommandError {
   #[expect(
     clippy::too_many_lines,
@@ -549,6 +558,24 @@ impl fmt::Display for CommandError {
       Self::TargetDead(target) => write!(formatter, "attack target {} is dead", target.value()),
       Self::CannotAttackSelf(actor) => {
         write!(formatter, "actor {} cannot attack itself", actor.value())
+      }
+      Self::CastChillRequiresFrostcaster(actor) => write!(
+        formatter,
+        "actor {} cannot cast Chill because only Frostcasters may cast it",
+        actor.value()
+      ),
+      Self::CannotCastChillSelf(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot cast Chill on itself",
+          actor.value()
+        )
+      }
+      Self::CastChillUnknownTarget(target) => {
+        write!(formatter, "unknown Chill cast target {}", target.value())
+      }
+      Self::CastChillTargetDead(target) => {
+        write!(formatter, "Chill cast target {} is dead", target.value())
       }
       Self::ChaseRequiresEnemy(actor) => {
         write!(
@@ -683,6 +710,18 @@ impl fmt::Display for CommandError {
         attacker.value(),
         target.value()
       ),
+      Self::CastChillOutOfRange { caster, target } => write!(
+        formatter,
+        "Frostcaster {} cannot cast Chill at target {} outside distance 2..=3",
+        caster.value(),
+        target.value()
+      ),
+      Self::CastChillNoLineOfSight { caster, target } => write!(
+        formatter,
+        "Frostcaster {} cannot cast Chill at target {} without a clear cardinal line of sight",
+        caster.value(),
+        target.value()
+      ),
       Self::RangedAttackNoAmmunition(actor) => write!(
         formatter,
         "actor {} cannot ranged attack without ammunition",
@@ -758,5 +797,4 @@ impl fmt::Display for CommandError {
     }
   }
 }
-
 impl std::error::Error for CommandError {}

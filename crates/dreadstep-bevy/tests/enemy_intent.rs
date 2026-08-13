@@ -263,6 +263,44 @@ fn scheduled_distant_enemy_intent_prefers_ranged_attack_before_chase() {
 }
 
 #[test]
+fn scheduled_frostcaster_intent_prefers_cast_chill_at_clear_range() {
+  let world = WorldState::new(
+    GridMap::filled(3, 1, Tile::Floor).expect("test map should be valid"),
+    vec![
+      Actor::with_enemy_behavior(
+        ActorId::new(1),
+        Position::new(0, 0),
+        EnemyBehavior::Frostcaster,
+      ),
+      Actor::new(ActorId::new(2), ActorKind::Player, Position::new(2, 0)),
+    ],
+  )
+  .expect("frostcaster world validates");
+  let mut app = App::new();
+  app.insert_resource(PresentationRuntime::new(PresentationState::new(7, world)));
+  app.insert_resource(PresentationInput::new(ActorId::new(2)));
+  app.insert_resource(PresentationEnemyIntent::new());
+  app.add_plugins(PresentationPlugin);
+  let before_snapshot = app.world().resource::<PresentationRuntime>().snapshot();
+  let before_replay = app
+    .world()
+    .resource::<PresentationRuntime>()
+    .replay_digest();
+  app.update();
+
+  assert_eq!(
+    app.world().resource::<PresentationEnemyIntent>().command(),
+    Some(Command::CastChill {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+  );
+  let runtime = app.world().resource::<PresentationRuntime>();
+  assert_eq!(runtime.snapshot(), before_snapshot);
+  assert_eq!(runtime.replay_digest(), before_replay);
+}
+
+#[test]
 fn scheduled_enemy_intent_investigates_a_kick_noise_before_chase() {
   let world = WorldState::new(
     GridMap::from_tiles(

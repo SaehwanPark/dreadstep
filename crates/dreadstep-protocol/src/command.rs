@@ -81,6 +81,13 @@ pub enum CommandRequest {
     /// The actor being targeted.
     target: ActorId,
   },
+  /// Cast Chilled at a living target along a clear bounded cardinal ray.
+  CastChill {
+    /// The Frostcaster issuing the request.
+    actor: ActorId,
+    /// The living actor receiving Chilled.
+    target: ActorId,
+  },
   /// Throw one owned, unequipped throwable item at a living cardinal ranged target.
   Throw {
     /// The player issuing the request.
@@ -190,6 +197,10 @@ impl From<CommandRequest> for CoreCommand {
         actor: dreadstep_core::ActorId::new(actor.value()),
         target: dreadstep_core::ActorId::new(target.value()),
       },
+      CommandRequest::CastChill { actor, target } => Self::CastChill {
+        actor: dreadstep_core::ActorId::new(actor.value()),
+        target: dreadstep_core::ActorId::new(target.value()),
+      },
       CommandRequest::Throw {
         actor,
         item,
@@ -273,6 +284,10 @@ impl From<CoreCommand> for CommandRequest {
         target: ActorId::new(target.value()),
       },
       CoreCommand::RangedAttack { actor, target } => Self::RangedAttack {
+        actor: ActorId::new(actor.value()),
+        target: ActorId::new(target.value()),
+      },
+      CoreCommand::CastChill { actor, target } => Self::CastChill {
         actor: ActorId::new(actor.value()),
         target: ActorId::new(target.value()),
       },

@@ -114,6 +114,10 @@ impl ReplayTrace {
   }
 }
 
+#[expect(
+  clippy::too_many_lines,
+  reason = "replay command hashing keeps the stable tag table exhaustive"
+)]
 fn hash_command(hasher: &mut StableHasher, command: Command) {
   match command {
     Command::Move { actor, direction } => {
@@ -156,6 +160,11 @@ fn hash_command(hasher: &mut StableHasher, command: Command) {
     }
     Command::RangedAttack { actor, target } => {
       hasher.write_u8(9);
+      hasher.write_u32(actor.value());
+      hasher.write_u32(target.value());
+    }
+    Command::CastChill { actor, target } => {
+      hasher.write_u8(19);
       hasher.write_u32(actor.value());
       hasher.write_u32(target.value());
     }

@@ -486,15 +486,23 @@ pub fn starter_item_floor() -> Result<WorldState, ContentError> {
 /// Builds the desktop-authored item showcase with a reachable closed door beside the player.
 ///
 /// The underlying item fixture remains stable for adapter tests; this presentation fixture adds
-/// only the authored terrain needed for the documented open/close controls.
+/// the authored door and Frostcaster identity exercised by the desktop showcase.
 ///
 /// # Errors
 ///
 /// Returns [`ContentError`] when the authored item floor cannot be validated.
 pub fn starter_item_showcase_floor() -> Result<WorldState, ContentError> {
-  let mut world = starter_item_floor()?;
-  world.set_tile(Position::new(2, 1), Tile::Door);
-  Ok(world)
+  let mut definition = starter_item_floor_definition();
+  definition.tiles[9] = Tile::Door;
+  definition.actors[2] = Actor::with_melee_reach_and_behavior(
+    ActorId::new(3),
+    ActorKind::Enemy,
+    Position::new(1, 3),
+    HitPoints::new(3),
+    MeleeReach::DEFAULT,
+    EnemyBehavior::Frostcaster,
+  );
+  definition.build()
 }
 
 /// Returns the deterministic authored starter item-definition references.

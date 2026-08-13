@@ -211,6 +211,14 @@ pub enum CommandError {
   CannotAttackSelf(ActorId),
   /// A chase command must be issued by an enemy actor.
   ChaseRequiresEnemy(ActorId),
+  /// A Chill cast must be issued by an enemy Frostcaster.
+  CastChillRequiresFrostcaster(ActorId),
+  /// A Frostcaster cannot cast Chilled on itself.
+  CannotCastChillSelf(ActorId),
+  /// The Chill cast target is not present in the world.
+  CastChillUnknownTarget(ActorId),
+  /// The Chill cast target is already dead.
+  CastChillTargetDead(ActorId),
   /// A pickup command must be issued by a player actor.
   PickupRequiresPlayer(ActorId),
   /// A drop command must be issued by a player actor.
@@ -299,6 +307,20 @@ pub enum CommandError {
     /// The actor issuing the ranged attack.
     attacker: ActorId,
     /// The actor hidden by a diagonal path or blocking terrain.
+    target: ActorId,
+  },
+  /// The Chill cast target is outside the bounded ranged interval.
+  CastChillOutOfRange {
+    /// The Frostcaster issuing the cast.
+    caster: ActorId,
+    /// The actor outside cast range.
+    target: ActorId,
+  },
+  /// The Chill cast target is hidden by diagonal geometry or blocking terrain.
+  CastChillNoLineOfSight {
+    /// The Frostcaster issuing the cast.
+    caster: ActorId,
+    /// The actor hidden from the cast.
     target: ActorId,
   },
   /// The actor has no ranged ammunition remaining.
@@ -407,6 +429,24 @@ impl fmt::Display for CommandError {
           "actor {} cannot issue an enemy chase",
           actor.value()
         )
+      }
+      Self::CastChillRequiresFrostcaster(actor) => write!(
+        formatter,
+        "actor {} cannot cast Chill because only Frostcasters may cast it",
+        actor.value()
+      ),
+      Self::CannotCastChillSelf(actor) => {
+        write!(
+          formatter,
+          "actor {} cannot cast Chill on itself",
+          actor.value()
+        )
+      }
+      Self::CastChillUnknownTarget(target) => {
+        write!(formatter, "unknown Chill cast target {}", target.value())
+      }
+      Self::CastChillTargetDead(target) => {
+        write!(formatter, "Chill cast target {} is dead", target.value())
       }
       Self::PickupRequiresPlayer(actor) => {
         write!(
@@ -532,6 +572,18 @@ impl fmt::Display for CommandError {
         formatter,
         "actor {} cannot ranged attack target {} without a clear cardinal line of sight",
         attacker.value(),
+        target.value()
+      ),
+      Self::CastChillOutOfRange { caster, target } => write!(
+        formatter,
+        "Frostcaster {} cannot cast Chill at target {} outside distance 2..=3",
+        caster.value(),
+        target.value()
+      ),
+      Self::CastChillNoLineOfSight { caster, target } => write!(
+        formatter,
+        "Frostcaster {} cannot cast Chill at target {} without a clear cardinal line of sight",
+        caster.value(),
         target.value()
       ),
       Self::RangedAttackNoAmmunition(actor) => write!(

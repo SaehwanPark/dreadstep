@@ -90,7 +90,8 @@ impl PresentationAudioCue {
       | Event::BreakableBroken { .. }
       | Event::TrapTriggered { .. }
       | Event::StatusApplied { .. }
-      | Event::StatusExpired { .. } => None,
+      | Event::StatusExpired { .. }
+      | Event::ChillCast { .. } => None,
     }
   }
 }

@@ -11,6 +11,12 @@ All notable contributor- and user-visible project changes are recorded here.
   pursuit. Core intent, protocol v25 behavior snapshots, MCP, Bevy, and desktop smoke evidence
   remain synchronized; door breaking, damage, durability, and pathfinding remain deferred.
 
+- Added the authored Frostcaster enemy behavior. A scheduled Frostcaster casts the existing
+  Chilled status along a clear cardinal distance-2..=3 ray instead of ranged attack, consuming no
+  ammunition and paying ranged timing. Protocol v26, MCP, headless, Bevy, and desktop smoke map
+  the typed `CastChill`/`ChillCast` contract; damage, splash, cooldowns, and spell resources remain
+  deferred.
+
 - Added reclosable doors as a bounded Living Dungeon interaction. `Interact` and `Kick` now
   preserve an opened door as transparent, walkable `OpenDoor` terrain; a scheduled living actor
   may use typed `Close` on an adjacent unoccupied OpenDoor to restore blocking `Door` terrain with

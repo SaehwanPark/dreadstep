@@ -62,6 +62,13 @@ pub enum Command {
     /// The living actor being targeted.
     target: ActorId,
   },
+  /// Apply the existing Chilled status to a living actor within a clear cardinal ranged ray.
+  CastChill {
+    /// The Frostcaster issuing the cast.
+    actor: ActorId,
+    /// The living actor being chilled.
+    target: ActorId,
+  },
   /// Throw one owned authored item at a living cardinal ranged target.
   Throw {
     /// The player issuing the throw.
@@ -143,6 +150,7 @@ impl Command {
       | Self::Break { actor, .. }
       | Self::Attack { actor, .. }
       | Self::RangedAttack { actor, .. }
+      | Self::CastChill { actor, .. }
       | Self::Throw { actor, .. }
       | Self::Retreat { actor, .. }
       | Self::Chase { actor, .. }

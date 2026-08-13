@@ -654,6 +654,35 @@ fn frost_flask_throw_is_visible_in_desktop_event_evidence() {
 }
 
 #[test]
+fn frostcaster_cast_is_visible_in_desktop_diagnostics() {
+  let command = Command::CastChill {
+    actor: ActorId::new(3),
+    target: PLAYER,
+  };
+  assert_eq!(
+    command_value(command),
+    json!({ "kind": "cast_chill", "actor": 3, "target": 1 })
+  );
+  let event = Event::ChillCast {
+    caster: ActorId::new(3),
+    target: PLAYER,
+  };
+  assert_eq!(
+    event_value(event),
+    json!({ "kind": "chill_cast", "caster": 3, "target": 1 })
+  );
+  assert_eq!(event_message(event), "Actor 3 cast chill on actor 1.");
+
+  let mut intent = PresentationEnemyIntent::new();
+  intent.actor = Some(ActorId::new(3));
+  intent.command = Some(command);
+  assert_eq!(
+    enemy_intent_summary(Some(&intent)),
+    "Intent: enemy 3 casts chill on actor 1"
+  );
+}
+
+#[test]
 fn door_close_is_visible_in_desktop_event_evidence() {
   let event = Event::DoorClosed {
     actor: PLAYER,

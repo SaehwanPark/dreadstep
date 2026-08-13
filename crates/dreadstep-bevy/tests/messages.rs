@@ -7,8 +7,8 @@ use dreadstep_bevy::{
   PresentationRuntime, PresentationState,
 };
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, BlockReason, Command, Damage, GridMap, HitPoints, Position, Tile,
-  WorldState,
+  Actor, ActorId, ActorKind, BlockReason, Command, Damage, EnemyBehavior, GridMap, HitPoints,
+  Position, Tile, WorldState,
 };
 
 fn message_app(runtime: PresentationRuntime, actor: ActorId) -> App {
@@ -19,6 +19,48 @@ fn message_app(runtime: PresentationRuntime, actor: ActorId) -> App {
   app.insert_resource(ButtonInput::<KeyCode>::default());
   app.add_plugins(PresentationPlugin);
   app
+}
+
+#[test]
+fn frostcaster_cast_maps_to_ordered_typed_messages() {
+  let runtime = custom_runtime(
+    3,
+    vec![Tile::Floor; 3],
+    vec![
+      Actor::with_enemy_behavior(
+        ActorId::new(1),
+        Position::new(0, 0),
+        EnemyBehavior::Frostcaster,
+      ),
+      Actor::new(ActorId::new(2), ActorKind::Player, Position::new(2, 0)),
+    ],
+  );
+  let mut app = message_app(runtime, ActorId::new(2));
+  app.update();
+  app
+    .world_mut()
+    .resource_mut::<PresentationRuntime>()
+    .execute(Command::CastChill {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("clear ranged frostcaster cast should succeed");
+  app.update();
+
+  assert_eq!(
+    messages(&app),
+    vec![
+      PresentationMessage::ChillCast {
+        caster: ActorId::new(1),
+        target: ActorId::new(2),
+      },
+      PresentationMessage::StatusApplied {
+        actor: ActorId::new(2),
+        status: dreadstep_core::StatusKind::Chilled,
+        remaining_actions: 2,
+      },
+    ]
+  );
 }
 
 fn custom_runtime(width: u32, tiles: Vec<Tile>, actors: Vec<Actor>) -> PresentationRuntime {

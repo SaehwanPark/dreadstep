@@ -126,6 +126,13 @@ pub enum Event {
     /// The expired status kind.
     status: StatusKind,
   },
+  /// A Frostcaster successfully cast Chilled at a living target.
+  ChillCast {
+    /// The Frostcaster that completed the cast.
+    caster: ActorId,
+    /// The living actor that received Chilled.
+    target: ActorId,
+  },
   /// An attack reduced a target's hit points.
   Attacked {
     /// The actor that attacked.
@@ -279,6 +286,10 @@ impl From<CoreEvent> for Event {
       CoreEvent::StatusExpired { actor, status } => Self::StatusExpired {
         actor: ActorId::new(actor.value()),
         status: status.into(),
+      },
+      CoreEvent::ChillCast { caster, target } => Self::ChillCast {
+        caster: ActorId::new(caster.value()),
+        target: ActorId::new(target.value()),
       },
       CoreEvent::Attacked {
         attacker,

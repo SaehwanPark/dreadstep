@@ -114,6 +114,13 @@ pub enum Event {
     /// The target's hit points after damage.
     remaining_hit_points: HitPoints,
   },
+  /// A Frostcaster applied Chilled to a living ranged target.
+  ChillCast {
+    /// The Frostcaster that cast the status effect.
+    caster: ActorId,
+    /// The actor that received the status effect.
+    target: ActorId,
+  },
   /// A player consumed one throwable item against a living target.
   ItemThrown {
     /// The actor that threw the item.
