@@ -253,7 +253,9 @@ Simulation
     +------> GameEvents
 ```
 
-Bevy is one client.
+The terminal client is one client.
+
+Bevy is a later visual client.
 
 MCP is another.
 
@@ -909,9 +911,9 @@ content ───────────┐
 protocol ───────> core
                    ▲
                    │
-          ┌────────┼────────┐
-          │        │        │
-       headless   MCP      Bevy
+          ┌────────┼────────┬────────┐
+          │        │        │        │
+       headless   MCP      Bevy     TUI
 ```
 
 The key rule:
@@ -1521,7 +1523,10 @@ Engine upgrades are milestones, not chores.
 
 # 34. ROADMAP
 
-The roadmap intentionally develops **simulation → agent interface → playable game → systemic depth → content → human refinement**.
+The roadmap intentionally develops **simulation → agent interface → playable terminal game → core systemic depth → visual enhancement → content → human refinement**.
+
+The NetHack-style terminal client is the current human-playable surface. Pixel-art Bevy polish
+waits until core-facing milestones 4–6 are mature enough for a visual-enhancement stage.
 
 ---
 
@@ -1691,9 +1696,22 @@ This is the first major architectural proof.
 
 ### Goal
 
-Turn the existing simulation into a human-playable Bevy application.
+Turn the existing simulation into a human-playable client. The verified terminal showcase
+satisfies this milestone's playability requirement. Production pixel-art, Bevy window polish,
+animation, and audio remain a later visual-enhancement stage and must not block core-facing
+milestones 4–6.
 
 ### Features
+
+Terminal client (current default):
+
+- NetHack-style map, messages, and status;
+- colored glyphs;
+- keyboard input through the same simulation API;
+- field of view;
+- JSONL frame journals for agents.
+
+Deferred to the visual-enhancement stage:
 
 - Bevy window;
 - pixel-art map;
@@ -1703,10 +1721,7 @@ Turn the existing simulation into a human-playable Bevy application.
 - movement animations;
 - attack feedback;
 - simple HUD;
-- event/combat messages;
-- keyboard input;
-- basic audio placeholders;
-- fog of war / field of view.
+- basic audio placeholders.
 
 Human and MCP commands must pass through the same simulation API.
 
@@ -2688,7 +2703,7 @@ If the project develops successfully, it can ultimately be described along two c
 
 ## As an open-source technical project
 
-> **Dreadstep is an agent-native deterministic game simulation whose human client is built with Bevy and whose testing environment is exposed through MCP, allowing conventional tests, autonomous agents, and human players to interact with the same underlying rules engine.**
+> **Dreadstep is an agent-native deterministic game simulation whose current human client is a NetHack-style terminal adapter, whose later visual client is Bevy, and whose testing environment is exposed through MCP, allowing conventional tests, autonomous agents, and human players to interact with the same underlying rules engine.**
 
 The second description should remain subordinate to the first from the player's perspective.
 

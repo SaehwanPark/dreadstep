@@ -1,6 +1,6 @@
 # Dreadstep Architecture
 
-Last Reviewed: 2026-08-13
+Last Reviewed: 2026-08-14
 Status: Verified
 
 ## Overview
@@ -9,8 +9,9 @@ Dreadstep is a functional domain kernel surrounded by explicit adapters. The ker
 game outcomes; adapters translate external input into semantic commands and translate semantic
 events into presentation, files, telemetry, or transport responses.
 
-The current tree exposes a headless CLI, a bounded MCP stdio server, and a feature-gated Bevy
-desktop showcase around the same `dreadstep-core` world. Verified capabilities are indexed in
+The current tree exposes a headless CLI, a bounded MCP stdio server, a NetHack-style terminal
+showcase, and a feature-gated Bevy desktop client around the same `dreadstep-core` world.
+`dreadstep-tui` is the default player-facing adapter. Verified capabilities are indexed in
 [`SPEC.md`](SPEC.md) Present.
 
 ## Package Ownership
@@ -22,6 +23,7 @@ desktop showcase around the same `dreadstep-core` world. Verified capabilities a
 | `dreadstep-content` | Validation of authored definitions into domain values | Hidden simulation rules |
 | `dreadstep-headless` | CLI, files, processes, telemetry, batch execution | Authoritative game behavior |
 | `dreadstep-mcp` | Bounded player and tester operations | Arbitrary host access or game truth |
+| `dreadstep-tui` | Terminal input, glyphs, colors, FOV, frame layout, TTY/stdout I/O, JSONL frame journals | Authoritative state or rules |
 | `dreadstep-bevy` | Headless projection plus optional desktop input, window/render setup, HUD, assets, and journal | Authoritative state or rules |
 
 ## Dependency Direction
@@ -30,13 +32,14 @@ desktop showcase around the same `dreadstep-core` world. Verified capabilities a
 protocol ----> core <---- content
                   ^
                   |
-       +----------+----------+
-       |          |          |
-    headless     MCP       Bevy
+       +----------+----------+----------+
+       |          |          |          |
+    headless     MCP       Bevy       TUI
 ```
 
 The adapter packages may depend on protocol and content as well as core. Core, protocol,
-and content must never depend on Bevy or MCP runtime libraries. `dreadstep-bevy` keeps the
+and content must never depend on Bevy, MCP, or terminal runtime libraries. `dreadstep-tui`
+must not depend on Bevy or MCP. `dreadstep-bevy` keeps the
 headless feature graph minimal; its opt-in `desktop` feature adds Bevy's winit, X11, 2D render,
 UI/text, nearest-neighbor image, optional audio playback, and logging capabilities while continuing
 to exclude Wayland and `default_platform`.
@@ -49,9 +52,10 @@ external input -> adapter -> core command -> deterministic transition
 semantic events -> adapter -> output, presentation, telemetry, or protocol response
 ```
 
-Desktop timers, HUD text, asset handles, animation/audio, and JSONL journals are disposable
-effects. Only `WorldState::legal_commands` and `WorldState::execute` determine simulation
-outcomes. Display-free `--smoke` reuses those helpers without winit or a renderer.
+Desktop timers, HUD text, asset handles, animation/audio, TUI glyphs/colors/FOV, and JSONL
+journals are disposable effects. Only `WorldState::legal_commands` and `WorldState::execute`
+determine simulation outcomes. Display-free TUI `--smoke` reuses those helpers without a TTY
+or a renderer.
 
 State, configuration, seeded randomness, and time inputs should be explicit. Prefer pure
 transformations and returned outcomes; allow tightly scoped mutation when it is clearer or
@@ -65,14 +69,15 @@ materially more efficient in Rust.
   The digest uses an explicit deterministic byte order, not a process-randomized hasher.
 - Protocol v27 projects those values, including OpenDoor/Close terrain commands, actor behavior/status snapshots, Brute/Frostcaster/Blocker enemy behavior, throwable item
   effects, and typed throw/status events. MCP,
-  headless, and Bevy convert types and shape I/O;
+  headless, TUI, and Bevy convert types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.
-- Bevy ECS mirrors, FOV, enemy-intent, behavior-named HUD, and desktop session state are presentation-only.
-  Missing optional resources are no-ops or recorded fallbacks.
+- TUI glyphs, colors, keybindings, FOV, overlays, and Bevy ECS mirrors, enemy-intent, HUD, and
+  desktop session state are presentation-only. Missing optional resources are no-ops or recorded
+  fallbacks.
 - Content validates authored and generated floors into core values; connectivity checks stay
   at that boundary.
 - See [`SPEC.md`](SPEC.md) Present for the current capability summary and
-  [`docs/demo.md`](docs/demo.md) for desktop controls.
+  [`docs/demo.md`](docs/demo.md) for terminal-showcase controls.
 
 ## Constraints
 

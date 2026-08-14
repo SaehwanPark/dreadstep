@@ -38,5 +38,5 @@ jobs:
         run: rustup show active-toolchain
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
-      - name: Run display-free desktop smoke
-        run: cargo run -p dreadstep-bevy --features desktop --bin dreadstep --locked -- --smoke --seed 7 --log-dir target/dreadstep-ci-logs
+      - name: Run display-free terminal smoke
+        run: cargo run -p dreadstep-tui --locked -- --smoke --seed 7 --log-dir target/dreadstep-ci-logs

@@ -1,4 +1,4 @@
 interface:
   display_name: "Test Player"
-  short_description: "Play and visually assess Dreadstep"
-  default_prompt: "Use $test-player to play a runnable Dreadstep 2D showcase, inspect the requested behavior or experience, and report evidence-backed concerns."
+  short_description: "Play and assess the Dreadstep terminal showcase"
+  default_prompt: "Use $test-player to play a runnable Dreadstep terminal showcase, inspect the requested behavior or experience, and report evidence-backed concerns."

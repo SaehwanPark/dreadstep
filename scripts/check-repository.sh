@@ -30,12 +30,17 @@ readonly REQUIRED_FILES=(
   "crates/dreadstep-mcp/src/lib.rs"
   "crates/dreadstep-protocol/Cargo.toml"
   "crates/dreadstep-protocol/src/lib.rs"
+  "crates/dreadstep-tui/Cargo.toml"
+  "crates/dreadstep-tui/src/lib.rs"
   "docs/adr/0001-functional-core-and-adapters.md"
   "docs/harness/dreadstep/evals/cases.json"
   "docs/harness/dreadstep/team-spec.md"
   "rust-toolchain.toml"
   "rustfmt.toml"
+  "screenshots/tui-starter.txt"
+  "screenshots/tui-status.txt"
   "scripts/prepare-local-assets.sh"
+  "scripts/verify-bevy-desktop.sh"
 )
 
 for path in "${REQUIRED_FILES[@]}"; do
@@ -93,6 +98,8 @@ check_local_media_policy() {
   for tracked_path in \
     "dreadstep-concept-art.png" \
     "screenshots/future.png" \
+    "screenshots/tui-starter.txt" \
+    "screenshots/tui-status.txt" \
     "crates/dreadstep-bevy/src/audio/mod.rs" \
     "docs/audio/licensing.md" \
     "LICENSES/CC-BY-4.0.txt"; do
@@ -141,6 +148,7 @@ check_forbidden_dependency() {
 check_forbidden_dependency "dreadstep-core"
 check_forbidden_dependency "dreadstep-protocol"
 check_forbidden_dependency "dreadstep-content"
+check_forbidden_dependency "dreadstep-tui"
 
 if cargo tree --locked -p dreadstep-bevy -e features | grep -Eq \
   'bevy feature "(audio|default_platform|wayland)"'; then

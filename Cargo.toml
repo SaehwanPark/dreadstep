@@ -18,6 +18,8 @@ dreadstep-core = { path = "crates/dreadstep-core" }
 dreadstep-headless = { path = "crates/dreadstep-headless" }
 dreadstep-mcp = { path = "crates/dreadstep-mcp" }
 dreadstep-protocol = { path = "crates/dreadstep-protocol" }
+dreadstep-tui = { path = "crates/dreadstep-tui" }
+crossterm = { version = "=0.28.1", default-features = false, features = ["events", "windows"] }
 rmcp = { version = "=3.1.2", default-features = false, features = ["macros", "server", "transport-io"] }
 schemars = { version = "=1.2.2", features = ["derive"] }
 serde = { version = "=1.0.229", features = ["derive"] }

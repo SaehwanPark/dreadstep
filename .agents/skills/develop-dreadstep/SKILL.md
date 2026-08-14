@@ -28,7 +28,7 @@ testable, and independent of presentation and transport effects.
    - keep domain transformations pure when practical;
    - pass state, time, randomness, and configuration explicitly;
    - use Rust structs, newtypes, enums, `Option`, and typed `Result` errors;
-   - keep filesystem, process, logging, MCP, and Bevy effects in adapters;
+   - keep filesystem, process, logging, MCP, TUI, and Bevy effects in adapters;
    - allow localized mutation when it is clearer or measurably cheaper.
 6. Refactor under passing tests. Prefer domain-revealing names and cohesive functions over
    speculative abstractions or dense combinator chains.
@@ -36,9 +36,10 @@ testable, and independent of presentation and transport effects.
    Define project-specific terms for contributors who do not share the author's context.
 8. Re-read `LESSONS.md`, update an existing lesson or add a verified recurring lesson,
    and reconcile affected specs, architecture, ADRs, and changelog entries.
-9. For player-facing changes, update the runnable `dreadstep-bevy` desktop path, its JSONL
-   journal mapping, display-free smoke coverage, and `docs/demo.md`; record an explicit
-   `SPEC.md` deferral when the change is intentionally outside the showcase.
+9. For player-facing changes, update the runnable `dreadstep-tui` terminal path, its JSONL
+   journal/`frame` mapping, display-free smoke coverage, and `docs/demo.md`; record an explicit
+   `SPEC.md` deferral when the change is intentionally outside the showcase. Do not require
+   Bevy desktop mapping or pixel-2D playtesting until a visual-enhancement stage is active.
 10. Run `scripts/verify.sh` or a documented proportional subset for a trivial docs-only
    change. Review the diff for scope and semantic coherence.
 
@@ -49,7 +50,8 @@ testable, and independent of presentation and transport effects.
 - `dreadstep-content`: validated authored data converted into typed domain values.
 - `dreadstep-headless`: CLI, file, process, telemetry, and batch-run effects.
 - `dreadstep-mcp`: bounded player/tester operations; never arbitrary host access.
-- `dreadstep-bevy`: human input and presentation; never authoritative game rules.
+- `dreadstep-tui`: terminal input and presentation; never authoritative game rules.
+- `dreadstep-bevy`: optional pixel client; never authoritative state or rules.
 
 ## Review Gate
 

@@ -11,9 +11,10 @@ descent, distinctive loot, and a compact vocabulary of systems that combine in s
 but understandable ways.
 
 The game is also being built as a deterministic simulation first. Rust tests, headless
-tools, MCP agents, and the future Bevy client will issue the same semantic commands and
-observe the same events. The engineering exists to make the game better; players should
-not need to care about the testing architecture to enjoy it.
+tools, MCP agents, and the NetHack-style terminal client issue the same semantic commands and
+observe the same events. A pixel Bevy client remains in the tree for a later visual-enhancement
+stage. The engineering exists to make the game better; players should not need to care about
+the testing architecture to enjoy it.
 
 The authored item showcase places a closed door beside the player so the documented open/close
 controls are immediately reachable; the item-free starter floor remains the deterministic core
@@ -22,14 +23,68 @@ fixture.
 ## Current Status
 
 Workspace version `0.0.0`, protocol **v27**. Core owns deterministic combat, inventory, and
-environmental rules; protocol/MCP/headless/Bevy translate those values. The opt-in desktop
-showcase journals each run and can start an authored item fixture or a seeded procedural floor.
+environmental rules; protocol/MCP/headless/TUI/Bevy translate those values. The default
+showcase is the NetHack-style terminal client. It journals each run and can start an authored
+item fixture or a seeded procedural floor.
 
-- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, and stationary Blocker behavior, named desktop enemy intent HUD, MCP/headless adapters, Bevy projections, desktop `--smoke`,
+Live terminal captures (plain text; the TTY client adds color):
+
+Starter, seed 7:
+
+```text
+Dreadstep  seed:7  item_showcase
+
+
+
+
+
+
+
+
+ #
+#@+
+#.#
+#F.
+ ##
+HP:10/10 [##########]  Pos:(1,1)  T:0  Next:you
+Ammo:3/3  Status:none  Outcome:in_progress
+Inv: 101) heal+3  103) reach2*  104) flask  102) ammo+2
+Intent: (your turn)
+hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
+```
+
+After opening the door east of `@`:
+
+```text
+Dreadstep  seed:7  item_showcase
+You open the door.
+
+
+
+
+
+
+
+ ####
+#@'..
+#.#.#
+#F.
+ ##
+HP:10/10 [##########]  Pos:(1,1)  T:0  Next:2
+Ammo:3/3  Status:none  Outcome:in_progress
+Inv: 101) heal+3  103) reach2*  104) flask  102) ammo+2
+Intent: Pursuer chase
+hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
+```
+
+These frames are generated from the renderer and committed under `screenshots/`. They are
+captures of the current client, not concept art.
+
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, and stationary Blocker behavior, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`,
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
-- Still deferred: production art, richer AI and item systems, core-owned floor history,
+- Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems, core-owned floor history,
   persistence, and playback-compatible saves.
 
 The long-term design and roadmap are in
@@ -91,9 +146,9 @@ be retained for experiments, but the current desktop playback contract is rooted
 protocol ----> core <---- content
                   ^
                   |
-       +----------+----------+
-       |          |          |
-    headless     MCP       Bevy
+       +----------+----------+----------+
+       |          |          |          |
+    headless     MCP       Bevy       TUI
 ```
 
 `dreadstep-core` owns semantic game truth. The other packages translate content or external
@@ -111,10 +166,10 @@ On Apple Silicon macOS, first install Xcode command-line tools:
 xcode-select --install
 ```
 
-On Linux and WSL2, core/headless checks remain display-free; the full showcase gate uses the
-reviewed X11/XWayland Bevy feature path and requires `pkg-config` plus ALSA development headers
-(for example, `sudo apt-get install pkg-config libasound2-dev`). Windows contributors should use
-the MSVC Rust toolchain and Windows build tools.
+On Linux and WSL2, core/headless/TUI checks remain display-free. Workspace `--all-features`
+still compiles the Bevy desktop feature graph and requires `pkg-config` plus ALSA development
+headers (for example, `sudo apt-get install pkg-config libasound2-dev`). Windows contributors
+should use the MSVC Rust toolchain and Windows build tools.
 
 Run the complete local verification suite:
 
@@ -128,30 +183,32 @@ Run the developer scenario directly after building the headless package:
 cargo run -p dreadstep-headless -- --seed 7 --commands 'move:1:east,wait:2'
 ```
 
-Run the human-testable 2D showcase (optional local images are documented in
-[`docs/demo.md`](docs/demo.md)):
+Run the NetHack-style terminal showcase:
 
 ```sh
-cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
+cargo run -p dreadstep-tui -- --seed 7
 ```
 
-To launch the opt-in seeded procedural floor in the visible client, pass `--procedural` and an
-authored depth (the default is depth 1):
+To launch the opt-in seeded procedural floor, pass `--procedural` and an authored depth
+(the default is depth 1):
 
 ```sh
-cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
-  --procedural --depth 1 --seed 7
+cargo run -p dreadstep-tui -- --procedural --depth 1 --seed 7
 ```
 
 The default and `--smoke` paths retain the authored item fixture so inventory and command coverage
 remain stable. In an opt-in procedural visible run, press `N` after victory to start the next
-deterministic depth with the same seed; `Shift+R` restarts the current depth.
+deterministic depth with the same seed; `R` restarts the current depth.
 
 Use `--smoke` for the display-free deterministic sequence and inspect the flushed JSONL file in
-`dreadstep-logs/` or the supplied `--log-dir`.
+`dreadstep-logs/` or the supplied `--log-dir`. Use `--print-frames` when an agent needs frames on
+stdout.
 
-The first build downloads and checks Bevy's minimal dependency set and can take longer than
-later runs.
+The Bevy pixel client is deferred until a visual-enhancement stage:
+
+```sh
+cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
+```
 
 ## Repository Guide
 
@@ -168,6 +225,8 @@ Terms used in the project:
 - **Adapter:** code that translates external input or output around the domain kernel.
 - **MCP:** Model Context Protocol, planned here as a bounded interface for player and tester
   agents.
+- **TUI:** the NetHack-style terminal client, the current default human and agent-playable
+  showcase.
 - **Semantic event:** a game-meaningful outcome such as movement or damage, independent of
   animation or transport formatting.
 

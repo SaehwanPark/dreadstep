@@ -1,11 +1,11 @@
 ---
 name: test-player
-description: Play Dreadstep through its runnable 2D desktop showcases and visually evaluate observable feature behavior, regressions, usability, readability, pacing, feedback, and overall game experience. Use when a player-facing change or milestone needs hands-on visual inspection, exploratory playtesting, acceptance validation, or an evidence-backed feedback pass for a development or review agent. Do not use for headless-only correctness checks, code review, or implementing fixes.
+description: Play Dreadstep through its runnable terminal showcase and evaluate observable feature behavior, regressions, usability, readability, pacing, feedback, and overall game experience. Use when a player-facing change or milestone needs hands-on inspection, exploratory playtesting, acceptance validation, or an evidence-backed feedback pass for a development or review agent. Do not use for headless-only correctness checks, code review, or implementing fixes. Skip pixel-2D Bevy inspection unless SPEC.md says a visual-enhancement stage is active.
 ---
 
 # Test Player
 
-Play the game as a player, collect visual and runtime evidence, and return concerns to the
+Play the game as a player, collect runtime evidence, and return concerns to the
 development owner without changing the implementation under test.
 
 ## Required Inputs
@@ -15,11 +15,14 @@ development owner without changing the implementation under test.
 - `docs/demo.md` for the canonical showcase command, controls, journal contract, and manual
   checklist;
 - the relevant `SPEC.md`, `CHANGELOG.md`, diff, and tests when validating a feature;
-- a graphical session plus an available UI-control and screenshot capability;
+- a terminal session (no graphical session is required);
 - any seed, scenario, time budget, or handoff path supplied by the coordinating agent.
 
 Discover missing inputs from the repository. Do not guess a binary, control, fixture, or expected
 behavior that has a documented source.
+
+Pixel-2D Bevy playtesting is deferred until a visual-enhancement stage. Do not launch the Bevy
+desktop binary unless `SPEC.md` Future/Active explicitly reactivates that surface.
 
 ## Inspection Modes
 
@@ -53,24 +56,31 @@ Use the current command documented in `docs/demo.md`. At present the primary int
 is:
 
 ```sh
-cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
+cargo run -p dreadstep-tui -- --seed 7
 ```
 
-Treat that command as an example, not a second source of truth. If documentation and the runnable
+For agent-readable frames without an alternate screen:
+
+```sh
+cargo run -p dreadstep-tui -- --print-frames --no-delay --seed 7
+```
+
+Treat those commands as examples, not a second source of truth. If documentation and the runnable
 surface disagree, report the mismatch rather than silently inventing a replacement.
 
 ### 2. Preflight and Launch
 
 1. Run the documented display-free smoke command when startup risk or the requested change makes
-   it useful. Record it only as preflight evidence; it never counts as visual playtesting.
+   it useful. Record it only as preflight evidence; it never counts as playtesting.
 2. Launch the interactive process from a persistent terminal session, retain its output, and wait
-   for the game window to appear.
-3. Use an available UI-control tool to focus and operate the window, following that tool's own
-   instructions. Confirm that input reaches the game before starting the test route.
-4. Capture the seed, command, build or commit identity, window state, and initial visual evidence.
+   for the first frame.
+3. Confirm that keyboard input reaches the game before starting the test route.
+4. Capture the seed, command, build or commit identity, and initial frame evidence (terminal
+   transcript and/or journal `frame` records).
 
-If the game cannot build, open, render, or receive input, collect the exact failure and return a
-`blocked` report. Do not replace the requested visual pass with source inspection or smoke output.
+If the game cannot build, open, render frames, or receive input, collect the exact failure and
+return a `blocked` report. Do not replace the requested play pass with source inspection or smoke
+output.
 
 ### 3. Play Through the Surface
 
@@ -79,8 +89,8 @@ If the game cannot build, open, render, or receive input, collect the exact fail
    unless the request explicitly requires them.
 2. Observe both immediate feedback and the resulting state. Check whether the game communicates
    what happened, why it happened, and what the player can do next.
-3. Capture before-and-after screenshots for important transitions when the environment supports
-   it. Record exact input sequences for failures and high-impact experience concerns.
+3. Capture before-and-after frames for important transitions. Record exact input sequences for
+   failures and high-impact experience concerns.
 4. Exercise the normal path before destructive, losing, or terminal paths. Use restart with the
    same seed when reproducibility matters.
 5. In experience mode, note discoverability, control confidence, readability, pacing, decision
@@ -92,7 +102,7 @@ small reproduction probe.
 ### 4. Corroborate and Classify
 
 1. Exit through a documented clean-shutdown path when possible and confirm the process terminates.
-2. Inspect only the journal, replay artifact, terminal output, and screenshots produced by this
+2. Inspect only the journal, replay artifact, terminal output, and frames produced by this
    run. Use them to corroborate what was visible, not to overwrite the player observation.
 3. Repeat a suspected defect once with the same seed and inputs unless repetition risks data,
    hangs the environment, or adds no evidence after a crash.
@@ -100,7 +110,7 @@ small reproduction probe.
    - **simulation/content:** the journal and visible result agree on an incorrect game outcome;
    - **presentation/input:** authoritative evidence is correct but the visible or interactive
      surface is absent, stale, misleading, or uncontrollable;
-   - **process/environment:** build, windowing, audio device, asset, or tooling prevents the pass;
+   - **process/environment:** build, terminal, or tooling prevents the pass;
    - **unknown:** evidence is insufficient or contradictory.
 
 Never diagnose from appearance alone when the journal can distinguish a presentation mismatch
@@ -124,14 +134,14 @@ Use this structure:
 - Coverage: <routes and behaviors exercised>
 
 ### Confirmed observations
-- <what visibly happened, with screenshot/journal/terminal evidence>
+- <what happened, with frame/journal/terminal evidence>
 
 ### Concerns
 - [blocker|high|medium|low] [defect|experience|environment] <concise title>
   - Reproduce: <exact inputs and starting state>
   - Expected: <documented or clearly labeled player expectation>
   - Actual: <visible result>
-  - Evidence: <artifact path, journal record, screenshot, or terminal excerpt>
+  - Evidence: <artifact path, journal record, frame, or terminal excerpt>
   - Boundary: <simulation/content|presentation/input|process/environment|unknown>
 
 ### Experience notes
@@ -144,9 +154,9 @@ Use this structure:
 - <pass onward, investigate named concern, or rerun after named blocker>
 ```
 
-Omit empty sections. Report `pass` only when the requested visual route ran and no material concern
+Omit empty sections. Report `pass` only when the requested route ran and no material concern
 was observed. Use `concerns` for completed runs with actionable issues and `blocked` when the
-requested visual evidence could not be obtained.
+requested evidence could not be obtained.
 
 ## Severity Guide
 
@@ -159,10 +169,10 @@ Keep optional ideas separate from concerns unless an observed player problem mot
 
 ## Validation Checklist
 
-- Operate a live 2D showcase; do not claim visual coverage from tests, logs, or static art alone.
+- Operate a live terminal showcase; do not claim coverage from tests or static art alone.
 - Cite the command, seed, route, and working-tree context needed to reproduce the pass.
-- Support each defect with visible evidence and, when available, the matching journal or replay
-  evidence.
+- Support each defect with visible frame evidence and, when available, the matching journal or
+  replay evidence.
 - Distinguish confirmed defects, experience observations, environmental blockers, and unverified
   areas.
 - Preserve the implementation under test and disclose any unavoidable test-state mutation.
@@ -170,6 +180,7 @@ Keep optional ideas separate from concerns unless an observed player problem mot
 
 ## Stop Conditions
 
-Stop and report instead of improvising when no graphical/control capability is available, the
-documented showcase cannot run, the requested state requires an unapproved mutation, evidence
-conflicts without a safe discriminator, or continued play risks user data or the host environment.
+Stop and report instead of improvising when no terminal capability is available, the documented
+showcase cannot run, the requested state requires an unapproved mutation, evidence conflicts
+without a safe discriminator, continued play risks user data or the host environment, or the
+request demands pixel-2D Bevy inspection while that surface remains deferred.

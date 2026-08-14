@@ -17,7 +17,7 @@ only for explicit review requests or the higher-risk boundaries listed below.
 | --- | --- | --- |
 | Development owner | Scope, spec, tests, implementation, refactor, docs, verification | `$develop-dreadstep` |
 | Semantic reviewer | Cross-boundary coherence, evidence, and final disposition | `$review-dreadstep` |
-| Test player | Hands-on visual feature inspection and experience feedback through runnable 2D showcases | `$test-player` |
+| Test player | Hands-on feature inspection and experience feedback through the runnable terminal showcase | `$test-player` |
 
 The development owner remains the synthesis and acceptance owner. A reviewer reports
 findings but does not silently expand scope or take over implementation. The test player reports
@@ -39,9 +39,10 @@ owner decides their disposition.
 6. **Review and verify:** apply the risk gate, run required checks, and issue `pass`, `fix`,
    or `redo`. Output final evidence and unresolved concerns.
 
-For a player-facing slice with a runnable 2D surface, use `$test-player` when visual inspection is
+For a player-facing slice with a runnable terminal surface, use `$test-player` when inspection is
 requested or when acceptance depends on player-visible behavior or experience. Treat its report as
-input to the development owner; do not substitute display-free smoke output for its visual pass.
+input to the development owner; do not substitute display-free smoke output for its play pass.
+Pixel-2D Bevy inspection is deferred until a visual-enhancement stage.
 
 ## Review Gate
 
