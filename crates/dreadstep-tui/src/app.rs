@@ -126,7 +126,7 @@ fn write_capture(path: std::path::PathBuf, contents: &str) -> io::Result<()> {
   std::fs::write(path, format!("{contents}\n"))
 }
 
-fn run_print_frames(play: &mut Play, no_delay: bool) -> ExitCode {
+fn run_print_frames(play: &mut Play, _no_delay: bool) -> ExitCode {
   let mut stdout = io::stdout();
   if writeln!(stdout, "{}\n{}", FRAME_SEPARATOR, play.frame().plain()).is_err() {
     return play.shutdown("stdout_fault");
@@ -135,10 +135,7 @@ fn run_print_frames(play: &mut Play, no_delay: bool) -> ExitCode {
     if matches!(play.status, Status::Faulted(_)) {
       return play.shutdown("fault");
     }
-    if play.session.next_actor() != Some(PLAYER)
-      && matches!(play.status, Status::Running)
-      && (no_delay || !io::stdin().is_terminal())
-    {
+    if play.session.next_actor() != Some(PLAYER) && matches!(play.status, Status::Running) {
       let _ = play.drive_enemies(false);
       let _ = writeln!(stdout, "{}\n{}", FRAME_SEPARATOR, play.frame().plain());
       continue;

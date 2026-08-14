@@ -104,28 +104,19 @@ fn map_lines(session: &Session) -> Vec<Vec<Cell>> {
 }
 
 fn cell_at(session: &Session, position: dreadstep_core::Position) -> Cell {
-  if let Some(actor) = session
+  // Actor iteration is id-ordered, so occupancy must prefer living actors over corpses
+  // rather than the first record on the tile.
+  if let Some(living) = session
     .actors()
-    .find(|actor| actor.position() == position)
-    .filter(|actor| {
-      actor.is_alive()
-        || session
-          .actors()
-          .filter(|other| other.position() == position && other.is_alive())
-          .count()
-          == 0
-    })
+    .find(|actor| actor.is_alive() && actor.position() == position)
   {
-    // Living actors win the cell. A corpse is shown only when no living actor shares the tile.
-    if actor.is_alive() {
-      return actor_cell(actor);
-    }
-    if !session
-      .actors()
-      .any(|other| other.is_alive() && other.position() == position)
-    {
-      return actor_cell(actor);
-    }
+    return actor_cell(living);
+  }
+  if let Some(corpse) = session
+    .actors()
+    .find(|actor| !actor.is_alive() && actor.position() == position)
+  {
+    return actor_cell(corpse);
   }
   if session
     .ground_items()
@@ -290,10 +281,14 @@ fn intent_line(session: &Session) -> String {
 }
 
 fn controls_line(session: &Session) -> &'static str {
-  match session.outcome() {
-    RunOutcome::Victory => "R restart  N next depth (procedural)  Esc quit  ? help",
-    RunOutcome::Defeat => "R restart  Esc quit  ? help",
-    RunOutcome::InProgress => {
+  match (session.outcome(), session.scenario()) {
+    (RunOutcome::Victory, crate::session::Scenario::Procedural { .. }) => {
+      "R restart  N next depth (procedural)  Esc quit  ? help"
+    }
+    (RunOutcome::Victory, crate::session::Scenario::ItemShowcase) | (RunOutcome::Defeat, _) => {
+      "R restart  Esc quit  ? help"
+    }
+    (RunOutcome::InProgress, _) => {
       "hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit"
     }
   }
@@ -403,5 +398,27 @@ mod tests {
     let plain = render_frame(&session, &ui).plain();
     assert!(plain.contains("You open the door."));
     assert!(plain.contains('\''), "open-door glyph missing:\n{plain}");
+  }
+
+  #[test]
+  fn living_actor_glyph_wins_over_a_lower_id_corpse() {
+    let mut session = Session::start_item_run(7).expect("item showcase");
+    let corpse = dreadstep_core::ActorId::new(2);
+    let living = dreadstep_core::ActorId::new(3);
+    let position = session.actor(corpse).expect("enemy 2").position();
+    session
+      .set_hit_points_for_test(corpse, dreadstep_core::HitPoints::new(0))
+      .expect("kill lower-id actor");
+    session
+      .prepare_smoke_teleport(living, position)
+      .expect("living actor may occupy a corpse tile");
+    let mut ui = UiState::new();
+    ui.select_default_item(&session);
+    let glyph = super::cell_at(&session, position);
+    assert_eq!(
+      glyph.glyph(),
+      'F',
+      "living frostcaster must draw over corpse at {position:?}"
+    );
   }
 }

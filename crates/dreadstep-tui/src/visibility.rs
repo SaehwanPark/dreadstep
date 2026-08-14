@@ -78,9 +78,10 @@ mod tests {
     );
     if far != origin {
       assert!(
-        !player_can_see(&session, far) || visible.contains(&far),
-        "FOV decision must be consistent with the visible set"
+        !visible.contains(&far),
+        "radius-3 FOV must hide the far map corner {far:?} from {origin:?}"
       );
+      assert!(!player_can_see(&session, far));
     }
     let east_wallish = origin.translated(dreadstep_core::Direction::East);
     assert!(

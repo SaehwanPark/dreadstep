@@ -249,6 +249,15 @@ impl Session {
   pub fn prepare_smoke_pickup(&mut self, actor: ActorId, item: ItemId) -> Result<(), WorldError> {
     self.world.drop_item(actor, item)
   }
+
+  #[cfg(test)]
+  pub(crate) fn set_hit_points_for_test(
+    &mut self,
+    actor: ActorId,
+    hit_points: dreadstep_core::HitPoints,
+  ) -> Result<(), WorldError> {
+    self.world.set_hit_points(actor, hit_points)
+  }
 }
 
 #[cfg(test)]
