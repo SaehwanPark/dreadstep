@@ -6,6 +6,12 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added a NetHack-style `dreadstep-tui` terminal showcase as the default player-facing client
+  and CI/smoke gate. Glyphs, colors, FOV, keybindings, JSONL `frame` journals, `--print-frames`,
+  and README text captures are adapter-owned; core rules and protocol v27 are unchanged. Pixel
+  2D Bevy playtesting is deferred to `scripts/verify-bevy-desktop.sh` until a visual-enhancement
+  stage.
+
 - Added the stationary `Blocker` enemy behavior. A scheduled Blocker attacks only when its
   controlled target is within melee reach and otherwise waits in place; protocol v27, content,
   MCP, Bevy intent, desktop actor-state JSON, and display-free smoke project the authored identity.

@@ -6,7 +6,8 @@
 ## Context
 
 Dreadstep must support deterministic tests, replay evidence, headless tools, MCP agents,
-and a Bevy client without allowing any one interface to become the source of game truth.
+a terminal client, and a Bevy client without allowing any one interface to become the source of
+game truth.
 The original proposal places simulation before presentation but leaves the ownership of
 semantic commands and events implicit between core and protocol.
 
@@ -20,14 +21,15 @@ Domain code prefers explicit state and pure transformations. Seeded randomness, 
 configuration enter through arguments or typed state. Local mutation is permitted when it
 keeps Rust ownership clearer or avoids a demonstrated cost without exposing hidden state.
 
-Headless, MCP, and Bevy packages own effects. They may translate external input into core
+Headless, MCP, TUI, and Bevy packages own effects. They may translate external input into core
 commands and core events into external output, but they cannot decide authoritative game
 outcomes. Content is validated into typed values supported by core and cannot add hidden
 rules.
 
 ## Consequences
 
-- Core can compile and test without Bevy, MCP, platform services, or authored-file formats.
+- Core can compile and test without Bevy, MCP, terminal runtimes, platform services, or
+  authored-file formats.
 - Protocol versioning can evolve without making wire representation the domain model.
 - Adapter integration tests must compare both sides of each boundary.
 - Some translations are explicit even when sharing one representation would require less

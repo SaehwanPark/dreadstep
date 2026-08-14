@@ -12,6 +12,16 @@
       ]
     },
     {
+      "id": "tui-input",
+      "prompt": "Map keyboard input in the terminal client to a player move.",
+      "skill": "develop-dreadstep",
+      "assertions": [
+        "Keeps input effects in dreadstep-tui",
+        "Maps input to a core-owned semantic command",
+        "Does not implement movement rules in the terminal renderer"
+      ]
+    },
+    {
       "id": "bevy-input",
       "prompt": "Map keyboard input in the Bevy client to a player move.",
       "skill": "develop-dreadstep",

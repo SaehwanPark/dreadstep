@@ -3,8 +3,8 @@
 ## What
 
 - Dreadstep is a deterministic tactical roguelike whose Rust domain model serves tests,
-  headless tools, MCP agents, and a future Bevy client.
-- `dreadstep-core` owns semantic game truth. Protocol, content, headless, MCP, and Bevy are
+  headless tools, MCP agents, a NetHack-style terminal client, and a future Bevy client.
+- `dreadstep-core` owns semantic game truth. Protocol, content, headless, MCP, TUI, and Bevy are
   boundaries around it; see `ARCHITECTURE.md`.
 
 ## Why

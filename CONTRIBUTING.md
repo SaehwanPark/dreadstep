@@ -23,9 +23,10 @@ Install Rust through `rustup`. The committed toolchain file selects Rust 1.97.1 
 Rustfmt and Clippy automatically.
 
 - Apple Silicon macOS: install Xcode command-line tools with `xcode-select --install`.
-- Linux or WSL2: core/headless checks need no Bevy desktop packages; the full showcase gate uses
-  the reviewed X11/XWayland feature path and requires `pkg-config` plus the ALSA development
-  package (for example, `sudo apt-get install pkg-config libasound2-dev`).
+- Linux or WSL2: core/headless/TUI checks need no Bevy desktop packages. Workspace
+  `--all-features` still compiles Bevy audio and requires `pkg-config` plus the ALSA
+  development package (for example, `sudo apt-get install pkg-config libasound2-dev`).
+  The default showcase gate is the terminal client.
 - Windows: use a Rustup installation with the MSVC host toolchain and Windows build tools.
 
 Verify the repository:
@@ -64,25 +65,27 @@ media paths.
 
 ## Runnable showcase maintenance
 
-Player-facing changes must keep the desktop showcase and its evidence current. Run the visible
+Player-facing changes must keep the terminal showcase and its evidence current. Run the visible
 client with:
 
 ```sh
-cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- --seed 7
+cargo run -p dreadstep-tui -- --seed 7
 ```
 
 Run the display-free gate with:
 
 ```sh
-cargo run -p dreadstep-bevy --features desktop --bin dreadstep -- \
-  --smoke --seed 7 --log-dir target/dreadstep-smoke-logs
+cargo run -p dreadstep-tui -- \
+  --smoke --seed 7 --log-dir target/dreadstep-tui-smoke-logs
 ```
 
 When adding a player-visible command, event, state field, or presentation capability, update the
-desktop action selection or exhaustive journal mapping, the smoke sequence/coverage lists, and
-the matrix and manual checklist in `docs/demo.md`. If the feature is intentionally deferred,
-record the explicit exclusion and verification plan in `SPEC.md` instead. Tester-only MCP/test
-operations remain outside the human client.
+TUI action selection or exhaustive journal/`frame` mapping, the smoke sequence/coverage lists,
+README screenshot goldens when the opening frame changes, and the matrix and manual checklist in
+`docs/demo.md`. If the feature is intentionally deferred, record the explicit exclusion and
+verification plan in `SPEC.md` instead. Tester-only MCP/test operations remain outside the human
+client. Do not require Bevy desktop mapping until a visual-enhancement stage; that later gate is
+`scripts/verify-bevy-desktop.sh`.
 
 ## Code and Documentation Style
 

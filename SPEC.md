@@ -130,12 +130,15 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 4 slice: deterministic Frostcaster Chilled casting |
 | 2026-08-13 | Milestone 4 slice: behavior-named enemy intent HUD |
 | 2026-08-13 | Milestone 5 preparation slice: deterministic stationary Blocker behavior |
+| 2026-08-14 | NetHack-style terminal showcase as the default tester |
 
 ## Present
 
 Workspace version is `0.0.0`. Protocol version is **27**. Simulation truth stays in
-`dreadstep-core`; adapters translate only. Desktop controls and smoke coverage are
-documented in [`docs/demo.md`](docs/demo.md).
+`dreadstep-core`; adapters translate only. The default player-facing showcase is the
+NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
+coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
+deferred until a later visual-enhancement stage.
 
 ### Core
 
@@ -162,40 +165,39 @@ documented in [`docs/demo.md`](docs/demo.md).
 
 - Headless projections (scene, HUD, FOV, intent, audio/animation cues, sprites) plus an
   opt-in desktop showcase with JSONL journal, replay-export evidence, `--smoke`, and
-  optional `--procedural` floor selection.
+  optional `--procedural` floor selection. This pixel client remains in the workspace but is
+  not the default tester gate; `scripts/verify-bevy-desktop.sh` is the later visual-stage
+  check.
+
+### Terminal client
+
+- `dreadstep-tui` is the default human and agent-playable showcase: a colored NetHack-style
+  map, message window, and status lines over the same core commands and events. Display-free
+  `--smoke`, JSONL `frame` records, replay export, `--print-frames`, and README screenshot
+  goldens are adapter effects. Pixel 2D Bevy playtesting is deferred.
 
 ## Active
 
-The current slice is complete: a scheduled living actor may close an adjacent unoccupied OpenDoor
-with typed `Close`, returning it to blocking `Door` terrain. Existing `Interact` and `Kick` actions
-retain the opened-door identity. Protocol v27, MCP, headless, Bevy, HUD/journal formatting, content,
-and display-free smoke project the same core-owned result. A player may also throw authored Frost Flask item 104 at a living target
-on a clear cardinal distance-2..=3 ray. The flask is consumed, applies or refreshes the existing
-two-action `Chilled` status, and emits typed throw/application events. Authored Kiter enemies expose
-deterministic adjacent retreat before their existing combat fallbacks. MCP, headless,
-Bevy, HUD/journal formatting, content, and display-free smoke project the same core-owned result.
-Authored Brute enemies now select the existing `Break` command when a directly blocking Breakable
-is their deterministic next horizontal-first chase step, then resume ordinary pursuit. Their
-behavior identity and enemy intent are projected through protocol, MCP, and Bevy boundaries.
-Authored Blocker enemies now select the existing `Attack` command only within melee reach and
-otherwise select `Wait`, holding their position without new commands or events. Protocol v27,
-MCP, content, Bevy intent, actor-state JSON, and display-free smoke project the same identity.
-Authored Frostcaster enemies retain adjacent attacks and otherwise select `CastChill` on clear
-cardinal distance-2..=3 targets, applying the existing two-action Chilled status without ammo;
-the typed `ChillCast` event, protocol v27, MCP/headless mappings, Bevy intent, and display-free
-smoke are synchronized.
-The desktop HUD names the authored behavior (`Pursuer`, `Kiter`, `Brute`, `Frostcaster`, or `Blocker`)
-alongside that core-selected intent; this remains a read-only presentation projection.
+The current slice is complete: `dreadstep-tui` is the default player-facing showcase. It maps
+NetHack-inspired keys onto core `legal_commands`, renders a colored glyph frame with radius-3
+FOV, journals plain `frame` records for agents, and provides display-free `--smoke` coverage
+for the current command and event kinds. `scripts/verify.sh` and CI use TUI smoke. Bevy remains
+in the workspace; pixel-2D playtesting is deferred to `scripts/verify-bevy-desktop.sh` until a
+visual-enhancement stage. Protocol remains v27.
 
 ## Future
 
 ### Remaining roadmap milestones
 
 Each remaining proposal milestone needs its own bounded acceptance slice before it can
-move into `Past`. Production art, richer combat, living-dungeon progression, loot,
-playback-compatible saves, and release quality remain future work.
+move into `Past`. Core-facing work updates the terminal client plus MCP/headless/protocol
+as needed. Pixel-art Bevy polish waits until core is mature enough for a visual-enhancement
+stage. Richer combat, living-dungeon progression, loot, playback-compatible saves, and
+release quality remain future work.
 
-- Milestone 3 — First Visible Dreadstep polish: production art adoption around the verified showcase.
+- Milestone 3 — First visible Dreadstep is satisfied by the verified terminal client.
+  Production-art adoption, pixel 2D window polish, and Bevy visual playtesting are deferred
+  to the visual-enhancement stage after core-facing milestones 4–6.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions.
 - Milestone 5 — The Living Dungeon: enemy archetypes, richer environmental state, and core-owned
   floor progression.

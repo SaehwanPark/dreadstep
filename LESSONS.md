@@ -13,14 +13,41 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
   terminals once; export from the accepted trace; share predicates between discovery and
   execution.
 - Adapter goldens and public commands: refresh snapshots after digest or command-set changes;
-  keep protocol/control reconciliation in one slice.
+  keep protocol/control reconciliation in one slice; player-facing gates follow the active
+  showcase crate.
 - Bevy presentation: keep engine features at the boundary; key ECS mirrors by domain identity;
   snapshot before exclusive projection; never order input from a button set; finalize journals
   before `App::run` consumes the world.
+- Terminal presentation: render frames as a pure function so goldens and agents do not need a
+  TTY; log stripped frames rather than putting glyphs on MCP.
 - Items and environment: opaque ids vs catalog membership; atomic tester transfers; exclusive
   consumable results; typed environmental commands; reuse movement as the trap trigger.
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
   keep compiling without import-path churn.
+
+## 2026-08-14 — Player-facing gates follow the active showcase crate
+
+- Context: Skills, `docs/demo.md`, `CONTRIBUTING.md`, `scripts/verify.sh`, and CI all required
+  Bevy desktop smoke and visual playtesting, so core-facing work could not defer pixel clients
+  without those gates failing.
+- Symptom: A new terminal adapter would still leave `verify.sh` and `$test-player` pointed at
+  the Bevy window.
+- Cause: The player-facing maintenance contract was hardcoded to `dreadstep-bevy` instead of
+  naming the active showcase crate.
+- Resolution: Make `dreadstep-tui` the default showcase, retarget verify/CI/skills, and keep
+  Bevy smoke in `scripts/verify-bevy-desktop.sh` for a later visual-enhancement stage.
+- Prevention: When the human client changes, update the skill, demo, contributing, verify, and
+  CI paths in the same slice. Do not leave Bevy as an implicit required mapping for core work.
+
+## 2026-08-14 — Terminal frames must be a pure function
+
+- Context: Agents and README captures need to see the client without a graphical session, and
+  alternate-screen TUIs often hide frames from terminal transcripts.
+- Symptom: A curses-only renderer cannot produce deterministic goldens or agent-readable logs.
+- Cause: Layout was treated as a TTY effect instead of a projection of core state.
+- Resolution: Build `TextFrame` from session plus UI state, strip colors for goldens/`frame`
+  journal records, and print frames on stdout when stdin is not a TTY.
+- Prevention: Do not put glyphs on MCP. Do not make screenshot goldens depend on crossterm.
 
 ## 2026-08-13 — Keep crate-root re-exports when splitting production modules
 
