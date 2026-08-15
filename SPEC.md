@@ -132,6 +132,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 5 preparation slice: deterministic stationary Blocker behavior |
 | 2026-08-14 | NetHack-style terminal showcase as the default tester |
 | 2026-08-15 | Milestone 4/5 slice: deterministic Scavenger enemy behavior |
+| 2026-08-15 | Enhancing TUI presentation: colored text, symbols, and section spacing |
 
 ## Present
 
@@ -174,17 +175,20 @@ deferred until a later visual-enhancement stage.
 ### Terminal client
 
 - `dreadstep-tui` is the default human and agent-playable showcase: a colored NetHack-style
-  map, message window, and status lines over the same core commands and events. Display-free
-  `--smoke`, JSONL `frame` records, replay export, `--print-frames`, and README screenshot
-  goldens are adapter effects. Pixel 2D Bevy playtesting is deferred.
+  map, message window, and status lines over the same core commands and events. Distinct blank-line
+  separators structure the visual hierarchy between messages, dungeon map/overlays, status, and
+  intent/controls sections. Semantic color styling accents header, message events, health bars,
+  ammo/status/outcome, inventory items, and enemy intent. Display-free `--smoke`, JSONL `frame`
+  records, replay export, `--print-frames`, and README screenshot goldens are adapter effects.
+  Pixel 2D Bevy playtesting is deferred.
 
 ## Active
 
-The current slice is complete: deterministic Scavenger enemy behavior is verified across
-`dreadstep-core`, `dreadstep-protocol` (v28), `dreadstep-mcp`, `dreadstep-tui` glyph/color/HUD
-mappings (`s`), and `dreadstep-bevy` intent projection. A Scavenger attacks within melee reach
-and pursues when healthy, but prioritizes retreat from adjacent targets when wounded.
-Protocol version is v28.
+The current slice is complete: enhanced TUI presentation in `dreadstep-tui` is verified across
+unit tests, screenshot goldens, display-free smoke, and a test-player evaluation. The layout
+maintains dedicated blank-line section separators (messages to map/overlays, map/overlays to status,
+status to intent/controls) and rich semantic cell colors while preserving deterministic pure-function
+frame rendering and clean plain-text stripping for journals and screenshots. Protocol version is v28.
 
 ## Future
 

@@ -41,14 +41,17 @@ Dreadstep  seed:7  item_showcase
 
 
 
+
  #
 #@+
 #.#
 #F.
  ##
+
 HP:10/10 [##########]  Pos:(1,1)  T:0  Next:you
 Ammo:3/3  Status:none  Outcome:in_progress
 Inv: 101) heal+3  103) reach2*  104) flask  102) ammo+2
+
 Intent: (your turn)
 hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
 ```
@@ -65,14 +68,17 @@ You open the door.
 
 
 
+
  ####
 #@'..
 #.#.#
 #F.
  ##
+
 HP:10/10 [##########]  Pos:(1,1)  T:0  Next:2
 Ammo:3/3  Status:none  Outcome:in_progress
 Inv: 101) heal+3  103) reach2*  104) flask  102) ammo+2
+
 Intent: Pursuer chase
 hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
 ```

@@ -46,6 +46,12 @@ impl Cell {
     }
   }
 
+  /// Creates a styled cell with explicit color and bold attributes.
+  #[must_use]
+  pub const fn styled(glyph: char, color: CellColor, bold: bool) -> Self {
+    Self { glyph, color, bold }
+  }
+
   /// Creates a default-colored cell.
   #[must_use]
   pub const fn plain(glyph: char) -> Self {
@@ -68,6 +74,13 @@ impl Cell {
   #[must_use]
   pub const fn bold(self) -> bool {
     self.bold
+  }
+}
+
+/// Appends characters of a string slice styled with a given color.
+pub fn push_styled(cells: &mut Vec<Cell>, text: &str, color: CellColor) {
+  for glyph in text.chars() {
+    cells.push(Cell::new(glyph, color));
   }
 }
 
