@@ -83,7 +83,7 @@ when an agent needs both a readable frame and typed legal actions.
 
 | Current player-facing surface | TUI frame | Journal | Display-free smoke |
 | --- | --- | --- | --- |
-| Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster/Blocker intent | map, scheduler, behavior + intent, messages | command + event + frames | yes |
+| Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster/Blocker/Scavenger intent | map, scheduler, behavior + intent, messages | command + event + frames | yes |
 | Attack / damage / death | glyphs, messages, terminal status | ordered `attacked`/`died` events | yes |
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped rows and item glyphs | item/reload/throw events | yes |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise | distinct glyphs plus status duration | typed status and terrain events | yes |

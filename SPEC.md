@@ -131,10 +131,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-13 | Milestone 4 slice: behavior-named enemy intent HUD |
 | 2026-08-13 | Milestone 5 preparation slice: deterministic stationary Blocker behavior |
 | 2026-08-14 | NetHack-style terminal showcase as the default tester |
+| 2026-08-15 | Milestone 4/5 slice: deterministic Scavenger enemy behavior |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **27**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **28**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -145,7 +146,8 @@ deferred until a later visual-enhancement stage.
 - Typed map, actors, scheduling, melee and ranged combat, chase/investigation, inventory, equipment,
   pickup/drop, consumables, equipment effects, doors, reclosable OpenDoor terrain, traps,
   ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
-  ammunition, canonical `RunOutcome`, replay traces, and state digests.
+  ammunition, canonical `RunOutcome`, replay traces, state digests, and authored Pursuer, Kiter,
+  Brute, Frostcaster, Blocker, and Scavenger enemy behaviors.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -178,12 +180,11 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: `dreadstep-tui` is the default player-facing showcase. It maps
-NetHack-inspired keys onto core `legal_commands`, renders a colored glyph frame with radius-3
-FOV, journals plain `frame` records for agents, and provides display-free `--smoke` coverage
-for the current command and event kinds. `scripts/verify.sh` and CI use TUI smoke. Bevy remains
-in the workspace; pixel-2D playtesting is deferred to `scripts/verify-bevy-desktop.sh` until a
-visual-enhancement stage. Protocol remains v27.
+The current slice is complete: deterministic Scavenger enemy behavior is verified across
+`dreadstep-core`, `dreadstep-protocol` (v28), `dreadstep-mcp`, `dreadstep-tui` glyph/color/HUD
+mappings (`s`), and `dreadstep-bevy` intent projection. A Scavenger attacks within melee reach
+and pursues when healthy, but prioritizes retreat from adjacent targets when wounded.
+Protocol version is v28.
 
 ## Future
 

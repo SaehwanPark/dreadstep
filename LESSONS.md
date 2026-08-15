@@ -23,7 +23,22 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Items and environment: opaque ids vs catalog membership; atomic tester transfers; exclusive
   consumable results; typed environmental commands; reuse movement as the trap trigger.
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
-  keep compiling without import-path churn.
+  keep compiling without import-path churn; isolate complex multi-archetype selection policies into cohesive submodule helpers.
+
+## 2026-08-15 — Decompose enemy intent selection into cohesive submodule helpers
+
+- Context: As additional enemy behaviors (Kiter, Brute, Frostcaster, Blocker, Scavenger) were added
+  to `preferred_enemy_command`, the inline selection function in `world/mod.rs` exceeded function
+  line limits and mixed multiple distinct archetype rules in a single block.
+- Symptom: `clippy::too_many_lines` failed on `preferred_enemy_command` during workspace verification.
+- Cause: Placing all behavior-specific match arms and candidate legal-action searches in a monolithic
+  function.
+- Resolution: Extract intent selection into a dedicated `world/intent.rs` submodule with small, focused
+  associated helper functions for each behavior policy (`preferred_kiter_command`,
+  `preferred_scavenger_command`, `preferred_blocker_command`, etc.).
+- Prevention: Keep archetype selection policies isolated in dedicated associated functions within
+  `world/intent.rs` when adding new enemy behaviors, preserving exact deterministic priority order and
+  testability without bloated functions.
 
 ## 2026-08-14 — Player-facing gates follow the active showcase crate
 

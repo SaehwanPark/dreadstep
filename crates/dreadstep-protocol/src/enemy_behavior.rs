@@ -18,6 +18,8 @@ pub enum EnemyBehavior {
   Frostcaster,
   /// Hold position, attacking only when a target is already within melee reach.
   Blocker,
+  /// Pursue and attack at full hit points, but retreat when wounded.
+  Scavenger,
 }
 
 impl From<CoreEnemyBehavior> for EnemyBehavior {
@@ -28,6 +30,7 @@ impl From<CoreEnemyBehavior> for EnemyBehavior {
       CoreEnemyBehavior::Brute => Self::Brute,
       CoreEnemyBehavior::Frostcaster => Self::Frostcaster,
       CoreEnemyBehavior::Blocker => Self::Blocker,
+      CoreEnemyBehavior::Scavenger => Self::Scavenger,
     }
   }
 }
@@ -40,6 +43,7 @@ impl From<EnemyBehavior> for CoreEnemyBehavior {
       EnemyBehavior::Brute => Self::Brute,
       EnemyBehavior::Frostcaster => Self::Frostcaster,
       EnemyBehavior::Blocker => Self::Blocker,
+      EnemyBehavior::Scavenger => Self::Scavenger,
     }
   }
 }

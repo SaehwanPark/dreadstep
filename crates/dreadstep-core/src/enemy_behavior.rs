@@ -14,4 +14,6 @@ pub enum EnemyBehavior {
   Frostcaster,
   /// Hold position, attacking only when the controlled target enters melee reach.
   Blocker,
+  /// Pursue and attack at full hit points, but retreat when wounded.
+  Scavenger,
 }
