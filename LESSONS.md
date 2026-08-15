@@ -14,7 +14,7 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
   execution.
 - Adapter goldens and public commands: refresh snapshots after digest or command-set changes;
   keep protocol/control reconciliation in one slice; player-facing gates follow the active
-  showcase crate.
+  showcase crate; reconcile layout spacing changes with screenshot goldens and README text blocks.
 - Bevy presentation: keep engine features at the boundary; key ECS mirrors by domain identity;
   snapshot before exclusive projection; never order input from a button set; finalize journals
   before `App::run` consumes the world.
@@ -24,6 +24,20 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
   consumable results; typed environmental commands; reuse movement as the trap trigger.
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
   keep compiling without import-path churn; isolate complex multi-archetype selection policies into cohesive submodule helpers.
+
+## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
+
+- Context: When adding visual section separators (blank lines) between the message window, dungeon
+  rendering, status block, and intent/controls sections in `dreadstep-tui`, plain-text line counts
+  in `screenshots/` and `README.md` changed.
+- Symptom: Integration tests in `crates/dreadstep-tui/tests/screenshots.rs` failed because committed
+  screenshot files and embedded README text blocks had differing blank line counts.
+- Cause: TUI layout is verified through exact character-for-character regression goldens and README
+  documentation embeddings.
+- Resolution: Regenerate screenshot files using `cargo run -p dreadstep-tui -- --capture screenshots/`
+  and update embedded text blocks in `README.md` in the same slice.
+- Prevention: Whenever frame layout or spacing changes, update the screenshot captures and README
+  embeddings together, then verify with `cargo test -p dreadstep-tui` and `scripts/verify.sh`.
 
 ## 2026-08-15 — Decompose enemy intent selection into cohesive submodule helpers
 

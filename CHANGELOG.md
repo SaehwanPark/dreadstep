@@ -6,6 +6,15 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Enhanced `dreadstep-tui` terminal presentation with structured section spacing and rich semantic
+  color styling. The layout establishes clean blank-line separators between the message window and
+  dungeon rendering / overlays, between dungeon rendering and the status section, and between the
+  status section and the intent/controls section. Added semantic color styling across the header,
+  messages (combat, cold, errors, interactions), health bar (health threshold coloring), ammo,
+  status, outcome, inventory items (categorized by effect, selected, wielded), enemy intent, controls,
+  and overlays. Reconciled README screenshot goldens and unit tests while preserving pure deterministic
+  frame layout and plain text stripping.
+
 - Added the authored `Scavenger` enemy behavior. A healthy Scavenger pursues and attacks within
   melee reach like a pursuer, but prioritizes deterministic retreat from adjacent targets when
   wounded (hit points below maximum), falling back to melee attack only when cornered without an
