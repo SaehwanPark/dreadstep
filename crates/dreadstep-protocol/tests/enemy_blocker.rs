@@ -37,13 +37,13 @@ fn version_27_snapshot_projects_the_authored_blocker_behavior() {
 
   let snapshot = WorldSnapshot::from_world(&world);
   let digest = snapshot.digest().value();
-  assert_eq!(PROTOCOL_VERSION, 27);
-  assert_eq!(snapshot.protocol_version(), 27);
+  assert_eq!(PROTOCOL_VERSION, 28);
+  assert_eq!(snapshot.protocol_version(), 28);
   assert_eq!(snapshot.actors()[0].behavior(), EnemyBehavior::Blocker);
   assert_eq!(
     serde_json::to_value(snapshot).expect("snapshot should serialize"),
     json!({
-      "protocol_version": 27,
+      "protocol_version": 28,
       "outcome": "in_progress",
       "current_time": 0,
       "next_actor": 2,

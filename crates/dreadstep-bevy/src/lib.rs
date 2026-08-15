@@ -69,11 +69,12 @@ pub(crate) use sync_feedback::{
   sync_animation_cues, sync_audio_asset_projection, sync_audio_cues, sync_enemy_intent, sync_hud,
   sync_messages,
 };
+#[cfg_attr(not(feature = "desktop"), allow(unused_imports))]
+pub(crate) use sync_render::placeholder_sprite;
 pub(crate) use sync_render::{
-  placeholder_sprite, sync_bevy_sprite_projection, sync_bevy_sprite_transform_projection,
-  sync_render_asset_projection, sync_render_command_plan, sync_render_nodes,
-  sync_render_projection, sync_scene_pixel_positions, sync_sprite_node_components,
-  sync_sprite_projection, sync_sprite_transform_components,
+  sync_bevy_sprite_projection, sync_bevy_sprite_transform_projection, sync_render_asset_projection,
+  sync_render_command_plan, sync_render_nodes, sync_render_projection, sync_scene_pixel_positions,
+  sync_sprite_node_components, sync_sprite_projection, sync_sprite_transform_components,
 };
 pub(crate) use sync_view::{
   sync_camera, sync_focus, sync_scene_camera, sync_scene_camera_components, sync_scene_focus,

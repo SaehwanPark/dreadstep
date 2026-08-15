@@ -26,7 +26,7 @@ fn snapshot_projects_in_progress_outcome_and_current_protocol_version() {
   .expect("world should be valid");
   let snapshot = WorldSnapshot::from_world(&world);
 
-  assert_eq!(PROTOCOL_VERSION, 27);
+  assert_eq!(PROTOCOL_VERSION, 28);
   assert_eq!(snapshot.protocol_version(), PROTOCOL_VERSION);
   assert_eq!(snapshot.outcome(), RunOutcome::InProgress);
   assert_eq!(snapshot.actors()[0].id(), ActorId::new(1));

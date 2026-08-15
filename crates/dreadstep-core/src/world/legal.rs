@@ -127,7 +127,10 @@ impl WorldState {
     living_targets: &[&Actor],
     commands: &mut Vec<Command>,
   ) {
-    if actor.enemy_behavior() == EnemyBehavior::Kiter {
+    if actor.enemy_behavior() == EnemyBehavior::Kiter
+      || (actor.enemy_behavior() == EnemyBehavior::Scavenger
+        && actor.hit_points().value() < actor.max_hit_points().value())
+    {
       for target in living_targets {
         if Self::manhattan_distance(actor.position(), target.position()) == 1
           && self.retreat_direction(actor_id, target.id()).is_ok()

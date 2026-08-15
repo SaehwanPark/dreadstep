@@ -133,7 +133,11 @@ impl WorldState {
       .actors
       .get(&actor_id)
       .ok_or(CommandError::UnknownActor(actor_id))?;
-    if actor.kind() != ActorKind::Enemy || actor.enemy_behavior() != EnemyBehavior::Kiter {
+    if actor.kind() != ActorKind::Enemy
+      || !(actor.enemy_behavior() == EnemyBehavior::Kiter
+        || (actor.enemy_behavior() == EnemyBehavior::Scavenger
+          && actor.hit_points().value() < actor.max_hit_points().value()))
+    {
       return Err(CommandError::RetreatRequiresKiter(actor_id));
     }
     if actor_id == target_id {

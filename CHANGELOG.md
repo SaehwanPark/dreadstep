@@ -6,6 +6,12 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added the authored `Scavenger` enemy behavior. A healthy Scavenger pursues and attacks within
+  melee reach like a pursuer, but prioritizes deterministic retreat from adjacent targets when
+  wounded (hit points below maximum), falling back to melee attack only when cornered without an
+  escape tile. Protocol v28, MCP, Bevy intent HUD, and TUI glyph/color mappings (`s`) project
+  the authored identity without changing action timing or core simulation invariants.
+
 - Added a NetHack-style `dreadstep-tui` terminal showcase as the default player-facing client
   and CI/smoke gate. Glyphs, colors, FOV, keybindings, JSONL `frame` journals, `--print-frames`,
   and README text captures are adapter-owned; core rules and protocol v27 are unchanged. Pixel
