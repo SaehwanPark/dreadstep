@@ -72,6 +72,7 @@ fn item_thrown_event_and_throwable_item_effect_project_without_adapter_policy() 
       "id": 104,
       "definition": 5,
       "equipment_effect": null,
+      "equipment_slot": null,
       "throwable_effect": "chill"
     })
   );

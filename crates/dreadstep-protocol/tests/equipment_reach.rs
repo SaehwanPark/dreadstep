@@ -21,7 +21,11 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     Some(dreadstep_protocol::EquipmentEffect::MinimumMeleeReach { reach })
       if reach.value() == 2
   ));
-  assert_eq!(PROTOCOL_VERSION, 32);
+  assert_eq!(
+    snapshot.equipment_slot(),
+    Some(dreadstep_protocol::EquipmentSlot::Weapon)
+  );
+  assert_eq!(PROTOCOL_VERSION, 33);
 }
 
 #[test]
@@ -52,6 +56,28 @@ fn item_snapshot_projects_ranged_damage_effect() {
     Some(dreadstep_protocol::EquipmentEffect::RangedDamage { amount })
       if amount.value() == 1
   ));
+}
+
+#[test]
+fn item_snapshot_projects_weapon_and_armor_roles() {
+  let weapon = ItemSnapshot::from_item(Item::with_equipment_damage(
+    dreadstep_core::ItemId::new(105),
+    ItemDefinitionId::new(6),
+    Damage::new(1),
+  ));
+  let armor = ItemSnapshot::from_item(Item::with_damage_reduction(
+    dreadstep_core::ItemId::new(106),
+    ItemDefinitionId::new(7),
+    Damage::new(1),
+  ));
+  assert_eq!(
+    weapon.equipment_slot(),
+    Some(dreadstep_protocol::EquipmentSlot::Weapon)
+  );
+  assert_eq!(
+    armor.equipment_slot(),
+    Some(dreadstep_protocol::EquipmentSlot::Armor)
+  );
 }
 
 #[test]

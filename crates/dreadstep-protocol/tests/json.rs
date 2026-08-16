@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 32);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 33);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -74,6 +74,10 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["inventory_capacity"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
+  assert_eq!(
+    value["actors"][0]["inventory"][0]["equipment_slot"],
+    serde_json::Value::Null
+  );
   assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
   let equipped_value =
     serde_json::to_value(equipped_snapshot()).expect("snapshot should serialize");
@@ -113,6 +117,7 @@ fn snapshot_json_projects_snake_case_equipment_effect() {
     value["equipment_effect"],
     serde_json::json!({"minimum_melee_reach": {"reach": 2}})
   );
+  assert_eq!(value["equipment_slot"], "weapon");
 }
 
 #[test]
@@ -143,6 +148,7 @@ fn snapshot_json_projects_ranged_damage_equipment_effect() {
     value["equipment_effect"],
     serde_json::json!({"ranged_damage": {"amount": 1}})
   );
+  assert_eq!(value["equipment_slot"], "weapon");
 }
 
 #[test]
@@ -158,6 +164,7 @@ fn snapshot_json_projects_damage_reduction_equipment_effect() {
     value["equipment_effect"],
     serde_json::json!({"damage_reduction": {"amount": 1}})
   );
+  assert_eq!(value["equipment_slot"], "armor");
 }
 
 #[test]

@@ -32,6 +32,7 @@ mod behavior;
 mod cli;
 pub(crate) mod format;
 pub(crate) mod input;
+mod item_format;
 pub(crate) mod journal;
 mod plugin;
 pub(crate) mod session;

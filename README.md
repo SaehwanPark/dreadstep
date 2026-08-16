@@ -22,7 +22,7 @@ fixture.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v32**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v33**. Core owns deterministic combat, inventory, and
 environmental rules; protocol/MCP/headless/TUI/Bevy translate those values. The default
 showcase is the NetHack-style terminal client. It journals each run and can start an authored
 item fixture or a seeded procedural floor.

@@ -19,7 +19,7 @@ mod snapshot;
 mod status;
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 32;
+pub const PROTOCOL_VERSION: u16 = 33;
 
 pub use command::{CommandRequest, Direction};
 pub use enemy_behavior::EnemyBehavior;
@@ -27,8 +27,8 @@ pub use error::{CommandError, MapError, ScenarioError, WorldError};
 pub use event::{BlockReason, Damage, Event};
 pub use ids::{ActorId, ActorKind, HitPoints, ItemDefinitionId, ItemId, MeleeReach, Position};
 pub use item::{
-  AmmunitionResult, EquipmentEffect, GroundItemSnapshot, HealingResult, ItemSnapshot,
-  ThrowableEffect,
+  AmmunitionResult, EquipmentEffect, EquipmentSlot, GroundItemSnapshot, HealingResult,
+  ItemSnapshot, ThrowableEffect,
 };
 pub use replay::{ActionTime, ReplayEvidence, StateDigest};
 pub use scenario::{Scenario, ScenarioActor, Tile};
