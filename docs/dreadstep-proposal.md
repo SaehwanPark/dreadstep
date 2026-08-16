@@ -2039,6 +2039,11 @@ instances, full ownership/pickup/transfer operations reject atomically, protocol
 capacity and typed overflow errors, and legal player pickup omits a full inventory. Effects,
 stacking, weight, and capacity upgrades remain future work.
 
+The terminal inventory overlay now also provides a deterministic comparison line: the selected
+typed-effect label is shown against the currently equipped item or an explicit empty baseline.
+This is presentation-only; rarity, generated loot, affixes, and richer comparison metadata remain
+future work.
+
 ### Implement
 
 - equipment;

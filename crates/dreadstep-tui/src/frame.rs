@@ -509,7 +509,7 @@ fn inventory_overlay_lines(session: &Session, ui: &UiState) -> Vec<Vec<Cell>> {
   push_styled(&mut header, "Inventory", CellColor::WhiteBold);
   push_styled(
     &mut header,
-    " (Tab cycles, e equip, q use, x drop, i close):",
+    " (Tab cycles, compare, e equip, q use, x drop, i close):",
     CellColor::Gray,
   );
   lines.push(header);
@@ -548,6 +548,37 @@ fn inventory_overlay_lines(session: &Session, ui: &UiState) -> Vec<Vec<Cell>> {
       }
       lines.push(row);
     }
+    let mut comparison = Vec::new();
+    push_styled(&mut comparison, "Compare: ", CellColor::Gray);
+    let selected = ui
+      .selected_item()
+      .and_then(|selected| player.inventory().iter().find(|item| item.id() == selected));
+    let equipped = player
+      .equipped_item()
+      .and_then(|equipped| player.inventory().iter().find(|item| item.id() == equipped));
+    match (selected, equipped) {
+      (Some(selected), Some(equipped)) if selected.id() == equipped.id() => {
+        push_styled(
+          &mut comparison,
+          "selected item is wielded",
+          CellColor::Green,
+        );
+      }
+      (Some(selected), Some(equipped)) => {
+        let (selected_label, selected_color) = item_kind_label_and_color(selected);
+        let (equipped_label, equipped_color) = item_kind_label_and_color(equipped);
+        push_styled(&mut comparison, &selected_label, selected_color);
+        push_styled(&mut comparison, " vs ", CellColor::Gray);
+        push_styled(&mut comparison, &equipped_label, equipped_color);
+      }
+      (Some(selected), None) => {
+        let (selected_label, selected_color) = item_kind_label_and_color(selected);
+        push_styled(&mut comparison, &selected_label, selected_color);
+        push_styled(&mut comparison, " vs nothing", CellColor::Gray);
+      }
+      (None, _) => push_styled(&mut comparison, "no selection", CellColor::Default),
+    }
+    lines.push(comparison);
   }
   lines
 }
@@ -704,6 +735,20 @@ mod tests {
       .position(|line| line.starts_with("HP:"))
       .expect("HP line");
     assert_eq!(plain_lines[hp_index - 1], "");
+  }
+
+  #[test]
+  fn inventory_overlay_compares_selected_item_with_equipped_item() {
+    let session = Session::start_item_run(7).expect("item showcase");
+    let mut ui = UiState::new();
+    ui.select_default_item(&session);
+    ui.toggle_inventory();
+
+    let plain = render_frame(&session, &ui).plain();
+    assert!(
+      plain.contains("Compare: reach2 vs nothing"),
+      "comparison missing:\n{plain}"
+    );
   }
 
   #[test]
