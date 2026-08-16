@@ -270,7 +270,7 @@ fn inventory_status_line(session: &Session, ui: &UiState) -> Vec<Cell> {
       push_styled(&mut cells, "  ", CellColor::Default);
     }
     let id = item.id().value();
-    let is_equipped = Some(item.id()) == player.equipped_item();
+    let is_equipped = player.is_item_equipped(item.id());
     let is_selected = Some(item.id()) == ui.selected_item();
 
     let (label_text, item_color) = item_kind_label_and_color(item);
@@ -536,7 +536,7 @@ fn inventory_overlay_lines(session: &Session, ui: &UiState) -> Vec<Vec<Cell>> {
     for item in player.inventory() {
       let mut row = Vec::new();
       let is_selected = Some(item.id()) == ui.selected_item();
-      let is_equipped = Some(item.id()) == player.equipped_item();
+      let is_equipped = player.is_item_equipped(item.id());
       if is_selected {
         push_styled(&mut row, "* ", CellColor::Yellow);
       } else {

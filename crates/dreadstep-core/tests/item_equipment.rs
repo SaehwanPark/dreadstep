@@ -57,6 +57,62 @@ fn equipment_slot_is_derived_from_the_closed_effect_set() {
 }
 
 #[test]
+fn weapon_and_armor_slots_are_active_together_and_unequip_in_stable_order() {
+  let mut world = equipment_world();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_equipment_damage(ItemId::new(2), ItemDefinitionId::new(102), Damage::new(1)),
+    )
+    .unwrap();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_damage_reduction(ItemId::new(3), ItemDefinitionId::new(103), Damage::new(1)),
+    )
+    .unwrap();
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(2),
+    })
+    .unwrap();
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(3),
+    })
+    .unwrap();
+
+  let actor = world.actor(ActorId::new(1)).unwrap();
+  assert_eq!(actor.equipped_weapon(), Some(ItemId::new(2)));
+  assert_eq!(actor.equipped_armor(), Some(ItemId::new(3)));
+  assert_eq!(actor.melee_damage(), Damage::new(2));
+  assert_eq!(actor.damage_reduction(), Damage::new(1));
+
+  let unequipped = world
+    .execute(Command::Unequip {
+      actor: ActorId::new(1),
+    })
+    .unwrap();
+  assert_eq!(
+    unequipped.events(),
+    &[
+      Event::ItemUnequipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(2),
+      },
+      Event::ItemUnequipped {
+        actor: ActorId::new(1),
+        item: ItemId::new(3),
+      },
+    ]
+  );
+  let actor = world.actor(ActorId::new(1)).unwrap();
+  assert_eq!(actor.equipped_items(), [None, None]);
+}
+
+#[test]
 fn equip_and_unequip_preserve_inventory_and_emit_typed_events() {
   let mut world = equipment_world();
   let equipped = world

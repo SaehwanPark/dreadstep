@@ -93,7 +93,7 @@ impl WorldState {
     }
     if actor.kind() == ActorKind::Player {
       for item in actor.inventory() {
-        if actor.equipped_item() != Some(item.id()) {
+        if !actor.is_item_equipped(item.id()) {
           commands.push(Command::Drop {
             actor: actor_id,
             item: item.id(),
@@ -102,7 +102,7 @@ impl WorldState {
       }
     }
     for item in actor.inventory() {
-      if actor.equipped_item() != Some(item.id()) {
+      if !actor.is_item_equipped(item.id()) {
         commands.push(Command::Equip {
           actor: actor_id,
           item: item.id(),
@@ -115,7 +115,7 @@ impl WorldState {
         }
       }
     }
-    if actor.equipped_item().is_some() {
+    if actor.equipped_items().iter().any(Option::is_some) {
       commands.push(Command::Unequip { actor: actor_id });
     }
   }
@@ -221,9 +221,7 @@ impl WorldState {
       let mut throwable_items = actor
         .inventory()
         .iter()
-        .filter(|item| {
-          actor.equipped_item() != Some(item.id()) && item.throwable_effect().is_some()
-        })
+        .filter(|item| !actor.is_item_equipped(item.id()) && item.throwable_effect().is_some())
         .copied()
         .collect::<Vec<_>>();
       throwable_items.sort_by_key(|item| item.id());

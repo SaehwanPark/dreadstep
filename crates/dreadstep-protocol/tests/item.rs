@@ -98,6 +98,8 @@ fn actor_snapshot_projects_owned_items_in_insertion_order() {
   assert_eq!(actor.inventory()[0].id(), ItemId::new(1));
   assert_eq!(actor.inventory()[0].definition(), ItemDefinitionId::new(10));
   assert_eq!(actor.equipped_item(), Some(ItemId::new(1)));
+  assert_eq!(actor.equipped_weapon(), Some(ItemId::new(1)));
+  assert_eq!(actor.equipped_armor(), None);
   assert_eq!(actor.position(), Position::new(0, 0));
 }
 

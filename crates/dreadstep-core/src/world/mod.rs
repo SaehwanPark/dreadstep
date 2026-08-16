@@ -169,7 +169,7 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V11");
+    hasher.write_bytes(b"DREADSTEP-STATE-V12");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -234,12 +234,14 @@ impl WorldState {
         hash_equipment_effect(&mut hasher, item.equipment_effect());
         hash_throwable_effect(&mut hasher, item.throwable_effect());
       }
-      match actor.equipped_item() {
-        Some(item) => {
-          hasher.write_u8(1);
-          hasher.write_u32(item.value());
+      for item in actor.equipped_items() {
+        match item {
+          Some(item) => {
+            hasher.write_u8(1);
+            hasher.write_u32(item.value());
+          }
+          None => hasher.write_u8(0),
         }
-        None => hasher.write_u8(0),
       }
     }
     if !self.ground_items.is_empty() {
@@ -391,7 +393,7 @@ impl WorldState {
       }
       Command::Investigate { position, .. } => self.investigate(actor_id, position)?,
       Command::Equip { item, .. } => self.equip_item(actor_id, item)?,
-      Command::Unequip { .. } => vec![self.unequip_item(actor_id)?],
+      Command::Unequip { .. } => self.unequip_item(actor_id)?,
       Command::UseItem { item, .. } => vec![self.use_item(actor_id, item)?],
       Command::Pickup { item, .. } => vec![self.pickup_item_command(actor_id, item)?],
       Command::Drop { item, .. } => vec![self.drop_item_command(actor_id, item)?],

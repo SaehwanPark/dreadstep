@@ -4,7 +4,7 @@ use dreadstep_core::{
   Actor, ActorId, ActorKind, Damage, GridMap, Item, ItemDefinitionId, MeleeReach, Position, Tile,
   WorldState,
 };
-use dreadstep_protocol::{ItemSnapshot, PROTOCOL_VERSION, WorldSnapshot};
+use dreadstep_protocol::{ItemId, ItemSnapshot, PROTOCOL_VERSION, WorldSnapshot};
 use serde_json::json;
 
 #[test]
@@ -25,7 +25,7 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     snapshot.equipment_slot(),
     Some(dreadstep_protocol::EquipmentSlot::Weapon)
   );
-  assert_eq!(PROTOCOL_VERSION, 33);
+  assert_eq!(PROTOCOL_VERSION, 34);
 }
 
 #[test]
@@ -78,6 +78,55 @@ fn item_snapshot_projects_weapon_and_armor_roles() {
     armor.equipment_slot(),
     Some(dreadstep_protocol::EquipmentSlot::Armor)
   );
+}
+
+#[test]
+fn actor_snapshot_projects_independent_weapon_and_armor_slots() {
+  let map = GridMap::from_tiles(1, 1, vec![Tile::Floor]).unwrap();
+  let mut world = WorldState::new(
+    map,
+    vec![Actor::new(
+      ActorId::new(1),
+      ActorKind::Player,
+      Position::new(0, 0),
+    )],
+  )
+  .unwrap();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_equipment_damage(
+        dreadstep_core::ItemId::new(105),
+        ItemDefinitionId::new(6),
+        Damage::new(1),
+      ),
+    )
+    .unwrap();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_damage_reduction(
+        dreadstep_core::ItemId::new(106),
+        ItemDefinitionId::new(7),
+        Damage::new(1),
+      ),
+    )
+    .unwrap();
+  world
+    .execute(dreadstep_core::Command::Equip {
+      actor: ActorId::new(1),
+      item: dreadstep_core::ItemId::new(105),
+    })
+    .unwrap();
+  world
+    .execute(dreadstep_core::Command::Equip {
+      actor: ActorId::new(1),
+      item: dreadstep_core::ItemId::new(106),
+    })
+    .unwrap();
+  let actor = WorldSnapshot::from_world(&world).actors()[0].clone();
+  assert_eq!(actor.equipped_weapon().map(ItemId::value), Some(105));
+  assert_eq!(actor.equipped_armor().map(ItemId::value), Some(106));
 }
 
 #[test]

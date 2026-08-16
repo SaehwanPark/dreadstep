@@ -139,10 +139,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic authored trap-mitigating armor |
 | 2026-08-16 | Milestone 6 slice: deterministic inventory item comparison UX |
 | 2026-08-16 | Milestone 6 slice: deterministic authored ranged-damage equipment |
+| 2026-08-16 | Milestone 6 slice: deterministic independent weapon and armor slots |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **33**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **34**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -194,12 +195,12 @@ deferred until a later visual-enhancement stage.
 ## Active
 
 The current slice is complete: authored equipment now includes a ranged-damage bonus resolved at the
-core ranged-attack boundary, with protocol version 33 and synchronized replay/state-digest and
-adapter projections. Item snapshots and client labels also project a typed weapon/armor role derived
-from the closed effect set; this remains presentation metadata and does not add multi-slot semantics.
-The terminal inventory overlay also shows a deterministic comparison line for the selected item versus
-the currently equipped item (or an explicit empty baseline). Rarity, generated loot, affixes, and richer
-inventory actions remain deferred.
+core ranged-attack boundary, with protocol version 34 and synchronized replay/state-digest and
+adapter projections. Actors may hold one active weapon and one active armor item; effects aggregate
+deterministically and the existing single-item accessor remains a compatibility projection. Item
+snapshots and client labels project typed roles, while the terminal inventory overlay shows a
+deterministic comparison line. Rarity, generated loot, affixes, and richer inventory actions remain
+deferred.
 
 ## Future
 

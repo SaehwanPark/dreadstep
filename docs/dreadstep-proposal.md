@@ -2049,6 +2049,11 @@ equipment item in protocol snapshots, Bevy JSON, and terminal labels. The role i
 closed effect set and carries no multi-slot occupancy rules; generated loot, affixes, and richer
 equipment semantics remain future work.
 
+The next bounded equipment slice is now verified: each actor may hold one active weapon and one
+active armor item simultaneously. Equipping replaces only the matching role, combat bonuses read
+the complete loadout, and the existing unequip action clears active roles in stable order. This
+does not add weapon subclasses, durability, affixes, rarity, or generated loot.
+
 ### Implement
 
 - equipment;
