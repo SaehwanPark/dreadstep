@@ -36,7 +36,7 @@ fn world_snapshot_projects_scavenger_behavior() {
   .expect("world should validate");
 
   let snapshot = WorldSnapshot::from_world(&core_world);
-  assert_eq!(PROTOCOL_VERSION, 29);
+  assert_eq!(PROTOCOL_VERSION, 30);
   assert_eq!(snapshot.protocol_version(), PROTOCOL_VERSION);
   assert_eq!(snapshot.actors()[0].behavior(), EnemyBehavior::Scavenger);
 }

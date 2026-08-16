@@ -320,9 +320,10 @@ impl Actor {
           .iter()
           .find(|item| item.id() == equipped)
           .and_then(|item| {
-            item
-              .equipment_effect()
-              .map(|crate::EquipmentEffect::MinimumMeleeReach { reach }| reach)
+            item.equipment_effect().and_then(|effect| match effect {
+              crate::EquipmentEffect::MinimumMeleeReach { reach } => Some(reach),
+              crate::EquipmentEffect::MeleeDamage { .. } => None,
+            })
           })
       })
       .map_or(self.melee_reach, |minimum| self.melee_reach.max(minimum))
@@ -332,6 +333,25 @@ impl Actor {
   #[must_use]
   pub const fn base_melee_reach(&self) -> MeleeReach {
     self.melee_reach
+  }
+
+  /// Returns the fixed melee damage plus any equipped authored damage bonus.
+  #[must_use]
+  pub fn melee_damage(&self) -> Damage {
+    let bonus = self
+      .equipped
+      .and_then(|equipped| {
+        self
+          .inventory
+          .iter()
+          .find(|item| item.id() == equipped)
+          .and_then(|item| match item.equipment_effect() {
+            Some(crate::EquipmentEffect::MeleeDamage { amount }) => Some(amount.value()),
+            Some(crate::EquipmentEffect::MinimumMeleeReach { .. }) | None => None,
+          })
+      })
+      .unwrap_or(0);
+    Damage::new(Damage::MELEE.value().saturating_add(bonus))
   }
 
   /// Returns this actor's items in deterministic insertion order.
