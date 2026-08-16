@@ -21,7 +21,7 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     Some(dreadstep_protocol::EquipmentEffect::MinimumMeleeReach { reach })
       if reach.value() == 2
   ));
-  assert_eq!(PROTOCOL_VERSION, 28);
+  assert_eq!(PROTOCOL_VERSION, 29);
 }
 
 #[test]

@@ -410,7 +410,9 @@ fn intent_line(session: &Session) -> Vec<Cell> {
   let b_name = behavior_name(behavior);
   let b_color = match behavior {
     dreadstep_core::EnemyBehavior::Frostcaster => CellColor::Cyan,
-    dreadstep_core::EnemyBehavior::Pursuer | dreadstep_core::EnemyBehavior::Brute => CellColor::Red,
+    dreadstep_core::EnemyBehavior::Pursuer
+    | dreadstep_core::EnemyBehavior::Brute
+    | dreadstep_core::EnemyBehavior::Zombie => CellColor::Red,
     dreadstep_core::EnemyBehavior::Kiter | dreadstep_core::EnemyBehavior::Scavenger => {
       CellColor::DarkYellow
     }

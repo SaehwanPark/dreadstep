@@ -6,6 +6,12 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added the authored `Zombie` (slow pursuer) enemy behavior. A Zombie follows standard chase and attack
+  priorities within melee reach, but takes a base action cost of 2 scheduler ticks (1 base + 1 zombie bonus;
+  3 ticks if Chilled) per action, allowing standard-speed players to take 2 turns per Zombie turn. Protocol
+  v29, MCP scenario loading, Bevy intent HUD, and TUI glyph/color mappings (`Z` in red) project the
+  authored identity and slow timing without compromising core determinism or simulation invariants.
+
 - Enhanced `dreadstep-tui` terminal presentation with structured section spacing and rich semantic
   color styling. The layout establishes clean blank-line separators between the message window and
   dungeon rendering / overlays, between dungeon rendering and the status section, and between the

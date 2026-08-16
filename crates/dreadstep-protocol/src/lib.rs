@@ -19,7 +19,7 @@ mod snapshot;
 mod status;
 
 /// Version of the in-memory agent observation projection.
-pub const PROTOCOL_VERSION: u16 = 28;
+pub const PROTOCOL_VERSION: u16 = 29;
 
 pub use command::{CommandRequest, Direction};
 pub use enemy_behavior::EnemyBehavior;

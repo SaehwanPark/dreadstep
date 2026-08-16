@@ -133,10 +133,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-14 | NetHack-style terminal showcase as the default tester |
 | 2026-08-15 | Milestone 4/5 slice: deterministic Scavenger enemy behavior |
 | 2026-08-15 | Enhancing TUI presentation: colored text, symbols, and section spacing |
+| 2026-08-16 | Milestone 4 slice: deterministic Zombie (slow pursuer) enemy behavior |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **28**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **29**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -148,7 +149,7 @@ deferred until a later visual-enhancement stage.
   pickup/drop, consumables, equipment effects, doors, reclosable OpenDoor terrain, traps,
   ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, state digests, and authored Pursuer, Kiter,
-  Brute, Frostcaster, Blocker, and Scavenger enemy behaviors.
+  Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy behaviors.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -184,11 +185,11 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: enhanced TUI presentation in `dreadstep-tui` is verified across
-unit tests, screenshot goldens, display-free smoke, and a test-player evaluation. The layout
-maintains dedicated blank-line section separators (messages to map/overlays, map/overlays to status,
-status to intent/controls) and rich semantic cell colors while preserving deterministic pure-function
-frame rendering and clean plain-text stripping for journals and screenshots. Protocol version is v28.
+The current slice is complete: deterministic `Zombie` (slow pursuer) enemy behavior is implemented
+and verified across `dreadstep-core`, `dreadstep-protocol` (v29), `dreadstep-mcp`, `dreadstep-tui`,
+and `dreadstep-bevy`. A Zombie follows standard chase/attack priority but incurs a base action cost of
+2 scheduler ticks (1 base + 1 zombie bonus; 3 ticks if Chilled), granting standard-speed players 2 turns
+per zombie action. Protocol version is v29.
 
 ## Future
 

@@ -114,6 +114,7 @@ pub fn actor_cell(actor: &Actor) -> Cell {
       EnemyBehavior::Frostcaster => Cell::new('F', CellColor::Cyan),
       EnemyBehavior::Blocker => Cell::new('b', CellColor::Red),
       EnemyBehavior::Scavenger => Cell::new('s', CellColor::Red),
+      EnemyBehavior::Zombie => Cell::new('Z', CellColor::Red),
     },
   }
 }
@@ -140,6 +141,7 @@ pub const fn behavior_name(behavior: EnemyBehavior) -> &'static str {
     EnemyBehavior::Frostcaster => "Frostcaster",
     EnemyBehavior::Blocker => "Blocker",
     EnemyBehavior::Scavenger => "Scavenger",
+    EnemyBehavior::Zombie => "Zombie",
   }
 }
 
@@ -179,5 +181,8 @@ mod tests {
       EnemyBehavior::Scavenger,
     );
     assert_eq!(actor_cell(&scavenger).glyph(), 's');
+    let zombie =
+      Actor::with_enemy_behavior(ActorId::new(6), Position::new(5, 1), EnemyBehavior::Zombie);
+    assert_eq!(actor_cell(&zombie).glyph(), 'Z');
   }
 }

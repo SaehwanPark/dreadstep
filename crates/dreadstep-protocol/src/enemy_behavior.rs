@@ -20,6 +20,8 @@ pub enum EnemyBehavior {
   Blocker,
   /// Pursue and attack at full hit points, but retreat when wounded.
   Scavenger,
+  /// Pursue and attack with slow two-tick action cost.
+  Zombie,
 }
 
 impl From<CoreEnemyBehavior> for EnemyBehavior {
@@ -31,6 +33,7 @@ impl From<CoreEnemyBehavior> for EnemyBehavior {
       CoreEnemyBehavior::Frostcaster => Self::Frostcaster,
       CoreEnemyBehavior::Blocker => Self::Blocker,
       CoreEnemyBehavior::Scavenger => Self::Scavenger,
+      CoreEnemyBehavior::Zombie => Self::Zombie,
     }
   }
 }
@@ -44,6 +47,7 @@ impl From<EnemyBehavior> for CoreEnemyBehavior {
       EnemyBehavior::Frostcaster => Self::Frostcaster,
       EnemyBehavior::Blocker => Self::Blocker,
       EnemyBehavior::Scavenger => Self::Scavenger,
+      EnemyBehavior::Zombie => Self::Zombie,
     }
   }
 }
