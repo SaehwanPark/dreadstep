@@ -3,7 +3,8 @@
 use dreadstep_core::{
   AmmunitionResult as CoreAmmunitionResult, EquipmentEffect as CoreEquipmentEffect,
   EquipmentSlot as CoreEquipmentSlot, GroundItemStack as CoreGroundItemStack,
-  HealingResult as CoreHealingResult, Item as CoreItem, ThrowableEffect as CoreThrowableEffect,
+  HealingResult as CoreHealingResult, Item as CoreItem, ItemRarity as CoreItemRarity,
+  ThrowableEffect as CoreThrowableEffect,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -15,9 +16,22 @@ use crate::{Damage, HitPoints, ItemDefinitionId, ItemId, Position};
 pub struct ItemSnapshot {
   id: ItemId,
   definition: ItemDefinitionId,
+  rarity: ItemRarity,
   equipment_effect: Option<EquipmentEffect>,
   equipment_slot: Option<EquipmentSlot>,
   throwable_effect: Option<ThrowableEffect>,
+}
+
+/// A stable presentation rarity for one item instance.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemRarity {
+  /// A baseline item with no rarity modifier.
+  Common,
+  /// An uncommon item intended to stand out in inventory presentation.
+  Magic,
+  /// A high-value item intended to stand out in inventory presentation.
+  Rare,
 }
 
 /// A protocol projection of the role implied by an equipment effect.
@@ -127,6 +141,11 @@ impl ItemSnapshot {
     Self {
       id: ItemId::new(item.id().value()),
       definition: ItemDefinitionId::new(item.definition().value()),
+      rarity: match item.rarity() {
+        CoreItemRarity::Common => ItemRarity::Common,
+        CoreItemRarity::Magic => ItemRarity::Magic,
+        CoreItemRarity::Rare => ItemRarity::Rare,
+      },
       equipment_effect: item.equipment_effect().map(|effect| match effect {
         CoreEquipmentEffect::MinimumMeleeReach { reach } => EquipmentEffect::MinimumMeleeReach {
           reach: crate::MeleeReach::new(reach.value()).unwrap_or(crate::MeleeReach::DEFAULT),
@@ -161,6 +180,12 @@ impl ItemSnapshot {
   #[must_use]
   pub const fn definition(self) -> ItemDefinitionId {
     self.definition
+  }
+
+  /// Returns the stable presentation rarity.
+  #[must_use]
+  pub const fn rarity(self) -> ItemRarity {
+    self.rarity
   }
 
   /// Returns the optional closed equipment effect.

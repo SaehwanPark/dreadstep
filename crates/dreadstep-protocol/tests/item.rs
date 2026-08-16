@@ -7,7 +7,7 @@ use dreadstep_core::{
   WorldState as CoreWorldState,
 };
 use dreadstep_protocol::{
-  ActorId, ActorSnapshot, CommandError, ItemDefinitionId, ItemId, Position, WorldError,
+  ActorId, ActorSnapshot, CommandError, ItemDefinitionId, ItemId, ItemRarity, Position, WorldError,
   WorldSnapshot,
 };
 
@@ -97,6 +97,7 @@ fn actor_snapshot_projects_owned_items_in_insertion_order() {
   assert_eq!(actor.inventory().len(), 1);
   assert_eq!(actor.inventory()[0].id(), ItemId::new(1));
   assert_eq!(actor.inventory()[0].definition(), ItemDefinitionId::new(10));
+  assert_eq!(actor.inventory()[0].rarity(), ItemRarity::Common);
   assert_eq!(actor.equipped_item(), Some(ItemId::new(1)));
   assert_eq!(actor.equipped_weapon(), Some(ItemId::new(1)));
   assert_eq!(actor.equipped_armor(), None);

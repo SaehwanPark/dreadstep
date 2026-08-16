@@ -79,6 +79,42 @@ pub enum EquipmentSlot {
   Armor,
 }
 
+/// The presentation rarity authored for an item instance.
+///
+/// Rarity is intentionally metadata in the current slice: it does not alter equipment effects,
+/// consumable outcomes, inventory legality, or action timing.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ItemRarity {
+  /// A baseline item with no rarity modifier.
+  Common,
+  /// An uncommon item intended to stand out in inventory presentation.
+  Magic,
+  /// A high-value item intended to stand out in inventory presentation.
+  Rare,
+}
+
+impl ItemRarity {
+  /// Returns the stable snake-case wire value used by adapters.
+  #[must_use]
+  pub const fn wire_name(self) -> &'static str {
+    match self {
+      Self::Common => "common",
+      Self::Magic => "magic",
+      Self::Rare => "rare",
+    }
+  }
+
+  /// Returns the concise terminal prefix used for non-common items.
+  #[must_use]
+  pub const fn display_prefix(self) -> &'static str {
+    match self {
+      Self::Common => "",
+      Self::Magic => "magic ",
+      Self::Rare => "rare ",
+    }
+  }
+}
+
 /// The closed set of mechanical effects available from equipped items.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EquipmentEffect {
@@ -176,6 +212,7 @@ impl AmmunitionResult {
 pub struct Item {
   id: ItemId,
   definition: ItemDefinitionId,
+  rarity: ItemRarity,
   effect: ItemEffect,
   equipment_effect: Option<EquipmentEffect>,
   throwable_effect: Option<ThrowableEffect>,
@@ -188,6 +225,7 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: None,
       throwable_effect: None,
@@ -200,6 +238,7 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect,
       equipment_effect: None,
       throwable_effect: None,
@@ -216,6 +255,7 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MinimumMeleeReach { reach }),
       throwable_effect: None,
@@ -232,6 +272,7 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MeleeDamage { amount }),
       throwable_effect: None,
@@ -248,6 +289,7 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::RangedDamage { amount }),
       throwable_effect: None,
@@ -264,6 +306,7 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::DamageReduction { amount }),
       throwable_effect: None,
@@ -280,10 +323,18 @@ impl Item {
     Self {
       id,
       definition,
+      rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: None,
       throwable_effect: Some(effect),
     }
+  }
+
+  /// Returns this item with an explicit presentation rarity.
+  #[must_use]
+  pub const fn with_rarity(mut self, rarity: ItemRarity) -> Self {
+    self.rarity = rarity;
+    self
   }
 
   /// Returns the globally unique instance identity.
@@ -296,6 +347,12 @@ impl Item {
   #[must_use]
   pub const fn definition(self) -> ItemDefinitionId {
     self.definition
+  }
+
+  /// Returns the authored presentation rarity for this item instance.
+  #[must_use]
+  pub const fn rarity(self) -> ItemRarity {
+    self.rarity
   }
 
   /// Returns the authored gameplay effect for this item instance.

@@ -140,10 +140,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic inventory item comparison UX |
 | 2026-08-16 | Milestone 6 slice: deterministic authored ranged-damage equipment |
 | 2026-08-16 | Milestone 6 slice: deterministic independent weapon and armor slots |
+| 2026-08-16 | Milestone 6 slice: deterministic item-rarity presentation metadata |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **34**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **35**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -195,12 +196,12 @@ deferred until a later visual-enhancement stage.
 ## Active
 
 The current slice is complete: authored equipment now includes a ranged-damage bonus resolved at the
-core ranged-attack boundary, with protocol version 34 and synchronized replay/state-digest and
+core ranged-attack boundary, with protocol version 35 and synchronized replay/state-digest and
 adapter projections. Actors may hold one active weapon and one active armor item; effects aggregate
 deterministically and the existing single-item accessor remains a compatibility projection. Item
-snapshots and client labels project typed roles, while the terminal inventory overlay shows a
-deterministic comparison line. Rarity, generated loot, affixes, and richer inventory actions remain
-deferred.
+snapshots and client labels project typed roles and common/magic/rare presentation rarity, while the
+terminal inventory overlay shows a deterministic comparison line. Rarity is metadata only here;
+generated loot, affixes, identification, and richer inventory actions remain deferred.
 
 ## Future
 

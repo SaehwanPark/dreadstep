@@ -4,7 +4,7 @@ use dreadstep_core::{
   Actor, ActorId, ActorKind, Damage, GridMap, Item, ItemDefinitionId, MeleeReach, Position, Tile,
   WorldState,
 };
-use dreadstep_protocol::{ItemId, ItemSnapshot, PROTOCOL_VERSION, WorldSnapshot};
+use dreadstep_protocol::{ItemId, ItemRarity, ItemSnapshot, PROTOCOL_VERSION, WorldSnapshot};
 use serde_json::json;
 
 #[test]
@@ -25,7 +25,7 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     snapshot.equipment_slot(),
     Some(dreadstep_protocol::EquipmentSlot::Weapon)
   );
-  assert_eq!(PROTOCOL_VERSION, 34);
+  assert_eq!(PROTOCOL_VERSION, 35);
 }
 
 #[test]
@@ -41,6 +41,18 @@ fn item_snapshot_projects_melee_damage_effect() {
     Some(dreadstep_protocol::EquipmentEffect::MeleeDamage { amount })
       if amount.value() == 1
   ));
+}
+
+#[test]
+fn item_snapshot_projects_explicit_rarity() {
+  let item = Item::with_equipment_damage(
+    dreadstep_core::ItemId::new(105),
+    ItemDefinitionId::new(6),
+    Damage::new(1),
+  )
+  .with_rarity(dreadstep_core::ItemRarity::Rare);
+  let snapshot = ItemSnapshot::from_item(item);
+  assert_eq!(snapshot.rarity(), ItemRarity::Rare);
 }
 
 #[test]

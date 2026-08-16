@@ -7,6 +7,7 @@ pub(crate) fn item_value(item: Item) -> Value {
   json!({
     "id": item.id().value(),
     "definition": item.definition().value(),
+    "rarity": item.rarity().wire_name(),
     "equipment_slot": item.equipment_slot().map(equipment_slot_name),
     "equipment_effect": item.equipment_effect().map(|effect| match effect {
       dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
@@ -43,5 +44,18 @@ pub(crate) fn equipment_status_suffix(item: Item, equipped: bool) -> &'static st
     Some(dreadstep_core::EquipmentSlot::Weapon) => " [wielded]",
     Some(dreadstep_core::EquipmentSlot::Armor) => " [worn]",
     None => " [equipped]",
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::item_value;
+  use dreadstep_core::{ItemDefinitionId, ItemId, ItemRarity};
+
+  #[test]
+  fn item_json_projects_explicit_rarity() {
+    let item = dreadstep_core::Item::new(ItemId::new(1), ItemDefinitionId::new(2))
+      .with_rarity(ItemRarity::Rare);
+    assert_eq!(item_value(item)["rarity"], "rare");
   }
 }

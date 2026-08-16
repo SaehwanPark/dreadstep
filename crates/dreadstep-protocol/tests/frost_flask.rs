@@ -71,6 +71,7 @@ fn item_thrown_event_and_throwable_item_effect_project_without_adapter_policy() 
     serde_json::json!({
       "id": 104,
       "definition": 5,
+      "rarity": "common",
       "equipment_effect": null,
       "equipment_slot": null,
       "throwable_effect": "chill"
