@@ -33,6 +33,11 @@ pub enum EquipmentEffect {
     /// The damage bonus applied to melee attacks.
     amount: Damage,
   },
+  /// Add the supplied damage to each ranged attack while equipped.
+  RangedDamage {
+    /// The damage bonus applied to ranged attacks.
+    amount: Damage,
+  },
   /// Reduce scheduled incoming damage by the supplied amount while equipped.
   DamageReduction {
     /// The damage reduction applied to melee, ranged, and floor-trap damage.
@@ -116,6 +121,9 @@ impl ItemSnapshot {
           reach: crate::MeleeReach::new(reach.value()).unwrap_or(crate::MeleeReach::DEFAULT),
         },
         CoreEquipmentEffect::MeleeDamage { amount } => EquipmentEffect::MeleeDamage {
+          amount: Damage::new(amount.value()),
+        },
+        CoreEquipmentEffect::RangedDamage { amount } => EquipmentEffect::RangedDamage {
           amount: Damage::new(amount.value()),
         },
         CoreEquipmentEffect::DamageReduction { amount } => EquipmentEffect::DamageReduction {

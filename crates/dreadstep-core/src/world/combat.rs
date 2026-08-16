@@ -38,13 +38,12 @@ impl WorldState {
     attacker: ActorId,
     target: ActorId,
   ) -> Result<Vec<Event>, CommandError> {
-    self.attack_with_distance(
-      attacker,
-      target,
-      Self::is_ranged_distance,
-      Damage::RANGED,
-      true,
-    )
+    let damage = self
+      .actors
+      .get(&attacker)
+      .map(Actor::ranged_damage)
+      .ok_or(CommandError::UnknownActor(attacker))?;
+    self.attack_with_distance(attacker, target, Self::is_ranged_distance, damage, true)
   }
 
   pub(super) fn cast_chill(

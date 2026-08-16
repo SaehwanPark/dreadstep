@@ -532,6 +532,12 @@ fn item_scenario() -> Result<WorldState, SessionError> {
     .map_err(|error| SessionError::Scenario(error.into()))?;
   world
     .give_item(
+      ActorId::new(2),
+      Item::with_ranged_damage(ItemId::new(106), ItemDefinitionId::new(7), Damage::new(1)),
+    )
+    .map_err(|error| SessionError::Scenario(error.into()))?;
+  world
+    .give_item(
       ActorId::new(1),
       Item::with_effect(
         ItemId::new(102),

@@ -329,6 +329,7 @@ impl Actor {
             item.equipment_effect().and_then(|effect| match effect {
               crate::EquipmentEffect::MinimumMeleeReach { reach } => Some(reach),
               crate::EquipmentEffect::MeleeDamage { .. }
+              | crate::EquipmentEffect::RangedDamage { .. }
               | crate::EquipmentEffect::DamageReduction { .. } => None,
             })
           })
@@ -356,6 +357,7 @@ impl Actor {
             Some(crate::EquipmentEffect::MeleeDamage { amount }) => Some(amount.value()),
             Some(
               crate::EquipmentEffect::MinimumMeleeReach { .. }
+              | crate::EquipmentEffect::RangedDamage { .. }
               | crate::EquipmentEffect::DamageReduction { .. },
             )
             | None => None,
@@ -363,6 +365,30 @@ impl Actor {
       })
       .unwrap_or(0);
     Damage::new(Damage::MELEE.value().saturating_add(bonus))
+  }
+
+  /// Returns the fixed ranged damage plus any equipped authored damage bonus.
+  #[must_use]
+  pub fn ranged_damage(&self) -> Damage {
+    let bonus = self
+      .equipped
+      .and_then(|equipped| {
+        self
+          .inventory
+          .iter()
+          .find(|item| item.id() == equipped)
+          .and_then(|item| match item.equipment_effect() {
+            Some(crate::EquipmentEffect::RangedDamage { amount }) => Some(amount.value()),
+            Some(
+              crate::EquipmentEffect::MinimumMeleeReach { .. }
+              | crate::EquipmentEffect::MeleeDamage { .. }
+              | crate::EquipmentEffect::DamageReduction { .. },
+            )
+            | None => None,
+          })
+      })
+      .unwrap_or(0);
+    Damage::new(Damage::RANGED.value().saturating_add(bonus))
   }
 
   /// Returns the equipped incoming-damage reduction, or zero when no armor effect is active.
@@ -379,7 +405,8 @@ impl Actor {
             Some(crate::EquipmentEffect::DamageReduction { amount }) => Some(amount),
             Some(
               crate::EquipmentEffect::MinimumMeleeReach { .. }
-              | crate::EquipmentEffect::MeleeDamage { .. },
+              | crate::EquipmentEffect::MeleeDamage { .. }
+              | crate::EquipmentEffect::RangedDamage { .. },
             )
             | None => None,
           })

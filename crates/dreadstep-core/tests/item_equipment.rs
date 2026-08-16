@@ -180,6 +180,62 @@ fn equipped_items_cannot_be_moved_by_tester_mutations() {
 }
 
 #[test]
+fn equipped_ranged_damage_changes_attack_evidence_and_target_hit_points() {
+  let mut world = WorldState::new(
+    GridMap::filled(3, 1, Tile::Floor).expect("map should validate"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(2, 0),
+        HitPoints::new(3),
+      ),
+    ],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_ranged_damage(ItemId::new(3), ItemDefinitionId::new(103), Damage::new(1)),
+    )
+    .expect("ranged weapon should be owned");
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(3),
+    })
+    .expect("ranged weapon should equip");
+  world
+    .execute(Command::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should yield");
+
+  let result = world
+    .execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("distance-two ranged attack should be accepted");
+  assert!(matches!(
+    result.events(),
+    [Event::Attacked {
+      damage,
+      remaining_hit_points,
+      ..
+    }] if *damage == Damage::new(2) && *remaining_hit_points == HitPoints::new(1)
+  ));
+  assert_eq!(
+    world
+      .actor(ActorId::new(2))
+      .expect("target exists")
+      .hit_points(),
+    HitPoints::new(1)
+  );
+}
+
+#[test]
 fn equipped_melee_damage_bonus_changes_attack_evidence_and_hit_points() {
   let mut world = WorldState::new(
     GridMap::filled(2, 1, Tile::Floor).expect("map should validate"),

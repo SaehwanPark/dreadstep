@@ -1,5 +1,14 @@
 //! Journal payloads, HUD text, and event/command formatting.
 
+use super::behavior::{enemy_behavior_name, enemy_behavior_value};
+use super::journal::journal_path;
+use super::session::DesktopSession;
+use super::session::DesktopStatus;
+use super::{HEALTH_BAR_WIDTH, PLAYER, SHOWCASE_MAX_HIT_POINTS};
+use crate::{
+  PresentationEnemyIntent, PresentationRuntime, PresentationSnapshot, PresentationVisibility,
+  SceneRenderPlaceholder,
+};
 use bevy::ecs::component::Component;
 use bevy::ecs::query::With;
 use bevy::ecs::system::{Query, Res};
@@ -9,18 +18,6 @@ use dreadstep_core::{
   RunOutcome, Tile,
 };
 use serde_json::{Value, json};
-
-use crate::{
-  PresentationEnemyIntent, PresentationRuntime, PresentationSnapshot, PresentationVisibility,
-  SceneRenderPlaceholder,
-};
-
-use super::behavior::{enemy_behavior_name, enemy_behavior_value};
-use super::journal::journal_path;
-use super::session::DesktopSession;
-use super::session::DesktopStatus;
-use super::{HEALTH_BAR_WIDTH, PLAYER, SHOWCASE_MAX_HIT_POINTS};
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum HudLineKind {
   Stats,
@@ -108,6 +105,9 @@ pub(crate) fn item_value(item: Item) -> Value {
       dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
         json!({ "melee_damage_bonus": amount.value() })
       }
+      dreadstep_core::EquipmentEffect::RangedDamage { amount } => json!({
+        "ranged_damage_bonus": amount.value()
+      }),
       dreadstep_core::EquipmentEffect::DamageReduction { amount } => {
         json!({ "damage_reduction": amount.value() })
       }
@@ -747,6 +747,9 @@ pub(crate) fn desktop_update_hud(
                 }
                 dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
                   format!(" [damage +{}]", amount.value())
+                }
+                dreadstep_core::EquipmentEffect::RangedDamage { amount } => {
+                  format!(" [ranged +{}]", amount.value())
                 }
                 dreadstep_core::EquipmentEffect::DamageReduction { amount } => {
                   format!(" [armor -{}]", amount.value())
