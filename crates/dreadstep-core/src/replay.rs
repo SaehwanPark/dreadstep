@@ -256,6 +256,10 @@ pub(crate) fn hash_equipment_effect(hasher: &mut StableHasher, effect: Option<Eq
       hasher.write_u8(1);
       hasher.write_u8(reach.value());
     }
+    Some(EquipmentEffect::MeleeDamage { amount }) => {
+      hasher.write_u8(2);
+      hasher.write_u16(amount.value());
+    }
   }
 }
 

@@ -9,9 +9,9 @@
 use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, AmmunitionAmount, EnemyBehavior, GridMap, HealingAmount, HitPoints,
-  Item, ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position, ThrowableEffect,
-  Tile, WorldError, WorldState,
+  Actor, ActorId, ActorKind, AmmunitionAmount, Damage, EnemyBehavior, GridMap, HealingAmount,
+  HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position,
+  ThrowableEffect, Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -417,8 +417,8 @@ pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentErro
 ///
 /// This scenario is separate from [`starter_floor_definition`], which intentionally remains
 /// item-free. It binds the shared starter catalog and uses interleaved placements to provide a
-/// stable content fixture for adapters and tests, including authored consumables and the first
-/// equipment-derived reach weapon.
+/// stable content fixture for adapters and tests, including authored consumables and closed
+/// equipment effects.
 #[must_use]
 pub fn starter_item_floor_definition() -> StarterFloorDefinition {
   let mut definition = starter_floor_definition();
@@ -458,7 +458,7 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
       ),
       StarterItemPlacement::new(
         ActorId::new(2),
-        Item::new(ItemId::new(100), ItemDefinitionId::new(1)),
+        Item::with_equipment_damage(ItemId::new(100), ItemDefinitionId::new(1), Damage::new(1)),
       ),
       StarterItemPlacement::new(
         ActorId::new(1),

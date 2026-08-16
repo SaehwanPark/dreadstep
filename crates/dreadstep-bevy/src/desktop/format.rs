@@ -105,6 +105,9 @@ pub(crate) fn item_value(item: Item) -> Value {
       dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
         json!({ "minimum_melee_reach": reach.value() })
       }
+      dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
+        json!({ "melee_damage_bonus": amount.value() })
+      }
     }),
     "throwable_effect": item.throwable_effect().map(|effect| match effect {
       dreadstep_core::ThrowableEffect::Chill => "chill",
@@ -738,6 +741,9 @@ pub(crate) fn desktop_update_hud(
               .map_or_else(String::new, |effect| match effect {
                 dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
                   format!(" [reach {}]", reach.value())
+                }
+                dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
+                  format!(" [damage +{}]", amount.value())
                 }
               },),
             item

@@ -1,8 +1,8 @@
 //! Core equipment contract tests.
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, Event, GridMap, Item, ItemDefinitionId, ItemId, Position,
-  Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, Damage, Event, GridMap, HitPoints, Item, ItemDefinitionId,
+  ItemId, Position, Tile, WorldState,
 };
 
 fn equipment_world() -> WorldState {
@@ -177,6 +177,64 @@ fn equipped_items_cannot_be_moved_by_tester_mutations() {
   );
   assert_eq!(world, before_transfer);
   assert_eq!(world.digest(), before_transfer_digest);
+}
+
+#[test]
+fn equipped_melee_damage_bonus_changes_attack_evidence_and_hit_points() {
+  let mut world = WorldState::new(
+    GridMap::filled(2, 1, Tile::Floor).expect("map should validate"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(1, 0),
+        HitPoints::new(10),
+      ),
+    ],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_equipment_damage(ItemId::new(9), ItemDefinitionId::new(9), Damage::new(1)),
+    )
+    .expect("damage weapon should be owned");
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(9),
+    })
+    .expect("damage weapon should equip");
+  world
+    .execute(Command::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should yield");
+
+  let result = world
+    .execute(Command::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("adjacent target should be attackable");
+  assert_eq!(
+    world.actor(ActorId::new(2)).unwrap().hit_points(),
+    HitPoints::new(8)
+  );
+  assert_eq!(
+    world.actor(ActorId::new(1)).unwrap().melee_damage(),
+    Damage::new(2)
+  );
+  assert_eq!(
+    result.events(),
+    &[Event::Attacked {
+      attacker: ActorId::new(1),
+      target: ActorId::new(2),
+      damage: Damage::new(2),
+      remaining_hit_points: HitPoints::new(8),
+    }]
+  );
 }
 
 #[test]

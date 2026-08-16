@@ -649,12 +649,28 @@ constructor cannot silently alter the default client path or lose owner/order da
   generic stat or affix system.
 - Symptom: Treating every item as consumable would silently destroy a weapon, while hashing only
   effective reach would lose the actor's authored fallback after unequip.
-- Resolution: Add one closed `MinimumMeleeReach` equipment effect, keep it separate from
-  consumable effects, reject `UseItem` atomically for equipment, and hash both base reach and item
-  effect alongside the existing equipment identity.
-- Prevention: Preserve the exact equip/unequip timing and replacement events, expose the closed
-  effect in protocol snapshots, and defer weapon classes, damage, armor, affixes, durability, and
-  identification until their own bounded contracts exist.
+- Resolution: Keep equipment effects closed and separate from consumables, reject `UseItem`
+  atomically for equipment, and hash both base reach and each authored effect alongside the item
+  identity. Resolve a damage bonus in core's melee attack path so `Attacked` evidence and target
+  hit points cannot diverge from the equipped item.
+- Prevention: Preserve exact equip/unequip timing and replacement events, expose every closed effect
+  in protocol snapshots and adapter diagnostics, and defer weapon classes, armor, affixes,
+  durability, and identification until their own bounded contracts exist.
+
+## Keep authored equipment bonuses on the attack boundary
+
+- Context: Adding a melee-damage item extends the first equipment-derived effect without opening a
+  generic stat or affix system.
+- Symptom: Applying a bonus in content, MCP, or presentation would let the visible combat result
+  disagree with core hit points, replay digests, or `Attacked` event evidence.
+- Cause: Core owns equipped item identity, combat damage, state digests, and event ordering; adapters
+  only project the closed effect and resulting evidence.
+- Resolution: Store one typed `MeleeDamage` equipment effect on the item instance, calculate the
+  effective melee damage only while that item is equipped, and map the effect through protocol,
+  TUI, Bevy, and MCP fixtures. Bump the protocol and state-digest schema tags together.
+- Prevention: Test an equipped bonus, unequipped fallback, target hit points, event damage, digest
+  participation, non-consumable rejection, and adapter snapshot mappings before adding additional
+  weapon stats or slots.
 
 ## Keep throw effects closed and status accounting actor-specific
 

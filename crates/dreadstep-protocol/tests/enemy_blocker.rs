@@ -24,7 +24,7 @@ fn blocker_behavior_has_a_stable_snake_case_projection() {
 }
 
 #[test]
-fn version_27_snapshot_projects_the_authored_blocker_behavior() {
+fn version_30_snapshot_projects_the_authored_blocker_behavior() {
   let world = WorldState::new(
     CoreGridMap::filled(3, 1, CoreTile::Floor).expect("test map should be valid"),
     vec![CoreActor::with_enemy_behavior(
@@ -37,12 +37,12 @@ fn version_27_snapshot_projects_the_authored_blocker_behavior() {
 
   let snapshot = WorldSnapshot::from_world(&world);
   let digest = snapshot.digest().value();
-  assert_eq!(PROTOCOL_VERSION, 29);
-  assert_eq!(snapshot.protocol_version(), 29);
+  assert_eq!(PROTOCOL_VERSION, 30);
+  assert_eq!(snapshot.protocol_version(), 30);
   assert_eq!(
     serde_json::to_value(snapshot).expect("snapshot should serialize"),
     json!({
-      "protocol_version": 29,
+      "protocol_version": 30,
       "outcome": "in_progress",
       "current_time": 0,
       "next_actor": 2,

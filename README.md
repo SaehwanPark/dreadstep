@@ -22,7 +22,7 @@ fixture.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v29**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v30**. Core owns deterministic combat, inventory, and
 environmental rules; protocol/MCP/headless/TUI/Bevy translate those values. The default
 showcase is the NetHack-style terminal client. It journals each run and can start an authored
 item fixture or a seeded procedural floor.
@@ -86,7 +86,7 @@ hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
 These frames are generated from the renderer and committed under `screenshots/`. They are
 captures of the current client, not concept art.
 
-- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, and slow Zombie pursuer behavior, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`,
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, and authored melee-damage equipment, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`,
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).

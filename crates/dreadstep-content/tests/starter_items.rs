@@ -5,8 +5,8 @@ use dreadstep_content::{
   starter_floor_definition, starter_item_floor, starter_item_floor_definition,
 };
 use dreadstep_core::{
-  ActorId, AmmunitionAmount, HealingAmount, Item, ItemDefinitionId, ItemEffect, ItemId, MeleeReach,
-  ThrowableEffect, WorldState,
+  ActorId, AmmunitionAmount, Damage, HealingAmount, Item, ItemDefinitionId, ItemEffect, ItemId,
+  MeleeReach, ThrowableEffect, WorldState,
 };
 
 #[test]
@@ -78,7 +78,11 @@ fn starter_item_floor_is_complete_and_repeatable() {
   );
   assert_eq!(
     actors[1].inventory(),
-    &[Item::new(ItemId::new(100), ItemDefinitionId::new(1))]
+    &[Item::with_equipment_damage(
+      ItemId::new(100),
+      ItemDefinitionId::new(1),
+      Damage::new(1),
+    )]
   );
   assert!(actors[2..].iter().all(|actor| actor.inventory().is_empty()));
   assert_eq!(

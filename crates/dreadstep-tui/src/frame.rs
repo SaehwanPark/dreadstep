@@ -308,6 +308,9 @@ fn item_kind_label_and_color(item: &Item) -> (String, CellColor) {
       Some(EquipmentEffect::MinimumMeleeReach { reach }) => {
         (format!("reach{}", reach.value()), CellColor::Magenta)
       }
+      Some(EquipmentEffect::MeleeDamage { amount }) => {
+        (format!("damage+{}", amount.value()), CellColor::Red)
+      }
       None => ("item".to_string(), CellColor::Default),
     },
   }

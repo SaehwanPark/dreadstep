@@ -1,7 +1,7 @@
 //! Protocol projection tests for the bounded equipment-derived reach effect.
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, Item, ItemDefinitionId, MeleeReach, Position, Tile,
+  Actor, ActorId, ActorKind, Damage, GridMap, Item, ItemDefinitionId, MeleeReach, Position, Tile,
   WorldState,
 };
 use dreadstep_protocol::{ItemSnapshot, PROTOCOL_VERSION, WorldSnapshot};
@@ -21,7 +21,22 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     Some(dreadstep_protocol::EquipmentEffect::MinimumMeleeReach { reach })
       if reach.value() == 2
   ));
-  assert_eq!(PROTOCOL_VERSION, 29);
+  assert_eq!(PROTOCOL_VERSION, 30);
+}
+
+#[test]
+fn item_snapshot_projects_melee_damage_effect() {
+  let item = Item::with_equipment_damage(
+    dreadstep_core::ItemId::new(105),
+    ItemDefinitionId::new(6),
+    Damage::new(1),
+  );
+  let snapshot = ItemSnapshot::from_item(item);
+  assert!(matches!(
+    snapshot.equipment_effect(),
+    Some(dreadstep_protocol::EquipmentEffect::MeleeDamage { amount })
+      if amount.value() == 1
+  ));
 }
 
 #[test]

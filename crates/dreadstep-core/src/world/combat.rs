@@ -19,11 +19,16 @@ impl WorldState {
       .get(&attacker)
       .map(Actor::melee_reach)
       .ok_or(CommandError::UnknownActor(attacker))?;
+    let damage = self
+      .actors
+      .get(&attacker)
+      .map(Actor::melee_damage)
+      .ok_or(CommandError::UnknownActor(attacker))?;
     self.attack_with_distance(
       attacker,
       target,
       |first, second| Self::is_melee_distance(first, second, reach),
-      Damage::MELEE,
+      damage,
       false,
     )
   }

@@ -1,9 +1,9 @@
 //! Contract tests for versioned snapshot JSON projection.
 
 use dreadstep_core::{
-  Actor as CoreActor, ActorId as CoreActorId, ActorKind as CoreActorKind, GridMap as CoreGridMap,
-  Item as CoreItem, ItemDefinitionId as CoreItemDefinitionId, ItemId as CoreItemId,
-  MeleeReach as CoreMeleeReach, Position as CorePosition, Tile as CoreTile,
+  Actor as CoreActor, ActorId as CoreActorId, ActorKind as CoreActorKind, Damage as CoreDamage,
+  GridMap as CoreGridMap, Item as CoreItem, ItemDefinitionId as CoreItemDefinitionId,
+  ItemId as CoreItemId, MeleeReach as CoreMeleeReach, Position as CorePosition, Tile as CoreTile,
   WorldState as CoreWorldState,
 };
 use dreadstep_protocol::{
@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 29);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 30);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -112,6 +112,21 @@ fn snapshot_json_projects_snake_case_equipment_effect() {
   assert_eq!(
     value["equipment_effect"],
     serde_json::json!({"minimum_melee_reach": {"reach": 2}})
+  );
+}
+
+#[test]
+fn snapshot_json_projects_melee_damage_equipment_effect() {
+  let item = CoreItem::with_equipment_damage(
+    CoreItemId::new(105),
+    CoreItemDefinitionId::new(1),
+    CoreDamage::new(1),
+  );
+  let value = serde_json::to_value(dreadstep_protocol::ItemSnapshot::from_item(item))
+    .expect("item should serialize");
+  assert_eq!(
+    value["equipment_effect"],
+    serde_json::json!({"melee_damage": {"amount": 1}})
   );
 }
 

@@ -8,7 +8,7 @@ use dreadstep_core::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{HitPoints, ItemDefinitionId, ItemId, Position};
+use crate::{Damage, HitPoints, ItemDefinitionId, ItemId, Position};
 
 /// A protocol projection of one opaque item instance.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
@@ -27,6 +27,11 @@ pub enum EquipmentEffect {
   MinimumMeleeReach {
     /// The minimum effective reach while equipped.
     reach: crate::MeleeReach,
+  },
+  /// Add the supplied damage to each melee attack while equipped.
+  MeleeDamage {
+    /// The damage bonus applied to melee attacks.
+    amount: Damage,
   },
 }
 
@@ -104,6 +109,9 @@ impl ItemSnapshot {
       equipment_effect: item.equipment_effect().map(|effect| match effect {
         CoreEquipmentEffect::MinimumMeleeReach { reach } => EquipmentEffect::MinimumMeleeReach {
           reach: crate::MeleeReach::new(reach.value()).unwrap_or(crate::MeleeReach::DEFAULT),
+        },
+        CoreEquipmentEffect::MeleeDamage { amount } => EquipmentEffect::MeleeDamage {
+          amount: Damage::new(amount.value()),
         },
       }),
       throwable_effect: item.throwable_effect().map(|effect| match effect {

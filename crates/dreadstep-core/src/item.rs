@@ -78,6 +78,11 @@ pub enum EquipmentEffect {
     /// The minimum effective reach while this item is equipped.
     reach: crate::MeleeReach,
   },
+  /// Add the supplied damage to each melee attack while equipped.
+  MeleeDamage {
+    /// The damage bonus applied to melee attacks.
+    amount: crate::Damage,
+  },
 }
 
 /// The closed set of effects available from explicitly thrown items.
@@ -194,6 +199,22 @@ impl Item {
       definition,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MinimumMeleeReach { reach }),
+      throwable_effect: None,
+    }
+  }
+
+  /// Creates a non-consumable item instance with a melee-damage equipment effect.
+  #[must_use]
+  pub const fn with_equipment_damage(
+    id: ItemId,
+    definition: ItemDefinitionId,
+    amount: crate::Damage,
+  ) -> Self {
+    Self {
+      id,
+      definition,
+      effect: ItemEffect::None,
+      equipment_effect: Some(EquipmentEffect::MeleeDamage { amount }),
       throwable_effect: None,
     }
   }

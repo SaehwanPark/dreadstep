@@ -6,6 +6,11 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added a deterministic authored melee-damage equipment effect. A typed equipped item can add a
+  closed bonus to melee attacks; core applies it to target hit points and `Attacked` evidence,
+  state digests distinguish the effect, the item remains non-consumable, and the authored content
+  plus MCP, protocol v30, TUI, Bevy, and headless projections stay synchronized.
+
 - Added the authored `Zombie` (slow pursuer) enemy behavior. A Zombie follows standard chase and attack
   priorities within melee reach, but takes a base action cost of 2 scheduler ticks (1 base + 1 zombie bonus;
   3 ticks if Chilled) per action, allowing standard-speed players to take 2 turns per Zombie turn. Protocol

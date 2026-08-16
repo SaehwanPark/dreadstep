@@ -2,7 +2,7 @@
 
 use dreadstep_mcp::{Session, SessionError};
 use dreadstep_protocol::{
-  ActorId, CommandError, CommandRequest, Event, ItemDefinitionId, ItemId, WorldError,
+  ActorId, CommandError, CommandRequest, Event, ItemDefinitionId, ItemId, Position, WorldError,
 };
 
 #[test]
@@ -178,4 +178,51 @@ fn authored_reach_weapon_changes_melee_range_and_rejects_consumption() {
     })
     .expect("equipped reach should enable distance-two melee");
   assert!(matches!(output.events(), [Event::Attacked { .. }]));
+}
+
+#[test]
+fn authored_damage_weapon_changes_attack_evidence_after_tester_transfer() {
+  let mut session = Session::start_item_run(7).expect("authored item scenario should be valid");
+  session
+    .drop_item(ActorId::new(1), ItemId::new(101))
+    .expect("tester should free one inventory slot");
+  session
+    .transfer_item(ActorId::new(2), ActorId::new(1), ItemId::new(100))
+    .expect("authored damage weapon should transfer to the player");
+  let weapon = session
+    .inspect(ActorId::new(1))
+    .expect("player should exist")
+    .inventory()
+    .iter()
+    .find(|item| item.id() == ItemId::new(100))
+    .copied()
+    .expect("damage weapon should be visible after transfer");
+  assert!(matches!(
+    weapon.equipment_effect(),
+    Some(dreadstep_protocol::EquipmentEffect::MeleeDamage { amount }) if amount.value() == 1
+  ));
+  session
+    .act(CommandRequest::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(100),
+    })
+    .expect("damage weapon should equip");
+  session
+    .teleport(ActorId::new(2), Position::new(1, 0))
+    .expect("tester should place the target adjacent for a melee check");
+  session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should yield");
+  let output = session
+    .act(CommandRequest::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("adjacent target should be attackable");
+  assert!(matches!(
+    output.events().first(),
+    Some(Event::Attacked { damage, .. }) if damage.value() == 2
+  ));
 }
