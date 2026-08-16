@@ -2,8 +2,8 @@
 
 use dreadstep_core::{
   AmmunitionResult as CoreAmmunitionResult, EquipmentEffect as CoreEquipmentEffect,
-  GroundItemStack as CoreGroundItemStack, HealingResult as CoreHealingResult, Item as CoreItem,
-  ThrowableEffect as CoreThrowableEffect,
+  EquipmentSlot as CoreEquipmentSlot, GroundItemStack as CoreGroundItemStack,
+  HealingResult as CoreHealingResult, Item as CoreItem, ThrowableEffect as CoreThrowableEffect,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,7 +16,18 @@ pub struct ItemSnapshot {
   id: ItemId,
   definition: ItemDefinitionId,
   equipment_effect: Option<EquipmentEffect>,
+  equipment_slot: Option<EquipmentSlot>,
   throwable_effect: Option<ThrowableEffect>,
+}
+
+/// A protocol projection of the role implied by an equipment effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EquipmentSlot {
+  /// A weapon-like effect that changes attack reach or damage.
+  Weapon,
+  /// An armor-like effect that reduces incoming damage.
+  Armor,
 }
 
 /// A protocol projection of the closed equipment effects supported by core.
@@ -130,6 +141,10 @@ impl ItemSnapshot {
           amount: Damage::new(amount.value()),
         },
       }),
+      equipment_slot: item.equipment_slot().map(|slot| match slot {
+        CoreEquipmentSlot::Weapon => EquipmentSlot::Weapon,
+        CoreEquipmentSlot::Armor => EquipmentSlot::Armor,
+      }),
       throwable_effect: item.throwable_effect().map(|effect| match effect {
         CoreThrowableEffect::Chill => ThrowableEffect::Chill,
       }),
@@ -152,6 +167,12 @@ impl ItemSnapshot {
   #[must_use]
   pub const fn equipment_effect(self) -> Option<EquipmentEffect> {
     self.equipment_effect
+  }
+
+  /// Returns the derived equipment role, when this item has an equipment effect.
+  #[must_use]
+  pub const fn equipment_slot(self) -> Option<EquipmentSlot> {
+    self.equipment_slot
   }
 
   /// Returns the optional closed effect when this item is thrown.

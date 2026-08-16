@@ -1,7 +1,8 @@
 //! Pure NetHack-style frame layout. No terminal I/O lives here.
 
 use dreadstep_core::{
-  ActorKind, EquipmentEffect, Item, ItemEffect, RunOutcome, StatusKind, ThrowableEffect,
+  ActorKind, EquipmentEffect, EquipmentSlot, Item, ItemEffect, RunOutcome, StatusKind,
+  ThrowableEffect,
 };
 
 use crate::glyphs::{
@@ -133,7 +134,6 @@ fn map_lines(session: &Session) -> Vec<Vec<Cell>> {
   }
   rows
 }
-
 fn cell_at(session: &Session, position: dreadstep_core::Position) -> Cell {
   // Actor iteration is id-ordered, so occupancy must prefer living actors over corpses
   // rather than the first record on the tile.
@@ -161,7 +161,6 @@ fn cell_at(session: &Session, position: dreadstep_core::Position) -> Cell {
     .tile_at(position)
     .map_or_else(unseen_cell, tile_cell)
 }
-
 fn status_lines(session: &Session, ui: &UiState) -> Vec<Vec<Cell>> {
   vec![
     health_line(session),
@@ -212,7 +211,6 @@ fn health_line(session: &Session) -> Vec<Cell> {
   }
   cells
 }
-
 fn ammo_status_outcome_line(session: &Session) -> Vec<Cell> {
   let player = session.actor(PLAYER);
   let ammo = player.map_or(0, dreadstep_core::Actor::ranged_ammo);
@@ -286,13 +284,21 @@ fn inventory_status_line(session: &Session, ui: &UiState) -> Vec<Cell> {
     push_styled(&mut cells, &full_label, display_color);
 
     if is_equipped {
-      push_styled(&mut cells, " (wielded)", CellColor::Green);
+      push_styled(&mut cells, equipment_state_label(item), CellColor::Green);
     }
     if is_selected {
       push_styled(&mut cells, "*", CellColor::Yellow);
     }
   }
   cells
+}
+
+fn equipment_state_label(item: &Item) -> &'static str {
+  match item.equipment_slot() {
+    Some(EquipmentSlot::Weapon) => " (wielded)",
+    Some(EquipmentSlot::Armor) => " (worn)",
+    None => " (equipped)",
+  }
 }
 
 fn item_kind_label_and_color(item: &Item) -> (String, CellColor) {
@@ -334,7 +340,6 @@ fn health_bar(hp: u16, max_hp: u16) -> String {
     "-".repeat(HEALTH_BAR_WIDTH.saturating_sub(filled))
   )
 }
-
 fn message_line(text: &str) -> Vec<Cell> {
   let color = if text.contains("cannot")
     || text.contains("Rejected")
@@ -547,7 +552,7 @@ fn inventory_overlay_lines(session: &Session, ui: &UiState) -> Vec<Vec<Cell>> {
       };
       push_styled(&mut row, &full_label, display_color);
       if is_equipped {
-        push_styled(&mut row, " (wielded)", CellColor::Green);
+        push_styled(&mut row, equipment_state_label(item), CellColor::Green);
       }
       lines.push(row);
     }

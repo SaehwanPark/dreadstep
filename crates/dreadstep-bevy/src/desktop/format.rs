@@ -1,6 +1,7 @@
 //! Journal payloads, HUD text, and event/command formatting.
 
 use super::behavior::{enemy_behavior_name, enemy_behavior_value};
+use super::item_format::{equipment_status_suffix, item_value};
 use super::journal::journal_path;
 use super::session::DesktopSession;
 use super::session::DesktopStatus;
@@ -14,8 +15,8 @@ use bevy::ecs::query::With;
 use bevy::ecs::system::{Query, Res};
 use bevy::prelude::Text;
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, Item, ItemId, Position,
-  RunOutcome, Tile,
+  Actor, ActorId, ActorKind, BlockReason, Command, Direction, Event, ItemId, Position, RunOutcome,
+  Tile,
 };
 use serde_json::{Value, json};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -91,30 +92,6 @@ pub(crate) fn actor_value(actor: &Actor) -> Value {
     })),
     "equipped": actor.equipped_item().map(ItemId::value),
     "inventory": actor.inventory().iter().copied().map(item_value).collect::<Vec<_>>(),
-  })
-}
-
-pub(crate) fn item_value(item: Item) -> Value {
-  json!({
-    "id": item.id().value(),
-    "definition": item.definition().value(),
-    "equipment_effect": item.equipment_effect().map(|effect| match effect {
-      dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
-        json!({ "minimum_melee_reach": reach.value() })
-      }
-      dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
-        json!({ "melee_damage_bonus": amount.value() })
-      }
-      dreadstep_core::EquipmentEffect::RangedDamage { amount } => json!({
-        "ranged_damage_bonus": amount.value()
-      }),
-      dreadstep_core::EquipmentEffect::DamageReduction { amount } => {
-        json!({ "damage_reduction": amount.value() })
-      }
-    }),
-    "throwable_effect": item.throwable_effect().map(|effect| match effect {
-      dreadstep_core::ThrowableEffect::Chill => "chill",
-    }),
   })
 }
 
@@ -760,7 +737,7 @@ pub(crate) fn desktop_update_hud(
               .map_or_else(String::new, |effect| match effect {
                 dreadstep_core::ThrowableEffect::Chill => " [throw: chill]".to_string(),
               }),
-            if equipped { " [equipped]" } else { "" }
+            equipment_status_suffix(*item, equipped)
           )
         })
         .collect::<Vec<_>>();

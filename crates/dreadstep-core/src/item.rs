@@ -70,6 +70,15 @@ pub enum ItemEffect {
   },
 }
 
+/// The closed set of equipment roles used to explain an authored effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum EquipmentSlot {
+  /// A weapon-like effect that changes attack reach or damage.
+  Weapon,
+  /// An armor-like effect that reduces incoming damage.
+  Armor,
+}
+
 /// The closed set of mechanical effects available from equipped items.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EquipmentEffect {
@@ -299,6 +308,20 @@ impl Item {
   #[must_use]
   pub const fn equipment_effect(self) -> Option<EquipmentEffect> {
     self.equipment_effect
+  }
+
+  /// Returns the derived equipment role for this item's closed effect.
+  #[must_use]
+  pub const fn equipment_slot(self) -> Option<EquipmentSlot> {
+    match self.equipment_effect {
+      Some(
+        EquipmentEffect::MinimumMeleeReach { .. }
+        | EquipmentEffect::MeleeDamage { .. }
+        | EquipmentEffect::RangedDamage { .. },
+      ) => Some(EquipmentSlot::Weapon),
+      Some(EquipmentEffect::DamageReduction { .. }) => Some(EquipmentSlot::Armor),
+      None => None,
+    }
   }
 
   /// Returns the optional closed throwable effect.

@@ -1,8 +1,8 @@
 //! Core equipment contract tests.
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, Command, Damage, Event, GridMap, HitPoints, Item, ItemDefinitionId,
-  ItemId, Position, Tile, WorldState,
+  Actor, ActorId, ActorKind, Command, Damage, EquipmentSlot, Event, GridMap, HitPoints, Item,
+  ItemDefinitionId, ItemId, Position, Tile, WorldState,
 };
 
 fn equipment_world() -> WorldState {
@@ -22,6 +22,38 @@ fn equipment_world() -> WorldState {
     )
     .expect("item should be owned");
   world
+}
+
+#[test]
+fn equipment_slot_is_derived_from_the_closed_effect_set() {
+  assert_eq!(
+    Item::with_equipment_effect(
+      ItemId::new(1),
+      ItemDefinitionId::new(101),
+      dreadstep_core::MeleeReach::new(2).unwrap(),
+    )
+    .equipment_slot(),
+    Some(EquipmentSlot::Weapon)
+  );
+  assert_eq!(
+    Item::with_equipment_damage(ItemId::new(2), ItemDefinitionId::new(102), Damage::new(1))
+      .equipment_slot(),
+    Some(EquipmentSlot::Weapon)
+  );
+  assert_eq!(
+    Item::with_ranged_damage(ItemId::new(3), ItemDefinitionId::new(103), Damage::new(1))
+      .equipment_slot(),
+    Some(EquipmentSlot::Weapon)
+  );
+  assert_eq!(
+    Item::with_damage_reduction(ItemId::new(4), ItemDefinitionId::new(104), Damage::new(1))
+      .equipment_slot(),
+    Some(EquipmentSlot::Armor)
+  );
+  assert_eq!(
+    Item::new(ItemId::new(5), ItemDefinitionId::new(105)).equipment_slot(),
+    None
+  );
 }
 
 #[test]
