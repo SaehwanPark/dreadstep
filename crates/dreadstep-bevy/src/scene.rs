@@ -42,6 +42,7 @@ pub struct SceneActor {
   pub(crate) melee_reach: dreadstep_core::MeleeReach,
   pub(crate) ready_at: dreadstep_core::ActionTime,
   pub(crate) equipped_item: Option<ItemId>,
+  pub(crate) equipped_armor: Option<ItemId>,
   pub(crate) alive: bool,
 }
 
@@ -55,6 +56,7 @@ impl SceneActor {
       melee_reach: actor.melee_reach(),
       ready_at: actor.ready_at(),
       equipped_item: actor.equipped_item(),
+      equipped_armor: actor.equipped_armor(),
       alive: actor.is_alive(),
     }
   }
@@ -99,6 +101,18 @@ impl SceneActor {
   #[must_use]
   pub const fn equipped_item(self) -> Option<ItemId> {
     self.equipped_item
+  }
+
+  /// Returns the optional armor item identity mirrored from the core actor.
+  #[must_use]
+  pub const fn equipped_armor(self) -> Option<ItemId> {
+    self.equipped_armor
+  }
+
+  /// Returns whether this mirrored actor has the requested item in either slot.
+  #[must_use]
+  pub fn is_item_equipped(self, item: ItemId) -> bool {
+    self.equipped_item == Some(item) || self.equipped_armor == Some(item)
   }
 
   /// Returns whether the projected actor is living.

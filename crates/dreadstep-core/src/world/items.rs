@@ -4,8 +4,8 @@
 //! capacity and identity invariants cannot diverge by adapter.
 
 use crate::{
-  Actor, ActorId, ActorKind, AmmunitionResult, CommandError, Event, GroundItemStack, HealingResult,
-  HitPoints, Item, ItemEffect, ItemId, ThrowableEffect, WorldError, WorldState,
+  Actor, ActorId, ActorKind, AmmunitionResult, CommandError, EquipmentSlot, Event, GroundItemStack,
+  HealingResult, HitPoints, Item, ItemEffect, ItemId, ThrowableEffect, WorldError, WorldState,
 };
 
 impl WorldState {
@@ -82,7 +82,11 @@ impl WorldState {
         item: item_id,
       });
     };
-    if self.actors.get(&actor_id).and_then(Actor::equipped_item) == Some(item_id) {
+    if self
+      .actors
+      .get(&actor_id)
+      .is_some_and(|actor| actor.is_item_equipped(item_id))
+    {
       return Err(WorldError::ItemEquipped {
         actor: actor_id,
         item: item_id,
@@ -277,18 +281,28 @@ impl WorldState {
         item: item_id,
       });
     }
-    if actor.equipped_item() == Some(item_id) {
+    if actor.is_item_equipped(item_id) {
       return Err(CommandError::ItemAlreadyEquipped {
         actor: actor_id,
         item: item_id,
       });
     }
-    let previous = actor.equipped_item();
+    let item = actor
+      .inventory()
+      .iter()
+      .find(|item| item.id() == item_id)
+      .copied()
+      .ok_or(CommandError::ItemNotOwned {
+        actor: actor_id,
+        item: item_id,
+      })?;
+    let slot = item.equipment_slot().unwrap_or(EquipmentSlot::Weapon);
+    let previous = actor.equipped_item_for_slot(slot);
     self
       .actors
       .get_mut(&actor_id)
       .ok_or(CommandError::UnknownActor(actor_id))?
-      .equipped = Some(item_id);
+      .set_equipped_item_for_slot(slot, Some(item_id));
     let mut events = Vec::with_capacity(2);
     if let Some(previous) = previous {
       events.push(Event::ItemUnequipped {
@@ -303,22 +317,31 @@ impl WorldState {
     Ok(events)
   }
 
-  pub(super) fn unequip_item(&mut self, actor_id: ActorId) -> Result<Event, CommandError> {
-    let item = self
+  pub(super) fn unequip_item(&mut self, actor_id: ActorId) -> Result<Vec<Event>, CommandError> {
+    let equipped = self
       .actors
       .get(&actor_id)
       .ok_or(CommandError::UnknownActor(actor_id))?
-      .equipped_item()
-      .ok_or(CommandError::NothingEquipped(actor_id))?;
-    self
+      .equipped_items();
+    if equipped.iter().all(Option::is_none) {
+      return Err(CommandError::NothingEquipped(actor_id));
+    }
+    let actor = self
       .actors
       .get_mut(&actor_id)
-      .ok_or(CommandError::UnknownActor(actor_id))?
-      .equipped = None;
-    Ok(Event::ItemUnequipped {
-      actor: actor_id,
-      item,
-    })
+      .ok_or(CommandError::UnknownActor(actor_id))?;
+    actor.set_equipped_item_for_slot(EquipmentSlot::Weapon, None);
+    actor.set_equipped_item_for_slot(EquipmentSlot::Armor, None);
+    Ok(
+      equipped
+        .into_iter()
+        .flatten()
+        .map(|item| Event::ItemUnequipped {
+          actor: actor_id,
+          item,
+        })
+        .collect(),
+    )
   }
 
   pub(super) fn use_item(
@@ -342,7 +365,7 @@ impl WorldState {
         item: item_id,
       });
     }
-    if actor.equipped_item() == Some(item_id) {
+    if actor.is_item_equipped(item_id) {
       return Err(CommandError::ItemEquipped {
         actor: actor_id,
         item: item_id,
@@ -428,7 +451,7 @@ impl WorldState {
         actor: actor_id,
         item: item_id,
       })?;
-    if actor.equipped_item() == Some(item_id) {
+    if actor.is_item_equipped(item_id) {
       return Err(CommandError::ItemEquipped {
         actor: actor_id,
         item: item_id,

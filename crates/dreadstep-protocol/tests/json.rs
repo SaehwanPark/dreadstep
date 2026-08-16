@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 33);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 34);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -79,10 +79,23 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
     serde_json::Value::Null
   );
   assert_eq!(value["actors"][0]["equipped_item"], serde_json::Value::Null);
+  assert_eq!(
+    value["actors"][0]["equipped_weapon"],
+    serde_json::Value::Null
+  );
+  assert_eq!(
+    value["actors"][0]["equipped_armor"],
+    serde_json::Value::Null
+  );
   let equipped_value =
     serde_json::to_value(equipped_snapshot()).expect("snapshot should serialize");
   assert_eq!(equipped_value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(equipped_value["actors"][0]["equipped_item"], 4);
+  assert_eq!(equipped_value["actors"][0]["equipped_weapon"], 4);
+  assert_eq!(
+    equipped_value["actors"][0]["equipped_armor"],
+    serde_json::Value::Null
+  );
 }
 
 #[test]

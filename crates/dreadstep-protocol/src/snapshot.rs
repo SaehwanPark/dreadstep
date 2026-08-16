@@ -59,6 +59,8 @@ pub struct ActorSnapshot {
   inventory_capacity: u16,
   inventory: Vec<ItemSnapshot>,
   equipped_item: Option<ItemId>,
+  equipped_weapon: Option<ItemId>,
+  equipped_armor: Option<ItemId>,
   heard_noise: Option<Position>,
   status: Option<StatusSnapshot>,
 }
@@ -93,6 +95,10 @@ impl ActorSnapshot {
         .map(ItemSnapshot::from_item)
         .collect(),
       equipped_item: actor.equipped_item().map(|item| ItemId::new(item.value())),
+      equipped_weapon: actor
+        .equipped_weapon()
+        .map(|item| ItemId::new(item.value())),
+      equipped_armor: actor.equipped_armor().map(|item| ItemId::new(item.value())),
       heard_noise: actor
         .heard_noise()
         .map(|position| Position::new(position.x(), position.y())),
@@ -172,10 +178,22 @@ impl ActorSnapshot {
     &self.inventory
   }
 
-  /// Returns the optional equipped item identity, which points into [`Self::inventory`].
+  /// Returns the primary equipped item identity, preferring the weapon slot.
   #[must_use]
   pub const fn equipped_item(&self) -> Option<ItemId> {
     self.equipped_item
+  }
+
+  /// Returns the active weapon item identity, when present.
+  #[must_use]
+  pub const fn equipped_weapon(&self) -> Option<ItemId> {
+    self.equipped_weapon
+  }
+
+  /// Returns the active armor item identity, when present.
+  #[must_use]
+  pub const fn equipped_armor(&self) -> Option<ItemId> {
+    self.equipped_armor
   }
 
   /// Returns the one-use noise position currently heard by this actor, if any.

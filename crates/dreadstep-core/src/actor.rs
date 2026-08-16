@@ -3,7 +3,9 @@
 //! Ready time, inventory, and ammunition live on the actor record. World transitions mutate
 //! these fields; adapters must not invent a second copy.
 
-use crate::{ActorId, EnemyBehavior, HitPoints, Item, ItemId, Position, Status, StatusKind};
+use crate::{
+  ActorId, EnemyBehavior, EquipmentSlot, HitPoints, Item, ItemId, Position, Status, StatusKind,
+};
 
 /// The kind of actor represented in the world.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -147,7 +149,8 @@ pub struct Actor {
   max_hit_points: HitPoints,
   melee_reach: MeleeReach,
   pub(crate) inventory: Vec<Item>,
-  pub(crate) equipped: Option<ItemId>,
+  pub(crate) equipped_weapon: Option<ItemId>,
+  pub(crate) equipped_armor: Option<ItemId>,
   pub(crate) ranged_ammo: u16,
   pub(crate) ready_at: ActionTime,
   pub(crate) heard_noise: Option<Position>,
@@ -231,7 +234,8 @@ impl Actor {
       max_hit_points: hit_points,
       melee_reach,
       inventory: Vec::new(),
-      equipped: None,
+      equipped_weapon: None,
+      equipped_armor: None,
       ranged_ammo,
       ready_at: ActionTime::new(0),
       heard_noise: None,
@@ -319,21 +323,25 @@ impl Actor {
   #[must_use]
   pub fn melee_reach(&self) -> MeleeReach {
     self
-      .equipped
-      .and_then(|equipped| {
+      .equipped_items()
+      .iter()
+      .flatten()
+      .filter_map(|equipped| {
         self
           .inventory
           .iter()
-          .find(|item| item.id() == equipped)
-          .and_then(|item| {
-            item.equipment_effect().and_then(|effect| match effect {
-              crate::EquipmentEffect::MinimumMeleeReach { reach } => Some(reach),
+          .find(|item| item.id() == *equipped)
+          .and_then(|item| match item.equipment_effect() {
+            Some(crate::EquipmentEffect::MinimumMeleeReach { reach }) => Some(reach),
+            Some(
               crate::EquipmentEffect::MeleeDamage { .. }
               | crate::EquipmentEffect::RangedDamage { .. }
-              | crate::EquipmentEffect::DamageReduction { .. } => None,
-            })
+              | crate::EquipmentEffect::DamageReduction { .. },
+            )
+            | None => None,
           })
       })
+      .max()
       .map_or(self.melee_reach, |minimum| self.melee_reach.max(minimum))
   }
 
@@ -347,12 +355,14 @@ impl Actor {
   #[must_use]
   pub fn melee_damage(&self) -> Damage {
     let bonus = self
-      .equipped
-      .and_then(|equipped| {
+      .equipped_items()
+      .iter()
+      .flatten()
+      .filter_map(|equipped| {
         self
           .inventory
           .iter()
-          .find(|item| item.id() == equipped)
+          .find(|item| item.id() == *equipped)
           .and_then(|item| match item.equipment_effect() {
             Some(crate::EquipmentEffect::MeleeDamage { amount }) => Some(amount.value()),
             Some(
@@ -363,7 +373,7 @@ impl Actor {
             | None => None,
           })
       })
-      .unwrap_or(0);
+      .fold(0_u16, u16::saturating_add);
     Damage::new(Damage::MELEE.value().saturating_add(bonus))
   }
 
@@ -371,12 +381,14 @@ impl Actor {
   #[must_use]
   pub fn ranged_damage(&self) -> Damage {
     let bonus = self
-      .equipped
-      .and_then(|equipped| {
+      .equipped_items()
+      .iter()
+      .flatten()
+      .filter_map(|equipped| {
         self
           .inventory
           .iter()
-          .find(|item| item.id() == equipped)
+          .find(|item| item.id() == *equipped)
           .and_then(|item| match item.equipment_effect() {
             Some(crate::EquipmentEffect::RangedDamage { amount }) => Some(amount.value()),
             Some(
@@ -387,22 +399,24 @@ impl Actor {
             | None => None,
           })
       })
-      .unwrap_or(0);
+      .fold(0_u16, u16::saturating_add);
     Damage::new(Damage::RANGED.value().saturating_add(bonus))
   }
 
   /// Returns the equipped incoming-damage reduction, or zero when no armor effect is active.
   #[must_use]
   pub fn damage_reduction(&self) -> Damage {
-    self
-      .equipped
-      .and_then(|equipped| {
+    let reduction = self
+      .equipped_items()
+      .iter()
+      .flatten()
+      .filter_map(|equipped| {
         self
           .inventory
           .iter()
-          .find(|item| item.id() == equipped)
+          .find(|item| item.id() == *equipped)
           .and_then(|item| match item.equipment_effect() {
-            Some(crate::EquipmentEffect::DamageReduction { amount }) => Some(amount),
+            Some(crate::EquipmentEffect::DamageReduction { amount }) => Some(amount.value()),
             Some(
               crate::EquipmentEffect::MinimumMeleeReach { .. }
               | crate::EquipmentEffect::MeleeDamage { .. }
@@ -411,7 +425,8 @@ impl Actor {
             | None => None,
           })
       })
-      .unwrap_or(Damage::new(0))
+      .fold(0_u16, u16::saturating_add);
+    Damage::new(reduction)
   }
 
   /// Returns this actor's items in deterministic insertion order.
@@ -420,10 +435,48 @@ impl Actor {
     &self.inventory
   }
 
-  /// Returns the optional equipped item identity, which always points into this inventory.
+  /// Returns the primary equipped item identity, preferring the weapon slot for compatibility.
   #[must_use]
-  pub const fn equipped_item(&self) -> Option<ItemId> {
-    self.equipped
+  pub fn equipped_item(&self) -> Option<ItemId> {
+    self.equipped_weapon.or(self.equipped_armor)
+  }
+
+  /// Returns the active weapon item identity, when one is equipped.
+  #[must_use]
+  pub const fn equipped_weapon(&self) -> Option<ItemId> {
+    self.equipped_weapon
+  }
+
+  /// Returns the active armor item identity, when one is equipped.
+  #[must_use]
+  pub const fn equipped_armor(&self) -> Option<ItemId> {
+    self.equipped_armor
+  }
+
+  /// Returns active item identities in stable weapon-then-armor order.
+  #[must_use]
+  pub const fn equipped_items(&self) -> [Option<ItemId>; 2] {
+    [self.equipped_weapon, self.equipped_armor]
+  }
+
+  /// Returns whether this item occupies either active equipment slot.
+  #[must_use]
+  pub fn is_item_equipped(&self, item: ItemId) -> bool {
+    self.equipped_weapon == Some(item) || self.equipped_armor == Some(item)
+  }
+
+  pub(crate) const fn equipped_item_for_slot(&self, slot: EquipmentSlot) -> Option<ItemId> {
+    match slot {
+      EquipmentSlot::Weapon => self.equipped_weapon,
+      EquipmentSlot::Armor => self.equipped_armor,
+    }
+  }
+
+  pub(crate) fn set_equipped_item_for_slot(&mut self, slot: EquipmentSlot, item: Option<ItemId>) {
+    match slot {
+      EquipmentSlot::Weapon => self.equipped_weapon = item,
+      EquipmentSlot::Armor => self.equipped_armor = item,
+    }
   }
 
   /// Returns the number of ranged shots remaining for this actor.

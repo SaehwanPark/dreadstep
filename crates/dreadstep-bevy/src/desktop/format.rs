@@ -91,6 +91,8 @@ pub(crate) fn actor_value(actor: &Actor) -> Value {
       "remaining_actions": status.remaining_actions(),
     })),
     "equipped": actor.equipped_item().map(ItemId::value),
+    "equipped_weapon": actor.equipped_weapon().map(ItemId::value),
+    "equipped_armor": actor.equipped_armor().map(ItemId::value),
     "inventory": actor.inventory().iter().copied().map(item_value).collect::<Vec<_>>(),
   })
 }
@@ -710,7 +712,7 @@ pub(crate) fn desktop_update_hud(
         .iter()
         .map(|item| {
           let selected = session.selected_item == Some(item.id());
-          let equipped = player.equipped_item() == Some(item.id());
+          let equipped = player.is_item_equipped(item.id());
           format!(
             "{}item {} (def {}){}{}{}",
             if selected { "> " } else { "  " },
