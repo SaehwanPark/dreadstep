@@ -9,7 +9,9 @@ use crate::{
   ActionCost, ActionResult, ActionTime, Actor, ActorId, ActorKind, Command, CommandError,
   EnemyBehavior, Event, GridMap, GroundItemStack, Position, RunOutcome, StateDigest, StatusKind,
   Tile, WorldError,
-  replay::{StableHasher, hash_equipment_effect, hash_item_effect, hash_throwable_effect},
+  replay::{
+    StableHasher, hash_equipment_effect, hash_item_effect, hash_item_rarity, hash_throwable_effect,
+  },
 };
 
 mod combat;
@@ -169,7 +171,7 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V12");
+    hasher.write_bytes(b"DREADSTEP-STATE-V13");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -230,6 +232,7 @@ impl WorldState {
       for item in actor.inventory() {
         hasher.write_u32(item.id().value());
         hasher.write_u32(item.definition().value());
+        hash_item_rarity(&mut hasher, item.rarity());
         hash_item_effect(&mut hasher, item.effect());
         hash_equipment_effect(&mut hasher, item.equipment_effect());
         hash_throwable_effect(&mut hasher, item.throwable_effect());
@@ -253,6 +256,7 @@ impl WorldState {
         for item in stack.items() {
           hasher.write_u32(item.id().value());
           hasher.write_u32(item.definition().value());
+          hash_item_rarity(&mut hasher, item.rarity());
           hash_item_effect(&mut hasher, item.effect());
           hash_equipment_effect(&mut hasher, item.equipment_effect());
           hash_throwable_effect(&mut hasher, item.throwable_effect());

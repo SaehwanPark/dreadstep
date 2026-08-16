@@ -1,14 +1,12 @@
 //! Pure NetHack-style frame layout. No terminal I/O lives here.
 
-use dreadstep_core::{
-  ActorKind, EquipmentEffect, EquipmentSlot, Item, ItemEffect, RunOutcome, StatusKind,
-  ThrowableEffect,
-};
+use dreadstep_core::{ActorKind, EquipmentSlot, Item, RunOutcome, StatusKind};
 
 use crate::glyphs::{
   Cell, CellColor, actor_cell, behavior_name, ground_item_cell, push_styled, tile_cell, unseen_cell,
 };
 use crate::input::{Overlay, UiState};
+use crate::item_labels::item_kind_label_and_color;
 use crate::kinds::{command_name, outcome_name};
 use crate::session::{PLAYER, Session};
 use crate::visibility::{FOV_RADIUS, visible_positions};
@@ -298,33 +296,6 @@ fn equipment_state_label(item: &Item) -> &'static str {
     Some(EquipmentSlot::Weapon) => " (wielded)",
     Some(EquipmentSlot::Armor) => " (worn)",
     None => " (equipped)",
-  }
-}
-
-fn item_kind_label_and_color(item: &Item) -> (String, CellColor) {
-  if matches!(item.throwable_effect(), Some(ThrowableEffect::Chill)) {
-    return ("flask".to_string(), CellColor::Cyan);
-  }
-  match item.effect() {
-    ItemEffect::Heal { amount } => (format!("heal+{}", amount.value()), CellColor::Green),
-    ItemEffect::RestoreAmmunition { amount } => {
-      (format!("ammo+{}", amount.value()), CellColor::Yellow)
-    }
-    ItemEffect::None => match item.equipment_effect() {
-      Some(EquipmentEffect::MinimumMeleeReach { reach }) => {
-        (format!("reach{}", reach.value()), CellColor::Magenta)
-      }
-      Some(EquipmentEffect::MeleeDamage { amount }) => {
-        (format!("damage+{}", amount.value()), CellColor::Red)
-      }
-      Some(EquipmentEffect::RangedDamage { amount }) => {
-        (format!("ranged+{}", amount.value()), CellColor::Yellow)
-      }
-      Some(EquipmentEffect::DamageReduction { amount }) => {
-        (format!("armor-{}", amount.value()), CellColor::Cyan)
-      }
-      None => ("item".to_string(), CellColor::Default),
-    },
   }
 }
 

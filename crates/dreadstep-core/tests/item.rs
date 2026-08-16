@@ -1,8 +1,8 @@
 //! Contract tests for opaque core item ownership.
 
 use dreadstep_core::{
-  Actor, ActorId, ActorKind, GridMap, Item, ItemDefinitionId, ItemId, Position, Tile, WorldError,
-  WorldState,
+  Actor, ActorId, ActorKind, GridMap, Item, ItemDefinitionId, ItemId, ItemRarity, Position, Tile,
+  WorldError, WorldState,
 };
 
 fn world() -> WorldState {
@@ -36,6 +36,29 @@ fn give_item_preserves_insertion_order_and_changes_the_world_digest() {
     .inventory();
   assert_eq!(inventory, &[first, second]);
   assert_ne!(world.digest(), before);
+}
+
+#[test]
+fn item_rarity_defaults_to_common_and_changes_digest_without_changing_effects() {
+  let common = Item::new(ItemId::new(1), ItemDefinitionId::new(10));
+  let magic = common.with_rarity(ItemRarity::Magic);
+  let rare = common.with_rarity(ItemRarity::Rare);
+
+  assert_eq!(common.rarity(), ItemRarity::Common);
+  assert_eq!(magic.rarity(), ItemRarity::Magic);
+  assert_eq!(rare.rarity(), ItemRarity::Rare);
+  assert_eq!(common.effect(), magic.effect());
+  assert_ne!(common, magic);
+
+  let mut common_world = world();
+  common_world
+    .give_item(ActorId::new(1), common)
+    .expect("common item should be accepted");
+  let mut magic_world = world();
+  magic_world
+    .give_item(ActorId::new(1), magic)
+    .expect("magic item should be accepted");
+  assert_ne!(common_world.digest(), magic_world.digest());
 }
 
 #[test]

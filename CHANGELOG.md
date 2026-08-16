@@ -6,16 +6,20 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added deterministic common/magic/rare item-rarity metadata. Existing item constructors default to
+  common; explicit rarity survives core state digests, protocol v35 snapshots, Bevy JSON, and TUI
+  labels without changing combat, equipment, or inventory legality.
+
 - Added independent weapon and armor equipment slots. Equipping replaces only the matching role,
   active effects aggregate deterministically, and the existing `Unequip` action clears both slots
-  in stable order. Protocol v34, Bevy scene/JSON, TUI labels, replay/state-digest evidence, and
+  in stable order. Protocol v35, Bevy scene/JSON, TUI labels, replay/state-digest evidence, and
   adapter tests expose the same loadout.
 
 - Added typed `weapon`/`armor` equipment-role projections to item snapshots and client labels.
   Roles are derived from the closed effect set; actual multi-slot semantics remain deferred.
 
 - Added a deterministic ranged-damage equipment effect. An equipped authored item raises ranged
-  attack damage in core evidence and target hit points, with protocol version 34 and synchronized
+  attack damage in core evidence and target hit points, with protocol version 35 and synchronized
   replay/state-digest, content, MCP, TUI, Bevy, and headless projections.
 
 - Added a deterministic inventory comparison line to the terminal overlay. The selected item's
@@ -25,7 +29,7 @@ All notable contributor- and user-visible project changes are recorded here.
 - Added a deterministic authored damage-reduction equipment effect. An equipped armor item reduces
   scheduled melee and ranged attack damage with saturating mitigation; core reports the actual
   `Attacked` damage and preserves target hit points, state digests distinguish the effect, and
-  content, MCP, protocol v34, TUI, Bevy, and headless projections stay synchronized. Weapon
+  content, MCP, protocol v35, TUI, Bevy, and headless projections stay synchronized. Weapon
   subclasses, affixes, and generic mitigation remain deferred.
 
 - Extended authored damage-reduction equipment to one-shot floor traps. Saturating mitigation now

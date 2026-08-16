@@ -2054,6 +2054,11 @@ active armor item simultaneously. Equipping replaces only the matching role, com
 the complete loadout, and the existing unequip action clears active roles in stable order. This
 does not add weapon subclasses, durability, affixes, rarity, or generated loot.
 
+The following bounded presentation slice is now verified: every item carries explicit common,
+magic, or rare rarity metadata. Existing constructors default to common; the value is preserved in
+state digests and projected through protocol, Bevy, and terminal labels without changing combat,
+equipment, inventory legality, identification, or loot generation.
+
 ### Implement
 
 - equipment;

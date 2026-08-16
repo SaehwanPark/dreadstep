@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 34);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 35);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -74,6 +74,7 @@ fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
   assert_eq!(value["actors"][0]["inventory_capacity"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["id"], 4);
   assert_eq!(value["actors"][0]["inventory"][0]["definition"], 9);
+  assert_eq!(value["actors"][0]["inventory"][0]["rarity"], "common");
   assert_eq!(
     value["actors"][0]["inventory"][0]["equipment_slot"],
     serde_json::Value::Null
@@ -131,6 +132,15 @@ fn snapshot_json_projects_snake_case_equipment_effect() {
     serde_json::json!({"minimum_melee_reach": {"reach": 2}})
   );
   assert_eq!(value["equipment_slot"], "weapon");
+}
+
+#[test]
+fn snapshot_json_projects_explicit_rarity() {
+  let item = CoreItem::new(CoreItemId::new(105), CoreItemDefinitionId::new(6))
+    .with_rarity(dreadstep_core::ItemRarity::Magic);
+  let value = serde_json::to_value(dreadstep_protocol::ItemSnapshot::from_item(item))
+    .expect("item should serialize");
+  assert_eq!(value["rarity"], "magic");
 }
 
 #[test]

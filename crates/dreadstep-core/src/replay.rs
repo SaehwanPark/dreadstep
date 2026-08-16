@@ -3,7 +3,7 @@
 //! Digests are regression evidence, not a cryptographic integrity check. The hasher is process-
 //! independent so identical worlds hash identically across platforms.
 
-use crate::{Command, Direction, EquipmentEffect, ItemEffect};
+use crate::{Command, Direction, EquipmentEffect, ItemEffect, ItemRarity};
 
 /// A stable, non-cryptographic digest used for deterministic regression evidence.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -237,6 +237,14 @@ pub(crate) fn hash_item_effect(hasher: &mut StableHasher, effect: ItemEffect) {
       hasher.write_u16(amount.value());
     }
   }
+}
+
+pub(crate) fn hash_item_rarity(hasher: &mut StableHasher, rarity: ItemRarity) {
+  hasher.write_u8(match rarity {
+    ItemRarity::Common => 0,
+    ItemRarity::Magic => 1,
+    ItemRarity::Rare => 2,
+  });
 }
 
 pub(crate) fn hash_throwable_effect(
