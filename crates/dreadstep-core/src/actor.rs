@@ -365,7 +365,7 @@ impl Actor {
     Damage::new(Damage::MELEE.value().saturating_add(bonus))
   }
 
-  /// Returns the equipped attack-damage reduction, or zero when no armor effect is active.
+  /// Returns the equipped incoming-damage reduction, or zero when no armor effect is active.
   #[must_use]
   pub fn damage_reduction(&self) -> Damage {
     self

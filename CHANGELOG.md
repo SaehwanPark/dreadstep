@@ -9,8 +9,12 @@ All notable contributor- and user-visible project changes are recorded here.
 - Added a deterministic authored damage-reduction equipment effect. An equipped armor item reduces
   scheduled melee and ranged attack damage with saturating mitigation; core reports the actual
   `Attacked` damage and preserves target hit points, state digests distinguish the effect, and
-  content, MCP, protocol v31, TUI, Bevy, and headless projections stay synchronized. Trap damage,
-  armor slots, affixes, and generic mitigation remain deferred.
+  content, MCP, protocol v31, TUI, Bevy, and headless projections stay synchronized. Armor slots,
+  affixes, and generic mitigation remain deferred.
+
+- Extended authored damage-reduction equipment to one-shot floor traps. Saturating mitigation now
+  preserves movement, trap consumption, death ordering, and actual `TrapTriggered` evidence while
+  keeping armor slots, affixes, and durability deferred.
 
 - Added a deterministic authored melee-damage equipment effect. A typed equipped item can add a
   closed bonus to melee attacks; core applies it to target hit points and `Attacked` evidence,

@@ -83,9 +83,9 @@ pub enum EquipmentEffect {
     /// The damage bonus applied to melee attacks.
     amount: crate::Damage,
   },
-  /// Reduce scheduled attack damage by the supplied amount while equipped.
+  /// Reduce scheduled incoming damage by the supplied amount while equipped.
   DamageReduction {
-    /// The damage reduction applied to melee and ranged attacks.
+    /// The damage reduction applied to melee, ranged, and floor-trap damage.
     amount: crate::Damage,
   },
 }

@@ -2012,8 +2012,9 @@ desktop behavior; weapon classes and equipment-derived effects remain future wor
 
 The first equipment-derived mechanical effect is now verified: authored item 103 raises effective
 melee reach to at least two while equipped, preserves the existing equipment action contract, and
-is explicitly non-consumable. Weapon classes, damage/accuracy changes, armor, affixes, durability,
-identification, and randomized loot remain future work.
+is explicitly non-consumable. Authored melee damage and incoming damage reduction are also verified,
+including saturating mitigation for one-shot floor traps. Weapon classes, armor slots, affixes,
+durability, identification, and randomized loot remain future work.
 
 The following bounded combat slice is also verified: a scheduled player may reload partial ranged
 ammunition to the fixed three-shot capacity through a typed `Reload` command. It preserves standard
