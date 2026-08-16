@@ -83,6 +83,11 @@ pub enum EquipmentEffect {
     /// The damage bonus applied to melee attacks.
     amount: crate::Damage,
   },
+  /// Add the supplied damage to each ranged attack while equipped.
+  RangedDamage {
+    /// The damage bonus applied to ranged attacks.
+    amount: crate::Damage,
+  },
   /// Reduce scheduled incoming damage by the supplied amount while equipped.
   DamageReduction {
     /// The damage reduction applied to melee, ranged, and floor-trap damage.
@@ -220,6 +225,22 @@ impl Item {
       definition,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MeleeDamage { amount }),
+      throwable_effect: None,
+    }
+  }
+
+  /// Creates a non-consumable item instance with a ranged-damage equipment effect.
+  #[must_use]
+  pub const fn with_ranged_damage(
+    id: ItemId,
+    definition: ItemDefinitionId,
+    amount: crate::Damage,
+  ) -> Self {
+    Self {
+      id,
+      definition,
+      effect: ItemEffect::None,
+      equipment_effect: Some(EquipmentEffect::RangedDamage { amount }),
       throwable_effect: None,
     }
   }

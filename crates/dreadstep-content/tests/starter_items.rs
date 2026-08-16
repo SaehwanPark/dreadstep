@@ -80,7 +80,8 @@ fn starter_item_floor_is_complete_and_repeatable() {
     actors[1].inventory(),
     &[
       Item::with_equipment_damage(ItemId::new(100), ItemDefinitionId::new(1), Damage::new(1),),
-      Item::with_damage_reduction(ItemId::new(105), ItemDefinitionId::new(6), Damage::new(1),)
+      Item::with_damage_reduction(ItemId::new(105), ItemDefinitionId::new(6), Damage::new(1),),
+      Item::with_ranged_damage(ItemId::new(106), ItemDefinitionId::new(7), Damage::new(1),)
     ]
   );
   assert!(actors[2..].iter().all(|actor| actor.inventory().is_empty()));

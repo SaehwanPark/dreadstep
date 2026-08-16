@@ -21,7 +21,7 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     Some(dreadstep_protocol::EquipmentEffect::MinimumMeleeReach { reach })
       if reach.value() == 2
   ));
-  assert_eq!(PROTOCOL_VERSION, 31);
+  assert_eq!(PROTOCOL_VERSION, 32);
 }
 
 #[test]
@@ -35,6 +35,21 @@ fn item_snapshot_projects_melee_damage_effect() {
   assert!(matches!(
     snapshot.equipment_effect(),
     Some(dreadstep_protocol::EquipmentEffect::MeleeDamage { amount })
+      if amount.value() == 1
+  ));
+}
+
+#[test]
+fn item_snapshot_projects_ranged_damage_effect() {
+  let item = Item::with_ranged_damage(
+    dreadstep_core::ItemId::new(106),
+    ItemDefinitionId::new(7),
+    Damage::new(1),
+  );
+  let snapshot = ItemSnapshot::from_item(item);
+  assert!(matches!(
+    snapshot.equipment_effect(),
+    Some(dreadstep_protocol::EquipmentEffect::RangedDamage { amount })
       if amount.value() == 1
   ));
 }

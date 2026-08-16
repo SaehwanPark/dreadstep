@@ -138,10 +138,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic authored damage-reduction equipment |
 | 2026-08-16 | Milestone 6 slice: deterministic authored trap-mitigating armor |
 | 2026-08-16 | Milestone 6 slice: deterministic inventory item comparison UX |
+| 2026-08-16 | Milestone 6 slice: deterministic authored ranged-damage equipment |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **31**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **32**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -154,7 +155,8 @@ deferred until a later visual-enhancement stage.
   ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, state digests, and authored Pursuer, Kiter,
   Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy behaviors. Authored equipment may add
-  closed melee-damage and incoming-damage-reduction effects resolved in core attack/trap evidence
+  closed melee-damage, ranged-damage, and incoming-damage-reduction effects resolved in core
+  attack/trap evidence
   and projected through every adapter.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
@@ -191,11 +193,11 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: the terminal inventory overlay now shows a deterministic comparison
-line for the selected item versus the currently equipped item (or an explicit empty baseline).
-Comparison is presentation-only and reads the same typed effect labels already projected from core;
-simulation, protocol, replay, and adapter authority remain unchanged. Rarity, generated loot,
-affixes, and richer inventory actions remain deferred.
+The current slice is complete: authored equipment now includes a ranged-damage bonus resolved at the
+core ranged-attack boundary, with protocol version 32 and synchronized replay/state-digest and
+adapter projections. The terminal inventory overlay also shows a deterministic comparison line for
+the selected item versus the currently equipped item (or an explicit empty baseline). Rarity,
+generated loot, affixes, equipment slots, and richer inventory actions remain deferred.
 
 ## Future
 

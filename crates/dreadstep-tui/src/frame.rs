@@ -311,6 +311,9 @@ fn item_kind_label_and_color(item: &Item) -> (String, CellColor) {
       Some(EquipmentEffect::MeleeDamage { amount }) => {
         (format!("damage+{}", amount.value()), CellColor::Red)
       }
+      Some(EquipmentEffect::RangedDamage { amount }) => {
+        (format!("ranged+{}", amount.value()), CellColor::Yellow)
+      }
       Some(EquipmentEffect::DamageReduction { amount }) => {
         (format!("armor-{}", amount.value()), CellColor::Cyan)
       }

@@ -268,3 +268,47 @@ fn authored_armor_reduces_attack_evidence_after_tester_transfer() {
     Some(Event::Attacked { damage, .. }) if damage.value() == 0
   ));
 }
+
+#[test]
+fn authored_ranged_weapon_changes_ranged_attack_evidence_after_tester_transfer() {
+  let mut session = Session::start_item_run(7).expect("authored item scenario should be valid");
+  session
+    .drop_item(ActorId::new(1), ItemId::new(101))
+    .expect("tester should free one inventory slot");
+  session
+    .transfer_item(ActorId::new(2), ActorId::new(1), ItemId::new(106))
+    .expect("authored ranged weapon should transfer to the player");
+  let weapon = session
+    .inspect(ActorId::new(1))
+    .expect("player should exist")
+    .inventory()
+    .iter()
+    .find(|item| item.id() == ItemId::new(106))
+    .copied()
+    .expect("ranged weapon should be visible after transfer");
+  assert!(matches!(
+    weapon.equipment_effect(),
+    Some(dreadstep_protocol::EquipmentEffect::RangedDamage { amount }) if amount.value() == 1
+  ));
+  session
+    .act(CommandRequest::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(106),
+    })
+    .expect("ranged weapon should equip");
+  session
+    .act(CommandRequest::Wait {
+      actor: ActorId::new(2),
+    })
+    .expect("enemy should yield");
+  let output = session
+    .act(CommandRequest::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("cardinal ranged target should be attackable");
+  assert!(matches!(
+    output.events().first(),
+    Some(Event::Attacked { damage, .. }) if damage.value() == 2
+  ));
+}
