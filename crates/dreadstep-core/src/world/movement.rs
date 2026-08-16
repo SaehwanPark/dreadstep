@@ -48,12 +48,18 @@ impl WorldState {
           .set_tile(to, Tile::Floor)
           .ok_or(CommandError::UnknownActor(actor_id))?;
         let damage = Damage::TRAP;
+        let reduction = self
+          .actors
+          .get(&actor_id)
+          .map(Actor::damage_reduction)
+          .ok_or(CommandError::UnknownActor(actor_id))?;
+        let actual_damage = damage.saturating_sub(reduction);
         let remaining_hit_points = {
           let actor = self
             .actors
             .get_mut(&actor_id)
             .ok_or(CommandError::UnknownActor(actor_id))?;
-          let remaining_hit_points = actor.hit_points.reduced_by(damage);
+          let remaining_hit_points = actor.hit_points.reduced_by(actual_damage);
           actor.hit_points = remaining_hit_points;
           if !remaining_hit_points.is_alive() {
             actor.heard_noise = None;
@@ -64,7 +70,7 @@ impl WorldState {
         events.push(Event::TrapTriggered {
           actor: actor_id,
           position: to,
-          damage,
+          damage: actual_damage,
           remaining_hit_points,
         });
         if !remaining_hit_points.is_alive() {

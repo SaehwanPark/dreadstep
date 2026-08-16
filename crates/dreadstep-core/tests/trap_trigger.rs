@@ -2,7 +2,7 @@
 
 use dreadstep_core::{
   ActionCost, ActionTime, Actor, ActorId, ActorKind, Command, Damage, Direction, Event, GridMap,
-  HitPoints, Position, RunOutcome, Tile, WorldState,
+  HitPoints, Item, ItemDefinitionId, ItemId, Position, RunOutcome, Tile, WorldState,
 };
 
 fn trap_world() -> WorldState {
@@ -56,6 +56,47 @@ fn entering_a_trap_moves_then_emits_damage_and_consumes_the_tile() {
     result.current_time(),
     ActionTime::new(ActionCost::STANDARD.value())
   );
+}
+
+#[test]
+fn equipped_damage_reduction_mitigates_trap_evidence_without_preventing_consumption() {
+  let mut world = trap_world();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_damage_reduction(ItemId::new(10), ItemDefinitionId::new(6), Damage::new(1)),
+    )
+    .expect("armor should be owned");
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(10),
+    })
+    .expect("armor should equip");
+
+  let result = world
+    .execute(Command::Move {
+      actor: ActorId::new(1),
+      direction: Direction::East,
+    })
+    .expect("entering a trap should remain an accepted movement action");
+
+  assert_eq!(world.map().tile_at(Position::new(1, 0)), Some(Tile::Floor));
+  assert_eq!(
+    world.actor(ActorId::new(1)).unwrap().hit_points(),
+    HitPoints::new(10)
+  );
+  assert!(matches!(
+    result.events(),
+    [
+      Event::Moved { .. },
+      Event::TrapTriggered {
+        damage,
+        remaining_hit_points,
+        ..
+      }
+    ] if *damage == Damage::new(0) && *remaining_hit_points == HitPoints::new(10)
+  ));
 }
 
 #[test]
