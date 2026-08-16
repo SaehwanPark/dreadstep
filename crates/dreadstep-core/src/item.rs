@@ -83,6 +83,11 @@ pub enum EquipmentEffect {
     /// The damage bonus applied to melee attacks.
     amount: crate::Damage,
   },
+  /// Reduce scheduled attack damage by the supplied amount while equipped.
+  DamageReduction {
+    /// The damage reduction applied to melee and ranged attacks.
+    amount: crate::Damage,
+  },
 }
 
 /// The closed set of effects available from explicitly thrown items.
@@ -215,6 +220,22 @@ impl Item {
       definition,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MeleeDamage { amount }),
+      throwable_effect: None,
+    }
+  }
+
+  /// Creates a non-consumable item instance with a closed attack-damage reduction effect.
+  #[must_use]
+  pub const fn with_damage_reduction(
+    id: ItemId,
+    definition: ItemDefinitionId,
+    amount: crate::Damage,
+  ) -> Self {
+    Self {
+      id,
+      definition,
+      effect: ItemEffect::None,
+      equipment_effect: Some(EquipmentEffect::DamageReduction { amount }),
       throwable_effect: None,
     }
   }

@@ -461,6 +461,10 @@ pub fn starter_item_floor_definition() -> StarterFloorDefinition {
         Item::with_equipment_damage(ItemId::new(100), ItemDefinitionId::new(1), Damage::new(1)),
       ),
       StarterItemPlacement::new(
+        ActorId::new(2),
+        Item::with_damage_reduction(ItemId::new(105), ItemDefinitionId::new(6), Damage::new(1)),
+      ),
+      StarterItemPlacement::new(
         ActorId::new(1),
         Item::with_effect(
           ItemId::new(102),
@@ -522,6 +526,7 @@ pub fn starter_item_catalog_definition() -> ItemCatalogDefinition {
     ItemDefinitionId::new(3),
     ItemDefinitionId::new(4),
     ItemDefinitionId::new(5),
+    ItemDefinitionId::new(6),
   ])
 }
 

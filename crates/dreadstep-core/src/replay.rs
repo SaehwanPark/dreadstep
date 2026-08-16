@@ -260,6 +260,10 @@ pub(crate) fn hash_equipment_effect(hasher: &mut StableHasher, effect: Option<Eq
       hasher.write_u8(2);
       hasher.write_u16(amount.value());
     }
+    Some(EquipmentEffect::DamageReduction { amount }) => {
+      hasher.write_u8(3);
+      hasher.write_u16(amount.value());
+    }
   }
 }
 

@@ -98,6 +98,12 @@ impl Damage {
   pub const fn value(self) -> u16 {
     self.0
   }
+
+  /// Returns this damage amount after saturating reduction by another amount.
+  #[must_use]
+  pub const fn saturating_sub(self, reduction: Self) -> Self {
+    Self(self.0.saturating_sub(reduction.0))
+  }
 }
 
 /// A non-zero Manhattan distance at which an actor may perform melee attacks.
@@ -322,7 +328,8 @@ impl Actor {
           .and_then(|item| {
             item.equipment_effect().and_then(|effect| match effect {
               crate::EquipmentEffect::MinimumMeleeReach { reach } => Some(reach),
-              crate::EquipmentEffect::MeleeDamage { .. } => None,
+              crate::EquipmentEffect::MeleeDamage { .. }
+              | crate::EquipmentEffect::DamageReduction { .. } => None,
             })
           })
       })
@@ -347,11 +354,37 @@ impl Actor {
           .find(|item| item.id() == equipped)
           .and_then(|item| match item.equipment_effect() {
             Some(crate::EquipmentEffect::MeleeDamage { amount }) => Some(amount.value()),
-            Some(crate::EquipmentEffect::MinimumMeleeReach { .. }) | None => None,
+            Some(
+              crate::EquipmentEffect::MinimumMeleeReach { .. }
+              | crate::EquipmentEffect::DamageReduction { .. },
+            )
+            | None => None,
           })
       })
       .unwrap_or(0);
     Damage::new(Damage::MELEE.value().saturating_add(bonus))
+  }
+
+  /// Returns the equipped attack-damage reduction, or zero when no armor effect is active.
+  #[must_use]
+  pub fn damage_reduction(&self) -> Damage {
+    self
+      .equipped
+      .and_then(|equipped| {
+        self
+          .inventory
+          .iter()
+          .find(|item| item.id() == equipped)
+          .and_then(|item| match item.equipment_effect() {
+            Some(crate::EquipmentEffect::DamageReduction { amount }) => Some(amount),
+            Some(
+              crate::EquipmentEffect::MinimumMeleeReach { .. }
+              | crate::EquipmentEffect::MeleeDamage { .. },
+            )
+            | None => None,
+          })
+      })
+      .unwrap_or(Damage::new(0))
   }
 
   /// Returns this actor's items in deterministic insertion order.
