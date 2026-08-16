@@ -137,6 +137,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic authored melee-damage equipment |
 | 2026-08-16 | Milestone 6 slice: deterministic authored damage-reduction equipment |
 | 2026-08-16 | Milestone 6 slice: deterministic authored trap-mitigating armor |
+| 2026-08-16 | Milestone 6 slice: deterministic inventory item comparison UX |
 
 ## Present
 
@@ -190,10 +191,11 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: deterministic authored damage-reduction equipment now covers scheduled
-melee/ranged attacks and one-shot floor traps. Trap consumption, movement/event ordering, and death
-handling remain unchanged; core reports actual damage in `Attacked`/`TrapTriggered` evidence and
-preserves saturating mitigation. Armor slots, affixes, durability, and identification remain deferred.
+The current slice is complete: the terminal inventory overlay now shows a deterministic comparison
+line for the selected item versus the currently equipped item (or an explicit empty baseline).
+Comparison is presentation-only and reads the same typed effect labels already projected from core;
+simulation, protocol, replay, and adapter authority remain unchanged. Rarity, generated loot,
+affixes, and richer inventory actions remain deferred.
 
 ## Future
 

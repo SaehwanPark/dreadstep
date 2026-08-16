@@ -670,8 +670,8 @@ constructor cannot silently alter the default client path or lose owner/order da
   TUI, Bevy, and MCP fixtures. Bump the protocol and state-digest schema tags together.
 - Prevention: Test equipped damage and reduction bonuses across attacks and one-shot traps,
   unequipped fallback, target hit points, actual event damage, digest participation,
-  non-consumable rejection, and adapter snapshot mappings before adding additional weapon stats or
-  slots.
+  non-consumable rejection, adapter snapshot mappings, and deterministic selected-versus-equipped
+  labels before adding additional weapon stats or slots.
 
 ## Keep throw effects closed and status accounting actor-specific
 

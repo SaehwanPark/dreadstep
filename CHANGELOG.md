@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added a deterministic inventory comparison line to the terminal overlay. The selected item's
+  typed effect is shown against the currently wielded item or an explicit empty baseline, without
+  mutating core state or changing replay/protocol schemas.
+
 - Added a deterministic authored damage-reduction equipment effect. An equipped armor item reduces
   scheduled melee and ranged attack damage with saturating mitigation; core reports the actual
   `Attacked` damage and preserves target hit points, state digests distinguish the effect, and
