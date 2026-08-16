@@ -10,6 +10,7 @@ pub(super) const fn enemy_behavior_name(behavior: EnemyBehavior) -> &'static str
     EnemyBehavior::Frostcaster => "Frostcaster",
     EnemyBehavior::Blocker => "Blocker",
     EnemyBehavior::Scavenger => "Scavenger",
+    EnemyBehavior::Zombie => "Zombie",
   }
 }
 
@@ -21,5 +22,6 @@ pub(super) const fn enemy_behavior_value(behavior: EnemyBehavior) -> &'static st
     EnemyBehavior::Frostcaster => "frostcaster",
     EnemyBehavior::Blocker => "blocker",
     EnemyBehavior::Scavenger => "scavenger",
+    EnemyBehavior::Zombie => "zombie",
   }
 }

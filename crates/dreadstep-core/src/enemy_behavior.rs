@@ -16,4 +16,6 @@ pub enum EnemyBehavior {
   Blocker,
   /// Pursue and attack at full hit points, but retreat when wounded.
   Scavenger,
+  /// Pursue and attack like a pursuer, but each action takes slow (two-tick) action time.
+  Zombie,
 }

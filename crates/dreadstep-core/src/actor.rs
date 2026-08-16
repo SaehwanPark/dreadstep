@@ -58,6 +58,9 @@ impl ActionCost {
   /// The fixed cost used by the bounded ranged attack.
   pub const RANGED: Self = Self(2);
 
+  /// The fixed cost used by slow actors such as Zombies.
+  pub const SLOW: Self = Self(2);
+
   /// Creates an action cost from its numeric value.
   #[must_use]
   pub const fn new(value: u64) -> Self {

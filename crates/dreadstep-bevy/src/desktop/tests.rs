@@ -1128,6 +1128,7 @@ fn hud_intent_summary_names_each_authored_behavior_and_no_action() {
     (EnemyBehavior::Frostcaster, "Frostcaster"),
     (EnemyBehavior::Blocker, "Blocker"),
     (EnemyBehavior::Scavenger, "Scavenger"),
+    (EnemyBehavior::Zombie, "Zombie"),
   ] {
     let intent = PresentationEnemyIntent {
       actor: Some(ActorId::new(4)),

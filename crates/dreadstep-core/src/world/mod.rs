@@ -199,6 +199,7 @@ impl WorldState {
         EnemyBehavior::Frostcaster => 4,
         EnemyBehavior::Blocker => 5,
         EnemyBehavior::Scavenger => 6,
+        EnemyBehavior::Zombie => 7,
       });
       hasher.write_i32(actor.position().x());
       hasher.write_i32(actor.position().y());
@@ -446,8 +447,14 @@ impl WorldState {
   }
 
   pub(super) fn action_cost(&self, actor_id: ActorId, base: ActionCost) -> Option<ActionCost> {
-    let extra = u64::from(self.actors.get(&actor_id)?.status().is_some());
-    base.value().checked_add(extra).map(ActionCost::new)
+    let actor = self.actors.get(&actor_id)?;
+    let extra_status = u64::from(actor.status().is_some());
+    let extra_zombie = u64::from(actor.enemy_behavior() == EnemyBehavior::Zombie);
+    base
+      .value()
+      .checked_add(extra_status)?
+      .checked_add(extra_zombie)
+      .map(ActionCost::new)
   }
 
   fn actor_at(&self, position: Position) -> Option<ActorId> {
