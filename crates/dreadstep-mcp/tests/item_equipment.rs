@@ -226,3 +226,45 @@ fn authored_damage_weapon_changes_attack_evidence_after_tester_transfer() {
     Some(Event::Attacked { damage, .. }) if damage.value() == 2
   ));
 }
+
+#[test]
+fn authored_armor_reduces_attack_evidence_after_tester_transfer() {
+  let mut session = Session::start_item_run(7).expect("authored item scenario should be valid");
+  session
+    .drop_item(ActorId::new(1), ItemId::new(101))
+    .expect("tester should free one inventory slot");
+  session
+    .transfer_item(ActorId::new(2), ActorId::new(1), ItemId::new(105))
+    .expect("authored armor should transfer to the player");
+  let armor = session
+    .inspect(ActorId::new(1))
+    .expect("player should exist")
+    .inventory()
+    .iter()
+    .find(|item| item.id() == ItemId::new(105))
+    .copied()
+    .expect("armor should be visible after transfer");
+  assert!(matches!(
+    armor.equipment_effect(),
+    Some(dreadstep_protocol::EquipmentEffect::DamageReduction { amount }) if amount.value() == 1
+  ));
+  session
+    .act(CommandRequest::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(105),
+    })
+    .expect("armor should equip");
+  session
+    .teleport(ActorId::new(2), Position::new(1, 0))
+    .expect("tester should place the attacker adjacent");
+  let output = session
+    .act(CommandRequest::Attack {
+      actor: ActorId::new(2),
+      target: ActorId::new(1),
+    })
+    .expect("adjacent player should be attackable");
+  assert!(matches!(
+    output.events().first(),
+    Some(Event::Attacked { damage, .. }) if damage.value() == 0
+  ));
+}

@@ -135,10 +135,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-15 | Enhancing TUI presentation: colored text, symbols, and section spacing |
 | 2026-08-16 | Milestone 4 slice: deterministic Zombie (slow pursuer) enemy behavior |
 | 2026-08-16 | Milestone 6 slice: deterministic authored melee-damage equipment |
+| 2026-08-16 | Milestone 6 slice: deterministic authored damage-reduction equipment |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **30**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **31**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -151,7 +152,8 @@ deferred until a later visual-enhancement stage.
   ChillTrap/Chilled, breakables, terrain-aware kick noise, cover, reach, reload,
   ammunition, canonical `RunOutcome`, replay traces, state digests, and authored Pursuer, Kiter,
   Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy behaviors. Authored equipment may add
-  a closed melee-damage bonus resolved in core attack evidence and projected through every adapter.
+  closed melee-damage and attack-damage-reduction effects resolved in core attack evidence and
+  projected through every adapter.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -187,10 +189,11 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: deterministic authored melee-damage equipment is implemented and
-verified across `dreadstep-core`, `dreadstep-protocol` (v30), `dreadstep-mcp`, `dreadstep-tui`,
-and `dreadstep-bevy`. An equipped damage item adds its typed bonus to melee `Attacked` evidence,
-updates target hit points in core, participates in the state digest, and remains non-consumable.
+The current slice is complete: deterministic authored damage-reduction equipment is implemented and
+verified across `dreadstep-core`, `dreadstep-protocol` (v31), `dreadstep-mcp`, `dreadstep-tui`, and
+`dreadstep-bevy`. An equipped armor item reduces scheduled melee and ranged attack damage in core,
+reports actual damage in `Attacked` evidence, participates in the state digest, and remains
+non-consumable; armor slots, trap mitigation, and affixes remain deferred.
 
 ## Future
 

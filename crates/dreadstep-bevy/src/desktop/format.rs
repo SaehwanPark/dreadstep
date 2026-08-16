@@ -108,6 +108,9 @@ pub(crate) fn item_value(item: Item) -> Value {
       dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
         json!({ "melee_damage_bonus": amount.value() })
       }
+      dreadstep_core::EquipmentEffect::DamageReduction { amount } => {
+        json!({ "damage_reduction": amount.value() })
+      }
     }),
     "throwable_effect": item.throwable_effect().map(|effect| match effect {
       dreadstep_core::ThrowableEffect::Chill => "chill",
@@ -745,6 +748,9 @@ pub(crate) fn desktop_update_hud(
                 dreadstep_core::EquipmentEffect::MeleeDamage { amount } => {
                   format!(" [damage +{}]", amount.value())
                 }
+                dreadstep_core::EquipmentEffect::DamageReduction { amount } => {
+                  format!(" [armor -{}]", amount.value())
+                }
               },),
             item
               .throwable_effect()
@@ -788,10 +794,4 @@ pub(crate) fn desktop_update_hud(
     };
     *text = Text::new(value);
   }
-}
-
-/// The exhaustive formatter is public for integration tests and future coverage checks.
-#[must_use]
-pub fn event_kind(event: Event) -> &'static str {
-  crate::showcase_event_name(event)
 }

@@ -128,7 +128,8 @@ impl WorldState {
     if ranged && !self.has_ranged_line_of_sight(attacker_position, target_position) {
       return Err(CommandError::RangedAttackNoLineOfSight { attacker, target });
     }
-    let remaining_hit_points = target_actor.hit_points().reduced_by(damage);
+    let actual_damage = damage.saturating_sub(target_actor.damage_reduction());
+    let remaining_hit_points = target_actor.hit_points().reduced_by(actual_damage);
     self
       .actors
       .get_mut(&target)
@@ -149,7 +150,7 @@ impl WorldState {
     let mut events = vec![Event::Attacked {
       attacker,
       target,
-      damage,
+      damage: actual_damage,
       remaining_hit_points,
     }];
     if !remaining_hit_points.is_alive() {

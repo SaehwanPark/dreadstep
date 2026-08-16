@@ -57,7 +57,7 @@ fn equipped_snapshot() -> WorldSnapshot {
 
 #[test]
 fn snapshot_json_is_versioned_and_contains_stable_actor_item_fields() {
-  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 30);
+  assert_eq!(dreadstep_protocol::PROTOCOL_VERSION, 31);
   let value = serde_json::to_value(snapshot()).expect("snapshot should serialize");
   assert_eq!(value["protocol_version"], PROTOCOL_VERSION);
   assert_eq!(value["current_time"], 0);
@@ -127,6 +127,21 @@ fn snapshot_json_projects_melee_damage_equipment_effect() {
   assert_eq!(
     value["equipment_effect"],
     serde_json::json!({"melee_damage": {"amount": 1}})
+  );
+}
+
+#[test]
+fn snapshot_json_projects_damage_reduction_equipment_effect() {
+  let item = CoreItem::with_damage_reduction(
+    CoreItemId::new(105),
+    CoreItemDefinitionId::new(6),
+    CoreDamage::new(1),
+  );
+  let value = serde_json::to_value(dreadstep_protocol::ItemSnapshot::from_item(item))
+    .expect("item should serialize");
+  assert_eq!(
+    value["equipment_effect"],
+    serde_json::json!({"damage_reduction": {"amount": 1}})
   );
 }
 

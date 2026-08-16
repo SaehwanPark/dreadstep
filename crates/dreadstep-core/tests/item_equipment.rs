@@ -238,6 +238,122 @@ fn equipped_melee_damage_bonus_changes_attack_evidence_and_hit_points() {
 }
 
 #[test]
+fn equipped_damage_reduction_caps_attack_damage_and_is_typed() {
+  let mut world = WorldState::new(
+    GridMap::filled(2, 1, Tile::Floor).expect("map should validate"),
+    vec![
+      Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0)),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(1, 0),
+        HitPoints::new(10),
+      ),
+    ],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(2),
+      Item::with_damage_reduction(ItemId::new(10), ItemDefinitionId::new(6), Damage::new(1)),
+    )
+    .expect("armor should be owned");
+  world
+    .execute(Command::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("player should yield to the enemy");
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(2),
+      item: ItemId::new(10),
+    })
+    .expect("armor should equip");
+  assert_eq!(
+    world.actor(ActorId::new(2)).unwrap().damage_reduction(),
+    Damage::new(1)
+  );
+
+  let result = world
+    .execute(Command::Attack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("adjacent target should be attackable");
+  assert_eq!(
+    world.actor(ActorId::new(2)).unwrap().hit_points(),
+    HitPoints::new(10)
+  );
+  assert!(matches!(
+    result.events(),
+    [Event::Attacked {
+      damage,
+      remaining_hit_points,
+      ..
+    }] if *damage == Damage::new(0) && *remaining_hit_points == HitPoints::new(10)
+  ));
+}
+
+#[test]
+fn equipped_damage_reduction_applies_to_ranged_attack_evidence() {
+  let mut world = WorldState::new(
+    GridMap::filled(3, 1, Tile::Floor).expect("map should validate"),
+    vec![
+      Actor::with_ranged_ammo(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(10),
+        1,
+      ),
+      Actor::with_hit_points(
+        ActorId::new(2),
+        ActorKind::Enemy,
+        Position::new(2, 0),
+        HitPoints::new(10),
+      ),
+    ],
+  )
+  .expect("world should validate");
+  world
+    .give_item(
+      ActorId::new(2),
+      Item::with_damage_reduction(ItemId::new(10), ItemDefinitionId::new(6), Damage::new(1)),
+    )
+    .expect("armor should be owned");
+  world
+    .execute(Command::Wait {
+      actor: ActorId::new(1),
+    })
+    .expect("player should yield to the enemy");
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(2),
+      item: ItemId::new(10),
+    })
+    .expect("armor should equip");
+
+  let result = world
+    .execute(Command::RangedAttack {
+      actor: ActorId::new(1),
+      target: ActorId::new(2),
+    })
+    .expect("clear distance-two target should be attackable");
+  assert_eq!(
+    world.actor(ActorId::new(2)).unwrap().hit_points(),
+    HitPoints::new(10)
+  );
+  assert!(matches!(
+    result.events(),
+    [Event::Attacked {
+      damage,
+      remaining_hit_points,
+      ..
+    }] if *damage == Damage::new(0) && *remaining_hit_points == HitPoints::new(10)
+  ));
+}
+
+#[test]
 #[expect(
   clippy::too_many_lines,
   reason = "the contract intentionally compares legal ordering and isolated digest variants"

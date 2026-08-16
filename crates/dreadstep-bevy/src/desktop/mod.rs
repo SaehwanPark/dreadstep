@@ -15,7 +15,7 @@ use bevy::app::{PanicHandlerPlugin, PluginGroup};
 use bevy::prelude::{App, DefaultPlugins, ImagePlugin, WindowPlugin, default};
 use bevy::window::Window;
 use dreadstep_content::ContentError;
-use dreadstep_core::{ActorId, ItemId};
+use dreadstep_core::{ActorId, Event, ItemId};
 
 use serde_json::json;
 
@@ -41,7 +41,6 @@ pub(crate) mod smoke;
 mod tests;
 
 pub use cli::DesktopOptions;
-pub use format::event_kind;
 pub use plugin::DesktopPresentationPlugin;
 
 use cli::{ParseResult, USAGE, parse_options};
@@ -63,6 +62,12 @@ pub(crate) const ENEMY_DELAY: Duration = Duration::from_millis(150);
 pub(crate) const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 pub(crate) const HEALTH_BAR_WIDTH: usize = 10;
 pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
+
+/// The exhaustive formatter is public for integration tests and future coverage checks.
+#[must_use]
+pub fn event_kind(event: Event) -> &'static str {
+  crate::showcase_event_name(event)
+}
 
 /// Every current command kind that must remain demonstrable by the desktop smoke path.
 pub const SHOWCASE_COMMAND_KINDS: [&str; 19] = [

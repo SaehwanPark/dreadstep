@@ -33,6 +33,11 @@ pub enum EquipmentEffect {
     /// The damage bonus applied to melee attacks.
     amount: Damage,
   },
+  /// Reduce scheduled attack damage by the supplied amount while equipped.
+  DamageReduction {
+    /// The damage reduction applied to melee and ranged attacks.
+    amount: Damage,
+  },
 }
 
 /// A protocol projection of the closed throwable effects supported by core.
@@ -111,6 +116,9 @@ impl ItemSnapshot {
           reach: crate::MeleeReach::new(reach.value()).unwrap_or(crate::MeleeReach::DEFAULT),
         },
         CoreEquipmentEffect::MeleeDamage { amount } => EquipmentEffect::MeleeDamage {
+          amount: Damage::new(amount.value()),
+        },
+        CoreEquipmentEffect::DamageReduction { amount } => EquipmentEffect::DamageReduction {
           amount: Damage::new(amount.value()),
         },
       }),
