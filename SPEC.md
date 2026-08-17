@@ -145,6 +145,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 6 slice: deterministic equipment affix metadata and aggregation |
 | 2026-08-17 | Milestone 6 slice: deterministic procedural affix tiers |
 | 2026-08-17 | Milestone 6 slice: deterministic procedural consumable potency |
+| 2026-08-17 | Milestone 6 slice: deterministic procedural ground-loot distribution |
 
 ## Present
 
@@ -166,7 +167,8 @@ deferred until a later visual-enhancement stage.
   mitigation affixes aggregate with the equipped base effect using saturating arithmetic. Seeded
   procedural floors also place two ordered deterministic generated equipment choices and one
   deterministic consumable with rarity metadata and bounded potency in the player's inventory plus
-  one deterministic ground equipment choice at the first enemy from the validated content catalog.
+  two deterministic ground equipment choices at the first two enemies from the validated content
+  catalog.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -204,12 +206,12 @@ deferred until a later visual-enhancement stage.
 ## Active
 
 The current slice is complete: generated floors provide two ordered equipment choices, one typed
-consumable, and one deterministic ground equipment choice. Each equipment item carries one closed
+consumable, and two deterministic ground equipment choices. Each equipment item carries one closed
 affix whose bounded seed/depth-derived magnitude adds to the matching equipped combat stat while
 preserving independent weapon/armor slots. The affix, tier, rarity, base effect, consumable potency,
-identity, consumable effect, and ground placement derive from seed/depth and remain visible through
-core digests plus protocol, Bevy, and TUI projections. Affix pools, identification, richer
-ground-loot distribution, and richer inventory actions remain deferred.
+identity, consumable effect, and ordered ground placements derive from seed/depth and remain visible through
+core digests plus protocol, Bevy, and TUI projections. Affix pools, identification, broader
+ground-loot tables, and richer inventory actions remain deferred.
 
 ## Future
 

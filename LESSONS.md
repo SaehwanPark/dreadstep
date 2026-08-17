@@ -51,6 +51,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
   same-effect inputs with different strengths, and retain the core `UseItem` path as the only
   effect application boundary.
 
+## 2026-08-17 — Keep procedural ground loot ordered by authored enemy position
+
+- Context: Seeded floors now distribute more than one generated equipment item onto enemy starting
+  positions.
+- Symptom: An unordered or client-owned placement list could make ground snapshots and pickup targets
+  vary even when the seed and depth were unchanged.
+- Resolution: Generate each item in content, transfer it through core `give_item` and `drop_item`,
+  and rely on core's row-major stack ordering and opaque identity validation for projections.
+- Prevention: Test both authored positions, stack order, distinct identities, and player ownership
+  exclusion whenever procedural ground distribution expands.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon

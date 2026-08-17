@@ -333,8 +333,8 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 /// Returns a deterministic seeded corridor-floor definition.
 ///
 /// This procedural-content boundary varies authored terrain, enemy durability, two ordered
-/// generated starter-loot equipment choices, one consumable inventory choice, and one ground
-/// equipment choice with bounded seed/depth-derived affix tiers. The returned definition still
+/// generated starter-loot equipment choices, one consumable inventory choice, and two ground
+/// equipment choices with bounded seed/depth-derived affix tiers. The returned definition still
 /// delegates all map, catalog, and actor/item validation to core when
 /// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
 /// remains a valid deterministic fixture value.
@@ -501,8 +501,8 @@ fn procedural_partition_gap(seed: u64, depth: u32, partition_x: u32) -> u32 {
   (mixed % 7) as u32 + 1
 }
 
-/// Builds a validated deterministic seeded corridor floor with one generated ground item placed
-/// at the first enemy's authored position for the existing pickup/drop rules to consume later.
+/// Builds a validated deterministic seeded corridor floor with generated ground items placed at
+/// the first two enemies' authored positions for the existing pickup/drop rules to consume later.
 ///
 /// # Errors
 ///
@@ -512,6 +512,9 @@ pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentErro
   let ground_item = procedural_loot(seed, depth, 2);
   world.give_item(ActorId::new(2), ground_item)?;
   world.drop_item(ActorId::new(2), ground_item.id())?;
+  let second_ground_item = procedural_loot(seed, depth, 4);
+  world.give_item(ActorId::new(3), second_ground_item)?;
+  world.drop_item(ActorId::new(3), second_ground_item.id())?;
   Ok(world)
 }
 
