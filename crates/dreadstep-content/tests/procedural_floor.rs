@@ -1,7 +1,7 @@
 //! Seeded procedural-floor content invariants.
 
 use dreadstep_content::{procedural_floor, procedural_floor_definition};
-use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, Position, Tile};
+use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, ItemRarity, Position, Tile};
 
 #[test]
 fn identical_seed_and_depth_produce_identical_valid_worlds() {
@@ -199,6 +199,34 @@ fn generated_consumable_potency_is_seeded_and_bounded() {
   assert!((1..=2).contains(&healing_different_seed_potency));
   assert_ne!(ammunition_first_potency, ammunition_different_seed_potency);
   assert_ne!(healing_first_potency, healing_different_seed_potency);
+}
+
+#[test]
+fn procedural_rarity_respects_depth_floor() {
+  let shallow = procedural_floor(7, 1).expect("generated floor should validate");
+  assert_eq!(
+    shallow.ground_items()[0].items()[0].rarity(),
+    ItemRarity::Common,
+    "shallow floors should retain the common rarity mix"
+  );
+
+  let deep = procedural_floor(7, 3).expect("generated floor should validate");
+  let player = deep
+    .actor(ActorId::new(1))
+    .expect("generated player should exist");
+  assert!(
+    player
+      .inventory()
+      .iter()
+      .all(|item| matches!(item.rarity(), ItemRarity::Magic | ItemRarity::Rare))
+  );
+  assert!(
+    deep
+      .ground_items()
+      .iter()
+      .flat_map(dreadstep_core::GroundItemStack::items)
+      .all(|item| matches!(item.rarity(), ItemRarity::Magic | ItemRarity::Rare))
+  );
 }
 
 #[test]

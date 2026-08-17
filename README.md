@@ -29,8 +29,8 @@ protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors 
 validated item catalog and provide two ordered deterministic generated equipment choices with
 distinct closed effects plus one
 consumable with bounded deterministic potency in the player inventory, alongside two ground
-equipment choices at the first two enemies; all equipment carries bounded deterministic affix tiers. The
-default showcase is the NetHack-style
+equipment choices at the first two enemies; depth 3+ generated items are at least Magic, and all
+equipment carries bounded deterministic affix tiers. The default showcase is the NetHack-style
 terminal client. It journals each run and can
 start an authored item fixture or a seeded procedural floor.
 

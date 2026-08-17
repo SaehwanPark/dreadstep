@@ -2067,7 +2067,8 @@ choices at the first two enemies' positions. Item identities, effects, affixes, 
 rarities, and ordered placement are deterministic and visible through existing adapter projections.
 Follow-up bounded slices derive stable magnitudes of 1 or 2 for each closed equipment affix and each
 procedural consumable from seed/depth without opening generic affix pools; identification and richer
-generation remain future work.
+generation remain future work. Generated items at depth 3 and deeper now enforce a Magic-or-Rare
+rarity floor so descent increases the minimum loot quality without changing the closed rarity set.
 
 ### Implement
 
