@@ -163,8 +163,9 @@ deferred until a later visual-enhancement stage.
   closed melee-damage, ranged-damage, and incoming-damage-reduction effects resolved in core
   attack/trap evidence and projected through every adapter. Optional closed melee, ranged, or
   mitigation affixes aggregate with the equipped base effect using saturating arithmetic. Seeded
-  procedural floors also place one deterministic generated equipment item with a deterministic
-  rarity and bounded affix tier in the player's inventory from the validated content catalog.
+  procedural floors also place two ordered deterministic generated equipment choices with
+  deterministic rarity and bounded affix tiers in the player's inventory from the validated content
+  catalog.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -177,8 +178,8 @@ deferred until a later visual-enhancement stage.
 ### Content
 
 - Authored starter and starter-item floors, item catalog, and a seeded corridor-floor
-  generator with reachability checks and one seed/depth-derived starter equipment item plus one
-  closed affix. The starter-item showcase includes a closed door beside the player for the documented open/close
+  generator with reachability checks and two seed/depth-derived starter equipment items with closed
+  affixes. The starter-item showcase includes a closed door beside the player for the documented open/close
   controls; the item-free starter remains unchanged.
 
 ### Bevy and desktop
@@ -201,12 +202,12 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: generated equipment may carry one deterministic closed affix with a
-bounded seed/depth-derived magnitude that adds to the matching equipped combat stat while
-preserving independent weapon/armor slots. The affix, tier, rarity, base effect, and identity derive
-from seed/depth and remain visible through core digests plus protocol, Bevy, and TUI projections.
-Affix pools, identification, ground-loot distribution, and richer inventory actions remain
-deferred.
+The current slice is complete: generated floors provide two ordered equipment choices, each with
+one deterministic closed affix whose bounded seed/depth-derived magnitude adds to the matching
+equipped combat stat while preserving independent weapon/armor slots. The affix, tier, rarity, base
+effect, and identity derive from seed/depth and remain visible through core digests plus protocol,
+Bevy, and TUI projections. Affix pools, identification, ground-loot distribution, and richer
+inventory actions remain deferred.
 
 ## Future
 

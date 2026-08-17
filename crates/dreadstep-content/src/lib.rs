@@ -332,9 +332,9 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 
 /// Returns a deterministic seeded corridor-floor definition.
 ///
-/// This procedural-content boundary varies authored terrain, enemy durability, and one generated
-/// starter loot item with a bounded seed/depth-derived affix tier. The returned definition still
-/// delegates all map, catalog, and actor/item validation to core when
+/// This procedural-content boundary varies authored terrain, enemy durability, and two ordered
+/// generated starter loot items with bounded seed/depth-derived affix tiers. The returned
+/// definition still delegates all map, catalog, and actor/item validation to core when
 /// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
 /// remains a valid deterministic fixture value.
 #[must_use]
@@ -397,19 +397,21 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
     ],
   )
   .with_item_catalog(starter_item_catalog_definition());
-  definition = definition.with_items(vec![StarterItemPlacement::new(
-    ActorId::new(1),
-    procedural_loot(seed, depth),
-  )]);
+  definition = definition.with_items(vec![
+    StarterItemPlacement::new(ActorId::new(1), procedural_loot(seed, depth, 0)),
+    StarterItemPlacement::new(ActorId::new(1), procedural_loot(seed, depth, 1)),
+  ]);
   definition
 }
 
-fn procedural_loot(seed: u64, depth: u32) -> Item {
-  let mixed = procedural_loot_mix(seed, depth);
+fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
+  let mixed = procedural_loot_mix(seed, depth, variant);
   let low_bits = mixed & u64::from(u32::MAX);
+  let variant_bit = u32::try_from(variant & 1).expect("procedural loot variant fits") << 30;
   let item_id = ItemId::new(
     0x8000_0000
-      | (u32::try_from(low_bits).expect("masked procedural item identity fits") & 0x7fff_ffff),
+      | variant_bit
+      | (u32::try_from(low_bits).expect("masked procedural item identity fits") & 0x3fff_ffff),
   );
   let rarity = match mixed % 6 {
     0 => ItemRarity::Rare,
@@ -446,9 +448,10 @@ fn procedural_loot(seed: u64, depth: u32) -> Item {
   item.with_affix(affix).with_rarity(rarity)
 }
 
-fn procedural_loot_mix(seed: u64, depth: u32) -> u64 {
+fn procedural_loot_mix(seed: u64, depth: u32, variant: u64) -> u64 {
   seed
     .wrapping_add(u64::from(depth).wrapping_mul(0x9E37_79B9_7F4A_7C15))
+    .wrapping_add(variant.wrapping_mul(0xA24B_AED4_963E_E407))
     .wrapping_add(0xD1B5_4A32_D192_ED03)
     .rotate_left(17)
     .wrapping_mul(0xBF58_476D_1CE4_E5B9)
