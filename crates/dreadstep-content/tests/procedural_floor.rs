@@ -1,7 +1,7 @@
 //! Seeded procedural-floor content invariants.
 
 use dreadstep_content::{procedural_floor, procedural_floor_definition};
-use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, Position, Tile};
+use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, EquipmentSlot, Position, Tile};
 
 #[test]
 fn identical_seed_and_depth_produce_identical_valid_worlds() {
@@ -20,6 +20,46 @@ fn identical_seed_and_depth_produce_identical_valid_worlds() {
       .map(dreadstep_core::Actor::position)
       .collect::<Vec<_>>()
   );
+}
+
+#[test]
+fn procedural_floor_places_one_seeded_equipment_item_in_player_inventory() {
+  let world = procedural_floor(7, 1).expect("generated floor should validate");
+  let player = world
+    .actor(ActorId::new(1))
+    .expect("generated player should exist");
+  let [item] = player.inventory() else {
+    panic!("procedural floor should provide exactly one generated item");
+  };
+
+  assert!(item.id().value() & 0x8000_0000 != 0);
+  assert_eq!(item.equipment_slot(), Some(EquipmentSlot::Weapon));
+  assert!(item.equipment_effect().is_some());
+}
+
+#[test]
+fn procedural_item_identity_changes_with_seed_or_depth() {
+  let first = procedural_floor(7, 1)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[0]
+    .id();
+  let different_seed = procedural_floor(8, 1)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[0]
+    .id();
+  let deeper = procedural_floor(7, 4)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[0]
+    .id();
+
+  assert_ne!(first, different_seed);
+  assert_ne!(first, deeper);
 }
 
 #[test]

@@ -141,6 +141,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic authored ranged-damage equipment |
 | 2026-08-16 | Milestone 6 slice: deterministic independent weapon and armor slots |
 | 2026-08-16 | Milestone 6 slice: deterministic item-rarity presentation metadata |
+| 2026-08-16 | Milestone 6 slice: deterministic procedural starter loot |
 
 ## Present
 
@@ -159,7 +160,8 @@ deferred until a later visual-enhancement stage.
   Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy behaviors. Authored equipment may add
   closed melee-damage, ranged-damage, and incoming-damage-reduction effects resolved in core
   attack/trap evidence
-  and projected through every adapter.
+  and projected through every adapter. Seeded procedural floors also place one deterministic
+  generated equipment item in the player's inventory from the validated content catalog.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -172,8 +174,9 @@ deferred until a later visual-enhancement stage.
 ### Content
 
 - Authored starter and starter-item floors, item catalog, and a seeded corridor-floor
-  generator with reachability checks. The starter-item showcase includes a closed door beside the
-  player for the documented open/close controls; the item-free starter remains unchanged.
+  generator with reachability checks and one seed/depth-derived starter equipment item. The
+  starter-item showcase includes a closed door beside the player for the documented open/close
+  controls; the item-free starter remains unchanged.
 
 ### Bevy and desktop
 
@@ -195,13 +198,12 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: authored equipment now includes a ranged-damage bonus resolved at the
-core ranged-attack boundary, with protocol version 35 and synchronized replay/state-digest and
-adapter projections. Actors may hold one active weapon and one active armor item; effects aggregate
-deterministically and the existing single-item accessor remains a compatibility projection. Item
-snapshots and client labels project typed roles and common/magic/rare presentation rarity, while the
-terminal inventory overlay shows a deterministic comparison line. Rarity is metadata only here;
-generated loot, affixes, identification, and richer inventory actions remain deferred.
+The current slice is complete: seeded procedural floors now bind the validated item catalog and place
+one deterministic equipment item in the player's inventory. The item identity, effect, and rarity
+derive from seed/depth and remain visible through existing protocol, Bevy, and TUI projections.
+Authored equipment still supports independent weapon/armor slots, deterministic aggregation, typed
+roles, common/magic/rare presentation rarity, and a terminal comparison line. Affixes,
+identification, ground-loot distribution, and richer inventory actions remain deferred.
 
 ## Future
 

@@ -24,10 +24,10 @@ fixture.
 
 Workspace version `0.0.0`, protocol **v35**. Core owns deterministic combat, inventory, and
 environmental rules, including one active weapon and one active armor slot plus typed item rarity;
-protocol/MCP/headless/TUI/Bevy
-translate those values. The default
-showcase is the NetHack-style terminal client. It journals each run and can start an authored
-item fixture or a seeded procedural floor.
+protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors also bind the
+validated item catalog and provide one deterministic generated equipment item in the player
+inventory. The default showcase is the NetHack-style terminal client. It journals each run and can
+start an authored item fixture or a seeded procedural floor.
 
 Live terminal captures (plain text; the TTY client adds color):
 
