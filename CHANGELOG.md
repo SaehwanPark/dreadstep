@@ -10,12 +10,16 @@ All notable contributor- and user-visible project changes are recorded here.
   consumables now derive a stable strength of 1 or 2 from floor seed/depth while preserving the
   existing effect families, item order, commands, and protocol shape.
 
+- Expanded procedural ground loot to two deterministic equipment choices at the first two enemy
+  positions. Each item keeps a distinct seed/depth/variant identity and closed affix while core
+  ground-stack ordering and existing pickup/drop rules remain authoritative.
+
 - Added bounded deterministic procedural affix tiers. Generated melee, ranged, and mitigation
   affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
   magnitudes remain unchanged; generic affix pools and identification remain deferred.
 
-- Expanded deterministic procedural starter loot to two ordered inventory equipment choices plus one
-  ground equipment choice at the first enemy's position. Each equipment item keeps a distinct
+- Expanded deterministic procedural starter loot to two ordered inventory equipment choices plus two
+  ground equipment choices at the first two enemy positions. Each equipment item keeps a distinct
   seed/depth/variant identity and closed affix while staying within the existing inventory and
   pickup/drop rules; authored fixtures and item schemas remain unchanged.
 
@@ -31,10 +35,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 - Added deterministic procedural starter loot. Seeded floors now bind the authored item catalog and
   place two ordered seed/depth-derived equipment choices and one consumable in the player inventory
-  plus one ground choice, each with stable identity/effect and common/magic/rare rarity metadata;
+  plus two ground choices, each with stable identity/effect and common/magic/rare rarity metadata;
   equipment also carries one closed affix. Same inputs produce the same choices while changed seed
-  or depth changes their identities; affix pools, richer ground loot, and richer generation remain
-  future work.
+  or depth changes their identities; affix pools, broader ground-loot tables, and richer generation
+  remain future work.
 
 - Added deterministic common/magic/rare item-rarity metadata. Existing item constructors default to
   common; explicit rarity survives core state digests, protocol v35 snapshots, Bevy JSON, and TUI
