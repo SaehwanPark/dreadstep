@@ -114,6 +114,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Add seed-range variation tests for every new procedural policy and keep shallow
   compatibility assertions separate from deeper-generation checks.
 
+## 2026-08-17 — Keep procedural ground consumables on the typed drop path
+
+- Context: Broader procedural loot needed a ground consumable without inventing a client-owned item
+  effect or pickup rule.
+- Symptom: Adding a ground placement directly in an adapter would bypass core ownership, row-major
+  stack ordering, digest evidence, and the existing pickup command.
+- Resolution: Construct the existing typed Heal or RestoreAmmunition item in content, give it to the
+  authored enemy actor, and immediately use core `drop_item` so every adapter sees the same stack.
+- Prevention: Test the sorted third stack, non-equipment properties, and shallow/deep potency floors;
+  keep new ground loot within the existing core ownership and pickup boundary.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon

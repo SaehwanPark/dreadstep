@@ -72,17 +72,21 @@ fn procedural_loadout_choices_have_distinct_equipment_effects() {
 #[test]
 fn procedural_floor_places_two_seeded_equipment_items_on_the_ground() {
   let world = procedural_floor(7, 1).expect("generated floor should validate");
-  let [first_stack, second_stack] = world.ground_items() else {
-    panic!("procedural floor should provide exactly two ground stacks");
+  let [first_stack, consumable_stack, second_stack] = world.ground_items() else {
+    panic!("procedural floor should provide two equipment stacks and one consumable stack");
   };
   let [first_item] = first_stack.items() else {
     panic!("first procedural ground stack should provide exactly one item");
+  };
+  let [consumable] = consumable_stack.items() else {
+    panic!("procedural ground consumable stack should provide exactly one item");
   };
   let [second_item] = second_stack.items() else {
     panic!("second procedural ground stack should provide exactly one item");
   };
 
   assert_eq!(first_stack.position(), Position::new(11, 1));
+  assert_eq!(consumable_stack.position(), Position::new(1, 7));
   assert_eq!(second_stack.position(), Position::new(11, 7));
   assert_ne!(first_item.id(), second_item.id());
   for item in [first_item, second_item] {
@@ -98,6 +102,12 @@ fn procedural_floor_places_two_seeded_equipment_items_on_the_ground() {
         .any(|owned| owned.id() == item.id())
     );
   }
+  assert!(consumable.equipment_slot().is_none());
+  assert!(consumable.affix().is_none());
+  assert!(matches!(
+    consumable.effect(),
+    dreadstep_core::ItemEffect::Heal { .. } | dreadstep_core::ItemEffect::RestoreAmmunition { .. }
+  ));
 }
 
 #[test]
@@ -183,6 +193,7 @@ fn procedural_affix_magnitude_respects_depth_floor() {
       .ground_items()
       .iter()
       .flat_map(dreadstep_core::GroundItemStack::items)
+      .filter(|item| item.equipment_slot().is_some())
       .all(|item| {
         item
           .affix()
@@ -261,6 +272,28 @@ fn generated_consumable_potency_is_seeded_and_bounded() {
   assert_eq!(deep_healing_kind, "healing");
   assert_eq!(deep_ammunition_potency, 2);
   assert_eq!(deep_healing_potency, 2);
+}
+
+#[test]
+fn generated_ground_consumable_keeps_the_depth_potency_floor() {
+  let ground_potency = |seed, depth| {
+    let world = procedural_floor(seed, depth).expect("generated floor should validate");
+    let stack = world
+      .ground_items()
+      .iter()
+      .find(|stack| stack.position() == Position::new(1, 7))
+      .expect("third enemy should receive the procedural consumable");
+    match stack.items()[0].effect() {
+      dreadstep_core::ItemEffect::Heal { amount } => amount.value(),
+      dreadstep_core::ItemEffect::RestoreAmmunition { amount } => amount.value(),
+      other @ dreadstep_core::ItemEffect::None => {
+        panic!("expected a generated ground consumable effect, got {other:?}")
+      }
+    }
+  };
+
+  assert!((1..=2).contains(&ground_potency(0, 1)));
+  assert_eq!(ground_potency(0, 3), 2);
 }
 
 #[test]

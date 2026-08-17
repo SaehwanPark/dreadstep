@@ -405,7 +405,7 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
   definition = definition.with_items(vec![
     StarterItemPlacement::new(ActorId::new(1), procedural_loot(seed, depth, 0)),
     StarterItemPlacement::new(ActorId::new(1), procedural_loot(seed, depth, 1)),
-    StarterItemPlacement::new(ActorId::new(1), procedural_consumable(seed, depth)),
+    StarterItemPlacement::new(ActorId::new(1), procedural_consumable(seed, depth, 3)),
   ]);
   definition
 }
@@ -446,9 +446,9 @@ fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
   item.with_affix(affix).with_rarity(rarity)
 }
 
-fn procedural_consumable(seed: u64, depth: u32) -> Item {
-  let mixed = procedural_loot_mix(seed, depth, 3);
-  let item_id = procedural_item_id(mixed, 3);
+fn procedural_consumable(seed: u64, depth: u32, variant: u64) -> Item {
+  let mixed = procedural_loot_mix(seed, depth, variant);
+  let item_id = procedural_item_id(mixed, variant);
   let rarity = procedural_rarity(mixed, depth);
   let amount = procedural_consumable_amount(mixed, depth);
   let effect = if mixed.is_multiple_of(2) {
@@ -556,6 +556,9 @@ pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentErro
   let second_ground_item = procedural_loot(seed, depth, 4);
   world.give_item(ActorId::new(3), second_ground_item)?;
   world.drop_item(ActorId::new(3), second_ground_item.id())?;
+  let ground_consumable = procedural_consumable(seed, depth, 5);
+  world.give_item(ActorId::new(4), ground_consumable)?;
+  world.drop_item(ActorId::new(4), ground_consumable.id())?;
   Ok(world)
 }
 

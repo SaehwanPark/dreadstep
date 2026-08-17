@@ -29,7 +29,7 @@ protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors 
 validated item catalog and provide two ordered deterministic generated equipment choices with
 distinct closed effects plus one
 consumable with bounded deterministic potency in the player inventory, alongside two ground
-equipment choices at the first two enemies; depth 3+ generated items are at least Magic, and all
+equipment choices at the first two enemies and one ground consumable at the third; depth 3+ generated items are at least Magic, and all
 equipment carries bounded deterministic affix tiers, with depth 3+ affixes at magnitude 2 and
 consumables at potency 2, and deeper floors vary the existing Pursuer, Kiter, Scavenger, and Zombie
 enemy policies deterministically. The
