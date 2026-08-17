@@ -10,9 +10,10 @@ All notable contributor- and user-visible project changes are recorded here.
   affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
   magnitudes remain unchanged; generic affix pools and identification remain deferred.
 
-- Expanded deterministic procedural starter loot to two ordered equipment choices. Each item keeps a
-  distinct seed/depth/variant identity and closed affix while staying within the existing inventory
-  capacity; authored fixtures and item schemas remain unchanged.
+- Expanded deterministic procedural starter loot to two ordered inventory equipment choices plus one
+  ground equipment choice at the first enemy's position. Each item keeps a distinct
+  seed/depth/variant identity and closed affix while staying within the existing inventory and
+  pickup/drop rules; authored fixtures and item schemas remain unchanged.
 
 - Added one closed deterministic equipment-affix layer. Generated equipment now carries a typed
   melee, ranged, or mitigation affix that aggregates with its matching equipped base effect using
@@ -21,10 +22,10 @@ All notable contributor- and user-visible project changes are recorded here.
   deferred.
 
 - Added deterministic procedural starter loot. Seeded floors now bind the authored item catalog and
-  place two ordered seed/depth-derived equipment choices in the player inventory, each with stable
-  identity, closed effect, common/magic/rare rarity metadata, and one closed affix. Same inputs
-  produce the same choices while changed seed or depth changes their identities; affix pools, ground
-  loot, and richer generation remain future work.
+  place two ordered seed/depth-derived equipment choices in the player inventory and one ground
+  choice, each with stable identity, closed effect, common/magic/rare rarity metadata, and one closed
+  affix. Same inputs produce the same choices while changed seed or depth changes their identities;
+  affix pools, richer ground loot, and richer generation remain future work.
 
 - Added deterministic common/magic/rare item-rarity metadata. Existing item constructors default to
   common; explicit rarity survives core state digests, protocol v35 snapshots, Bevy JSON, and TUI

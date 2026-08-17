@@ -42,6 +42,30 @@ fn procedural_floor_places_two_seeded_equipment_items_in_player_inventory() {
 }
 
 #[test]
+fn procedural_floor_places_one_seeded_equipment_item_on_the_ground() {
+  let world = procedural_floor(7, 1).expect("generated floor should validate");
+  let [stack] = world.ground_items() else {
+    panic!("procedural floor should provide exactly one ground stack");
+  };
+  let [item] = stack.items() else {
+    panic!("procedural ground stack should provide exactly one item");
+  };
+
+  assert_eq!(stack.position(), Position::new(11, 1));
+  assert!(item.id().value() & 0x8000_0000 != 0);
+  assert!(item.equipment_slot().is_some());
+  assert!(item.affix().is_some());
+  assert!(
+    !world
+      .actor(ActorId::new(1))
+      .expect("generated player should exist")
+      .inventory()
+      .iter()
+      .any(|owned| owned.id() == item.id())
+  );
+}
+
+#[test]
 fn procedural_item_identity_changes_with_seed_or_depth() {
   let first = procedural_floor(7, 1)
     .expect("generated floor should validate")
