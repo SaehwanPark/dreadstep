@@ -22,8 +22,9 @@ fixture.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v35**. Core owns deterministic combat, inventory, and
-environmental rules, including one active weapon and one active armor slot plus typed item rarity;
+Workspace version `0.0.0`, protocol **v36**. Core owns deterministic combat, inventory, and
+environmental rules, including one active weapon and one active armor slot plus typed item rarity
+and closed equipment affixes;
 protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors also bind the
 validated item catalog and provide one deterministic generated equipment item in the player
 inventory. The default showcase is the NetHack-style terminal client. It journals each run and can
@@ -92,7 +93,8 @@ captures of the current client, not concept art.
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
-- Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems, core-owned floor history,
+- Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems,
+  affix pools and identification, core-owned floor history,
   persistence, and playback-compatible saves.
 
 The long-term design and roadmap are in

@@ -714,7 +714,7 @@ pub(crate) fn desktop_update_hud(
           let selected = session.selected_item == Some(item.id());
           let equipped = player.is_item_equipped(item.id());
           format!(
-            "{}item {} (def {}){}{}{}",
+            "{}item {} (def {}){}{}{}{}",
             if selected { "> " } else { "  " },
             item.id().value(),
             item.definition().value(),
@@ -739,6 +739,9 @@ pub(crate) fn desktop_update_hud(
               .map_or_else(String::new, |effect| match effect {
                 dreadstep_core::ThrowableEffect::Chill => " [throw: chill]".to_string(),
               }),
+            item.affix().map_or_else(String::new, |affix| {
+              format!(" [affix {} +{}]", affix.wire_name(), affix.amount().value())
+            }),
             equipment_status_suffix(*item, equipped)
           )
         })

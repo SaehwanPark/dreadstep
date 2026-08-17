@@ -35,6 +35,7 @@ fn procedural_floor_places_one_seeded_equipment_item_in_player_inventory() {
   assert!(item.id().value() & 0x8000_0000 != 0);
   assert_eq!(item.equipment_slot(), Some(EquipmentSlot::Weapon));
   assert!(item.equipment_effect().is_some());
+  assert!(item.affix().is_some());
 }
 
 #[test]

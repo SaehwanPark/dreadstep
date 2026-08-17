@@ -85,10 +85,10 @@ when an agent needs both a readable frame and typed legal actions.
 | --- | --- | --- | --- |
 | Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster/Blocker/Scavenger/Zombie intent | map, scheduler, behavior + intent, messages | command + event + frames | yes |
 | Attack / damage / death | glyphs, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped rows and item glyphs | item/reload/throw events | yes |
+| Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped rows, rarity, and affix labels | item/reload/throw events | yes for authored fixture |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise | distinct glyphs plus status duration | typed status and terrain events | yes |
 | Presentation field of view | radius-3 cardinal reveal; unseen cells are spaces | complete world remains in core/journal state | no display required |
-| Opt-in procedural floor and `N` advancement | seeded 13×9 floor and next-depth restart after victory | `run_started` depth and `floor_advanced` | no; smoke keeps item fixture |
+| Opt-in procedural floor and `N` advancement | seeded 13×9 floor, generated rarity/affix label, and next-depth restart after victory | `run_started` depth and `floor_advanced` | no; smoke keeps item fixture |
 
 ## Smoke verification
 

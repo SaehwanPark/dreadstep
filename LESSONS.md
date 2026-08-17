@@ -21,9 +21,21 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Terminal presentation: render frames as a pure function so goldens and agents do not need a
   TTY; log stripped frames rather than putting glyphs on MCP.
 - Items and environment: opaque ids vs catalog membership; atomic tester transfers; exclusive
-  consumable results; typed environmental commands; reuse movement as the trap trigger.
+  consumable results; typed environmental commands; reuse movement as the trap trigger; keep
+  affixes typed and aggregate them at the core equipment boundary.
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
   keep compiling without import-path churn; isolate complex multi-archetype selection policies into cohesive submodule helpers.
+
+## 2026-08-17 — Aggregate closed affixes at the equipment boundary
+
+- Context: Procedural loot needed a first meaningful affix without opening a generic stat system.
+- Symptom: Applying a generated modifier in content or a client would let combat evidence diverge
+  from equipped state and replay digests.
+- Resolution: Store one typed affix on the core item, derive its role with the existing closed
+  equipment effect, and aggregate only its matching stat in `Actor` while hashing and projecting the
+  complete item record.
+- Prevention: Keep affix variants closed, use saturating arithmetic, and add core, protocol, Bevy,
+  and TUI assertions whenever a new affix changes item state or presentation.
 
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
