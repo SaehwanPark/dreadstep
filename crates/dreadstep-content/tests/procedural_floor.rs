@@ -1,7 +1,7 @@
 //! Seeded procedural-floor content invariants.
 
 use dreadstep_content::{procedural_floor, procedural_floor_definition};
-use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, EquipmentSlot, Position, Tile};
+use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, Position, Tile};
 
 #[test]
 fn identical_seed_and_depth_produce_identical_valid_worlds() {
@@ -23,19 +23,22 @@ fn identical_seed_and_depth_produce_identical_valid_worlds() {
 }
 
 #[test]
-fn procedural_floor_places_one_seeded_equipment_item_in_player_inventory() {
+fn procedural_floor_places_two_seeded_equipment_items_in_player_inventory() {
   let world = procedural_floor(7, 1).expect("generated floor should validate");
   let player = world
     .actor(ActorId::new(1))
     .expect("generated player should exist");
-  let [item] = player.inventory() else {
-    panic!("procedural floor should provide exactly one generated item");
+  let [first, second] = player.inventory() else {
+    panic!("procedural floor should provide exactly two generated items");
   };
 
-  assert!(item.id().value() & 0x8000_0000 != 0);
-  assert_eq!(item.equipment_slot(), Some(EquipmentSlot::Weapon));
-  assert!(item.equipment_effect().is_some());
-  assert!(item.affix().is_some());
+  for item in [first, second] {
+    assert!(item.id().value() & 0x8000_0000 != 0);
+    assert!(item.equipment_slot().is_some());
+    assert!(item.equipment_effect().is_some());
+    assert!(item.affix().is_some());
+  }
+  assert_ne!(first.id(), second.id());
 }
 
 #[test]
