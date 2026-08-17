@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added bounded deterministic procedural affix tiers. Generated melee, ranged, and mitigation
+  affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
+  magnitudes remain unchanged; generic affix pools and identification remain deferred.
+
 - Added one closed deterministic equipment-affix layer. Generated equipment now carries a typed
   melee, ranged, or mitigation affix that aggregates with its matching equipped base effect using
   saturating arithmetic. State-digest V14, protocol v36, Bevy JSON/HUD, and TUI labels project the

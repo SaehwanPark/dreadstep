@@ -143,6 +143,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic item-rarity presentation metadata |
 | 2026-08-16 | Milestone 6 slice: deterministic procedural starter loot |
 | 2026-08-17 | Milestone 6 slice: deterministic equipment affix metadata and aggregation |
+| 2026-08-17 | Milestone 6 slice: deterministic procedural affix tiers |
 
 ## Present
 
@@ -163,7 +164,7 @@ deferred until a later visual-enhancement stage.
   attack/trap evidence and projected through every adapter. Optional closed melee, ranged, or
   mitigation affixes aggregate with the equipped base effect using saturating arithmetic. Seeded
   procedural floors also place one deterministic generated equipment item with a deterministic
-  rarity and affix in the player's inventory from the validated content catalog.
+  rarity and bounded affix tier in the player's inventory from the validated content catalog.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -200,11 +201,12 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: generated equipment may carry one deterministic closed affix that
-adds to the matching equipped combat stat while preserving independent weapon/armor slots. The
-affix, rarity, base effect, and identity derive from seed/depth and remain visible through core
-digests plus protocol, Bevy, and TUI projections. Affix pools, identification, ground-loot
-distribution, and richer inventory actions remain deferred.
+The current slice is complete: generated equipment may carry one deterministic closed affix with a
+bounded seed/depth-derived magnitude that adds to the matching equipped combat stat while
+preserving independent weapon/armor slots. The affix, tier, rarity, base effect, and identity derive
+from seed/depth and remain visible through core digests plus protocol, Bevy, and TUI projections.
+Affix pools, identification, ground-loot distribution, and richer inventory actions remain
+deferred.
 
 ## Future
 
