@@ -62,6 +62,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Test both authored positions, stack order, distinct identities, and player ownership
   exclusion whenever procedural ground distribution expands.
 
+## 2026-08-17 — Derive procedural loadout roles from shared floor state
+
+- Context: Two generated starter choices should create a meaningful comparison instead of randomly
+  repeating the same closed equipment effect.
+- Symptom: Deriving each role from its variant-specific mix allowed identical roles for some seeds,
+  weakening the intended two-choice decision.
+- Resolution: Derive a shared seed/depth role base and offset it by the ordered variant, preserving
+  deterministic identity/rarity/affix mixes while guaranteeing distinct closed effects.
+- Prevention: Test representative seed/depth ranges for distinct typed effects and keep role policy
+  in content rather than duplicating it in adapters.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon

@@ -26,7 +26,8 @@ Workspace version `0.0.0`, protocol **v36**. Core owns deterministic combat, inv
 environmental rules, including one active weapon and one active armor slot plus typed item rarity
 and closed equipment affixes;
 protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors also bind the
-validated item catalog and provide two ordered deterministic generated equipment choices plus one
+validated item catalog and provide two ordered deterministic generated equipment choices with
+distinct closed effects plus one
 consumable with bounded deterministic potency in the player inventory, alongside two ground
 equipment choices at the first two enemies; all equipment carries bounded deterministic affix tiers. The
 default showcase is the NetHack-style
