@@ -152,6 +152,49 @@ fn generated_affix_amount_is_seeded_and_bounded() {
 }
 
 #[test]
+fn procedural_affix_magnitude_respects_depth_floor() {
+  let shallow = procedural_floor(7, 1).expect("generated floor should validate");
+  assert_eq!(
+    shallow
+      .actor(ActorId::new(1))
+      .expect("generated player should exist")
+      .inventory()[0]
+      .affix()
+      .expect("generated equipment should carry an affix")
+      .amount()
+      .value(),
+    1
+  );
+
+  let deep = procedural_floor(7, 3).expect("generated floor should validate");
+  let player = deep
+    .actor(ActorId::new(1))
+    .expect("generated player should exist");
+  assert!(player.inventory()[..2].iter().all(|item| {
+    item
+      .affix()
+      .expect("generated equipment should carry an affix")
+      .amount()
+      .value()
+      == 2
+  }));
+  assert!(
+    deep
+      .ground_items()
+      .iter()
+      .flat_map(dreadstep_core::GroundItemStack::items)
+      .all(|item| {
+        item
+          .affix()
+          .expect("generated ground equipment should carry an affix")
+          .amount()
+          .value()
+          == 2
+      })
+  );
+}
+
+#[test]
 fn generated_consumable_potency_is_seeded_and_bounded() {
   let ammunition_first = procedural_floor(0, 1)
     .expect("generated floor should validate")
