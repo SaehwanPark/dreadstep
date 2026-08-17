@@ -142,10 +142,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-16 | Milestone 6 slice: deterministic independent weapon and armor slots |
 | 2026-08-16 | Milestone 6 slice: deterministic item-rarity presentation metadata |
 | 2026-08-16 | Milestone 6 slice: deterministic procedural starter loot |
+| 2026-08-17 | Milestone 6 slice: deterministic equipment affix metadata and aggregation |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **35**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **36**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -159,9 +160,10 @@ deferred until a later visual-enhancement stage.
   ammunition, canonical `RunOutcome`, replay traces, state digests, and authored Pursuer, Kiter,
   Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy behaviors. Authored equipment may add
   closed melee-damage, ranged-damage, and incoming-damage-reduction effects resolved in core
-  attack/trap evidence
-  and projected through every adapter. Seeded procedural floors also place one deterministic
-  generated equipment item in the player's inventory from the validated content catalog.
+  attack/trap evidence and projected through every adapter. Optional closed melee, ranged, or
+  mitigation affixes aggregate with the equipped base effect using saturating arithmetic. Seeded
+  procedural floors also place one deterministic generated equipment item with a deterministic
+  rarity and affix in the player's inventory from the validated content catalog.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -174,8 +176,8 @@ deferred until a later visual-enhancement stage.
 ### Content
 
 - Authored starter and starter-item floors, item catalog, and a seeded corridor-floor
-  generator with reachability checks and one seed/depth-derived starter equipment item. The
-  starter-item showcase includes a closed door beside the player for the documented open/close
+  generator with reachability checks and one seed/depth-derived starter equipment item plus one
+  closed affix. The starter-item showcase includes a closed door beside the player for the documented open/close
   controls; the item-free starter remains unchanged.
 
 ### Bevy and desktop
@@ -198,12 +200,11 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: seeded procedural floors now bind the validated item catalog and place
-one deterministic equipment item in the player's inventory. The item identity, effect, and rarity
-derive from seed/depth and remain visible through existing protocol, Bevy, and TUI projections.
-Authored equipment still supports independent weapon/armor slots, deterministic aggregation, typed
-roles, common/magic/rare presentation rarity, and a terminal comparison line. Affixes,
-identification, ground-loot distribution, and richer inventory actions remain deferred.
+The current slice is complete: generated equipment may carry one deterministic closed affix that
+adds to the matching equipped combat stat while preserving independent weapon/armor slots. The
+affix, rarity, base effect, and identity derive from seed/depth and remain visible through core
+digests plus protocol, Bevy, and TUI projections. Affix pools, identification, ground-loot
+distribution, and richer inventory actions remain deferred.
 
 ## Future
 

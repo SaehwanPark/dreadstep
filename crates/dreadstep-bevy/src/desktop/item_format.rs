@@ -9,6 +9,9 @@ pub(crate) fn item_value(item: Item) -> Value {
     "definition": item.definition().value(),
     "rarity": item.rarity().wire_name(),
     "equipment_slot": item.equipment_slot().map(equipment_slot_name),
+    "affix": item.affix().map(|affix| {
+      json!({ affix.wire_name(): affix.amount().value() })
+    }),
     "equipment_effect": item.equipment_effect().map(|effect| match effect {
       dreadstep_core::EquipmentEffect::MinimumMeleeReach { reach } => {
         json!({ "minimum_melee_reach": reach.value() })
@@ -57,5 +60,18 @@ mod tests {
     let item = dreadstep_core::Item::new(ItemId::new(1), ItemDefinitionId::new(2))
       .with_rarity(ItemRarity::Rare);
     assert_eq!(item_value(item)["rarity"], "rare");
+  }
+
+  #[test]
+  fn item_json_projects_affix() {
+    let item = dreadstep_core::Item::with_equipment_damage(
+      dreadstep_core::ItemId::new(1),
+      dreadstep_core::ItemDefinitionId::new(2),
+      dreadstep_core::Damage::new(1),
+    )
+    .with_affix(dreadstep_core::ItemAffix::MeleeDamage {
+      amount: dreadstep_core::Damage::new(2),
+    });
+    assert_eq!(item_value(item)["affix"]["melee_damage"], 2);
   }
 }

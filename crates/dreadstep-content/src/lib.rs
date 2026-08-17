@@ -10,8 +10,8 @@ use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, AmmunitionAmount, Damage, EnemyBehavior, GridMap, HealingAmount,
-  HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, ItemRarity, MapError, MeleeReach,
-  Position, ThrowableEffect, Tile, WorldError, WorldState,
+  HitPoints, Item, ItemAffix, ItemDefinitionId, ItemEffect, ItemId, ItemRarity, MapError,
+  MeleeReach, Position, ThrowableEffect, Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -415,13 +415,33 @@ fn procedural_loot(seed: u64, depth: u32) -> Item {
     1 | 2 => ItemRarity::Magic,
     _ => ItemRarity::Common,
   };
-  let item = match (mixed / 6) % 4 {
-    0 => Item::with_equipment_damage(item_id, ItemDefinitionId::new(1), Damage::new(1)),
-    1 => Item::with_equipment_effect(item_id, ItemDefinitionId::new(4), MeleeReach::TWO),
-    2 => Item::with_damage_reduction(item_id, ItemDefinitionId::new(6), Damage::new(1)),
-    _ => Item::with_ranged_damage(item_id, ItemDefinitionId::new(7), Damage::new(1)),
+  let (item, affix) = match (mixed / 6) % 4 {
+    0 => (
+      Item::with_equipment_damage(item_id, ItemDefinitionId::new(1), Damage::new(1)),
+      ItemAffix::MeleeDamage {
+        amount: Damage::new(1),
+      },
+    ),
+    1 => (
+      Item::with_equipment_effect(item_id, ItemDefinitionId::new(4), MeleeReach::TWO),
+      ItemAffix::MeleeDamage {
+        amount: Damage::new(1),
+      },
+    ),
+    2 => (
+      Item::with_damage_reduction(item_id, ItemDefinitionId::new(6), Damage::new(1)),
+      ItemAffix::DamageReduction {
+        amount: Damage::new(1),
+      },
+    ),
+    _ => (
+      Item::with_ranged_damage(item_id, ItemDefinitionId::new(7), Damage::new(1)),
+      ItemAffix::RangedDamage {
+        amount: Damage::new(1),
+      },
+    ),
   };
-  item.with_rarity(rarity)
+  item.with_affix(affix).with_rarity(rarity)
 }
 
 fn procedural_loot_mix(seed: u64, depth: u32) -> u64 {

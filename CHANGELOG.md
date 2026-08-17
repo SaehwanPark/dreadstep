@@ -6,11 +6,17 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added one closed deterministic equipment-affix layer. Generated equipment now carries a typed
+  melee, ranged, or mitigation affix that aggregates with its matching equipped base effect using
+  saturating arithmetic. State-digest V14, protocol v36, Bevy JSON/HUD, and TUI labels project the
+  same affix evidence; affix pools, identification, rerolling, and richer loot distribution remain
+  deferred.
+
 - Added deterministic procedural starter loot. Seeded floors now bind the authored item catalog and
   place one seed/depth-derived equipment item in the player inventory, including stable identity,
-  closed effect, and common/magic/rare rarity metadata. Same inputs produce the same item while
-  changed seed or depth changes its identity; affixes, ground loot, and richer generation remain
-  future work.
+  closed effect, common/magic/rare rarity metadata, and one closed affix. Same inputs produce the
+  same item while changed seed or depth changes its identity; affix pools, ground loot, and richer
+  generation remain future work.
 
 - Added deterministic common/magic/rare item-rarity metadata. Existing item constructors default to
   common; explicit rarity survives core state digests, protocol v35 snapshots, Bevy JSON, and TUI
@@ -36,7 +42,7 @@ All notable contributor- and user-visible project changes are recorded here.
   scheduled melee and ranged attack damage with saturating mitigation; core reports the actual
   `Attacked` damage and preserves target hit points, state digests distinguish the effect, and
   content, MCP, protocol v35, TUI, Bevy, and headless projections stay synchronized. Weapon
-  subclasses, affixes, and generic mitigation remain deferred.
+  subclasses, affix pools, and generic mitigation remain deferred.
 
 - Extended authored damage-reduction equipment to one-shot floor traps. Saturating mitigation now
   preserves movement, trap consumption, death ordering, and actual `TrapTriggered` evidence while

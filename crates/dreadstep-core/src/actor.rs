@@ -363,15 +363,7 @@ impl Actor {
           .inventory
           .iter()
           .find(|item| item.id() == *equipped)
-          .and_then(|item| match item.equipment_effect() {
-            Some(crate::EquipmentEffect::MeleeDamage { amount }) => Some(amount.value()),
-            Some(
-              crate::EquipmentEffect::MinimumMeleeReach { .. }
-              | crate::EquipmentEffect::RangedDamage { .. }
-              | crate::EquipmentEffect::DamageReduction { .. },
-            )
-            | None => None,
-          })
+          .map(|item| item.melee_damage_bonus().value())
       })
       .fold(0_u16, u16::saturating_add);
     Damage::new(Damage::MELEE.value().saturating_add(bonus))
@@ -389,15 +381,7 @@ impl Actor {
           .inventory
           .iter()
           .find(|item| item.id() == *equipped)
-          .and_then(|item| match item.equipment_effect() {
-            Some(crate::EquipmentEffect::RangedDamage { amount }) => Some(amount.value()),
-            Some(
-              crate::EquipmentEffect::MinimumMeleeReach { .. }
-              | crate::EquipmentEffect::MeleeDamage { .. }
-              | crate::EquipmentEffect::DamageReduction { .. },
-            )
-            | None => None,
-          })
+          .map(|item| item.ranged_damage_bonus().value())
       })
       .fold(0_u16, u16::saturating_add);
     Damage::new(Damage::RANGED.value().saturating_add(bonus))
@@ -415,15 +399,7 @@ impl Actor {
           .inventory
           .iter()
           .find(|item| item.id() == *equipped)
-          .and_then(|item| match item.equipment_effect() {
-            Some(crate::EquipmentEffect::DamageReduction { amount }) => Some(amount.value()),
-            Some(
-              crate::EquipmentEffect::MinimumMeleeReach { .. }
-              | crate::EquipmentEffect::MeleeDamage { .. }
-              | crate::EquipmentEffect::RangedDamage { .. },
-            )
-            | None => None,
-          })
+          .map(|item| item.damage_reduction().value())
       })
       .fold(0_u16, u16::saturating_add);
     Damage::new(reduction)

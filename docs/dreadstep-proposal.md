@@ -1983,11 +1983,10 @@ Establish the Diablo-derived equipment loop.
 
 ### Repository status note
 
-The current implementation roadmap has verified a deterministic preparation boundary: one scheduled
-actor may equip or unequip one owned opaque item reference, with ordered replacement events and
-replay/snapshot projections. The full equipment loop below remains future work; effects, weapon and
-armor rules, consumables, affixes, rarity, generation, and inventory UX are not implied by that
-preparation slice.
+The current implementation roadmap has verified a deterministic equipment boundary: one scheduled
+actor may equip or unequip one owned opaque item reference, with ordered replacement events,
+replay/snapshot projections, and one optional closed affix that aggregates with its matching combat
+stat. Affix pools, identification, durability, and richer inventory UX remain future work.
 
 The next bounded preparation slice is now verified: one scheduled actor may consume one owned,
 unequipped opaque item instance, removing it with a typed event, standard action-time advancement,
@@ -2013,8 +2012,9 @@ desktop behavior; weapon classes and equipment-derived effects remain future wor
 The first equipment-derived mechanical effect is now verified: authored item 103 raises effective
 melee reach to at least two while equipped, preserves the existing equipment action contract, and
 is explicitly non-consumable. Authored melee damage, ranged damage, and incoming damage reduction
-are also verified, including saturating mitigation for one-shot floor traps. Weapon classes, armor
-slots, affixes, durability, identification, and randomized loot remain future work.
+are also verified, including saturating mitigation for one-shot floor traps. A closed melee, ranged,
+or mitigation affix may now add to the matching equipped stat with saturating arithmetic. Weapon
+classes, affix pools, durability, identification, and randomized ground loot remain future work.
 
 The following bounded combat slice is also verified: a scheduled player may reload partial ranged
 ammunition to the fixed three-shot capacity through a typed `Reload` command. It preserves standard
@@ -2052,7 +2052,7 @@ equipment semantics remain future work.
 The next bounded equipment slice is now verified: each actor may hold one active weapon and one
 active armor item simultaneously. Equipping replaces only the matching role, combat bonuses read
 the complete loadout, and the existing unequip action clears active roles in stable order. This
-does not add weapon subclasses, durability, affixes, rarity, or generated loot.
+does not add weapon subclasses, affix pools, durability, rarity, or generated loot.
 
 The following bounded presentation slice is now verified: every item carries explicit common,
 magic, or rare rarity metadata. Existing constructors default to common; the value is preserved in
@@ -2060,10 +2060,10 @@ state digests and projected through protocol, Bevy, and terminal labels without 
 equipment, inventory legality, identification, or loot generation.
 
 The next bounded loot slice is now verified: seeded procedural floors bind the validated authored
-item catalog and place one seed/depth-derived equipment item in the player inventory. Item identity,
-closed effect, and common/magic/rare rarity are deterministic and visible through existing adapter
-projections; ground-item distribution, affixes, identification, and richer generation remain future
-work.
+item catalog and place one seed/depth-derived equipment item with one closed affix in the player
+inventory. Item identity, closed effect, affix, and common/magic/rare rarity are deterministic and
+visible through existing adapter projections; affix pools, ground-item distribution, identification,
+and richer generation remain future work.
 
 ### Implement
 

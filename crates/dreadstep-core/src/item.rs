@@ -3,7 +3,7 @@
 //! Core stores opaque instances and optional effects. Catalog membership stays in content;
 //! adapters only project these values.
 
-use crate::{HitPoints, ItemDefinitionId, ItemId, Position};
+use crate::{Damage, HitPoints, ItemDefinitionId, ItemId, Position};
 
 /// A positive amount restored by a healing item effect.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -140,6 +140,52 @@ pub enum EquipmentEffect {
   },
 }
 
+/// One closed, additive modifier authored on an equipment item.
+///
+/// Affixes are intentionally limited to existing combat statistics in this slice. They do not
+/// introduce new timing, targeting, or inventory rules; an equipped affix simply adds to the
+/// corresponding base equipment effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ItemAffix {
+  /// Add melee damage while the item is equipped.
+  MeleeDamage {
+    /// The positive authored bonus.
+    amount: crate::Damage,
+  },
+  /// Add ranged damage while the item is equipped.
+  RangedDamage {
+    /// The positive authored bonus.
+    amount: crate::Damage,
+  },
+  /// Reduce incoming damage while the item is equipped.
+  DamageReduction {
+    /// The positive authored reduction.
+    amount: crate::Damage,
+  },
+}
+
+impl ItemAffix {
+  /// Returns the stable wire name used by presentation adapters.
+  #[must_use]
+  pub const fn wire_name(self) -> &'static str {
+    match self {
+      Self::MeleeDamage { .. } => "melee_damage",
+      Self::RangedDamage { .. } => "ranged_damage",
+      Self::DamageReduction { .. } => "damage_reduction",
+    }
+  }
+
+  /// Returns the authored numeric bonus.
+  #[must_use]
+  pub const fn amount(self) -> crate::Damage {
+    match self {
+      Self::MeleeDamage { amount }
+      | Self::RangedDamage { amount }
+      | Self::DamageReduction { amount } => amount,
+    }
+  }
+}
+
 /// The closed set of effects available from explicitly thrown items.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ThrowableEffect {
@@ -215,6 +261,7 @@ pub struct Item {
   rarity: ItemRarity,
   effect: ItemEffect,
   equipment_effect: Option<EquipmentEffect>,
+  affix: Option<ItemAffix>,
   throwable_effect: Option<ThrowableEffect>,
 }
 
@@ -228,6 +275,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: None,
+      affix: None,
       throwable_effect: None,
     }
   }
@@ -241,6 +289,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect,
       equipment_effect: None,
+      affix: None,
       throwable_effect: None,
     }
   }
@@ -258,6 +307,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MinimumMeleeReach { reach }),
+      affix: None,
       throwable_effect: None,
     }
   }
@@ -275,6 +325,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::MeleeDamage { amount }),
+      affix: None,
       throwable_effect: None,
     }
   }
@@ -292,6 +343,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::RangedDamage { amount }),
+      affix: None,
       throwable_effect: None,
     }
   }
@@ -309,6 +361,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: Some(EquipmentEffect::DamageReduction { amount }),
+      affix: None,
       throwable_effect: None,
     }
   }
@@ -326,6 +379,7 @@ impl Item {
       rarity: ItemRarity::Common,
       effect: ItemEffect::None,
       equipment_effect: None,
+      affix: None,
       throwable_effect: Some(effect),
     }
   }
@@ -334,6 +388,13 @@ impl Item {
   #[must_use]
   pub const fn with_rarity(mut self, rarity: ItemRarity) -> Self {
     self.rarity = rarity;
+    self
+  }
+
+  /// Returns this item with one explicit closed equipment affix.
+  #[must_use]
+  pub const fn with_affix(mut self, affix: ItemAffix) -> Self {
+    self.affix = Some(affix);
     self
   }
 
@@ -367,6 +428,12 @@ impl Item {
     self.equipment_effect
   }
 
+  /// Returns the optional closed equipment affix.
+  #[must_use]
+  pub const fn affix(self) -> Option<ItemAffix> {
+    self.affix
+  }
+
   /// Returns the derived equipment role for this item's closed effect.
   #[must_use]
   pub const fn equipment_slot(self) -> Option<EquipmentSlot> {
@@ -379,6 +446,48 @@ impl Item {
       Some(EquipmentEffect::DamageReduction { .. }) => Some(EquipmentSlot::Armor),
       None => None,
     }
+  }
+
+  /// Returns this item's melee-damage contribution, including its base effect and affix.
+  #[must_use]
+  pub const fn melee_damage_bonus(self) -> Damage {
+    let base = match self.equipment_effect {
+      Some(EquipmentEffect::MeleeDamage { amount }) => amount.value(),
+      _ => 0,
+    };
+    let affix = match self.affix {
+      Some(ItemAffix::MeleeDamage { amount }) => amount.value(),
+      _ => 0,
+    };
+    Damage::new(base.saturating_add(affix))
+  }
+
+  /// Returns this item's ranged-damage contribution, including its base effect and affix.
+  #[must_use]
+  pub const fn ranged_damage_bonus(self) -> Damage {
+    let base = match self.equipment_effect {
+      Some(EquipmentEffect::RangedDamage { amount }) => amount.value(),
+      _ => 0,
+    };
+    let affix = match self.affix {
+      Some(ItemAffix::RangedDamage { amount }) => amount.value(),
+      _ => 0,
+    };
+    Damage::new(base.saturating_add(affix))
+  }
+
+  /// Returns this item's incoming-damage reduction, including its base effect and affix.
+  #[must_use]
+  pub const fn damage_reduction(self) -> Damage {
+    let base = match self.equipment_effect {
+      Some(EquipmentEffect::DamageReduction { amount }) => amount.value(),
+      _ => 0,
+    };
+    let affix = match self.affix {
+      Some(ItemAffix::DamageReduction { amount }) => amount.value(),
+      _ => 0,
+    };
+    Damage::new(base.saturating_add(affix))
   }
 
   /// Returns the optional closed throwable effect.

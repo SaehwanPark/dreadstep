@@ -3,8 +3,8 @@
 use dreadstep_core::{
   AmmunitionResult as CoreAmmunitionResult, EquipmentEffect as CoreEquipmentEffect,
   EquipmentSlot as CoreEquipmentSlot, GroundItemStack as CoreGroundItemStack,
-  HealingResult as CoreHealingResult, Item as CoreItem, ItemRarity as CoreItemRarity,
-  ThrowableEffect as CoreThrowableEffect,
+  HealingResult as CoreHealingResult, Item as CoreItem, ItemAffix as CoreItemAffix,
+  ItemRarity as CoreItemRarity, ThrowableEffect as CoreThrowableEffect,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,7 @@ pub struct ItemSnapshot {
   definition: ItemDefinitionId,
   rarity: ItemRarity,
   equipment_effect: Option<EquipmentEffect>,
+  affix: Option<ItemAffix>,
   equipment_slot: Option<EquipmentSlot>,
   throwable_effect: Option<ThrowableEffect>,
 }
@@ -42,6 +43,27 @@ pub enum EquipmentSlot {
   Weapon,
   /// An armor-like effect that reduces incoming damage.
   Armor,
+}
+
+/// A protocol projection of one closed additive equipment affix.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemAffix {
+  /// Add melee damage while equipped.
+  MeleeDamage {
+    /// The authored damage bonus.
+    amount: Damage,
+  },
+  /// Add ranged damage while equipped.
+  RangedDamage {
+    /// The authored damage bonus.
+    amount: Damage,
+  },
+  /// Reduce incoming damage while equipped.
+  DamageReduction {
+    /// The authored damage reduction.
+    amount: Damage,
+  },
 }
 
 /// A protocol projection of the closed equipment effects supported by core.
@@ -160,6 +182,17 @@ impl ItemSnapshot {
           amount: Damage::new(amount.value()),
         },
       }),
+      affix: item.affix().map(|affix| match affix {
+        CoreItemAffix::MeleeDamage { amount } => ItemAffix::MeleeDamage {
+          amount: Damage::new(amount.value()),
+        },
+        CoreItemAffix::RangedDamage { amount } => ItemAffix::RangedDamage {
+          amount: Damage::new(amount.value()),
+        },
+        CoreItemAffix::DamageReduction { amount } => ItemAffix::DamageReduction {
+          amount: Damage::new(amount.value()),
+        },
+      }),
       equipment_slot: item.equipment_slot().map(|slot| match slot {
         CoreEquipmentSlot::Weapon => EquipmentSlot::Weapon,
         CoreEquipmentSlot::Armor => EquipmentSlot::Armor,
@@ -194,7 +227,13 @@ impl ItemSnapshot {
     self.equipment_effect
   }
 
-  /// Returns the derived equipment role, when this item has an equipment effect.
+  /// Returns the optional closed additive affix.
+  #[must_use]
+  pub const fn affix(self) -> Option<ItemAffix> {
+    self.affix
+  }
+
+  /// Returns the derived equipment role, when this item has a base equipment effect.
   #[must_use]
   pub const fn equipment_slot(self) -> Option<EquipmentSlot> {
     self.equipment_slot

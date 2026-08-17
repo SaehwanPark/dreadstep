@@ -10,7 +10,8 @@ use crate::{
   EnemyBehavior, Event, GridMap, GroundItemStack, Position, RunOutcome, StateDigest, StatusKind,
   Tile, WorldError,
   replay::{
-    StableHasher, hash_equipment_effect, hash_item_effect, hash_item_rarity, hash_throwable_effect,
+    StableHasher, hash_equipment_effect, hash_item_affix, hash_item_effect, hash_item_rarity,
+    hash_throwable_effect,
   },
 };
 
@@ -165,13 +166,14 @@ impl WorldState {
   /// The digest includes map dimensions and terrain, current action time, and every actor's
   /// identity, kind, enemy behavior, life, position, current and maximum hit points, ranged ammunition, ready
   /// time, optional one-use hearing target, ordered inventory item identities, definition
-  /// references and effects, optional equipped item identity, and ordered ground-item stacks. It
+  /// references, effects, and affixes, optional equipped item identity, and ordered ground-item
+  /// stacks. It
   /// is deterministic regression evidence, not a cryptographic integrity check or serialized state
   /// format.
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V13");
+    hasher.write_bytes(b"DREADSTEP-STATE-V14");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
@@ -235,6 +237,7 @@ impl WorldState {
         hash_item_rarity(&mut hasher, item.rarity());
         hash_item_effect(&mut hasher, item.effect());
         hash_equipment_effect(&mut hasher, item.equipment_effect());
+        hash_item_affix(&mut hasher, item.affix());
         hash_throwable_effect(&mut hasher, item.throwable_effect());
       }
       for item in actor.equipped_items() {
@@ -259,6 +262,7 @@ impl WorldState {
           hash_item_rarity(&mut hasher, item.rarity());
           hash_item_effect(&mut hasher, item.effect());
           hash_equipment_effect(&mut hasher, item.equipment_effect());
+          hash_item_affix(&mut hasher, item.affix());
           hash_throwable_effect(&mut hasher, item.throwable_effect());
         }
       }

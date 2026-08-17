@@ -2,7 +2,7 @@
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, Command, Damage, EquipmentSlot, Event, GridMap, HitPoints, Item,
-  ItemDefinitionId, ItemId, Position, Tile, WorldState,
+  ItemAffix, ItemDefinitionId, ItemId, Position, Tile, WorldState,
 };
 
 fn equipment_world() -> WorldState {
@@ -54,6 +54,49 @@ fn equipment_slot_is_derived_from_the_closed_effect_set() {
     Item::new(ItemId::new(5), ItemDefinitionId::new(105)).equipment_slot(),
     None
   );
+}
+
+#[test]
+fn equipped_affix_adds_to_the_matching_combat_stat() {
+  let mut world = equipment_world();
+  world
+    .give_item(
+      ActorId::new(1),
+      Item::with_equipment_damage(ItemId::new(2), ItemDefinitionId::new(102), Damage::new(1))
+        .with_affix(ItemAffix::MeleeDamage {
+          amount: Damage::new(2),
+        }),
+    )
+    .unwrap();
+  world
+    .execute(Command::Equip {
+      actor: ActorId::new(1),
+      item: ItemId::new(2),
+    })
+    .unwrap();
+
+  assert_eq!(
+    world.actor(ActorId::new(1)).unwrap().melee_damage(),
+    Damage::new(4)
+  );
+}
+
+#[test]
+fn affix_participates_in_role_derivation_and_state_digest() {
+  let base =
+    Item::with_equipment_damage(ItemId::new(2), ItemDefinitionId::new(102), Damage::new(1));
+  let affixed = base.with_affix(ItemAffix::MeleeDamage {
+    amount: Damage::new(1),
+  });
+  assert_eq!(affixed.equipment_slot(), Some(EquipmentSlot::Weapon));
+
+  let map = GridMap::filled(1, 1, Tile::Floor).unwrap();
+  let actor = Actor::new(ActorId::new(1), ActorKind::Player, Position::new(0, 0));
+  let mut plain = WorldState::new(map.clone(), vec![actor.clone()]).unwrap();
+  let mut changed = WorldState::new(map, vec![actor]).unwrap();
+  plain.give_item(ActorId::new(1), base).unwrap();
+  changed.give_item(ActorId::new(1), affixed).unwrap();
+  assert_ne!(plain.digest(), changed.digest());
 }
 
 #[test]
