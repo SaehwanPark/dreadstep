@@ -446,7 +446,7 @@ fn procedural_consumable(seed: u64, depth: u32) -> Item {
   let mixed = procedural_loot_mix(seed, depth, 3);
   let item_id = procedural_item_id(mixed, 3);
   let rarity = procedural_rarity(mixed, depth);
-  let amount = procedural_consumable_amount(mixed);
+  let amount = procedural_consumable_amount(mixed, depth);
   let effect = if mixed.is_multiple_of(2) {
     ItemEffect::Heal {
       amount: HealingAmount::new(amount).expect("procedural healing amount should be positive"),
@@ -465,8 +465,12 @@ fn procedural_consumable(seed: u64, depth: u32) -> Item {
   Item::with_effect(item_id, definition, effect).with_rarity(rarity)
 }
 
-fn procedural_consumable_amount(mixed: u64) -> u16 {
-  1 + u16::try_from((mixed / 48) % 2).expect("procedural consumable potency fits")
+fn procedural_consumable_amount(mixed: u64, depth: u32) -> u16 {
+  if depth >= 3 {
+    2
+  } else {
+    1 + u16::try_from((mixed / 48) % 2).expect("procedural consumable potency fits")
+  }
 }
 
 fn procedural_affix_amount(mixed: u64, depth: u32) -> Damage {

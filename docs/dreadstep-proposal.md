@@ -2068,8 +2068,8 @@ rarities, and ordered placement are deterministic and visible through existing a
 Follow-up bounded slices derive stable magnitudes of 1 or 2 for each closed equipment affix and each
 procedural consumable from seed/depth without opening generic affix pools; identification and richer
 generation remain future work. Generated items at depth 3 and deeper now enforce Magic-or-Rare
-rarity and magnitude-2 affix floors so descent increases minimum loot quality without changing the
-closed rarity or affix sets.
+rarity, magnitude-2 affix, and potency-2 consumable floors so descent increases minimum loot quality
+without changing the closed rarity, affix, or effect sets.
 
 ### Implement
 

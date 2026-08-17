@@ -242,6 +242,25 @@ fn generated_consumable_potency_is_seeded_and_bounded() {
   assert!((1..=2).contains(&healing_different_seed_potency));
   assert_ne!(ammunition_first_potency, ammunition_different_seed_potency);
   assert_ne!(healing_first_potency, healing_different_seed_potency);
+
+  let deep_ammunition = procedural_floor(0, 3)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[2]
+    .effect();
+  let deep_healing = procedural_floor(0, 4)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[2]
+    .effect();
+  let (deep_ammunition_kind, deep_ammunition_potency) = potency(deep_ammunition);
+  let (deep_healing_kind, deep_healing_potency) = potency(deep_healing);
+  assert_eq!(deep_ammunition_kind, "ammunition");
+  assert_eq!(deep_healing_kind, "healing");
+  assert_eq!(deep_ammunition_potency, 2);
+  assert_eq!(deep_healing_potency, 2);
 }
 
 #[test]
