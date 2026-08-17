@@ -2059,6 +2059,12 @@ magic, or rare rarity metadata. Existing constructors default to common; the val
 state digests and projected through protocol, Bevy, and terminal labels without changing combat,
 equipment, inventory legality, identification, or loot generation.
 
+The next bounded loot slice is now verified: seeded procedural floors bind the validated authored
+item catalog and place one seed/depth-derived equipment item in the player inventory. Item identity,
+closed effect, and common/magic/rare rarity are deterministic and visible through existing adapter
+projections; ground-item distribution, affixes, identification, and richer generation remain future
+work.
+
 ### Implement
 
 - equipment;

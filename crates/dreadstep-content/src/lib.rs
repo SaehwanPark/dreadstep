@@ -10,8 +10,8 @@ use std::{collections::BTreeSet, error::Error, fmt};
 
 use dreadstep_core::{
   Actor, ActorId, ActorKind, AmmunitionAmount, Damage, EnemyBehavior, GridMap, HealingAmount,
-  HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, MapError, MeleeReach, Position,
-  ThrowableEffect, Tile, WorldError, WorldState,
+  HitPoints, Item, ItemDefinitionId, ItemEffect, ItemId, ItemRarity, MapError, MeleeReach,
+  Position, ThrowableEffect, Tile, WorldError, WorldState,
 };
 
 /// Errors raised while validating or building authored content and core-world inputs.
@@ -332,10 +332,10 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 
 /// Returns a deterministic seeded corridor-floor definition.
 ///
-/// This is the first procedural-content boundary: it varies only authored terrain and enemy
-/// durability. The returned definition still delegates all map and actor validation to core when
-/// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
-/// remains a valid deterministic fixture value.
+/// This procedural-content boundary varies authored terrain, enemy durability, and one generated
+/// starter loot item. The returned definition still delegates all map, catalog, and actor/item
+/// validation to core when [`StarterFloorDefinition::build`] is called. `depth` is one-based in
+/// authored callers, but zero remains a valid deterministic fixture value.
 #[must_use]
 pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinition {
   const WIDTH: u32 = 13;
@@ -362,7 +362,7 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
   }
 
   let enemy_hit_points = HitPoints::new(3 + depth.min(5) as u16);
-  StarterFloorDefinition::new(
+  let mut definition = StarterFloorDefinition::new(
     WIDTH,
     HEIGHT,
     tiles,
@@ -395,6 +395,41 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
       ),
     ],
   )
+  .with_item_catalog(starter_item_catalog_definition());
+  definition = definition.with_items(vec![StarterItemPlacement::new(
+    ActorId::new(1),
+    procedural_loot(seed, depth),
+  )]);
+  definition
+}
+
+fn procedural_loot(seed: u64, depth: u32) -> Item {
+  let mixed = procedural_loot_mix(seed, depth);
+  let low_bits = mixed & u64::from(u32::MAX);
+  let item_id = ItemId::new(
+    0x8000_0000
+      | (u32::try_from(low_bits).expect("masked procedural item identity fits") & 0x7fff_ffff),
+  );
+  let rarity = match mixed % 6 {
+    0 => ItemRarity::Rare,
+    1 | 2 => ItemRarity::Magic,
+    _ => ItemRarity::Common,
+  };
+  let item = match (mixed / 6) % 4 {
+    0 => Item::with_equipment_damage(item_id, ItemDefinitionId::new(1), Damage::new(1)),
+    1 => Item::with_equipment_effect(item_id, ItemDefinitionId::new(4), MeleeReach::TWO),
+    2 => Item::with_damage_reduction(item_id, ItemDefinitionId::new(6), Damage::new(1)),
+    _ => Item::with_ranged_damage(item_id, ItemDefinitionId::new(7), Damage::new(1)),
+  };
+  item.with_rarity(rarity)
+}
+
+fn procedural_loot_mix(seed: u64, depth: u32) -> u64 {
+  seed
+    .wrapping_add(u64::from(depth).wrapping_mul(0x9E37_79B9_7F4A_7C15))
+    .wrapping_add(0xD1B5_4A32_D192_ED03)
+    .rotate_left(17)
+    .wrapping_mul(0xBF58_476D_1CE4_E5B9)
 }
 
 fn procedural_partition_gap(seed: u64, depth: u32, partition_x: u32) -> u32 {
