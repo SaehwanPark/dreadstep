@@ -333,9 +333,10 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 /// Returns a deterministic seeded corridor-floor definition.
 ///
 /// This procedural-content boundary varies authored terrain, enemy durability, and one generated
-/// starter loot item. The returned definition still delegates all map, catalog, and actor/item
-/// validation to core when [`StarterFloorDefinition::build`] is called. `depth` is one-based in
-/// authored callers, but zero remains a valid deterministic fixture value.
+/// starter loot item with a bounded seed/depth-derived affix tier. The returned definition still
+/// delegates all map, catalog, and actor/item validation to core when
+/// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
+/// remains a valid deterministic fixture value.
 #[must_use]
 pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinition {
   const WIDTH: u32 = 13;
@@ -415,29 +416,30 @@ fn procedural_loot(seed: u64, depth: u32) -> Item {
     1 | 2 => ItemRarity::Magic,
     _ => ItemRarity::Common,
   };
+  let affix_amount = Damage::new(1 + u16::try_from((mixed / 24) % 2).expect("affix tier fits"));
   let (item, affix) = match (mixed / 6) % 4 {
     0 => (
       Item::with_equipment_damage(item_id, ItemDefinitionId::new(1), Damage::new(1)),
       ItemAffix::MeleeDamage {
-        amount: Damage::new(1),
+        amount: affix_amount,
       },
     ),
     1 => (
       Item::with_equipment_effect(item_id, ItemDefinitionId::new(4), MeleeReach::TWO),
       ItemAffix::MeleeDamage {
-        amount: Damage::new(1),
+        amount: affix_amount,
       },
     ),
     2 => (
       Item::with_damage_reduction(item_id, ItemDefinitionId::new(6), Damage::new(1)),
       ItemAffix::DamageReduction {
-        amount: Damage::new(1),
+        amount: affix_amount,
       },
     ),
     _ => (
       Item::with_ranged_damage(item_id, ItemDefinitionId::new(7), Damage::new(1)),
       ItemAffix::RangedDamage {
-        amount: Damage::new(1),
+        amount: affix_amount,
       },
     ),
   };

@@ -64,6 +64,32 @@ fn procedural_item_identity_changes_with_seed_or_depth() {
 }
 
 #[test]
+fn generated_affix_amount_is_seeded_and_bounded() {
+  let first = procedural_floor(7, 1)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[0]
+    .affix()
+    .expect("generated equipment should carry an affix")
+    .amount()
+    .value();
+  let different_seed = procedural_floor(8, 1)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[0]
+    .affix()
+    .expect("generated equipment should carry an affix")
+    .amount()
+    .value();
+
+  assert!((1..=2).contains(&first));
+  assert!((1..=2).contains(&different_seed));
+  assert_ne!(first, different_seed);
+}
+
+#[test]
 fn seed_and_depth_change_the_generated_floor_without_invalidating_it() {
   let first = procedural_floor(7, 1).expect("generated floor should validate");
   let different_seed = procedural_floor(8, 1).expect("generated floor should validate");

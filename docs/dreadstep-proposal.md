@@ -2062,8 +2062,9 @@ equipment, inventory legality, identification, or loot generation.
 The next bounded loot slice is now verified: seeded procedural floors bind the validated authored
 item catalog and place one seed/depth-derived equipment item with one closed affix in the player
 inventory. Item identity, closed effect, affix, and common/magic/rare rarity are deterministic and
-visible through existing adapter projections; affix pools, ground-item distribution, identification,
-and richer generation remain future work.
+visible through existing adapter projections. A follow-up bounded slice derives a stable magnitude
+of 1 or 2 for that closed affix from seed/depth without opening generic affix pools; ground-item
+distribution, identification, and richer generation remain future work.
 
 ### Implement
 
