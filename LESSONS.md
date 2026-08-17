@@ -94,6 +94,15 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Test shallow tier retention plus every deep inventory and ground affix, and keep the
   depth policy in content rather than adapter or combat code.
 
+## 2026-08-17 — Keep procedural consumable progression in typed amounts
+
+- Context: Deep floors now need stronger healing and ammunition choices without adding new effects.
+- Symptom: Seeded 1–2 potency could leave a deep consumable at strength 1 despite deeper loot floors.
+- Resolution: Clamp the existing typed `HealingAmount` or `AmmunitionAmount` to 2 at depth 3+ while
+  preserving shallow seed variation and the core `UseItem` execution path.
+- Prevention: Test both closed effect families at shallow and deep depths, and keep progression in
+  content rather than changing item commands or effect application.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon
