@@ -103,6 +103,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Test both closed effect families at shallow and deep depths, and keep progression in
   content rather than changing item commands or effect application.
 
+## 2026-08-17 — Sample procedural policy values from mixed upper bits
+
+- Context: Deeper procedural floors needed seed/depth variation in enemy behavior while reusing the
+  established deterministic mixer.
+- Symptom: Taking a tiny modulo directly from the mix's low bits produced the same behavior for many
+  neighboring seeds because the mixer constants preserve low-bit structure.
+- Resolution: Select the behavior bucket from the mixed value's upper bits, where the avalanche makes
+  seed changes observable, and keep shallow fixture behavior explicit.
+- Prevention: Add seed-range variation tests for every new procedural policy and keep shallow
+  compatibility assertions separate from deeper-generation checks.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon

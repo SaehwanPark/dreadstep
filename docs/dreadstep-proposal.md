@@ -2069,7 +2069,9 @@ Follow-up bounded slices derive stable magnitudes of 1 or 2 for each closed equi
 procedural consumable from seed/depth without opening generic affix pools; identification and richer
 generation remain future work. Generated items at depth 3 and deeper now enforce Magic-or-Rare
 rarity, magnitude-2 affix, and potency-2 consumable floors so descent increases minimum loot quality
-without changing the closed rarity, affix, or effect sets.
+without changing the closed rarity, affix, or effect sets. Deeper procedural floors also vary the
+existing Pursuer, Kiter, Scavenger, and Zombie policies from seed/depth while retaining the shallow
+showcase roster.
 
 ### Implement
 
