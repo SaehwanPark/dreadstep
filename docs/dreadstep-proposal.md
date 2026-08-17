@@ -2014,7 +2014,7 @@ melee reach to at least two while equipped, preserves the existing equipment act
 is explicitly non-consumable. Authored melee damage, ranged damage, and incoming damage reduction
 are also verified, including saturating mitigation for one-shot floor traps. A closed melee, ranged,
 or mitigation affix may now add to the matching equipped stat with saturating arithmetic. Weapon
-classes, affix pools, durability, identification, and randomized ground loot remain future work.
+classes, affix pools, durability, identification, and richer randomized ground loot remain future work.
 
 The following bounded combat slice is also verified: a scheduled player may reload partial ranged
 ammunition to the fixed three-shot capacity through a typed `Reload` command. It preserves standard
@@ -2061,10 +2061,11 @@ equipment, inventory legality, identification, or loot generation.
 
 The next bounded loot slice is now verified: seeded procedural floors bind the validated authored
 item catalog and place two ordered seed/depth-derived equipment choices, each with one closed affix,
-in the player inventory. Item identities, closed effects, affixes, and common/magic/rare rarities are
+in the player inventory plus one deterministic ground equipment choice at the first enemy's
+position. Item identities, closed effects, affixes, common/magic/rare rarities, and placement are
 deterministic and visible through existing adapter projections. A follow-up bounded slice derives a
 stable magnitude of 1 or 2 for each closed affix from seed/depth without opening generic affix pools;
-ground-item distribution, identification, and richer generation remain future work.
+richer ground-item distribution, identification, and richer generation remain future work.
 
 ### Implement
 

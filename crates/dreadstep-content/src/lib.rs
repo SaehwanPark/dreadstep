@@ -332,11 +332,11 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 
 /// Returns a deterministic seeded corridor-floor definition.
 ///
-/// This procedural-content boundary varies authored terrain, enemy durability, and two ordered
-/// generated starter loot items with bounded seed/depth-derived affix tiers. The returned
-/// definition still delegates all map, catalog, and actor/item validation to core when
-/// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
-/// remains a valid deterministic fixture value.
+/// This procedural-content boundary varies authored terrain, enemy durability, two ordered
+/// generated starter-loot inventory choices, and one ground equipment choice with bounded
+/// seed/depth-derived affix tiers. The returned definition still delegates all map, catalog, and
+/// actor/item validation to core when [`StarterFloorDefinition::build`] is called. `depth` is
+/// one-based in authored callers, but zero remains a valid deterministic fixture value.
 #[must_use]
 pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinition {
   const WIDTH: u32 = 13;
@@ -407,10 +407,10 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
 fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
   let mixed = procedural_loot_mix(seed, depth, variant);
   let low_bits = mixed & u64::from(u32::MAX);
-  let variant_bit = u32::try_from(variant & 1).expect("procedural loot variant fits") << 30;
+  let variant_bits = u32::try_from(variant & 0x3).expect("procedural loot variant fits") << 30;
   let item_id = ItemId::new(
     0x8000_0000
-      | variant_bit
+      | variant_bits
       | (u32::try_from(low_bits).expect("masked procedural item identity fits") & 0x3fff_ffff),
   );
   let rarity = match mixed % 6 {
@@ -464,13 +464,18 @@ fn procedural_partition_gap(seed: u64, depth: u32, partition_x: u32) -> u32 {
   (mixed % 7) as u32 + 1
 }
 
-/// Builds a validated deterministic seeded corridor floor.
+/// Builds a validated deterministic seeded corridor floor with one generated ground item placed
+/// at the first enemy's authored position for the existing pickup/drop rules to consume later.
 ///
 /// # Errors
 ///
 /// Returns [`ContentError`] if generated content violates a core map or world invariant.
 pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentError> {
-  procedural_floor_definition(seed, depth).build()
+  let mut world = procedural_floor_definition(seed, depth).build()?;
+  let ground_item = procedural_loot(seed, depth, 2);
+  world.give_item(ActorId::new(2), ground_item)?;
+  world.drop_item(ActorId::new(2), ground_item.id())?;
+  Ok(world)
 }
 
 /// Returns the deterministic authored starter-item scenario definition.

@@ -164,8 +164,8 @@ deferred until a later visual-enhancement stage.
   attack/trap evidence and projected through every adapter. Optional closed melee, ranged, or
   mitigation affixes aggregate with the equipped base effect using saturating arithmetic. Seeded
   procedural floors also place two ordered deterministic generated equipment choices with
-  deterministic rarity and bounded affix tiers in the player's inventory from the validated content
-  catalog.
+  deterministic rarity and bounded affix tiers in the player's inventory plus one deterministic
+  ground equipment choice at the first enemy from the validated content catalog.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -202,12 +202,12 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: generated floors provide two ordered equipment choices, each with
-one deterministic closed affix whose bounded seed/depth-derived magnitude adds to the matching
-equipped combat stat while preserving independent weapon/armor slots. The affix, tier, rarity, base
-effect, and identity derive from seed/depth and remain visible through core digests plus protocol,
-Bevy, and TUI projections. Affix pools, identification, ground-loot distribution, and richer
-inventory actions remain deferred.
+The current slice is complete: generated floors provide two ordered equipment choices and one
+deterministic ground equipment choice. Each carries one closed affix whose bounded seed/depth-derived
+magnitude adds to the matching equipped combat stat while preserving independent weapon/armor slots.
+The affix, tier, rarity, base effect, identity, and ground placement derive from seed/depth and
+remain visible through core digests plus protocol, Bevy, and TUI projections. Affix pools,
+identification, richer ground-loot distribution, and richer inventory actions remain deferred.
 
 ## Future
 
