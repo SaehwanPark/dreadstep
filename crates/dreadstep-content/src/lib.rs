@@ -411,7 +411,9 @@ fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
   let item_id = procedural_item_id(mixed, variant);
   let rarity = procedural_rarity(mixed);
   let affix_amount = Damage::new(1 + u16::try_from((mixed / 24) % 2).expect("affix tier fits"));
-  let (item, affix) = match (mixed / 6) % 4 {
+  let role_seed = procedural_loot_mix(seed, depth, 0);
+  let role = (role_seed / 6 + variant) % 4;
+  let (item, affix) = match role {
     0 => (
       Item::with_equipment_damage(item_id, ItemDefinitionId::new(1), Damage::new(1)),
       ItemAffix::MeleeDamage {

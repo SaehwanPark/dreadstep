@@ -49,6 +49,27 @@ fn procedural_floor_places_two_equipment_items_and_one_consumable_in_player_inve
 }
 
 #[test]
+fn procedural_loadout_choices_have_distinct_equipment_effects() {
+  for seed in 0..32 {
+    for depth in [0, 1, 2, 3, 6] {
+      let world = procedural_floor(seed, depth).expect("generated floor should validate");
+      let player = world
+        .actor(ActorId::new(1))
+        .expect("generated player should exist");
+      let [first, second, ..] = player.inventory() else {
+        panic!("procedural floor should provide two equipment choices");
+      };
+
+      assert_ne!(
+        first.equipment_effect(),
+        second.equipment_effect(),
+        "seed {seed} depth {depth} should provide distinct equipment effects"
+      );
+    }
+  }
+}
+
+#[test]
 fn procedural_floor_places_two_seeded_equipment_items_on_the_ground() {
   let world = procedural_floor(7, 1).expect("generated floor should validate");
   let [first_stack, second_stack] = world.ground_items() else {

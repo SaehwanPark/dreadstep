@@ -2060,7 +2060,8 @@ state digests and projected through protocol, Bevy, and terminal labels without 
 equipment, inventory legality, identification, or loot generation.
 
 The next bounded loot slice is now verified: seeded procedural floors bind the validated authored
-item catalog and place two ordered seed/depth-derived equipment choices, each with one closed affix,
+item catalog and place two ordered seed/depth-derived equipment choices with distinct closed effects,
+each with one closed affix,
 and one existing-effect consumable in the player inventory plus two deterministic ground equipment
 choices at the first two enemies' positions. Item identities, effects, affixes, common/magic/rare
 rarities, and ordered placement are deterministic and visible through existing adapter projections.

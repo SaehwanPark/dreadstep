@@ -14,6 +14,10 @@ All notable contributor- and user-visible project changes are recorded here.
   positions. Each item keeps a distinct seed/depth/variant identity and closed affix while core
   ground-stack ordering and existing pickup/drop rules remain authoritative.
 
+- Made the two procedural starter equipment choices deterministically complementary: adjacent role
+  selection values guarantee distinct closed equipment effects without changing item schemas,
+  affix aggregation, or authored fixtures.
+
 - Added bounded deterministic procedural affix tiers. Generated melee, ranged, and mitigation
   affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
   magnitudes remain unchanged; generic affix pools and identification remain deferred.
