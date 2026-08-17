@@ -409,7 +409,7 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
 fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
   let mixed = procedural_loot_mix(seed, depth, variant);
   let item_id = procedural_item_id(mixed, variant);
-  let rarity = procedural_rarity(mixed);
+  let rarity = procedural_rarity(mixed, depth);
   let affix_amount = Damage::new(1 + u16::try_from((mixed / 24) % 2).expect("affix tier fits"));
   let role_seed = procedural_loot_mix(seed, depth, 0);
   let role = (role_seed / 6 + variant) % 4;
@@ -445,7 +445,7 @@ fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
 fn procedural_consumable(seed: u64, depth: u32) -> Item {
   let mixed = procedural_loot_mix(seed, depth, 3);
   let item_id = procedural_item_id(mixed, 3);
-  let rarity = procedural_rarity(mixed);
+  let rarity = procedural_rarity(mixed, depth);
   let amount = procedural_consumable_amount(mixed);
   let effect = if mixed.is_multiple_of(2) {
     ItemEffect::Heal {
@@ -479,11 +479,16 @@ fn procedural_item_id(mixed: u64, variant: u64) -> ItemId {
   )
 }
 
-fn procedural_rarity(mixed: u64) -> ItemRarity {
-  match mixed % 6 {
+fn procedural_rarity(mixed: u64, depth: u32) -> ItemRarity {
+  let rarity = match mixed % 6 {
     0 => ItemRarity::Rare,
     1 | 2 => ItemRarity::Magic,
     _ => ItemRarity::Common,
+  };
+  if depth >= 3 && rarity == ItemRarity::Common {
+    ItemRarity::Magic
+  } else {
+    rarity
   }
 }
 

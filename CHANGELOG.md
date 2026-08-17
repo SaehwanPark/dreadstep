@@ -18,6 +18,10 @@ All notable contributor- and user-visible project changes are recorded here.
   selection values guarantee distinct closed equipment effects without changing item schemas,
   affix aggregation, or authored fixtures.
 
+- Added a deterministic procedural rarity floor for descent: generated inventory and ground items
+  at depth 3 and deeper are Magic or Rare, while shallow floors keep the existing Common/Magic/Rare
+  mix.
+
 - Added bounded deterministic procedural affix tiers. Generated melee, ranged, and mitigation
   affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
   magnitudes remain unchanged; generic affix pools and identification remain deferred.

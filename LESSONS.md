@@ -73,6 +73,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Test representative seed/depth ranges for distinct typed effects and keep role policy
   in content rather than duplicating it in adapters.
 
+## 2026-08-17 — Apply procedural rarity progression at the content boundary
+
+- Context: Seeded floors needed stronger item progression as depth increased without adding new
+  rarity values or changing authored fixtures.
+- Symptom: A pure seed mix could still produce Common items deep in a run, weakening descent reward
+  expectations.
+- Resolution: Map Common to Magic at depth 3 and deeper after the existing deterministic rarity mix,
+  preserving Rare values and the closed Common/Magic/Rare enum.
+- Prevention: Test shallow Common retention plus deep inventory and ground rarity floors, and keep
+  progression policy in content before projection through adapters.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon
