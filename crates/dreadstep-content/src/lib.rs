@@ -333,10 +333,11 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 /// Returns a deterministic seeded corridor-floor definition.
 ///
 /// This procedural-content boundary varies authored terrain, enemy durability, two ordered
-/// generated starter-loot inventory choices, and one ground equipment choice with bounded
-/// seed/depth-derived affix tiers. The returned definition still delegates all map, catalog, and
-/// actor/item validation to core when [`StarterFloorDefinition::build`] is called. `depth` is
-/// one-based in authored callers, but zero remains a valid deterministic fixture value.
+/// generated starter-loot equipment choices, one consumable inventory choice, and one ground
+/// equipment choice with bounded seed/depth-derived affix tiers. The returned definition still
+/// delegates all map, catalog, and actor/item validation to core when
+/// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
+/// remains a valid deterministic fixture value.
 #[must_use]
 pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinition {
   const WIDTH: u32 = 13;
@@ -400,24 +401,15 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
   definition = definition.with_items(vec![
     StarterItemPlacement::new(ActorId::new(1), procedural_loot(seed, depth, 0)),
     StarterItemPlacement::new(ActorId::new(1), procedural_loot(seed, depth, 1)),
+    StarterItemPlacement::new(ActorId::new(1), procedural_consumable(seed, depth)),
   ]);
   definition
 }
 
 fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
   let mixed = procedural_loot_mix(seed, depth, variant);
-  let low_bits = mixed & u64::from(u32::MAX);
-  let variant_bits = u32::try_from(variant & 0x3).expect("procedural loot variant fits") << 30;
-  let item_id = ItemId::new(
-    0x8000_0000
-      | variant_bits
-      | (u32::try_from(low_bits).expect("masked procedural item identity fits") & 0x3fff_ffff),
-  );
-  let rarity = match mixed % 6 {
-    0 => ItemRarity::Rare,
-    1 | 2 => ItemRarity::Magic,
-    _ => ItemRarity::Common,
-  };
+  let item_id = procedural_item_id(mixed, variant);
+  let rarity = procedural_rarity(mixed);
   let affix_amount = Damage::new(1 + u16::try_from((mixed / 24) % 2).expect("affix tier fits"));
   let (item, affix) = match (mixed / 6) % 4 {
     0 => (
@@ -446,6 +438,45 @@ fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
     ),
   };
   item.with_affix(affix).with_rarity(rarity)
+}
+
+fn procedural_consumable(seed: u64, depth: u32) -> Item {
+  let mixed = procedural_loot_mix(seed, depth, 3);
+  let item_id = procedural_item_id(mixed, 3);
+  let rarity = procedural_rarity(mixed);
+  let effect = if mixed.is_multiple_of(2) {
+    ItemEffect::Heal {
+      amount: HealingAmount::new(2).expect("procedural healing amount should be positive"),
+    }
+  } else {
+    ItemEffect::RestoreAmmunition {
+      amount: AmmunitionAmount::new(1).expect("procedural ammunition amount should be positive"),
+    }
+  };
+  let definition = if mixed.is_multiple_of(2) {
+    ItemDefinitionId::new(2)
+  } else {
+    ItemDefinitionId::new(3)
+  };
+  Item::with_effect(item_id, definition, effect).with_rarity(rarity)
+}
+
+fn procedural_item_id(mixed: u64, variant: u64) -> ItemId {
+  let low_bits = mixed & u64::from(u32::MAX);
+  let variant_bits = u32::try_from(variant & 0x3).expect("procedural loot variant fits") << 30;
+  ItemId::new(
+    0x8000_0000
+      | variant_bits
+      | (u32::try_from(low_bits).expect("masked procedural item identity fits") & 0x3fff_ffff),
+  )
+}
+
+fn procedural_rarity(mixed: u64) -> ItemRarity {
+  match mixed % 6 {
+    0 => ItemRarity::Rare,
+    1 | 2 => ItemRarity::Magic,
+    _ => ItemRarity::Common,
+  }
 }
 
 fn procedural_loot_mix(seed: u64, depth: u32, variant: u64) -> u64 {

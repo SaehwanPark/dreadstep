@@ -2061,11 +2061,12 @@ equipment, inventory legality, identification, or loot generation.
 
 The next bounded loot slice is now verified: seeded procedural floors bind the validated authored
 item catalog and place two ordered seed/depth-derived equipment choices, each with one closed affix,
-in the player inventory plus one deterministic ground equipment choice at the first enemy's
-position. Item identities, closed effects, affixes, common/magic/rare rarities, and placement are
-deterministic and visible through existing adapter projections. A follow-up bounded slice derives a
-stable magnitude of 1 or 2 for each closed affix from seed/depth without opening generic affix pools;
-richer ground-item distribution, identification, and richer generation remain future work.
+and one existing-effect consumable in the player inventory plus one deterministic ground equipment
+choice at the first enemy's position. Item identities, effects, affixes, common/magic/rare rarities,
+and placement are deterministic and visible through existing adapter projections. A follow-up
+bounded slice derives a stable magnitude of 1 or 2 for each closed affix from seed/depth without
+opening generic affix pools; richer ground-item distribution, identification, and richer generation
+remain future work.
 
 ### Implement
 
