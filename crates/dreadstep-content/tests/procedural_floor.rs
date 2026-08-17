@@ -23,13 +23,13 @@ fn identical_seed_and_depth_produce_identical_valid_worlds() {
 }
 
 #[test]
-fn procedural_floor_places_two_seeded_equipment_items_in_player_inventory() {
+fn procedural_floor_places_two_equipment_items_and_one_consumable_in_player_inventory() {
   let world = procedural_floor(7, 1).expect("generated floor should validate");
   let player = world
     .actor(ActorId::new(1))
     .expect("generated player should exist");
-  let [first, second] = player.inventory() else {
-    panic!("procedural floor should provide exactly two generated items");
+  let [first, second, consumable] = player.inventory() else {
+    panic!("procedural floor should provide two equipment items and one consumable");
   };
 
   for item in [first, second] {
@@ -39,6 +39,13 @@ fn procedural_floor_places_two_seeded_equipment_items_in_player_inventory() {
     assert!(item.affix().is_some());
   }
   assert_ne!(first.id(), second.id());
+  assert!(consumable.equipment_effect().is_none());
+  assert!(consumable.equipment_slot().is_none());
+  assert!(matches!(
+    consumable.effect(),
+    dreadstep_core::ItemEffect::Heal { .. } | dreadstep_core::ItemEffect::RestoreAmmunition { .. }
+  ));
+  assert!(consumable.affix().is_none());
 }
 
 #[test]

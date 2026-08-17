@@ -26,9 +26,10 @@ Workspace version `0.0.0`, protocol **v36**. Core owns deterministic combat, inv
 environmental rules, including one active weapon and one active armor slot plus typed item rarity
 and closed equipment affixes;
 protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors also bind the
-validated item catalog and provide two ordered deterministic generated equipment choices in the
-player inventory plus one ground equipment choice at the first enemy, all with bounded deterministic
-affix tiers. The default showcase is the NetHack-style terminal client. It journals each run and can
+validated item catalog and provide two ordered deterministic generated equipment choices plus one
+consumable in the player inventory, alongside one ground equipment choice at the first enemy; all
+equipment carries bounded deterministic affix tiers. The default showcase is the NetHack-style
+terminal client. It journals each run and can
 start an authored item fixture or a seeded procedural floor.
 
 Live terminal captures (plain text; the TTY client adds color):
