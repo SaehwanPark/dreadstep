@@ -84,6 +84,16 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Test shallow Common retention plus deep inventory and ground rarity floors, and keep
   progression policy in content before projection through adapters.
 
+## 2026-08-17 — Keep procedural affix progression bounded at depth
+
+- Context: Deep floors needed stronger generated equipment without opening a new affix vocabulary.
+- Symptom: Seeded 1–2 tiers could still leave a deep generated item at magnitude 1, weakening the
+  relationship between descent and build power.
+- Resolution: Reuse the existing typed affix amount and clamp the deep-floor tier to magnitude 2,
+  while preserving shallow seed variation and core saturating aggregation.
+- Prevention: Test shallow tier retention plus every deep inventory and ground affix, and keep the
+  depth policy in content rather than adapter or combat code.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon

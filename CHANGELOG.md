@@ -22,6 +22,9 @@ All notable contributor- and user-visible project changes are recorded here.
   at depth 3 and deeper are Magic or Rare, while shallow floors keep the existing Common/Magic/Rare
   mix.
 
+- Added a deterministic procedural affix floor for descent: generated equipment affixes at depth 3
+  and deeper have magnitude 2, while shallow floors retain seed-derived 1–2 tiers.
+
 - Added bounded deterministic procedural affix tiers. Generated melee, ranged, and mitigation
   affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
   magnitudes remain unchanged; generic affix pools and identification remain deferred.

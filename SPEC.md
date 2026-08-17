@@ -148,6 +148,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 6 slice: deterministic procedural ground-loot distribution |
 | 2026-08-17 | Milestone 6 slice: deterministic procedural loadout role diversity |
 | 2026-08-17 | Milestone 6 slice: deterministic procedural rarity depth floor |
+| 2026-08-17 | Milestone 6 slice: deterministic procedural affix depth floor |
 
 ## Present
 
@@ -170,8 +171,8 @@ deferred until a later visual-enhancement stage.
   procedural floors also place two ordered deterministic generated equipment choices with distinct
   closed effects and one deterministic consumable with rarity metadata and bounded potency in the
   player's inventory plus two deterministic ground equipment choices at the first two enemies from
-  the validated content catalog. At depth 3 and deeper, generated items have a deterministic Magic
-  or Rare rarity floor.
+  the validated content catalog. At depth 3 and deeper, generated items have deterministic Magic-or-Rare
+  rarity and magnitude-2 affix floors.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -210,13 +211,12 @@ deferred until a later visual-enhancement stage.
 
 The current slice is complete: generated floors provide two ordered equipment choices with distinct
 closed effects, one typed consumable, and two deterministic ground equipment choices. Each equipment
-item carries one closed
-affix whose bounded seed/depth-derived magnitude adds to the matching equipped combat stat while
+item carries one closed affix whose bounded seed/depth-derived magnitude adds to the matching equipped combat stat while
 preserving independent weapon/armor slots. The affix, tier, rarity, base effect, consumable potency,
 identity, consumable effect, and ordered ground placements derive from seed/depth and remain visible through
-core digests plus protocol, Bevy, and TUI projections. Deep floors enforce a Magic-or-Rare rarity
-floor while shallow floors retain the full mix. Affix pools, identification, broader ground-loot
-tables, and richer inventory actions remain deferred.
+core digests plus protocol, Bevy, and TUI projections. Deep floors enforce Magic-or-Rare rarity and
+magnitude-2 affix floors while shallow floors retain the full mix. Affix pools, identification,
+broader ground-loot tables, and richer inventory actions remain deferred.
 
 ## Future
 

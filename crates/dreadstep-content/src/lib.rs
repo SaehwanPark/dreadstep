@@ -410,7 +410,7 @@ fn procedural_loot(seed: u64, depth: u32, variant: u64) -> Item {
   let mixed = procedural_loot_mix(seed, depth, variant);
   let item_id = procedural_item_id(mixed, variant);
   let rarity = procedural_rarity(mixed, depth);
-  let affix_amount = Damage::new(1 + u16::try_from((mixed / 24) % 2).expect("affix tier fits"));
+  let affix_amount = procedural_affix_amount(mixed, depth);
   let role_seed = procedural_loot_mix(seed, depth, 0);
   let role = (role_seed / 6 + variant) % 4;
   let (item, affix) = match role {
@@ -467,6 +467,15 @@ fn procedural_consumable(seed: u64, depth: u32) -> Item {
 
 fn procedural_consumable_amount(mixed: u64) -> u16 {
   1 + u16::try_from((mixed / 48) % 2).expect("procedural consumable potency fits")
+}
+
+fn procedural_affix_amount(mixed: u64, depth: u32) -> Damage {
+  let tier = if depth >= 3 {
+    1
+  } else {
+    u16::try_from((mixed / 24) % 2).expect("affix tier fits")
+  };
+  Damage::new(1 + tier)
 }
 
 fn procedural_item_id(mixed: u64, variant: u64) -> ItemId {
