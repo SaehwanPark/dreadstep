@@ -124,6 +124,56 @@ fn generated_affix_amount_is_seeded_and_bounded() {
 }
 
 #[test]
+fn generated_consumable_potency_is_seeded_and_bounded() {
+  let ammunition_first = procedural_floor(0, 1)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[2]
+    .effect();
+  let ammunition_different_seed = procedural_floor(1, 1)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[2]
+    .effect();
+  let healing_first = procedural_floor(0, 2)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[2]
+    .effect();
+  let healing_different_seed = procedural_floor(1, 2)
+    .expect("generated floor should validate")
+    .actor(ActorId::new(1))
+    .expect("generated player should exist")
+    .inventory()[2]
+    .effect();
+
+  let potency = |effect| match effect {
+    dreadstep_core::ItemEffect::Heal { amount } => ("healing", amount.value()),
+    dreadstep_core::ItemEffect::RestoreAmmunition { amount } => ("ammunition", amount.value()),
+    other @ dreadstep_core::ItemEffect::None => {
+      panic!("expected a generated consumable effect, got {other:?}")
+    }
+  };
+  let (ammunition_kind, ammunition_first_potency) = potency(ammunition_first);
+  let (ammunition_different_kind, ammunition_different_seed_potency) =
+    potency(ammunition_different_seed);
+  let (healing_kind, healing_first_potency) = potency(healing_first);
+  let (healing_different_kind, healing_different_seed_potency) = potency(healing_different_seed);
+
+  assert_eq!(ammunition_kind, ammunition_different_kind);
+  assert_eq!(healing_kind, healing_different_kind);
+  assert!((1..=2).contains(&ammunition_first_potency));
+  assert!((1..=2).contains(&ammunition_different_seed_potency));
+  assert!((1..=2).contains(&healing_first_potency));
+  assert!((1..=2).contains(&healing_different_seed_potency));
+  assert_ne!(ammunition_first_potency, ammunition_different_seed_potency);
+  assert_ne!(healing_first_potency, healing_different_seed_potency);
+}
+
+#[test]
 fn seed_and_depth_change_the_generated_floor_without_invalidating_it() {
   let first = procedural_floor(7, 1).expect("generated floor should validate");
   let different_seed = procedural_floor(8, 1).expect("generated floor should validate");

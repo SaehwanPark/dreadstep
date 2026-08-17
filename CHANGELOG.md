@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added bounded deterministic procedural consumable potency. Generated healing and ammunition
+  consumables now derive a stable strength of 1 or 2 from floor seed/depth while preserving the
+  existing effect families, item order, commands, and protocol shape.
+
 - Added bounded deterministic procedural affix tiers. Generated melee, ranged, and mitigation
   affixes now derive a stable magnitude of 1 or 2 from the floor seed/depth while authored item
   magnitudes remain unchanged; generic affix pools and identification remain deferred.

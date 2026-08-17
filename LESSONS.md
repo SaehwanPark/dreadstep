@@ -38,6 +38,19 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
   saturating arithmetic, and add core, protocol, Bevy, and TUI assertions whenever a new affix
   changes item state or presentation.
 
+## 2026-08-17 — Derive procedural consumable potency from the effect mix
+
+- Context: Procedural floors now place an existing healing or ammunition consumable alongside
+  generated equipment choices.
+- Symptom: A fixed amount would make the consumable's seed/depth identity affect its label and
+  effect family but not its tactical value.
+- Resolution: Derive a bounded potency from the same deterministic mix used to choose the closed
+  effect, then construct the typed `HealingAmount` or `AmmunitionAmount` without widening the
+  effect enum or public command/protocol contract.
+- Prevention: Keep generated consumable effect and potency in one content helper, test reproducible
+  same-effect inputs with different strengths, and retain the core `UseItem` path as the only
+  effect application boundary.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon
