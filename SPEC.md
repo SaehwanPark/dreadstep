@@ -172,8 +172,8 @@ deferred until a later visual-enhancement stage.
   mitigation affixes aggregate with the equipped base effect using saturating arithmetic. Seeded
   procedural floors also place two ordered deterministic generated equipment choices with distinct
   closed effects and one deterministic consumable with rarity metadata and bounded potency in the
-  player's inventory plus two deterministic ground equipment choices at the first two enemies from
-  the validated content catalog. At depth 3 and deeper, generated items have deterministic Magic-or-Rare
+  player's inventory plus two deterministic ground equipment choices at the first two enemies and
+  one deterministic ground consumable at the third enemy from the validated content catalog. At depth 3 and deeper, generated items have deterministic Magic-or-Rare
   rarity and magnitude-2 affix floors; procedural consumables use potency 2 at the same depth.
   Deeper floors also select existing Pursuer, Kiter, Scavenger, and Zombie policies from the
   seed/depth while preserving the shallow authored roster.
@@ -214,7 +214,8 @@ deferred until a later visual-enhancement stage.
 ## Active
 
 The current slice is complete: generated floors provide two ordered equipment choices with distinct
-closed effects, one typed consumable, and two deterministic ground equipment choices. Each equipment
+closed effects, one typed consumable, two deterministic ground equipment choices, and one typed ground
+consumable. Each equipment
 item carries one closed affix whose bounded seed/depth-derived magnitude adds to the matching equipped combat stat while
 preserving independent weapon/armor slots. The affix, tier, rarity, base effect, consumable potency,
 identity, consumable effect, ordered ground placements, and deeper-floor enemy policies derive from seed/depth and remain visible through

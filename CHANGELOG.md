@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added one deterministic existing-effect consumable to procedural ground loot at the third enemy's
+  position. The two equipment drops remain unchanged; ground consumables retain typed potency,
+  rarity, identity, and the existing core pickup path.
+
 - Added deterministic deeper-floor enemy behavior variation. Seeded procedural floors retain the
   shallow Pursuer/Pursuer/Kiter fixture while depth 2+ selects existing Pursuer, Kiter, Scavenger,
   and Zombie policies from seed/depth without changing behavior semantics or adapter schemas.
