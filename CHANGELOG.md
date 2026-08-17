@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added deterministic deeper-floor enemy behavior variation. Seeded procedural floors retain the
+  shallow Pursuer/Pursuer/Kiter fixture while depth 2+ selects existing Pursuer, Kiter, Scavenger,
+  and Zombie policies from seed/depth without changing behavior semantics or adapter schemas.
+
 - Added bounded deterministic procedural consumable potency. Generated healing and ammunition
   consumables now derive a stable strength of 1 or 2 from floor seed/depth while preserving the
   existing effect families, item order, commands, and protocol shape.

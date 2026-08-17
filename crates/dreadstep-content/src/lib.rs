@@ -375,17 +375,21 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
         Position::new(1, 1),
         HitPoints::new(10),
       ),
-      Actor::with_hit_points(
+      Actor::with_melee_reach_and_behavior(
         ActorId::new(2),
         ActorKind::Enemy,
         Position::new(11, 1),
         enemy_hit_points,
+        MeleeReach::DEFAULT,
+        procedural_enemy_behavior(seed, depth, 0),
       ),
-      Actor::with_hit_points(
+      Actor::with_melee_reach_and_behavior(
         ActorId::new(3),
         ActorKind::Enemy,
         Position::new(11, 7),
         enemy_hit_points,
+        MeleeReach::DEFAULT,
+        procedural_enemy_behavior(seed, depth, 1),
       ),
       Actor::with_melee_reach_and_behavior(
         ActorId::new(4),
@@ -393,7 +397,7 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
         Position::new(1, 7),
         enemy_hit_points,
         MeleeReach::DEFAULT,
-        EnemyBehavior::Kiter,
+        procedural_enemy_behavior(seed, depth, 2),
       ),
     ],
   )
@@ -512,6 +516,23 @@ fn procedural_loot_mix(seed: u64, depth: u32, variant: u64) -> u64 {
     .wrapping_add(0xD1B5_4A32_D192_ED03)
     .rotate_left(17)
     .wrapping_mul(0xBF58_476D_1CE4_E5B9)
+}
+
+fn procedural_enemy_behavior(seed: u64, depth: u32, slot: u64) -> EnemyBehavior {
+  if depth < 2 {
+    return match slot {
+      0 | 1 => EnemyBehavior::Pursuer,
+      _ => EnemyBehavior::Kiter,
+    };
+  }
+
+  let mixed = procedural_loot_mix(seed, depth, 8 + slot);
+  match (mixed >> 32) % 4 {
+    0 => EnemyBehavior::Pursuer,
+    1 => EnemyBehavior::Kiter,
+    2 => EnemyBehavior::Scavenger,
+    _ => EnemyBehavior::Zombie,
+  }
 }
 
 fn procedural_partition_gap(seed: u64, depth: u32, partition_x: u32) -> u32 {

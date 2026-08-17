@@ -31,7 +31,8 @@ distinct closed effects plus one
 consumable with bounded deterministic potency in the player inventory, alongside two ground
 equipment choices at the first two enemies; depth 3+ generated items are at least Magic, and all
 equipment carries bounded deterministic affix tiers, with depth 3+ affixes at magnitude 2 and
-consumables at potency 2. The
+consumables at potency 2, and deeper floors vary the existing Pursuer, Kiter, Scavenger, and Zombie
+enemy policies deterministically. The
 default showcase is the NetHack-style
 terminal client. It journals each run and can
 start an authored item fixture or a seeded procedural floor.

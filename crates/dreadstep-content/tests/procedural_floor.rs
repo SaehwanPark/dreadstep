@@ -381,6 +381,50 @@ fn generated_actor_roster_is_stable_and_walkable() {
 }
 
 #[test]
+fn procedural_deeper_floors_vary_enemy_behaviors_deterministically() {
+  let shallow = procedural_floor(7, 1).expect("generated floor should validate");
+  let shallow_behaviors: Vec<_> = shallow
+    .actors()
+    .skip(1)
+    .map(dreadstep_core::Actor::enemy_behavior)
+    .collect();
+  assert_eq!(
+    shallow_behaviors,
+    vec![
+      EnemyBehavior::Pursuer,
+      EnemyBehavior::Pursuer,
+      EnemyBehavior::Kiter
+    ]
+  );
+
+  let repeated = procedural_floor(7, 3).expect("generated floor should validate");
+  let same = procedural_floor(7, 3).expect("generated floor should validate");
+  assert_eq!(repeated.digest(), same.digest());
+
+  let rosters: Vec<Vec<_>> = (0..8)
+    .map(|seed| {
+      procedural_floor(seed, 3)
+        .expect("generated floor should validate")
+        .actors()
+        .skip(1)
+        .map(dreadstep_core::Actor::enemy_behavior)
+        .collect()
+    })
+    .collect();
+  assert!(
+    rosters.windows(2).any(|pair| pair[0] != pair[1]),
+    "deeper procedural floors should vary the enemy roster by seed"
+  );
+  assert!(
+    rosters
+      .iter()
+      .flatten()
+      .any(|behavior| matches!(behavior, EnemyBehavior::Scavenger | EnemyBehavior::Zombie)),
+    "deeper procedural floors should expose a non-basic existing behavior"
+  );
+}
+
+#[test]
 fn every_generated_floor_tile_is_reachable_from_the_player() {
   for seed in 0..32 {
     for depth in [0, 1, 3, 6] {
