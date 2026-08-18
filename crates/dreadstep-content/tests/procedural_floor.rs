@@ -70,7 +70,7 @@ fn procedural_loadout_choices_have_distinct_equipment_effects() {
 }
 
 #[test]
-fn procedural_floor_places_two_seeded_equipment_items_on_the_ground() {
+fn procedural_floor_places_seeded_ground_items_in_row_major_order() {
   let world = procedural_floor(7, 1).expect("generated floor should validate");
   let [first_stack, consumable_stack, second_stack] = world.ground_items() else {
     panic!("procedural floor should provide two equipment stacks and one consumable stack");
@@ -293,7 +293,31 @@ fn generated_ground_consumable_keeps_the_depth_potency_floor() {
   };
 
   assert!((1..=2).contains(&ground_potency(0, 1)));
-  assert_eq!(ground_potency(0, 3), 2);
+  assert_eq!(ground_potency(3, 3), 2);
+}
+
+#[test]
+fn deeper_ground_loot_table_varies_between_existing_item_categories() {
+  let categories: Vec<_> = (0..8)
+    .map(|seed| {
+      let world = procedural_floor(seed, 3).expect("generated floor should validate");
+      let stack = world
+        .ground_items()
+        .iter()
+        .find(|stack| stack.position() == Position::new(1, 7))
+        .expect("third enemy should receive a generated ground item");
+      stack.items()[0].equipment_slot().is_some()
+    })
+    .collect();
+
+  assert!(
+    categories.contains(&true),
+    "deeper table should produce equipment"
+  );
+  assert!(
+    categories.contains(&false),
+    "deeper table should produce an existing-effect consumable"
+  );
 }
 
 #[test]

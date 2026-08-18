@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added deterministic deeper procedural ground-loot table variation: the third enemy's existing
+  ground item may be equipment or an existing-effect consumable from depth 2 onward, while the
+  depth-1 consumable fixture and typed core drop path remain unchanged.
+
 - Added one deterministic existing-effect consumable to procedural ground loot at the third enemy's
   position. The two equipment drops remain unchanged; ground consumables retain typed potency,
   rarity, identity, and the existing core pickup path.

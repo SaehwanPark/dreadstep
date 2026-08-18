@@ -2063,9 +2063,11 @@ The next bounded loot slice is now verified: seeded procedural floors bind the v
 item catalog and place two ordered seed/depth-derived equipment choices with distinct closed effects,
 each with one closed affix,
 and one existing-effect consumable in the player inventory plus two deterministic ground equipment
-choices at the first two enemies' positions and one existing-effect ground consumable at the third
-enemy's position. Item identities, effects, affixes, common/magic/rare
-rarities, and ordered placement are deterministic and visible through existing adapter projections.
+choices at the first two enemies' positions and one existing-effect ground item selected from the
+equipment/consumable table at the third enemy's position; depth 1 retains the ground consumable
+fixture. Item identities, effects, affixes, common/magic/rare
+rarities, category selection, and ordered placement are deterministic and visible through existing
+adapter projections.
 Follow-up bounded slices derive stable magnitudes of 1 or 2 for each closed equipment affix and each
 procedural consumable from seed/depth without opening generic affix pools; identification and richer
 generation remain future work. Generated items at depth 3 and deeper now enforce Magic-or-Rare

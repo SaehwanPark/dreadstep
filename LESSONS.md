@@ -125,6 +125,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Prevention: Test the sorted third stack, non-equipment properties, and shallow/deep potency floors;
   keep new ground loot within the existing core ownership and pickup boundary.
 
+## 2026-08-17 — Vary deeper ground loot through existing constructors
+
+- Context: The first procedural ground-loot slice always placed a consumable at the third enemy,
+  leaving deeper floors with no category choice.
+- Symptom: Adding a second item-generation path would duplicate rarity, identity, or core ownership
+  rules and could drift from adapter-visible ground-stack behavior.
+- Resolution: Select between the existing equipment and consumable constructors from the same
+  seed/depth mix, with an explicit shallow compatibility branch for the depth-1 showcase.
+- Prevention: Test both categories across deeper seeds, keep all drops on core `give_item`/`drop_item`,
+  and preserve the existing depth rarity, affix, and potency-floor assertions.
+
 ## 2026-08-15 — Reconcile layout spacing changes with screenshot goldens and README text blocks
 
 - Context: When adding visual section separators (blank lines) between the message window, dungeon
