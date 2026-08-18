@@ -469,6 +469,15 @@ fn procedural_consumable(seed: u64, depth: u32, variant: u64) -> Item {
   Item::with_effect(item_id, definition, effect).with_rarity(rarity)
 }
 
+fn procedural_ground_loot(seed: u64, depth: u32, variant: u64) -> Item {
+  let mixed = procedural_loot_mix(seed, depth, variant);
+  if depth < 2 || (mixed >> 32).is_multiple_of(3) {
+    procedural_consumable(seed, depth, variant)
+  } else {
+    procedural_loot(seed, depth, variant)
+  }
+}
+
 fn procedural_consumable_amount(mixed: u64, depth: u32) -> u16 {
   if depth >= 3 {
     2
@@ -556,9 +565,9 @@ pub fn procedural_floor(seed: u64, depth: u32) -> Result<WorldState, ContentErro
   let second_ground_item = procedural_loot(seed, depth, 4);
   world.give_item(ActorId::new(3), second_ground_item)?;
   world.drop_item(ActorId::new(3), second_ground_item.id())?;
-  let ground_consumable = procedural_consumable(seed, depth, 5);
-  world.give_item(ActorId::new(4), ground_consumable)?;
-  world.drop_item(ActorId::new(4), ground_consumable.id())?;
+  let third_ground_item = procedural_ground_loot(seed, depth, 5);
+  world.give_item(ActorId::new(4), third_ground_item)?;
+  world.drop_item(ActorId::new(4), third_ground_item.id())?;
   Ok(world)
 }
 
