@@ -35,7 +35,8 @@ consumables at potency 2, and deeper floors vary the existing Pursuer, Kiter, Sc
 enemy policies deterministically. The
 default showcase is the NetHack-style
 terminal client. It journals each run and can
-start an authored item fixture or a seeded procedural floor.
+start an authored item fixture or a seeded procedural floor. Its inventory overlay also gives
+deterministic action guidance for the selected item by reading the core legal-command projection.
 
 Live terminal captures (plain text; the TTY client adds color):
 
@@ -96,7 +97,7 @@ hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
 These frames are generated from the renderer and committed under `screenshots/`. They are
 captures of the current client, not concept art.
 
-- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, authored melee-damage, ranged-damage, and damage-reduction equipment (including trap mitigation), deterministic inventory comparison UX, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`,
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, authored melee-damage, ranged-damage, and damage-reduction equipment (including trap mitigation), deterministic inventory comparison and selected-item action guidance UX, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`,
   and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).

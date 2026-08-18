@@ -85,7 +85,7 @@ when an agent needs both a readable frame and typed legal actions.
 | --- | --- | --- | --- |
 | Move / wait / enemy attack/ranged/investigate/chase; named Kiter/Brute/Frostcaster/Blocker/Scavenger/Zombie intent | map, scheduler, behavior + intent, messages | command + event + frames | yes |
 | Attack / damage / death | glyphs, messages, terminal status | ordered `attacked`/`died` events | yes |
-| Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped rows, rarity, and affix labels | item/reload/throw events | yes for authored fixture |
+| Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped rows, rarity, affix labels, and selected-item legal action guidance | item/reload/throw events | yes for authored fixture |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise | distinct glyphs plus status duration | typed status and terrain events | yes |
 | Presentation field of view | radius-3 cardinal reveal; unseen cells are spaces | complete world remains in core/journal state | no display required |
 | Opt-in procedural floor and `N` advancement | seeded 13×9 floor, deterministic deeper enemy policies, two distinct inventory rarity/affix-tier choices, one bounded-potency inventory consumable, two ground equipment choices, and a deterministic deeper equipment-or-consumable table choice (depth 1 keeps the typed consumable fixture), depth-3+ Magic/Rare, magnitude-2, and potency-2 floors, and next-depth restart after victory | `run_started` depth and `floor_advanced` | no; smoke keeps item fixture |
@@ -113,7 +113,7 @@ fail TUI compilation or smoke coverage until it is documented and mapped.
   equip/unequip, consume, pickup, drop, reload, restart, procedural `N`, and enemy delay
   work as documented;
 - `yubn` prints `You cannot move diagonally.` and does not call core;
-- HUD shows HP/position, scheduler, inventory, intent, messages, and controls;
+- HUD shows HP/position, scheduler, inventory, selected-item action guidance, intent, messages, and controls;
 - Escape and Ctrl-c leave a final shutdown record and replay export.
 
 ## Deferred pixel 2D

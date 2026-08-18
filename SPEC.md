@@ -152,6 +152,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 6 slice: deterministic procedural consumable depth floor |
 | 2026-08-17 | Milestone 5/6 slice: deterministic procedural enemy behavior variation |
 | 2026-08-17 | Milestone 6 slice: deterministic deeper ground-loot table variation |
+| 2026-08-17 | Milestone 6 slice: deterministic terminal inventory action guidance |
 
 ## Present
 
@@ -211,6 +212,8 @@ deferred until a later visual-enhancement stage.
   intent/controls sections. Semantic color styling accents header, message events, health bars,
   ammo/status/outcome, inventory items, and enemy intent. Display-free `--smoke`, JSONL `frame`
   records, replay export, `--print-frames`, and README screenshot goldens are adapter effects.
+  Its inventory overlay also lists only the selected item's currently legal, meaningful actions
+  (equip, use, throw, drop, or unequip) without adding a second command path.
   Pixel 2D Bevy playtesting is deferred.
 
 ## Active
@@ -225,7 +228,9 @@ identity, consumable effect, ordered ground placements, deeper ground-loot categ
 deeper-floor enemy policies derive from seed/depth and remain visible through
 core digests plus protocol, Bevy, and TUI projections. Deep floors enforce Magic-or-Rare rarity,
 magnitude-2 affix, and potency-2 consumable floors while shallow floors retain the full mix. Affix
-pools, identification, broader ground-loot families, and richer inventory actions remain deferred.
+pools, identification, broader ground-loot families, and broader inventory actions remain deferred.
+The terminal inventory overlay now explains the selected item's legal action set while keeping
+command legality authoritative in core.
 
 ## Future
 

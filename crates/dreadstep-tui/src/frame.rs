@@ -1,11 +1,12 @@
 //! Pure NetHack-style frame layout. No terminal I/O lives here.
 
-use dreadstep_core::{ActorKind, EquipmentSlot, Item, RunOutcome, StatusKind};
+use dreadstep_core::{ActorKind, RunOutcome, StatusKind};
 
 use crate::glyphs::{
   Cell, CellColor, actor_cell, behavior_name, ground_item_cell, push_styled, tile_cell, unseen_cell,
 };
 use crate::input::{Overlay, UiState};
+use crate::inventory::{equipment_state_label, inventory_overlay_lines};
 use crate::item_labels::item_kind_label_and_color;
 use crate::kinds::{command_name, outcome_name};
 use crate::session::{PLAYER, Session};
@@ -291,14 +292,6 @@ fn inventory_status_line(session: &Session, ui: &UiState) -> Vec<Cell> {
   cells
 }
 
-fn equipment_state_label(item: &Item) -> &'static str {
-  match item.equipment_slot() {
-    Some(EquipmentSlot::Weapon) => " (wielded)",
-    Some(EquipmentSlot::Armor) => " (worn)",
-    None => " (equipped)",
-  }
-}
-
 fn health_bar(hp: u16, max_hp: u16) -> String {
   if max_hp == 0 {
     return format!("[{}]", " ".repeat(HEALTH_BAR_WIDTH));
@@ -482,86 +475,6 @@ fn help_overlay_lines() -> Vec<Vec<Cell>> {
     .collect()
 }
 
-fn inventory_overlay_lines(session: &Session, ui: &UiState) -> Vec<Vec<Cell>> {
-  let mut lines = Vec::new();
-  let mut header = Vec::new();
-  push_styled(&mut header, "Inventory", CellColor::WhiteBold);
-  push_styled(
-    &mut header,
-    " (Tab cycles, compare, e equip, q use, x drop, i close):",
-    CellColor::Gray,
-  );
-  lines.push(header);
-
-  let Some(player) = session.actor(PLAYER) else {
-    let mut row = Vec::new();
-    push_styled(&mut row, "No player.", CellColor::Default);
-    lines.push(row);
-    return lines;
-  };
-  if player.inventory().is_empty() {
-    let mut row = Vec::new();
-    push_styled(&mut row, "Your pack is empty.", CellColor::Default);
-    lines.push(row);
-  } else {
-    for item in player.inventory() {
-      let mut row = Vec::new();
-      let is_selected = Some(item.id()) == ui.selected_item();
-      let is_equipped = player.is_item_equipped(item.id());
-      if is_selected {
-        push_styled(&mut row, "* ", CellColor::Yellow);
-      } else {
-        push_styled(&mut row, "  ", CellColor::Default);
-      }
-      let (label_text, item_color) = item_kind_label_and_color(item);
-      let id = item.id().value();
-      let full_label = format!("{id}) {label_text}");
-      let display_color = if is_selected {
-        CellColor::WhiteBold
-      } else {
-        item_color
-      };
-      push_styled(&mut row, &full_label, display_color);
-      if is_equipped {
-        push_styled(&mut row, equipment_state_label(item), CellColor::Green);
-      }
-      lines.push(row);
-    }
-    let mut comparison = Vec::new();
-    push_styled(&mut comparison, "Compare: ", CellColor::Gray);
-    let selected = ui
-      .selected_item()
-      .and_then(|selected| player.inventory().iter().find(|item| item.id() == selected));
-    let equipped = player
-      .equipped_item()
-      .and_then(|equipped| player.inventory().iter().find(|item| item.id() == equipped));
-    match (selected, equipped) {
-      (Some(selected), Some(equipped)) if selected.id() == equipped.id() => {
-        push_styled(
-          &mut comparison,
-          "selected item is wielded",
-          CellColor::Green,
-        );
-      }
-      (Some(selected), Some(equipped)) => {
-        let (selected_label, selected_color) = item_kind_label_and_color(selected);
-        let (equipped_label, equipped_color) = item_kind_label_and_color(equipped);
-        push_styled(&mut comparison, &selected_label, selected_color);
-        push_styled(&mut comparison, " vs ", CellColor::Gray);
-        push_styled(&mut comparison, &equipped_label, equipped_color);
-      }
-      (Some(selected), None) => {
-        let (selected_label, selected_color) = item_kind_label_and_color(selected);
-        push_styled(&mut comparison, &selected_label, selected_color);
-        push_styled(&mut comparison, " vs nothing", CellColor::Gray);
-      }
-      (None, _) => push_styled(&mut comparison, "no selection", CellColor::Default),
-    }
-    lines.push(comparison);
-  }
-  lines
-}
-
 const HELP_TEXT: &str = "\
 Commands (NetHack-inspired; Dreadstep is cardinal-only)
  hjkl or arrows or WASD   move (bump to attack or open)
@@ -727,6 +640,35 @@ mod tests {
     assert!(
       plain.contains("Compare: reach2 vs nothing"),
       "comparison missing:\n{plain}"
+    );
+  }
+
+  #[test]
+  fn inventory_overlay_lists_legal_actions_for_selected_equipment() {
+    let session = Session::start_item_run(7).expect("item showcase");
+    let mut ui = UiState::new();
+    ui.select_default_item(&session);
+    ui.toggle_inventory();
+
+    let plain = render_frame(&session, &ui).plain();
+    assert!(
+      plain.contains("Actions: e equip, x drop"),
+      "selected equipment actions missing:\n{plain}"
+    );
+  }
+
+  #[test]
+  fn inventory_overlay_lists_use_and_drop_for_selected_consumable() {
+    let session = Session::start_item_run(7).expect("item showcase");
+    let mut ui = UiState::new();
+    ui.select_default_item(&session);
+    ui.select_inventory(&session, true);
+    ui.toggle_inventory();
+
+    let plain = render_frame(&session, &ui).plain();
+    assert!(
+      plain.contains("Actions: q use, x drop"),
+      "selected consumable actions missing:\n{plain}"
     );
   }
 
