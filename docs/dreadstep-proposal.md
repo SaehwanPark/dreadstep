@@ -2044,6 +2044,11 @@ typed-effect label is shown against the currently equipped item or an explicit e
 This is presentation-only; rarity, generated loot, affixes, and richer comparison metadata remain
 future work.
 
+The next bounded inventory UX slice is also verified: the overlay lists the selected item's
+currently legal, meaningful actions (`e` equip, `q` use, `t` throw, `x` drop, or `T` unequip) by
+reading core legal-command evidence. It does not create adapter-owned commands or change item
+legality; broader inventory actions and identification remain future work.
+
 The current preparation slice additionally projects a typed `weapon` or `armor` role for every
 equipment item in protocol snapshots, Bevy JSON, and terminal labels. The role is derived from the
 closed effect set and carries no multi-slot occupancy rules; generated loot, affixes, and richer

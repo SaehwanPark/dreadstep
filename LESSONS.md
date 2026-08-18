@@ -26,6 +26,17 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
   keep compiling without import-path churn; isolate complex multi-archetype selection policies into cohesive submodule helpers.
 
+## 2026-08-17 — Derive terminal inventory guidance from legal commands
+
+- Context: The inventory overlay needed to help players choose an action for the selected item
+  without becoming a second source of command legality.
+- Symptom: A static list suggested equipment actions for consumables and could drift from the
+  scheduled actor's actual legal commands.
+- Resolution: Filter the selected item through `Session::legal_commands`, retain only its matching
+  equip/use/throw/drop/unequip commands, and keep the projection presentation-only.
+- Prevention: Whenever inventory controls expand, test at least one equipment and one consumable,
+  derive labels from core legal evidence, and keep new actions in the existing input mapping.
+
 ## 2026-08-17 — Aggregate closed affixes at the equipment boundary
 
 - Context: Procedural loot needed a first meaningful affix without opening a generic stat system.

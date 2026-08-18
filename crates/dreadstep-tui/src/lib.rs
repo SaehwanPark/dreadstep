@@ -10,6 +10,7 @@ mod args;
 mod frame;
 mod glyphs;
 mod input;
+mod inventory;
 mod item_labels;
 mod journal;
 mod kinds;
