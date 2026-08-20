@@ -1,7 +1,9 @@
 //! Seeded procedural-floor content invariants.
 
 use dreadstep_content::{procedural_floor, procedural_floor_definition};
-use dreadstep_core::{ActorId, ActorKind, EnemyBehavior, ItemRarity, Position, Tile};
+use dreadstep_core::{
+  ActorId, ActorKind, EnemyBehavior, ItemRarity, Position, ThrowableEffect, Tile,
+};
 
 #[test]
 fn identical_seed_and_depth_produce_identical_valid_worlds() {
@@ -514,4 +516,44 @@ fn every_generated_floor_tile_is_reachable_from_the_player() {
       assert_eq!(visited.len(), floor_count, "seed={seed}, depth={depth}");
     }
   }
+}
+
+#[test]
+fn deeper_procedural_ground_loot_can_generate_throwable_frost_flask() {
+  let shallow = procedural_floor(7, 1).expect("generated floor should validate");
+  let shallow_stacks = shallow.ground_items();
+  assert_eq!(shallow_stacks.len(), 3);
+  let shallow_consumable = shallow_stacks[1]
+    .items()
+    .first()
+    .expect("ground consumable exists");
+  assert!(shallow_consumable.throwable_effect().is_none());
+
+  let mut found_throwable = false;
+  for seed in 0..64 {
+    for depth in [2, 3, 4, 5] {
+      let world = procedural_floor(seed, depth).expect("generated floor should validate");
+      let stacks = world.ground_items();
+      for stack in stacks {
+        for item in stack.items() {
+          if item.throwable_effect() == Some(ThrowableEffect::Chill) {
+            found_throwable = true;
+            assert_eq!(item.definition().value(), 5);
+            assert!(item.equipment_slot().is_none());
+            assert!(item.affix().is_none());
+            if depth >= 3 {
+              assert!(matches!(
+                item.rarity(),
+                ItemRarity::Magic | ItemRarity::Rare
+              ));
+            }
+          }
+        }
+      }
+    }
+  }
+  assert!(
+    found_throwable,
+    "deeper procedural ground loot should generate throwable frost flask"
+  );
 }

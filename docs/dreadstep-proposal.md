@@ -2069,7 +2069,7 @@ item catalog and place two ordered seed/depth-derived equipment choices with dis
 each with one closed affix,
 and one existing-effect consumable in the player inventory plus two deterministic ground equipment
 choices at the first two enemies' positions and one existing-effect ground item selected from the
-equipment/consumable table at the third enemy's position; depth 1 retains the ground consumable
+equipment, consumable, or throwable Frost Flask table at the third enemy's position; depth 1 retains the ground consumable
 fixture. Item identities, effects, affixes, common/magic/rare
 rarities, category selection, and ordered placement are deterministic and visible through existing
 adapter projections.
@@ -2079,7 +2079,8 @@ generation remain future work. Generated items at depth 3 and deeper now enforce
 rarity, magnitude-2 affix, and potency-2 consumable floors so descent increases minimum loot quality
 without changing the closed rarity, affix, or effect sets. Deeper procedural floors also vary the
 existing Pursuer, Kiter, Scavenger, and Zombie policies from seed/depth while retaining the shallow
-showcase roster.
+showcase roster. Deeper ground utility loot now also samples throwable Frost Flasks from the complete
+validated item catalog.
 
 ### Implement
 

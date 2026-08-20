@@ -469,10 +469,30 @@ fn procedural_consumable(seed: u64, depth: u32, variant: u64) -> Item {
   Item::with_effect(item_id, definition, effect).with_rarity(rarity)
 }
 
+fn procedural_throwable(seed: u64, depth: u32, variant: u64) -> Item {
+  let mixed = procedural_loot_mix(seed, depth, variant);
+  let item_id = procedural_item_id(mixed, variant);
+  let rarity = procedural_rarity(mixed, depth);
+  Item::with_throwable_effect(item_id, ItemDefinitionId::new(5), ThrowableEffect::Chill)
+    .with_rarity(rarity)
+}
+
+fn procedural_utility_loot(seed: u64, depth: u32, variant: u64) -> Item {
+  if depth < 2 {
+    return procedural_consumable(seed, depth, variant);
+  }
+  let mixed = procedural_loot_mix(seed, depth, variant);
+  if (mixed >> 36).is_multiple_of(3) {
+    procedural_throwable(seed, depth, variant)
+  } else {
+    procedural_consumable(seed, depth, variant)
+  }
+}
+
 fn procedural_ground_loot(seed: u64, depth: u32, variant: u64) -> Item {
   let mixed = procedural_loot_mix(seed, depth, variant);
   if depth < 2 || (mixed >> 32).is_multiple_of(3) {
-    procedural_consumable(seed, depth, variant)
+    procedural_utility_loot(seed, depth, variant)
   } else {
     procedural_loot(seed, depth, variant)
   }

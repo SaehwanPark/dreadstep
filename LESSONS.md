@@ -26,6 +26,19 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
   keep compiling without import-path churn; isolate complex multi-archetype selection policies into cohesive submodule helpers.
 
+## 2026-08-17 — Include closed throwable utilities in procedural loot tables
+
+- Context: The item catalog defined throwable Frost Flasks alongside consumables and equipment, but
+  procedural generation previously sampled only equipment and consumable constructors.
+- Symptom: Players on procedural floors could never encounter or use throwable items despite full core
+  and adapter support for `ThrowItem` and `ThrowableEffect::Chill`.
+- Resolution: Route deeper utility ground drops through a procedural utility constructor that samples
+  Frost Flasks alongside healing and ammunition consumables, while preserving the depth-1 consumable
+  fixture and core-owned `give_item`/`drop_item` pipeline.
+- Prevention: When new item effects or categories enter the validated content catalog, integrate them
+  into procedural generation with explicit shallow compatibility branches and test their presence and
+  rarity floors at depth.
+
 ## 2026-08-17 — Derive terminal inventory guidance from legal commands
 
 - Context: The inventory overlay needed to help players choose an action for the selected item

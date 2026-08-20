@@ -153,6 +153,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 5/6 slice: deterministic procedural enemy behavior variation |
 | 2026-08-17 | Milestone 6 slice: deterministic deeper ground-loot table variation |
 | 2026-08-17 | Milestone 6 slice: deterministic terminal inventory action guidance |
+| 2026-08-17 | Milestone 6 slice: deterministic procedural throwable ground loot |
 
 ## Present
 
@@ -175,8 +176,9 @@ deferred until a later visual-enhancement stage.
   procedural floors also place two ordered deterministic generated equipment choices with distinct
   closed effects and one deterministic consumable with rarity metadata and bounded potency in the
   player's inventory plus two deterministic ground equipment choices at the first two enemies and
-  one deterministic ground item selected from the existing equipment/consumable table at the third
-  enemy from the validated content catalog. Depths below 2 retain the consumable fixture. At depth 3 and deeper, generated items have deterministic Magic-or-Rare
+  one deterministic ground item selected from the equipment, consumable, or throwable Frost Flask
+  table at the third enemy from the validated content catalog. Depths below 2 retain the consumable
+  fixture. At depth 3 and deeper, generated items have deterministic Magic-or-Rare
   rarity and magnitude-2 affix floors; procedural consumables use potency 2 at the same depth.
   Deeper floors also select existing Pursuer, Kiter, Scavenger, and Zombie policies from the
   seed/depth while preserving the shallow authored roster.
@@ -220,7 +222,7 @@ deferred until a later visual-enhancement stage.
 
 The current slice is complete: generated floors provide two ordered equipment choices with distinct
 closed effects, one typed consumable, two deterministic ground equipment choices, and a third ground
-item selected from the existing equipment/consumable table. Depth 1 retains the typed ground
+item selected from the equipment, consumable, or throwable Frost Flask table. Depth 1 retains the typed ground
 consumable fixture. Each equipment
 item carries one closed affix whose bounded seed/depth-derived magnitude adds to the matching equipped combat stat while
 preserving independent weapon/armor slots. The affix, tier, rarity, base effect, consumable potency,
@@ -229,7 +231,7 @@ deeper-floor enemy policies derive from seed/depth and remain visible through
 core digests plus protocol, Bevy, and TUI projections. Deep floors enforce Magic-or-Rare rarity,
 magnitude-2 affix, and potency-2 consumable floors while shallow floors retain the full mix. Affix
 pools, identification, broader ground-loot families, and broader inventory actions remain deferred.
-The terminal inventory overlay now explains the selected item's legal action set while keeping
+The terminal inventory overlay explains the selected item's legal action set while keeping
 command legality authoritative in core.
 
 ## Future
