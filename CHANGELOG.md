@@ -6,6 +6,11 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added deterministic procedural throwable ground loot: the third enemy's ground utility loot may
+  generate a throwable Frost Flask (`ThrowableEffect::Chill`) from depth 2 onward, completing
+  integration of all 7 authored catalog item definitions across procedural dungeon generation while
+  preserving the depth-1 consumable fixture and core-owned pickup/drop rules.
+
 - Added deterministic terminal inventory action guidance. The inventory overlay now lists only
   currently legal, meaningful actions for the selected item while keeping core legal-command
   discovery authoritative.
