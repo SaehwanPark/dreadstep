@@ -461,7 +461,13 @@ pub(crate) fn run_smoke(mut runtime: PresentationRuntime, journal: JournalHandle
   ) {
     failed = true;
   }
-  if export_replay(&runtime, &journal).is_err() {
+  if export_replay(
+    &runtime,
+    &journal,
+    dreadstep_protocol::ReplayScenario::SmokeFixture,
+  )
+  .is_err()
+  {
     failed = true;
     let _ = record_session(
       &mut session,

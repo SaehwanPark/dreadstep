@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 use crate::frame::{TextFrame, render_frame};
 use crate::input::UiState;
-use crate::journal::{Journal, JournalError, export_replay};
+use crate::journal::{Journal, JournalError, export_replay, export_replay_with_scenario};
 use crate::kinds::{command_name, command_value, event_name, outcome_name};
 use crate::messages::format_event;
 use crate::session::{PLAYER, Scenario, Session};
@@ -301,6 +301,14 @@ impl Play {
   /// Writes the sibling replay export.
   pub fn export_replay(&self) -> Result<std::path::PathBuf, String> {
     export_replay(&self.session, &self.journal)
+  }
+
+  /// Writes the replay export with an explicit diagnostic scenario label.
+  pub fn export_replay_as(
+    &self,
+    scenario: dreadstep_protocol::ReplayScenario,
+  ) -> Result<std::path::PathBuf, String> {
+    export_replay_with_scenario(&self.session, &self.journal, scenario)
   }
 
   /// Finalizes the journal with shutdown evidence.

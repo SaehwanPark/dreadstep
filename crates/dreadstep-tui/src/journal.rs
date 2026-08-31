@@ -9,11 +9,8 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
-use crate::kinds::{command_value, outcome_name};
 use crate::session::Session;
-
-/// Replay export schema version. This is evidence, not a playback contract.
-pub const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
+use dreadstep_protocol::{ReplayExport, ReplayScenario};
 
 /// A flushed, create-new JSONL run journal.
 #[derive(Debug)]
@@ -120,6 +117,19 @@ impl std::error::Error for JournalError {}
 ///
 /// Returns a string when a unique filename cannot be allocated or written.
 pub fn export_replay(session: &Session, journal: &Journal) -> Result<PathBuf, String> {
+  let scenario = match session.scenario() {
+    crate::session::Scenario::ItemShowcase => ReplayScenario::ItemShowcase,
+    crate::session::Scenario::Procedural { depth } => ReplayScenario::Procedural { depth },
+  };
+  export_replay_with_scenario(session, journal, scenario)
+}
+
+/// Writes a replay export using an explicit diagnostic scenario label.
+pub fn export_replay_with_scenario(
+  session: &Session,
+  journal: &Journal,
+  scenario: ReplayScenario,
+) -> Result<PathBuf, String> {
   let journal_path = journal.path();
   let stem = journal_path
     .file_stem()
@@ -128,18 +138,19 @@ pub fn export_replay(session: &Session, journal: &Journal) -> Result<PathBuf, St
   let directory = journal_path
     .parent()
     .ok_or_else(|| "run journal path has no parent directory".to_string())?;
-  let export = json!({
-    "schema_version": REPLAY_EXPORT_SCHEMA_VERSION,
-    "seed": session.seed(),
-    "commands": session
+  let export = ReplayExport::new(
+    session.seed(),
+    scenario,
+    session
       .replay_commands()
       .iter()
       .copied()
-      .map(command_value)
-      .collect::<Vec<_>>(),
-    "replay_digest": session.replay_digest().value(),
-    "outcome": outcome_name(session.outcome()),
-  });
+      .map(dreadstep_protocol::CommandRequest::from)
+      .collect(),
+    dreadstep_protocol::StateDigest::new(session.replay_digest().value()),
+    dreadstep_protocol::StateDigest::new(session.digest().value()),
+    session.outcome().into(),
+  );
   for counter in 0_u32..10_000 {
     let suffix = if counter == 0 {
       String::new()

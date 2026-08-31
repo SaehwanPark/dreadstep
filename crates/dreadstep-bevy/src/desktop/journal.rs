@@ -10,8 +10,9 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use serde_json::{Value, json};
 
 use super::REPLAY_EXPORT_SCHEMA_VERSION;
-use super::format::{command_value, outcome_name};
+use super::format::outcome_name;
 use crate::PresentationRuntime;
+use dreadstep_protocol::{ReplayExport, ReplayScenario};
 
 pub(crate) type JournalHandle = Arc<Mutex<Journal>>;
 
@@ -117,24 +118,30 @@ pub(crate) fn journal_path(journal: &JournalHandle) -> PathBuf {
   guard.path().to_path_buf()
 }
 
-pub(crate) fn replay_export_value(runtime: &PresentationRuntime) -> Value {
-  json!({
-    "schema_version": REPLAY_EXPORT_SCHEMA_VERSION,
-    "seed": runtime.seed(),
-    "commands": runtime
+pub(crate) fn replay_export_value(
+  runtime: &PresentationRuntime,
+  scenario: ReplayScenario,
+) -> Value {
+  let export = ReplayExport::new(
+    runtime.seed(),
+    scenario,
+    runtime
       .replay_commands()
       .iter()
       .copied()
-      .map(command_value)
-      .collect::<Vec<_>>(),
-    "replay_digest": runtime.replay_digest().value(),
-    "outcome": outcome_name(runtime.snapshot().outcome()),
-  })
+      .map(dreadstep_protocol::CommandRequest::from)
+      .collect(),
+    dreadstep_protocol::StateDigest::new(runtime.replay_digest().value()),
+    dreadstep_protocol::StateDigest::new(runtime.snapshot().digest().value()),
+    runtime.snapshot().outcome().into(),
+  );
+  serde_json::to_value(export).expect("replay export is serializable")
 }
 
 pub(crate) fn export_replay(
   runtime: &PresentationRuntime,
   journal: &JournalHandle,
+  scenario: ReplayScenario,
 ) -> Result<PathBuf, String> {
   let journal_path = journal_path(journal);
   let stem = journal_path
@@ -144,7 +151,7 @@ pub(crate) fn export_replay(
   let directory = journal_path
     .parent()
     .ok_or_else(|| "run journal path has no parent directory".to_string())?;
-  let export = replay_export_value(runtime);
+  let export = replay_export_value(runtime, scenario);
   for counter in 0_u32..10_000 {
     let suffix = if counter == 0 {
       String::new()

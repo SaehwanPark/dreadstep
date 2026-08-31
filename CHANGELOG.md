@@ -6,6 +6,13 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added playback-compatible diagnostic replay verification. Typed protocol exports now carry the
+  authored or seeded procedural scenario, accepted command requests, replay digest, final state
+  digest, and terminal outcome. The headless `--verify-replay <path>` command reconstructs the
+  scenario and executes every command through core, rejecting malformed or mismatched evidence.
+  Display-free TUI/Bevy smoke artifacts are labeled `smoke_fixture` and rejected explicitly because
+  their exhaustive setup mutations are diagnostic-only.
+
 - Added deterministic procedural throwable ground loot: the third enemy's ground utility loot may
   generate a throwable Frost Flask (`ThrowableEffect::Chill`) from depth 2 onward, completing
   integration of all 7 authored catalog item definitions across procedural dungeon generation while

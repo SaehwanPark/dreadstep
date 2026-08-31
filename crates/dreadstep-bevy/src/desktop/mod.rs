@@ -62,7 +62,8 @@ pub(crate) const SMOKE_ENEMY_ATTACK_LIMIT: usize = 32;
 pub(crate) const ENEMY_DELAY: Duration = Duration::from_millis(150);
 pub(crate) const SHOWCASE_MAX_HIT_POINTS: i32 = 10;
 pub(crate) const HEALTH_BAR_WIDTH: usize = 10;
-pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 = 1;
+pub(crate) const REPLAY_EXPORT_SCHEMA_VERSION: u16 =
+  dreadstep_protocol::REPLAY_EXPORT_SCHEMA_VERSION;
 
 /// The exhaustive formatter is public for integration tests and future coverage checks.
 #[must_use]

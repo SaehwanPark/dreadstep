@@ -150,8 +150,18 @@ fn replay_export_is_versioned_ordered_and_create_new() {
   };
   runtime.execute(command).expect("starter move accepted");
 
-  let first = export_replay(&runtime, &journal).expect("first export writes");
-  let second = export_replay(&runtime, &journal).expect("second export gets a new path");
+  let first = export_replay(
+    &runtime,
+    &journal,
+    dreadstep_protocol::ReplayScenario::Starter,
+  )
+  .expect("first export writes");
+  let second = export_replay(
+    &runtime,
+    &journal,
+    dreadstep_protocol::ReplayScenario::Starter,
+  )
+  .expect("second export gets a new path");
   assert_ne!(first, second);
   let export =
     serde_json::from_str::<Value>(&fs::read_to_string(&first).expect("first export reads"))
@@ -159,8 +169,14 @@ fn replay_export_is_versioned_ordered_and_create_new() {
   assert_eq!(export["schema_version"], REPLAY_EXPORT_SCHEMA_VERSION);
   assert_eq!(export["seed"], 7);
   assert_eq!(export["commands"].as_array().map(Vec::len), Some(1));
-  assert_eq!(export["commands"][0], command_value(command));
+  assert_eq!(
+    export["commands"][0],
+    serde_json::to_value(dreadstep_protocol::CommandRequest::from(command))
+      .expect("protocol command serializes")
+  );
   assert_eq!(export["replay_digest"], runtime.replay_digest().value());
+  assert_eq!(export["state_digest"], runtime.snapshot().digest().value());
+  assert_eq!(export["scenario"]["starter"], serde_json::Value::Null);
   assert_eq!(export["outcome"], "in_progress");
 
   let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");

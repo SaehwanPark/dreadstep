@@ -2063,6 +2063,7 @@ dependencies = [
  "dreadstep-content",
  "dreadstep-core",
  "dreadstep-protocol",
+ "serde_json",
 ]
 
 [[package]]
@@ -2096,6 +2097,7 @@ dependencies = [
  "crossterm",
  "dreadstep-content",
  "dreadstep-core",
+ "dreadstep-protocol",
  "serde_json",
 ]
 

@@ -12,6 +12,10 @@ use dreadstep_core::{
   ItemDefinitionId, ItemId, MeleeReach, Position, RunOutcome, StateDigest, Tile, WorldState,
 };
 
+mod replay;
+
+pub use replay::{ReplayVerificationError, render_replay_verification, verify_replay_file};
+
 /// Parsed command-line input for the fixed developer scenario.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CliInput {
