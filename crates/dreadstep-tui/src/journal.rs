@@ -171,3 +171,49 @@ pub fn export_replay_with_scenario(
   }
   Err("could not allocate a unique replay export filename".to_string())
 }
+
+#[cfg(test)]
+mod tests {
+  use std::time::{SystemTime, UNIX_EPOCH};
+
+  use super::{Journal, export_replay};
+  use crate::session::{PLAYER, Session};
+  use dreadstep_core::Command;
+  use dreadstep_protocol::{
+    CommandRequest, REPLAY_EXPORT_SCHEMA_VERSION, ReplayExport, ReplayScenario, RunOutcome,
+  };
+
+  fn test_directory() -> std::path::PathBuf {
+    let timestamp = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .expect("system clock is after epoch")
+      .as_nanos();
+    std::env::temp_dir().join(format!("dreadstep-tui-replay-{timestamp}"))
+  }
+
+  #[test]
+  fn exports_typed_replay_with_final_evidence() {
+    let directory = test_directory();
+    let mut session = Session::start_item_run(7).expect("item showcase should start");
+    let command = Command::Wait { actor: PLAYER };
+    session.execute(command).expect("wait should be accepted");
+    let journal = Journal::open(&directory).expect("journal should open");
+
+    let path = export_replay(&session, &journal).expect("replay export should write");
+    let export = serde_json::from_str::<ReplayExport>(
+      &std::fs::read_to_string(path).expect("replay export should read"),
+    )
+    .expect("replay export should decode");
+
+    assert_eq!(export.schema_version(), REPLAY_EXPORT_SCHEMA_VERSION);
+    assert_eq!(export.seed(), session.seed());
+    assert_eq!(export.scenario(), ReplayScenario::ItemShowcase);
+    assert_eq!(export.commands(), &[CommandRequest::from(command)]);
+    assert_eq!(
+      export.replay_digest().value(),
+      session.replay_digest().value()
+    );
+    assert_eq!(export.state_digest().value(), session.digest().value());
+    assert_eq!(export.outcome(), RunOutcome::InProgress);
+  }
+}
