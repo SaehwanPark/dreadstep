@@ -26,6 +26,21 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 - Module splits: keep crate-root `pub use` and `pub(crate)` intra-crate fields so adapters
   keep compiling without import-path churn; isolate complex multi-archetype selection policies into cohesive submodule helpers.
 
+## 2026-08-30 — Mark fixture mutations before exporting replay evidence
+
+- Context: The TUI and Bevy smoke runners intentionally teleport actors, replace terrain, change
+  enemy behaviors, and add items between commands to cover the full command/event matrix.
+- Symptom: Replaying their accepted command list from the authored item floor rejected a later
+  ranged command, even though the smoke run itself was deterministic and successful.
+- Cause: The command trace excludes those adapter-only setup mutations; a digest proves the final
+  state but cannot reconstruct an unrecorded starting world.
+- Resolution: Add an explicit `ReplayScenario::SmokeFixture` export label and make the headless
+  verifier reject it as diagnostic-only. Normal authored/procedural exports retain reconstructible
+  start metadata and are verified through core.
+- Prevention: Treat replayability as part of the export contract. When a fixture mutates core state
+  outside accepted commands, label the artifact non-replayable (or serialize the complete setup)
+  before exposing a playback command; test both paths.
+
 ## 2026-08-17 — Include closed throwable utilities in procedural loot tables
 
 - Context: The item catalog defined throwable Frost Flasks alongside consumables and equipment, but

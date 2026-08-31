@@ -30,7 +30,10 @@ pub use item::{
   AmmunitionResult, EquipmentEffect, EquipmentSlot, GroundItemSnapshot, HealingResult, ItemAffix,
   ItemRarity, ItemSnapshot, ThrowableEffect,
 };
-pub use replay::{ActionTime, ReplayEvidence, StateDigest};
+pub use replay::{
+  ActionTime, REPLAY_EXPORT_SCHEMA_VERSION, ReplayEvidence, ReplayExport, ReplayScenario,
+  StateDigest,
+};
 pub use scenario::{Scenario, ScenarioActor, Tile};
 pub use snapshot::{ActorSnapshot, LifeState, RunOutcome, WorldSnapshot};
 pub use status::{StatusKind, StatusSnapshot};

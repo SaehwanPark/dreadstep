@@ -150,8 +150,18 @@ fn replay_export_is_versioned_ordered_and_create_new() {
   };
   runtime.execute(command).expect("starter move accepted");
 
-  let first = export_replay(&runtime, &journal).expect("first export writes");
-  let second = export_replay(&runtime, &journal).expect("second export gets a new path");
+  let first = export_replay(
+    &runtime,
+    &journal,
+    dreadstep_protocol::ReplayScenario::Starter,
+  )
+  .expect("first export writes");
+  let second = export_replay(
+    &runtime,
+    &journal,
+    dreadstep_protocol::ReplayScenario::Starter,
+  )
+  .expect("second export gets a new path");
   assert_ne!(first, second);
   let export =
     serde_json::from_str::<Value>(&fs::read_to_string(&first).expect("first export reads"))
@@ -159,8 +169,14 @@ fn replay_export_is_versioned_ordered_and_create_new() {
   assert_eq!(export["schema_version"], REPLAY_EXPORT_SCHEMA_VERSION);
   assert_eq!(export["seed"], 7);
   assert_eq!(export["commands"].as_array().map(Vec::len), Some(1));
-  assert_eq!(export["commands"][0], command_value(command));
+  assert_eq!(
+    export["commands"][0],
+    serde_json::to_value(dreadstep_protocol::CommandRequest::from(command))
+      .expect("protocol command serializes")
+  );
   assert_eq!(export["replay_digest"], runtime.replay_digest().value());
+  assert_eq!(export["state_digest"], runtime.snapshot().digest().value());
+  assert_eq!(export["scenario"]["starter"], serde_json::Value::Null);
   assert_eq!(export["outcome"], "in_progress");
 
   let journal_text = fs::read_to_string(journal_path(&journal)).expect("journal reads");
@@ -850,6 +866,62 @@ fn finalization_exports_replay_and_shutdown_before_app_exit() {
   let joined = journal_text.join("\n");
   assert!(joined.contains("\"kind\":\"replay_exported\""));
   assert!(joined.contains("\"kind\":\"shutdown\""));
+  let _ = fs::remove_dir_all(directory);
+}
+
+#[test]
+fn procedural_finalization_preserves_replay_depth_metadata() {
+  let directory = test_directory("procedural-finalization");
+  let _ = fs::create_dir_all(&directory);
+  let journal = Arc::new(Mutex::new(
+    Journal::open(&directory).expect("journal opens"),
+  ));
+  let handle = FinalizationHandle::new();
+  let mut app = App::new();
+  app.add_message::<AppExit>();
+  app.insert_resource(
+    PresentationRuntime::start_procedural_run(7, 3).expect("procedural run validates"),
+  );
+  app.insert_resource(DesktopSession::new_with_scenario(
+    7,
+    true,
+    3,
+    journal.clone(),
+  ));
+  app.insert_resource(handle.clone());
+  app.add_systems(Update, |mut exits: MessageWriter<AppExit>| {
+    exits.write(AppExit::Success);
+  });
+  app.add_systems(Last, desktop_finalize);
+  app.update();
+
+  let report = handle.0.lock().expect("finalization report lock");
+  assert!(report.complete);
+  assert!(report.error.is_none());
+  drop(report);
+  let replay_path = fs::read_dir(&directory)
+    .expect("journal directory reads")
+    .filter_map(Result::ok)
+    .map(|entry| entry.path())
+    .find(|path| {
+      path
+        .extension()
+        .is_some_and(|extension| extension == "json")
+    })
+    .expect("procedural replay export exists");
+  let replay: Value =
+    serde_json::from_str(&fs::read_to_string(replay_path).expect("procedural replay export reads"))
+      .expect("procedural replay export parses");
+  assert_eq!(replay["schema_version"], REPLAY_EXPORT_SCHEMA_VERSION);
+  assert_eq!(replay["seed"], 7);
+  assert_eq!(replay["scenario"]["procedural"]["depth"], 3);
+  assert_eq!(replay["outcome"], "in_progress");
+  assert_eq!(replay["commands"].as_array().map(Vec::len), Some(0));
+  assert!(
+    replay["state_digest"]
+      .as_u64()
+      .is_some_and(|digest| digest != 0)
+  );
   let _ = fs::remove_dir_all(directory);
 }
 

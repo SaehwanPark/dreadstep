@@ -63,6 +63,26 @@ time.
 The authored item showcase places a closed door at `(2,1)`, immediately east of player actor
 1. Start that showcase to exercise `o`/`c` without relying on display-free smoke.
 
+## Replay verification
+
+Normal authored and procedural runs write a typed `*.replay.json` sibling beside the JSONL
+journal. Verify one by replaying its accepted protocol commands through core:
+
+```sh
+cargo run -p dreadstep-tui -- --capture target/dreadstep-capture \
+  --log-dir target/dreadstep-capture/logs --seed 7
+cargo run -p dreadstep-headless -- --verify-replay \
+  target/dreadstep-capture/logs/run-<timestamp>-<pid>.replay.json
+```
+
+`--capture` is reserved for the authored item-showcase screenshots; use `--print-frames` when
+inspecting a procedural floor.
+
+The verifier checks the schema, scenario reconstruction, accepted-command trace digest, final
+state digest, and terminal outcome. Display-free `--smoke` still writes an export for deterministic
+coverage evidence, but labels it `smoke_fixture`; its setup-only teleports, terrain, behavior, and
+item mutations are intentionally not playback-compatible, so verification rejects it explicitly.
+
 ## Agent monitoring
 
 Every accepted command, rejection, overlay change, and startup appends a JSONL record:
@@ -74,7 +94,8 @@ Every accepted command, rejection, overlay change, and startup appends a JSONL r
 `kind: "frame"` payloads include the plain frame string, seed, digest, outcome, and next
 actor. The journal also records `command_requested`, `action_accepted`, `action_rejected`,
 terminal outcomes, and `shutdown`. A sibling `*.replay.json` export is written from the
-accepted core trace, not reconstructed from the journal.
+accepted core trace, not reconstructed from the journal; normal exports also include typed
+scenario metadata and final-state evidence for the headless verifier.
 
 Do not add MCP tools that return TUI glyphs. Combine this log with existing MCP player tools
 when an agent needs both a readable frame and typed legal actions.
