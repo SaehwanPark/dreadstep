@@ -75,6 +75,9 @@ cargo run -p dreadstep-headless -- --verify-replay \
   target/dreadstep-capture/logs/run-<timestamp>-<pid>.replay.json
 ```
 
+`--capture` is reserved for the authored item-showcase screenshots; use `--print-frames` when
+inspecting a procedural floor.
+
 The verifier checks the schema, scenario reconstruction, accepted-command trace digest, final
 state digest, and terminal outcome. Display-free `--smoke` still writes an export for deterministic
 coverage evidence, but labels it `smoke_fixture`; its setup-only teleports, terrain, behavior, and
