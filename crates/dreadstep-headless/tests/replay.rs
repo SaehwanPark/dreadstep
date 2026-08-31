@@ -122,6 +122,45 @@ fn rejects_unsupported_schema_and_command_replay_digest_mismatch() {
 }
 
 #[test]
+fn rejects_malformed_export_command_and_outcome_mismatches() {
+  let directory = tempfile_directory();
+  let path = directory.join("invalid-evidence.replay.json");
+
+  fs::write(&path, b"not json").expect("malformed export should write");
+  assert!(matches!(
+    verify_replay_file(&path),
+    Err(ReplayVerificationError::Malformed { .. })
+  ));
+
+  let mut value = serde_json::to_value(export_for_item_showcase()).expect("export should encode");
+  value["commands"] = serde_json::json!([{"wait": {"actor": 2}}]);
+  fs::write(
+    &path,
+    serde_json::to_vec(&value).expect("rejected-command export should encode"),
+  )
+  .expect("rejected-command export should write");
+  assert!(matches!(
+    verify_replay_file(&path),
+    Err(ReplayVerificationError::CommandRejected { index: 0, .. })
+  ));
+
+  value = serde_json::to_value(export_for_item_showcase()).expect("export should encode");
+  value["outcome"] = serde_json::json!("victory");
+  fs::write(
+    &path,
+    serde_json::to_vec(&value).expect("outcome-mismatch export should encode"),
+  )
+  .expect("outcome-mismatch export should write");
+  assert!(matches!(
+    verify_replay_file(&path),
+    Err(ReplayVerificationError::OutcomeMismatch {
+      expected: RunOutcome::Victory,
+      actual: RunOutcome::InProgress
+    })
+  ));
+}
+
+#[test]
 fn rejects_diagnostic_smoke_fixture_as_non_replayable() {
   let export = ReplayExport::new(
     7,
@@ -144,6 +183,53 @@ fn rejects_diagnostic_smoke_fixture_as_non_replayable() {
       scenario: ReplayScenario::SmokeFixture
     })
   ));
+}
+
+#[test]
+fn verifier_process_prints_success_and_nonzero_failure() {
+  let directory = tempfile_directory();
+  let path = directory.join("process.replay.json");
+  fs::write(
+    &path,
+    serde_json::to_vec(&export_for_item_showcase()).expect("export should encode"),
+  )
+  .expect("export should write");
+
+  let binary = std::env::var("CARGO_BIN_EXE_dreadstep-headless")
+    .expect("Cargo should provide the headless binary path");
+  let verified = std::process::Command::new(&binary)
+    .args([
+      "--verify-replay",
+      path.to_str().expect("path should be UTF-8"),
+    ])
+    .output()
+    .expect("verifier process should launch");
+  assert!(verified.status.success());
+  assert!(String::from_utf8_lossy(&verified.stdout).starts_with("verified_replay\n"));
+
+  let smoke_path = directory.join("process-smoke.replay.json");
+  let smoke_export = ReplayExport::new(
+    7,
+    ReplayScenario::SmokeFixture,
+    Vec::new(),
+    StateDigest::new(0),
+    StateDigest::new(0),
+    RunOutcome::InProgress,
+  );
+  fs::write(
+    &smoke_path,
+    serde_json::to_vec(&smoke_export).expect("smoke export should encode"),
+  )
+  .expect("smoke export should write");
+  let rejected = std::process::Command::new(binary)
+    .args([
+      "--verify-replay",
+      smoke_path.to_str().expect("path should be UTF-8"),
+    ])
+    .output()
+    .expect("verifier process should launch");
+  assert_eq!(rejected.status.code(), Some(2));
+  assert!(String::from_utf8_lossy(&rejected.stderr).contains("diagnostic-only"));
 }
 
 fn tempfile_directory() -> std::path::PathBuf {
