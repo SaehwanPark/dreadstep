@@ -157,6 +157,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-09-01 | Milestone 5 preparation slice: deterministic procedural stairs marker |
 | 2026-08-30 | Milestone 7 preparation slice: playback-compatible diagnostic replay verification |
 | 2026-09-01 | Milestone 5 preparation slice: core-owned run and floor history contract |
+| 2026-09-01 | Milestone 5 preparation slice: TUI procedural advancement delegates to core run history |
 
 ## Present
 
@@ -189,8 +190,9 @@ deferred until a later visual-enhancement stage.
 - `RunState` owns the run seed, current depth, current `WorldState`, and compact per-floor digest and
   outcome records. Its typed `advance` contract accepts a caller-generated validated world only
   after canonical victory and an exactly contiguous depth, with atomic rejection and deterministic
-  run evidence. Existing TUI/Bevy advancement and per-floor replay exports remain unchanged until
-  an adapter-wiring slice.
+  run evidence. TUI procedural advancement delegates to this contract while retaining its
+  presentation reset and active-floor replay export; Bevy and MCP adapter wiring remain future
+  work.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -282,6 +284,17 @@ deferred.
   or multi-floor replay schema. Content still generates the next validated world and adapters still
   own their existing disposable replay/session state.
 
+### TUI core run adapter (complete)
+
+- Status: implemented on `feat/tui-core-run`.
+- Intent: make the terminal client's procedural `N` action generate the next floor through content
+  and delegate victory/depth validation and history replacement to core `RunState`.
+- Verification: TUI session projections derive depth/history from `RunState`; unwon transitions are
+  typed and atomic; successful transitions preserve core floor history, reset the active-floor
+  replay trace, and retain the existing HUD, journal, smoke, and screenshot behavior.
+- Exclusions: no stairs-position gate, Bevy/MCP migration, player or inventory carryover,
+  persistence, or multi-floor replay schema.
+
 ## Future
 
 ### Remaining roadmap milestones
@@ -297,7 +310,8 @@ release quality remain future work.
   to the visual-enhancement stage after core-facing milestones 4–6.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions.
 - Milestone 5 — The Living Dungeon: enemy archetypes, richer environmental state, stairs-gated
-  adapter wiring, persistent progression policy, and broader floor history behavior.
+  descent, remaining Bevy/MCP adapter wiring, persistent progression policy, and broader floor
+  history behavior.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build
   choices.
 - Milestone 7 — Vertical Slice: opening-to-victory run, mature presentation, music, polished

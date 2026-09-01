@@ -1911,12 +1911,13 @@ retreat from adjacent living targets using a farthest-cardinal deterministic esc
 authored Brute enemies break directly blocking Breakables before pursuit, authored Frostcasters
 cast Chilled along clear cardinal rays, and authored Blockers hold position outside melee reach,
 with protocol/MCP/headless/Bevy projections. Persistent/multi-source noise fields, richer procedural
-generation, damage/tool interactions, and broader archetype families remain future Milestone 5 work. The visible desktop preparation
+generation, damage/tool interactions, and broader archetype families remain future Milestone 5 work. The visible terminal preparation
 path can advance an opt-in procedural victory to the next seeded depth with `N`; each generated
 floor now also exposes exactly one deterministic, reachable `>` stairs marker. The marker is currently
-presentation-only. Core now owns a typed run seed/depth/history transition contract, while persistent
-floor history policy, adapter wiring, descent gating, player carryover, and multi-floor replay remain future
-work. The HUD exposes the current scenario/depth
+presentation-only. Core now owns a typed run seed/depth/history transition contract, and the TUI delegates
+its procedural floor replacement to that contract while retaining active-floor replay/presentation state.
+Persistent floor history policy, remaining Bevy/MCP adapter wiring, descent gating, player carryover, and
+multi-floor replay remain future work. The HUD exposes the current scenario/depth
 so this opt-in path remains legible during host playtesting.
 
 The first bounded cold interaction is now also verified: player-owned Frost Flask item 104 can be

@@ -28,5 +28,5 @@ pub use input::{Intent, Key, Overlay, UiState, intent_for_key};
 pub use journal::{Journal, JournalError};
 pub use kinds::{SHOWCASE_COMMAND_KINDS, SHOWCASE_EVENT_KINDS, command_name, event_name};
 pub use messages::format_event;
-pub use session::{PLAYER, Scenario, Session, SessionOutput};
+pub use session::{PLAYER, Scenario, Session, SessionAdvanceError, SessionOutput};
 pub use visibility::{FOV_RADIUS, player_can_see, visible_positions};

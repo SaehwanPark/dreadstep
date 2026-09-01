@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::process::ExitCode;
 
-use dreadstep_core::{Command, RunOutcome, Tile};
+use dreadstep_core::{Command, FloorAdvanceError, RunOutcome, Tile};
 use serde_json::{Value, json};
 
 use crate::frame::{TextFrame, render_frame};
@@ -11,7 +11,7 @@ use crate::input::UiState;
 use crate::journal::{Journal, JournalError, export_replay, export_replay_with_scenario};
 use crate::kinds::{command_name, command_value, event_name, outcome_name};
 use crate::messages::format_event;
-use crate::session::{PLAYER, Scenario, Session};
+use crate::session::{PLAYER, Scenario, Session, SessionAdvanceError};
 
 /// Presentation-owned run status.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -246,19 +246,14 @@ impl Play {
 
   /// Advances a procedural run after victory.
   pub fn advance_floor(&mut self) -> bool {
-    let Scenario::Procedural { depth } = self.session.scenario() else {
+    let Scenario::Procedural { .. } = self.session.scenario() else {
       return false;
     };
     if !matches!(self.status, Status::Victory) {
       return false;
     }
-    let Some(next_depth) = depth.checked_add(1) else {
-      self.fault("procedural floor depth overflow");
-      return false;
-    };
-    match Session::start_procedural_run(self.session.seed(), next_depth) {
-      Ok(session) => {
-        self.session = session;
+    match self.session.advance_procedural_floor() {
+      Ok(transition) => {
         self.ui = UiState::new();
         self.ui.select_default_item(&self.session);
         self.status = Status::Running;
@@ -269,11 +264,15 @@ impl Play {
           json!({
             "seed": self.session.seed(),
             "scenario": "procedural_floor",
-            "depth": next_depth,
+            "depth": transition.to_depth(),
           }),
         );
         let _ = self.record_frame("floor_advanced");
         true
+      }
+      Err(SessionAdvanceError::Core(FloorAdvanceError::DepthOverflow { .. })) => {
+        self.fault("procedural floor depth overflow");
+        false
       }
       Err(error) => {
         self.fault(format!("procedural floor advance failed: {error}"));
@@ -340,6 +339,8 @@ mod tests {
   use super::{Play, Status};
   use crate::journal::Journal;
   use crate::session::Session;
+  use dreadstep_content::procedural_floor;
+  use dreadstep_core::{ActorKind, Command, HitPoints};
 
   fn test_directory() -> std::path::PathBuf {
     let timestamp = SystemTime::now()
@@ -363,5 +364,48 @@ mod tests {
     assert!(
       matches!(play.status, Status::Faulted(reason) if reason.starts_with("replay export failed:"))
     );
+  }
+
+  #[test]
+  fn procedural_floor_advance_delegates_to_core_and_records_new_depth() {
+    let directory = test_directory().join("advance");
+    let journal = Journal::open(&directory).expect("journal should open");
+    let mut world = procedural_floor(7, 1).expect("procedural floor should generate");
+    let enemy_ids = world
+      .actors()
+      .filter(|actor| actor.kind() == ActorKind::Enemy)
+      .map(dreadstep_core::Actor::id)
+      .collect::<Vec<_>>();
+    for enemy_id in enemy_ids {
+      world
+        .set_hit_points(enemy_id, HitPoints::new(0))
+        .expect("tester mutation should defeat generated enemy");
+    }
+
+    let mut play = Play::new(
+      Session::from_procedural_world_for_test(7, 1, world),
+      journal,
+    );
+    play
+      .session
+      .execute(Command::Wait {
+        actor: crate::session::PLAYER,
+      })
+      .expect("the victorious floor should accept a wait");
+    play.status = Status::Victory;
+
+    assert!(play.advance_floor());
+    assert_eq!(play.status, Status::Running);
+    assert_eq!(play.session.depth(), 2);
+    assert_eq!(play.session.floor_history().len(), 2);
+    assert!(play.session.replay_commands().is_empty());
+    assert!(play.command_kinds.is_empty());
+    assert!(play.event_kinds.is_empty());
+    assert!(play.frame().plain().contains("procedural_floor depth 2"));
+
+    let journal = std::fs::read_to_string(play.journal_path()).expect("journal should flush");
+    assert!(journal.lines().any(|line| {
+      line.contains("\"kind\":\"floor_advanced\"") && line.contains("\"depth\":2")
+    }));
   }
 }

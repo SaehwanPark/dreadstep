@@ -34,8 +34,8 @@ equipment carries bounded deterministic affix tiers, with depth 3+ affixes at ma
 consumables at potency 2, and deeper floors vary the existing Pursuer, Kiter, Scavenger, and Zombie
 enemy policies deterministically. Core also exposes a typed run-level contract for seed, current
 depth, compact floor digest/outcome history, and atomic victory-to-contiguous-next-floor
-transitions; the existing TUI/Bevy session replacement remains the adapter behavior until that
-contract is wired through. The
+transitions; the TUI procedural `N` action now delegates its floor replacement to that contract
+while retaining per-floor replay and presentation state, and Bevy remains pending adapter wiring. The
 default showcase is the NetHack-style
 terminal client. It journals each run and can
 start an authored item fixture or a seeded procedural floor. Its inventory overlay also gives
@@ -112,8 +112,9 @@ item-showcase pair; use `--print-frames` to inspect a procedural floor.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems,
-  affix pools and identification, broader ground-loot families, stairs-gated descent and adapter
-  migration, player/inventory carryover, persistence, and playback-compatible multi-floor saves.
+  affix pools and identification, broader ground-loot families, stairs-gated descent, remaining
+  Bevy/MCP adapter migration, player/inventory carryover, persistence, and playback-compatible
+  multi-floor saves.
   Display-free smoke exports are explicitly marked
   diagnostic-only because their fixture mutations are not serialized.
 

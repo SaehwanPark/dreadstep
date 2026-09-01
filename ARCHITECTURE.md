@@ -78,9 +78,11 @@ materially more efficient in Rust.
   the versioned replay-export scenario/evidence contract. MCP, headless, TUI, and Bevy convert
   types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.
-- TUI glyphs, colors, keybindings, FOV, overlays, and Bevy ECS mirrors, enemy-intent, HUD, and
-  desktop session state are presentation-only. Missing optional resources are no-ops or recorded
-  fallbacks.
+- TUI glyphs, colors, keybindings, FOV, overlays, journal/replay output, and Bevy ECS mirrors,
+  enemy-intent, HUD, and desktop session state are presentation-only. The TUI procedural session
+  delegates floor-transition validation and replacement to core `RunState` while retaining its
+  active-floor presentation/replay reset; Bevy remains an adapter migration. Missing optional
+  resources are no-ops or recorded fallbacks.
 - Content validates authored and generated floors into core values; connectivity checks and
   procedural generation stay at that boundary. A caller supplies the next validated world to
   `RunState::advance`; core does not import the generator.
