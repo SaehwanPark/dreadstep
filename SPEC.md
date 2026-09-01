@@ -156,6 +156,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 6 slice: deterministic procedural throwable ground loot |
 | 2026-09-01 | Milestone 5 preparation slice: deterministic procedural stairs marker |
 | 2026-08-30 | Milestone 7 preparation slice: playback-compatible diagnostic replay verification |
+| 2026-09-01 | Milestone 5 preparation slice: core-owned run and floor history contract |
 
 ## Present
 
@@ -185,6 +186,11 @@ deferred until a later visual-enhancement stage.
   rarity and magnitude-2 affix floors; procedural consumables use potency 2 at the same depth.
   Deeper floors also select existing Pursuer, Kiter, Scavenger, and Zombie policies from the
   seed/depth while preserving the shallow authored roster.
+- `RunState` owns the run seed, current depth, current `WorldState`, and compact per-floor digest and
+  outcome records. Its typed `advance` contract accepts a caller-generated validated world only
+  after canonical victory and an exactly contiguous depth, with atomic rejection and deterministic
+  run evidence. Existing TUI/Bevy advancement and per-floor replay exports remain unchanged until
+  an adapter-wiring slice.
 - `legal_commands` and `execute` remain the only semantic mutation path.
 
 ### Protocol, MCP, and headless
@@ -265,6 +271,17 @@ explicitly tagged `smoke_fixture` and rejected as diagnostic-only because their 
 not serialized. Save slots, resume UI, renderer playback, and tester-scenario serialization remain
 deferred.
 
+### Core run and floor history contract (complete)
+
+- Status: implemented on `feat/core-run-history`.
+- Intent: keep the current floor authoritative in `WorldState` while core owns run seed, depth, and
+  compact digest/outcome records for every entered floor.
+- Verification: typed initial history, accepted command refresh, deterministic victory transition,
+  generator handoff, non-victory/non-contiguous/overflow rejection, and atomic state preservation.
+- Exclusions: no stairs-position gate, player or inventory carryover, adapter migration, save/load,
+  or multi-floor replay schema. Content still generates the next validated world and adapters still
+  own their existing disposable replay/session state.
+
 ## Future
 
 ### Remaining roadmap milestones
@@ -279,8 +296,8 @@ release quality remain future work.
   Production-art adoption, pixel 2D window polish, and Bevy visual playtesting are deferred
   to the visual-enhancement stage after core-facing milestones 4–6.
 - Milestone 4 — Tactical Combat: richer player verbs and systemic combat interactions.
-- Milestone 5 — The Living Dungeon: enemy archetypes, richer environmental state, and core-owned
-  floor progression.
+- Milestone 5 — The Living Dungeon: enemy archetypes, richer environmental state, stairs-gated
+  adapter wiring, persistent progression policy, and broader floor history behavior.
 - Milestone 6 — Loot and Build Formation: curated item progression, identification, and build
   choices.
 - Milestone 7 — Vertical Slice: opening-to-victory run, mature presentation, music, polished

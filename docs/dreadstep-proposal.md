@@ -1914,7 +1914,8 @@ with protocol/MCP/headless/Bevy projections. Persistent/multi-source noise field
 generation, damage/tool interactions, and broader archetype families remain future Milestone 5 work. The visible desktop preparation
 path can advance an opt-in procedural victory to the next seeded depth with `N`; each generated
 floor now also exposes exactly one deterministic, reachable `>` stairs marker. The marker is currently
-presentation-only, so persistent floor history, descent gating, and core-owned progression remain future
+presentation-only. Core now owns a typed run seed/depth/history transition contract, while persistent
+floor history policy, adapter wiring, descent gating, player carryover, and multi-floor replay remain future
 work. The HUD exposes the current scenario/depth
 so this opt-in path remains legible during host playtesting.
 

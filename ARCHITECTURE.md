@@ -18,7 +18,7 @@ showcase, and a feature-gated Bevy desktop client around the same `dreadstep-cor
 
 | Package | Owns | Must not own |
 | --- | --- | --- |
-| `dreadstep-core` | Domain state, commands, events, errors, deterministic rules | I/O, Bevy, MCP, authored-file formats |
+| `dreadstep-core` | Domain state, commands, events, errors, deterministic rules, run lifecycle metadata/history | I/O, Bevy, MCP, authored-file formats |
 | `dreadstep-protocol` | Versioned external representations and conversions, including typed replay-export metadata and evidence | Domain decisions or transports |
 | `dreadstep-content` | Validation of authored definitions into domain values | Hidden simulation rules |
 | `dreadstep-headless` | CLI, files, processes, telemetry, batch execution, and core-backed replay verification | Authoritative game behavior |
@@ -69,7 +69,9 @@ materially more efficient in Rust.
 - `dreadstep-core` owns `WorldState` transitions, occupancy, scheduling, combat, inventory,
   environmental tiles (including walkable, transparent procedural stairs), terrain-aware one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
   the stable state digest, including authored Kiter, Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy intent preferences.
-  The digest uses an explicit deterministic byte order, not a process-randomized hasher.
+  Its `RunState` wrapper owns the run seed, current depth, and compact per-floor digest/outcome
+  history while `WorldState` remains the current-floor authority. The digest uses an explicit
+  deterministic byte order, not a process-randomized hasher.
 - Protocol v37 projects those values, including typed procedural stairs terrain, OpenDoor/Close
   terrain commands, actor behavior/status snapshots, Brute/Frostcaster/Blocker/Scavenger/Zombie
   enemy behavior, throwable item effects, typed equipment affixes, typed throw/status events, and
@@ -79,8 +81,9 @@ materially more efficient in Rust.
 - TUI glyphs, colors, keybindings, FOV, overlays, and Bevy ECS mirrors, enemy-intent, HUD, and
   desktop session state are presentation-only. Missing optional resources are no-ops or recorded
   fallbacks.
-- Content validates authored and generated floors into core values; connectivity checks stay
-  at that boundary.
+- Content validates authored and generated floors into core values; connectivity checks and
+  procedural generation stay at that boundary. A caller supplies the next validated world to
+  `RunState::advance`; core does not import the generator.
 - See [`SPEC.md`](SPEC.md) Present for the current capability summary and
   [`docs/demo.md`](docs/demo.md) for terminal-showcase controls.
 
