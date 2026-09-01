@@ -14,6 +14,10 @@ depth:
 cargo run -p dreadstep-tui -- --procedural --depth 1 --seed 7
 ```
 
+Each generated floor contains one deterministic, reachable `>` stairs marker. It is currently a
+readable objective marker only; `N` still advances after the existing victory outcome while
+core-owned descent and floor history remain future work.
+
 When stdin is not a TTY, or when `--print-frames` is passed, the client prints a plain
 (no ANSI) frame after each state change, separated by `----`. Agents can read those frames
 from a terminal transcript and the JSONL `frame` records under `dreadstep-logs/` (or
@@ -88,7 +92,7 @@ when an agent needs both a readable frame and typed legal actions.
 | Inventory / equip / unequip / consume / throw / pickup / drop / reload | selected/equipped rows, rarity, affix labels, and selected-item legal action guidance | item/reload/throw events | yes for authored fixture |
 | Terrain, door/OpenDoor, trap, ChillTrap/Chilled, breakable, terrain-aware noise | distinct glyphs plus status duration | typed status and terrain events | yes |
 | Presentation field of view | radius-3 cardinal reveal; unseen cells are spaces | complete world remains in core/journal state | no display required |
-| Opt-in procedural floor and `N` advancement | seeded 13×9 floor, deterministic deeper enemy policies, two distinct inventory rarity/affix-tier choices, one bounded-potency inventory consumable, two ground equipment choices, and a deterministic deeper equipment-or-consumable table choice (depth 1 keeps the typed consumable fixture), depth-3+ Magic/Rare, magnitude-2, and potency-2 floors, and next-depth restart after victory | `run_started` depth and `floor_advanced` | no; smoke keeps item fixture |
+| Opt-in procedural floor and `N` advancement | seeded 13×9 floor with one deterministic reachable `>` stairs marker, deterministic deeper enemy policies, two distinct inventory rarity/affix-tier choices, one bounded-potency inventory consumable, two ground equipment choices, and a deterministic deeper equipment-or-consumable table choice (depth 1 keeps the typed consumable fixture), depth-3+ Magic/Rare, magnitude-2, and potency-2 floors, and next-depth restart after victory | `run_started` depth and `floor_advanced` | no; smoke keeps item fixture |
 
 ## Smoke verification
 
@@ -106,7 +110,7 @@ fail TUI compilation or smoke coverage until it is documented and mapped.
 ## Manual checklist
 
 - a colored NetHack-style map, message window, and status lines appear in the terminal;
-- floor, cover, wall, door, OpenDoor, trap, chill trap, breakable, player, enemy behaviors,
+- floor, stairs (`>`), cover, wall, door, OpenDoor, trap, chill trap, breakable, player, enemy behaviors,
   corpses, and ground items are distinct glyphs;
 - radius-3 field of view follows the controlled actor and hides distant cells;
 - movement, bump-to-open, bump-to-attack, wait, door close, smash, trap, combat, inventory,

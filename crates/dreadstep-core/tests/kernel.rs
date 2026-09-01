@@ -677,12 +677,19 @@ fn state_digest_changes_when_map_semantics_differ() {
   )];
   let floor_world =
     WorldState::new(GridMap::filled(2, 1, Tile::Floor).unwrap(), actors.clone()).unwrap();
+  let stairs_world = WorldState::new(
+    GridMap::from_tiles(2, 1, vec![Tile::Floor, Tile::Stairs]).unwrap(),
+    actors.clone(),
+  )
+  .unwrap();
   let wall_world = WorldState::new(
     GridMap::from_tiles(2, 1, vec![Tile::Floor, Tile::Wall]).unwrap(),
     actors,
   )
   .unwrap();
 
+  assert_ne!(floor_world.digest(), stairs_world.digest());
+  assert_ne!(stairs_world.digest(), wall_world.digest());
   assert_ne!(floor_world.digest(), wall_world.digest());
 }
 

@@ -1912,8 +1912,10 @@ authored Brute enemies break directly blocking Breakables before pursuit, author
 cast Chilled along clear cardinal rays, and authored Blockers hold position outside melee reach,
 with protocol/MCP/headless/Bevy projections. Persistent/multi-source noise fields, richer procedural
 generation, damage/tool interactions, and broader archetype families remain future Milestone 5 work. The visible desktop preparation
-path can advance an opt-in procedural victory to the next seeded depth with `N`; persistent floor
-history and core-owned progression remain future work. The HUD exposes the current scenario/depth
+path can advance an opt-in procedural victory to the next seeded depth with `N`; each generated
+floor now also exposes exactly one deterministic, reachable `>` stairs marker. The marker is currently
+presentation-only, so persistent floor history, descent gating, and core-owned progression remain future
+work. The HUD exposes the current scenario/depth
 so this opt-in path remains legible during host playtesting.
 
 The first bounded cold interaction is now also verified: player-owned Frost Flask item 104 can be

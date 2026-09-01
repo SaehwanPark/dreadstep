@@ -332,9 +332,9 @@ pub fn reclosable_door_floor() -> Result<WorldState, ContentError> {
 
 /// Returns a deterministic seeded corridor-floor definition.
 ///
-/// This procedural-content boundary varies authored terrain, enemy durability, two ordered
-/// generated starter-loot equipment choices, one consumable inventory choice, and two ground
-/// equipment choices with bounded seed/depth-derived affix tiers. The returned definition still
+/// This procedural-content boundary varies authored terrain, enemy durability, a reachable stairs
+/// marker, two ordered generated starter-loot equipment choices, one consumable inventory choice,
+/// and two ground equipment choices with bounded seed/depth-derived affix tiers. The returned definition still
 /// delegates all map, catalog, and actor/item validation to core when
 /// [`StarterFloorDefinition::build`] is called. `depth` is one-based in authored callers, but zero
 /// remains a valid deterministic fixture value.
@@ -362,6 +362,12 @@ pub fn procedural_floor_definition(seed: u64, depth: u32) -> StarterFloorDefinit
       }
     }
   }
+
+  // x=5 is outside every partition and y=7 is clear of authored actors and ground loot, so this
+  // fixed marker remains reachable for every seed/depth while preserving the corridor topology.
+  let stairs = Position::new(5, 7);
+  let stairs_index = (stairs.y().cast_unsigned() * WIDTH + stairs.x().cast_unsigned()) as usize;
+  tiles[stairs_index] = Tile::Stairs;
 
   let enemy_hit_points = HitPoints::new(3 + depth.min(5) as u16);
   let mut definition = StarterFloorDefinition::new(
@@ -571,8 +577,9 @@ fn procedural_partition_gap(seed: u64, depth: u32, partition_x: u32) -> u32 {
   (mixed % 7) as u32 + 1
 }
 
-/// Builds a validated deterministic seeded corridor floor with generated ground items placed at
-/// the first two enemies' authored positions for the existing pickup/drop rules to consume later.
+/// Builds a validated deterministic seeded corridor floor with one reachable stairs marker and
+/// generated ground items placed at the first two enemies' authored positions for the existing
+/// pickup/drop rules to consume later.
 ///
 /// # Errors
 ///

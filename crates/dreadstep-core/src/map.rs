@@ -71,6 +71,8 @@ impl Direction {
 pub enum Tile {
   /// A cell that actors may enter when it is not occupied.
   Floor,
+  /// A walkable, transparent exit marker for the current floor.
+  Stairs,
   /// A walkable cell that blocks ranged line of sight.
   Cover,
   /// A cell that blocks movement.
@@ -93,7 +95,7 @@ impl Tile {
   pub const fn is_walkable(self) -> bool {
     matches!(
       self,
-      Self::Floor | Self::Cover | Self::OpenDoor | Self::Trap | Self::ChillTrap
+      Self::Floor | Self::Stairs | Self::Cover | Self::OpenDoor | Self::Trap | Self::ChillTrap
     )
   }
 

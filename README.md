@@ -22,12 +22,12 @@ fixture.
 
 ## Current Status
 
-Workspace version `0.0.0`, protocol **v36**. Core owns deterministic combat, inventory, and
+Workspace version `0.0.0`, protocol **v37**. Core owns deterministic combat, inventory, and
 environmental rules, including one active weapon and one active armor slot plus typed item rarity
 and closed equipment affixes;
 protocol/MCP/headless/TUI/Bevy translate those values. Seeded procedural floors also bind the
-validated item catalog and provide two ordered deterministic generated equipment choices with
-distinct closed effects plus one
+validated item catalog, expose one deterministic reachable `>` stairs marker, and provide two
+ordered deterministic generated equipment choices with distinct closed effects plus one
 consumable with bounded deterministic potency in the player inventory, alongside two ground
 equipment choices at the first two enemies plus a deterministic equipment, consumable, or throwable Frost Flask choice at the third (the depth-1 fixture remains a consumable); depth 3+ generated items are at least Magic, and all
 equipment carries bounded deterministic affix tiers, with depth 3+ affixes at magnitude 2 and
@@ -97,8 +97,7 @@ hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
 These frames are generated from the renderer and committed under `screenshots/`. They are
 captures of the current client, not concept art.
 
-- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, authored melee-damage, ranged-damage, and damage-reduction equipment (including trap mitigation), deterministic inventory comparison and selected-item action guidance UX, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`,
-  and optional `--procedural` runs. Details: [`SPEC.md`](SPEC.md) Present.
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, authored melee-damage, ranged-damage, and damage-reduction equipment (including trap mitigation), deterministic inventory comparison and selected-item action guidance UX, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`, optional `--procedural` runs, and deterministic procedural `>` stairs markers. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems,

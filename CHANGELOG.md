@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added one deterministic, reachable `>` stairs marker to every seeded procedural floor. The marker
+  is a walkable, transparent core terrain value included in state-digest V15 and projected through
+  protocol v37, MCP, TUI, and Bevy; descent, floor history, and victory gating remain deferred.
+
 - Added deterministic procedural throwable ground loot: the third enemy's ground utility loot may
   generate a throwable Frost Flask (`ThrowableEffect::Chill`) from depth 2 onward, completing
   integration of all 7 authored catalog item definitions across procedural dungeon generation while

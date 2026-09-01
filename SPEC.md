@@ -154,10 +154,11 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 6 slice: deterministic deeper ground-loot table variation |
 | 2026-08-17 | Milestone 6 slice: deterministic terminal inventory action guidance |
 | 2026-08-17 | Milestone 6 slice: deterministic procedural throwable ground loot |
+| 2026-09-01 | Milestone 5 preparation slice: deterministic procedural stairs marker |
 
 ## Present
 
-Workspace version is `0.0.0`. Protocol version is **36**. Simulation truth stays in
+Workspace version is `0.0.0`. Protocol version is **37**. Simulation truth stays in
 `dreadstep-core`; adapters translate only. The default player-facing showcase is the
 NetHack-style terminal client in `dreadstep-tui`; controls, frame goldens, and smoke
 coverage are documented in [`docs/demo.md`](docs/demo.md). Pixel 2D Bevy playtesting is
@@ -177,7 +178,8 @@ deferred until a later visual-enhancement stage.
   closed effects and one deterministic consumable with rarity metadata and bounded potency in the
   player's inventory plus two deterministic ground equipment choices at the first two enemies and
   one deterministic ground item selected from the equipment, consumable, or throwable Frost Flask
-  table at the third enemy from the validated content catalog. Depths below 2 retain the consumable
+  table at the third enemy from the validated content catalog. Each procedural floor also exposes
+  exactly one deterministic, reachable, non-overlapping `Stairs` terrain cell. Depths below 2 retain the consumable
   fixture. At depth 3 and deeper, generated items have deterministic Magic-or-Rare
   rarity and magnitude-2 affix floors; procedural consumables use potency 2 at the same depth.
   Deeper floors also select existing Pursuer, Kiter, Scavenger, and Zombie policies from the
@@ -194,8 +196,8 @@ deferred until a later visual-enhancement stage.
 ### Content
 
 - Authored starter and starter-item floors, item catalog, and a seeded corridor-floor
-  generator with reachability checks and two seed/depth-derived starter equipment items with closed
-  affixes. The starter-item showcase includes a closed door beside the player for the documented open/close
+  generator with reachability checks, one deterministic reachable stairs marker, and two seed/depth-derived
+  starter equipment items with closed affixes. The starter-item showcase includes a closed door beside the player for the documented open/close
   controls; the item-free starter remains unchanged.
 
 ### Bevy and desktop
@@ -220,7 +222,23 @@ deferred until a later visual-enhancement stage.
 
 ## Active
 
-The current slice is complete: generated floors provide two ordered equipment choices with distinct
+### Procedural stairs marker (complete)
+
+- Status: implemented on `feat/procedural-stairs`.
+- Intent: every seeded procedural floor exposes exactly one deterministic, reachable `Stairs`
+  terrain cell rendered as `>`; the tile remains walkable and transparent and does not change
+  current enemy-death victory semantics.
+- Verification: core map/digest and movement evidence, content uniqueness/non-overlap/reachability
+  checks across representative seed/depth inputs, protocol/MCP scenario round-trip coverage, and
+  TUI/Bevy terrain projections plus the existing repository gate.
+- Exclusions: no `Descend` command, floor transition/history state, victory gating, save/load, or
+  replay playback in this slice.
+
+The current slice is complete: every seeded procedural floor now exposes exactly one deterministic,
+reachable, non-overlapping `Stairs` terrain cell projected as `>` by the TUI and as a typed terrain
+value through protocol, MCP, and Bevy. Stairs are walkable and transparent, participate in the
+state digest, and do not change current enemy-death victory semantics. The previous slice is complete:
+generated floors provide two ordered equipment choices with distinct
 closed effects, one typed consumable, two deterministic ground equipment choices, and a third ground
 item selected from the equipment, consumable, or throwable Frost Flask table. Depth 1 retains the typed ground
 consumable fixture. Each equipment

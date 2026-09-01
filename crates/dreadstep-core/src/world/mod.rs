@@ -173,12 +173,13 @@ impl WorldState {
   #[must_use]
   pub fn digest(&self) -> StateDigest {
     let mut hasher = StableHasher::new();
-    hasher.write_bytes(b"DREADSTEP-STATE-V14");
+    hasher.write_bytes(b"DREADSTEP-STATE-V15");
     hasher.write_u32(self.map.width());
     hasher.write_u32(self.map.height());
     for tile in self.map.tiles() {
       hasher.write_u8(match tile {
         Tile::Floor => 1,
+        Tile::Stairs => 9,
         Tile::Cover => 2,
         Tile::Wall => 3,
         Tile::Door => 4,

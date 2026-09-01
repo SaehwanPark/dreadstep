@@ -1,6 +1,6 @@
 # Dreadstep Architecture
 
-Last Reviewed: 2026-08-14
+Last Reviewed: 2026-09-01
 Status: Verified
 
 ## Overview
@@ -64,10 +64,10 @@ materially more efficient in Rust.
 ## Current Invariants
 
 - `dreadstep-core` owns `WorldState` transitions, occupancy, scheduling, combat, inventory,
-  environmental tiles, terrain-aware one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
+  environmental tiles (including walkable, transparent procedural stairs), terrain-aware one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
   the stable state digest, including authored Kiter, Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy intent preferences.
   The digest uses an explicit deterministic byte order, not a process-randomized hasher.
-- Protocol v36 projects those values, including OpenDoor/Close terrain commands, actor behavior/status snapshots, Brute/Frostcaster/Blocker/Scavenger/Zombie enemy behavior, throwable item
+- Protocol v37 projects those values, including typed procedural stairs terrain, OpenDoor/Close terrain commands, actor behavior/status snapshots, Brute/Frostcaster/Blocker/Scavenger/Zombie enemy behavior, throwable item
   effects, typed equipment affixes, and typed throw/status events. MCP,
   headless, TUI, and Bevy convert types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.

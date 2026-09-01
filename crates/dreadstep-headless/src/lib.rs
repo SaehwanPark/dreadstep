@@ -758,7 +758,7 @@ event=ItemEquipped { actor: ActorId(1), item: ItemId(103) }\n\
 event=Waited { actor: ActorId(2), at: ActionTime(0) }\n\
 event=Attacked { attacker: ActorId(1), target: ActorId(2), damage: Damage(1), remaining_hit_points: HitPoints(1) }\n\
 outcome=in_progress\n\
-digest=2924194571247046781\n"
+digest=12229946529093809348\n"
     );
   }
 
