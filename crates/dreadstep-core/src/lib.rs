@@ -16,6 +16,7 @@ mod ids;
 mod item;
 mod map;
 mod replay;
+mod run;
 mod status;
 mod world;
 
@@ -32,5 +33,6 @@ pub use item::{
 };
 pub use map::{Direction, GridMap, MapError, Position, Tile};
 pub use replay::{ReplayTrace, StateDigest};
+pub use run::{FloorAdvanceError, FloorRecord, FloorTransition, RunState};
 pub use status::{Status, StatusKind};
 pub use world::WorldState;

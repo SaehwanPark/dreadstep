@@ -7,8 +7,8 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 
 ## Index
 
-- Content and procedural floors: connectivity checks; opt-in desktop startup; keep progression
-  at the presentation boundary until core owns it.
+- Content and procedural floors: connectivity checks; opt-in desktop startup; keep generation in
+  content while core owns run lifecycle and history.
 - Core outcomes, replay, inventory, reach, ranged cost/ammo, and legal discovery: derive
   terminals once; export from the accepted trace; share predicates between discovery and
   execution.
@@ -748,21 +748,21 @@ constructor cannot silently alter the default client path or lose owner/order da
   diagonal closing, or adapter-owned visual state; test open/close identity, occupancy, legal order,
   digest/replay participation, and boundary mappings together.
 
-## Keep floor progression at the presentation boundary until core state exists
+## Keep generation in content while core owns run lifecycle and history
 
-- Context: The seeded procedural corridor now needs a small visible multi-floor loop without
-  prematurely adding persistent progression state to the simulation or agent contracts.
-- Symptom: Letting desktop input mutate a depth field in isolation could create a second source of
-  progression truth, while replacing the authored smoke fixture would remove exhaustive coverage.
-- Cause: The generator already accepts explicit seed/depth inputs and the core outcome projection
-  identifies a canonical victory, but no core floor-history or transition contract exists yet.
-- Resolution: Permit only procedural visible `Victory` to accept `N`; start the next floor through
-  `PresentationRuntime::start_procedural_run` with the same seed and checked incremented depth,
-  reset disposable presentation/replay state, and record `floor_advanced`. Keep item startup,
-  smoke, protocol/MCP scenarios, and future core progression unchanged.
-- Prevention: Test victory-only and procedural-only guards, exact seed/depth runtime parity, empty
-  replay reset, journal evidence, depth overflow/content faults, and item/smoke no-op behavior before
-  introducing floor history, loot progression, or agent-facing scenario selection.
+- Context: The seeded procedural corridor now has a visible multi-floor loop, and the next safe
+  boundary is to make run lifecycle metadata authoritative without making core depend on content.
+- Symptom: Letting an adapter mutate a depth field in isolation creates a second source of
+  progression truth, while moving generation into core would invert the package dependency.
+- Cause: Content owns explicit seed/depth generation and core owns canonical victory, but floor
+  history needs a compact typed contract around the current `WorldState`.
+- Resolution: Add core `RunState` with seed, depth, and digest/outcome records. Require victory and
+  exactly one contiguous next depth before atomically replacing the caller-supplied validated world;
+  refresh the current record after accepted commands. Leave stairs gating, carryover, adapter wiring,
+  persistence, and multi-floor replay schema to later slices.
+- Prevention: Keep generation in content, test deterministic history and transition evidence plus
+  typed atomic failures, and migrate each adapter only after its disposable session/replay behavior
+  has an explicit compatibility plan.
 
 ## Show scenario context from the adapter session, not inferred world state
 

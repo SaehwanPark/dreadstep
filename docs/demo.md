@@ -14,9 +14,10 @@ depth:
 cargo run -p dreadstep-tui -- --procedural --depth 1 --seed 7
 ```
 
-Each generated floor contains one deterministic, reachable `>` stairs marker. It is currently a
-readable objective marker only; `N` still advances after the existing victory outcome while
-core-owned descent and floor history remain future work.
+Each generated floor contains one deterministic, reachable `>` stairs marker. It remains a readable
+objective marker only: `N` still advances after the existing victory outcome through the current
+presentation session, while core now provides the typed run/depth/history contract that a future
+adapter-wiring slice will consume. Stairs-position gating and persistence remain future work.
 
 When stdin is not a TTY, or when `--print-frames` is passed, the client prints a plain
 (no ANSI) frame after each state change, separated by `----`. Agents can read those frames
@@ -27,7 +28,8 @@ stay TUI policy and are not MCP tools.
 `--no-delay` executes enemy turns immediately. `--smoke` is the display-free coverage gate.
 
 After a procedural run reaches victory, `N` starts the next deterministic depth with the
-same seed and records `floor_advanced`. `R` restarts the current seed/depth.
+same seed and records `floor_advanced`. The core contract independently validates the same
+victory-to-contiguous-depth transition when adapters are migrated. `R` restarts the current seed/depth.
 
 ## Controls
 

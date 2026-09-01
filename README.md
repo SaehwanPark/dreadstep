@@ -32,7 +32,10 @@ consumable with bounded deterministic potency in the player inventory, alongside
 equipment choices at the first two enemies plus a deterministic equipment, consumable, or throwable Frost Flask choice at the third (the depth-1 fixture remains a consumable); depth 3+ generated items are at least Magic, and all
 equipment carries bounded deterministic affix tiers, with depth 3+ affixes at magnitude 2 and
 consumables at potency 2, and deeper floors vary the existing Pursuer, Kiter, Scavenger, and Zombie
-enemy policies deterministically. The
+enemy policies deterministically. Core also exposes a typed run-level contract for seed, current
+depth, compact floor digest/outcome history, and atomic victory-to-contiguous-next-floor
+transitions; the existing TUI/Bevy session replacement remains the adapter behavior until that
+contract is wired through. The
 default showcase is the NetHack-style
 terminal client. It journals each run and can
 start an authored item fixture or a seeded procedural floor. Its inventory overlay also gives
@@ -109,8 +112,9 @@ item-showcase pair; use `--print-frames` to inspect a procedural floor.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems,
-  affix pools and identification, broader ground-loot families, core-owned floor history,
-  persistence, and playback-compatible saves. Display-free smoke exports are explicitly marked
+  affix pools and identification, broader ground-loot families, stairs-gated descent and adapter
+  migration, player/inventory carryover, persistence, and playback-compatible multi-floor saves.
+  Display-free smoke exports are explicitly marked
   diagnostic-only because their fixture mutations are not serialized.
 
 The long-term design and roadmap are in

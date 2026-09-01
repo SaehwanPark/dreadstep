@@ -2,7 +2,8 @@
 
 use dreadstep_content::{procedural_floor, procedural_floor_definition};
 use dreadstep_core::{
-  ActorId, ActorKind, EnemyBehavior, ItemRarity, Position, ThrowableEffect, Tile,
+  ActorId, ActorKind, EnemyBehavior, HitPoints, ItemRarity, Position, RunOutcome, RunState,
+  ThrowableEffect, Tile,
 };
 
 #[test]
@@ -22,6 +23,40 @@ fn identical_seed_and_depth_produce_identical_valid_worlds() {
       .map(dreadstep_core::Actor::position)
       .collect::<Vec<_>>()
   );
+}
+
+#[test]
+fn procedural_generator_feeds_a_deterministic_core_floor_transition() {
+  let seed = 7;
+  let depth = 1;
+  let mut current = procedural_floor(seed, depth).expect("generated floor should validate");
+  let enemy_ids = current
+    .actors()
+    .filter(|actor| actor.kind() == ActorKind::Enemy)
+    .map(dreadstep_core::Actor::id)
+    .collect::<Vec<_>>();
+  assert!(
+    !enemy_ids.is_empty(),
+    "generated floor should contain enemies"
+  );
+  for enemy_id in enemy_ids {
+    current
+      .set_hit_points(enemy_id, HitPoints::new(0))
+      .expect("tester mutation should defeat each generated enemy");
+  }
+  assert_eq!(current.outcome(), RunOutcome::Victory);
+
+  let next = procedural_floor(seed, depth + 1).expect("next generated floor should validate");
+  let next_digest = next.digest();
+  let mut run = RunState::new(seed, depth, current);
+  let transition = run
+    .advance(depth + 1, next)
+    .expect("victory should permit the next generated floor");
+
+  assert_eq!(run.depth(), depth + 1);
+  assert_eq!(transition.to_digest(), next_digest);
+  assert_eq!(run.world().digest(), next_digest);
+  assert_eq!(run.history().len(), 2);
 }
 
 #[test]
