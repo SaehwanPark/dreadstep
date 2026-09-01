@@ -22,7 +22,7 @@ fn replay_export_round_trips_typed_scenario_and_final_evidence() {
 
   assert_eq!(decoded, export);
   assert_eq!(decoded.schema_version(), 2);
-  assert_eq!(PROTOCOL_VERSION, 36);
+  assert_eq!(PROTOCOL_VERSION, 37);
   assert_eq!(decoded.scenario(), ReplayScenario::Procedural { depth: 3 });
   assert_eq!(decoded.commands().len(), 1);
   assert_eq!(decoded.replay_digest(), StateDigest::new(11));

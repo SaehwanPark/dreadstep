@@ -7,6 +7,8 @@ use crate::{ActorId, ActorKind, EnemyBehavior, HitPoints, MeleeReach, Position};
 pub enum Tile {
   /// A walkable cell.
   Floor,
+  /// A walkable, transparent exit marker for the current floor.
+  Stairs,
   /// A walkable cell that blocks ranged line of sight.
   Cover,
   /// A blocking cell.

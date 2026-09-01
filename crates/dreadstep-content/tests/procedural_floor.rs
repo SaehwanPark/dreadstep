@@ -519,6 +519,66 @@ fn every_generated_floor_tile_is_reachable_from_the_player() {
 }
 
 #[test]
+fn every_generated_floor_has_one_reachable_non_overlapping_stairs_cell() {
+  for seed in 0..32 {
+    for depth in [0, 1, 3, 6] {
+      let world = procedural_floor(seed, depth).expect("generated floor should validate");
+      let width = usize::try_from(world.map().width()).expect("width fits usize");
+      let stairs: Vec<_> = world
+        .map()
+        .tiles()
+        .iter()
+        .enumerate()
+        .filter(|(_, tile)| **tile == Tile::Stairs)
+        .map(|(index, _)| {
+          Position::new(
+            i32::try_from(index % width).expect("x fits i32"),
+            i32::try_from(index / width).expect("y fits i32"),
+          )
+        })
+        .collect();
+      assert_eq!(stairs.len(), 1, "seed={seed}, depth={depth}");
+      let stairs = stairs[0];
+      assert!(
+        world.actors().all(|actor| actor.position() != stairs),
+        "stairs overlap an actor for seed={seed}, depth={depth}"
+      );
+      assert!(
+        world
+          .ground_items()
+          .iter()
+          .all(|stack| stack.position() != stairs),
+        "stairs overlap ground loot for seed={seed}, depth={depth}"
+      );
+
+      let start = world
+        .actor(ActorId::new(1))
+        .expect("generated player should exist")
+        .position();
+      let mut visited = vec![start];
+      let mut index = 0;
+      while let Some(position) = visited.get(index).copied() {
+        index += 1;
+        for neighbor in [
+          Position::new(position.x() + 1, position.y()),
+          Position::new(position.x() - 1, position.y()),
+          Position::new(position.x(), position.y() + 1),
+          Position::new(position.x(), position.y() - 1),
+        ] {
+          if world.map().is_walkable(neighbor) && !visited.contains(&neighbor) {
+            visited.push(neighbor);
+          }
+        }
+      }
+      assert!(
+        visited.contains(&stairs),
+        "stairs are unreachable for seed={seed}, depth={depth}"
+      );
+    }
+  }
+}
+
+#[test]
 fn deeper_procedural_ground_loot_can_generate_throwable_frost_flask() {
   let shallow = procedural_floor(7, 1).expect("generated floor should validate");
   let shallow_stacks = shallow.ground_items();

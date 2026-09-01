@@ -6,6 +6,10 @@ All notable contributor- and user-visible project changes are recorded here.
 
 ### Added
 
+- Added one deterministic, reachable `>` stairs marker to every seeded procedural floor. The marker
+  is a walkable, transparent core terrain value included in state-digest V15 and projected through
+  protocol v37, MCP, TUI, and Bevy; descent, floor history, and victory gating remain deferred.
+
 - Added playback-compatible diagnostic replay verification. Typed protocol exports now carry the
   authored or seeded procedural scenario, accepted command requests, replay digest, final state
   digest, and terminal outcome. The headless `--verify-replay <path>` command reconstructs the

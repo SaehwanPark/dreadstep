@@ -183,6 +183,7 @@ impl Session {
       .copied()
       .map(|tile| match tile {
         ProtocolTile::Floor => Tile::Floor,
+        ProtocolTile::Stairs => Tile::Stairs,
         ProtocolTile::Cover => Tile::Cover,
         ProtocolTile::Wall => Tile::Wall,
         ProtocolTile::Door => Tile::Door,

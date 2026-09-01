@@ -89,6 +89,7 @@ pub fn push_styled(cells: &mut Vec<Cell>, text: &str, color: CellColor) {
 pub const fn tile_cell(tile: Tile) -> Cell {
   match tile {
     Tile::Floor => Cell::new('.', CellColor::Gray),
+    Tile::Stairs => Cell::new('>', CellColor::WhiteBold),
     Tile::Cover => Cell::new(':', CellColor::Green),
     Tile::Wall => Cell::new('#', CellColor::Gray),
     Tile::Door => Cell::new('+', CellColor::Yellow),
@@ -153,6 +154,7 @@ mod tests {
   #[test]
   fn terrain_glyphs_match_nethack_inspired_table() {
     assert_eq!(tile_cell(Tile::Floor).glyph(), '.');
+    assert_eq!(tile_cell(Tile::Stairs).glyph(), '>');
     assert_eq!(tile_cell(Tile::Wall).glyph(), '#');
     assert_eq!(tile_cell(Tile::Cover).glyph(), ':');
     assert_eq!(tile_cell(Tile::Door).glyph(), '+');

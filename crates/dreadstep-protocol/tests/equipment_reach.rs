@@ -25,7 +25,7 @@ fn item_snapshot_projects_equipment_effect_and_protocol_version_bumps() {
     snapshot.equipment_slot(),
     Some(dreadstep_protocol::EquipmentSlot::Weapon)
   );
-  assert_eq!(PROTOCOL_VERSION, 36);
+  assert_eq!(PROTOCOL_VERSION, 37);
 }
 
 #[test]

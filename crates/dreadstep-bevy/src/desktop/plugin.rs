@@ -449,6 +449,7 @@ pub(crate) fn desktop_style_sprites(
     let placeholder = node.placeholder();
     let color = match node.key() {
       crate::SceneSpriteKey::Terrain(Tile::Floor) => Color::srgb(0.16, 0.2, 0.24),
+      crate::SceneSpriteKey::Terrain(Tile::Stairs) => Color::srgb(0.85, 0.78, 0.24),
       crate::SceneSpriteKey::Terrain(Tile::Cover) => Color::srgb(0.36, 0.25, 0.12),
       crate::SceneSpriteKey::Terrain(Tile::Wall) => Color::srgb(0.04, 0.06, 0.08),
       crate::SceneSpriteKey::Terrain(Tile::Door) => Color::srgb(0.48, 0.25, 0.08),

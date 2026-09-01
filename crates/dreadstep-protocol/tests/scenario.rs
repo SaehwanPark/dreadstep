@@ -13,7 +13,7 @@ fn scenario_values_preserve_typed_map_and_actor_inputs() {
   let scenario = Scenario::new(
     3,
     1,
-    vec![Tile::Floor, Tile::Cover, Tile::Wall],
+    vec![Tile::Floor, Tile::Stairs, Tile::Wall],
     vec![ScenarioActor::new(
       ActorId::new(1),
       dreadstep_protocol::ActorKind::Player,
@@ -24,7 +24,7 @@ fn scenario_values_preserve_typed_map_and_actor_inputs() {
 
   assert_eq!(scenario.width(), 3);
   assert_eq!(scenario.height(), 1);
-  assert_eq!(scenario.tiles(), &[Tile::Floor, Tile::Cover, Tile::Wall]);
+  assert_eq!(scenario.tiles(), &[Tile::Floor, Tile::Stairs, Tile::Wall]);
   assert_eq!(scenario.actors().len(), 1);
   assert_eq!(scenario.actors()[0].id(), ActorId::new(1));
   assert_eq!(

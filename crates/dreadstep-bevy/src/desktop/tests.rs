@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use super::cli::ParseResult;
 use super::format::{
   actor_value, command_value, controls_text, enemy_intent_summary, event_message, event_value,
-  format_hud_stats, health_bar_text, scenario_label, terminal_hud_message,
+  format_hud_stats, health_bar_text, scenario_label, terminal_hud_message, tile_name,
   visibility_summary_values,
 };
 use super::input::{
@@ -718,6 +718,11 @@ fn visibility_summary_distinguishes_active_and_full_map() {
     visibility_summary_values(true, 3, 2),
     "FOV 2 tiles (radius 3)"
   );
+}
+
+#[test]
+fn stairs_terrain_keeps_a_typed_desktop_name() {
+  assert_eq!(tile_name(Tile::Stairs), "stairs");
 }
 
 #[test]

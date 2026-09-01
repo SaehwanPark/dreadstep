@@ -104,6 +104,7 @@ pub(crate) fn position_value(position: Position) -> Value {
 pub(crate) fn tile_name(tile: Tile) -> &'static str {
   match tile {
     Tile::Floor => "floor",
+    Tile::Stairs => "stairs",
     Tile::Cover => "cover",
     Tile::Wall => "wall",
     Tile::Door => "door",

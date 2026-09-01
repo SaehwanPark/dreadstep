@@ -71,6 +71,46 @@ fn create_scenario_replaces_world_and_resets_trace_for_the_same_seed() {
 }
 
 #[test]
+fn stairs_scenario_remains_walkable_through_mcp_session() {
+  let mut session = Session::start_run(7).expect("fixed scenario should be valid");
+  session
+    .create_scenario(&Scenario::new(
+      2,
+      1,
+      vec![Tile::Floor, Tile::Stairs],
+      vec![ScenarioActor::new(
+        ActorId::new(1),
+        ActorKind::Player,
+        Position::new(0, 0),
+        HitPoints::new(4),
+      )],
+    ))
+    .expect("stairs scenario should validate");
+
+  let moved = session
+    .act(CommandRequest::Move {
+      actor: ActorId::new(1),
+      direction: Direction::East,
+    })
+    .expect("the player should be able to enter stairs");
+  assert_eq!(
+    moved.events(),
+    &[Event::Moved {
+      actor: ActorId::new(1),
+      from: Position::new(0, 0),
+      to: Position::new(1, 0),
+    }]
+  );
+  assert_eq!(
+    session
+      .inspect(ActorId::new(1))
+      .expect("player should remain inspectable")
+      .position(),
+    Position::new(1, 0)
+  );
+}
+
+#[test]
 fn invalid_scenario_is_typed_and_atomic_for_map_and_world_errors() {
   let mut session = Session::start_run(7).expect("fixed scenario should be valid");
   session
