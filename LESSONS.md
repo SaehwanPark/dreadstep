@@ -8,7 +8,8 @@ Update an existing lesson instead of adding a duplicate. Package ownership lives
 ## Index
 
 - Content and procedural floors: connectivity checks; opt-in desktop startup; keep generation in
-  content while core owns run lifecycle and history.
+  content while core owns run lifecycle and history; preserve active-floor replay when adapters
+  adopt the run contract.
 - Core outcomes, replay, inventory, reach, ranged cost/ammo, and legal discovery: derive
   terminals once; export from the accepted trace; share predicates between discovery and
   execution.
@@ -763,6 +764,21 @@ constructor cannot silently alter the default client path or lose owner/order da
 - Prevention: Keep generation in content, test deterministic history and transition evidence plus
   typed atomic failures, and migrate each adapter only after its disposable session/replay behavior
   has an explicit compatibility plan.
+
+## Preserve active-floor replay when wiring an adapter to run history
+
+- Context: The TUI's procedural `N` action previously replaced its whole session, which implicitly
+  reset both presentation state and the one-floor replay trace. Core `RunState` now retains compact
+  history across that replacement.
+- Symptom: Exporting the new run history through the existing replay schema would make a per-floor
+  command trace look like a complete multi-floor playback, while resetting the entire run would
+  discard the newly authoritative history.
+- Resolution: Keep one `RunState` inside the procedural TUI session, delegate generation/validation
+  to `RunState::advance`, reset only the active-floor `ReplayTrace` after success, and leave HUD,
+  journal, smoke, and screenshot projections unchanged.
+- Prevention: Treat replay scope as an explicit compatibility boundary during each adapter migration;
+  test history retention and replay reset together, and defer multi-floor playback until its schema
+  can encode transition boundaries and per-floor command segments.
 
 ## Show scenario context from the adapter session, not inferred world state
 

@@ -9,8 +9,13 @@ All notable contributor- and user-visible project changes are recorded here.
 - Added a core-owned `RunState` progression contract. It records the run seed, current depth, and
   compact per-floor state-digest/outcome history; accepted commands refresh the current record,
   and typed advancement requires canonical victory plus one contiguous depth with atomic rejection.
-  Content still generates the next validated world, while existing adapter sessions and per-floor
-  replay exports remain unchanged until a follow-up wiring slice.
+  Content still generates the next validated world. The TUI procedural `N` action now delegates
+  replacement to this contract while preserving its presentation reset and active-floor replay
+  export; Bevy and MCP adapter wiring remain future work.
+
+- Wired the TUI procedural session to core `RunState`: depth and floor history are projected from
+  one run-owned state, successful advancement retains completed-floor metadata, rejected advances
+  remain atomic, and the existing journal/HUD/smoke behavior is unchanged.
 
 - Added one deterministic, reachable `>` stairs marker to every seeded procedural floor. The marker
   is a walkable, transparent core terrain value included in state-digest V15 and projected through
