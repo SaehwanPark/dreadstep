@@ -4,7 +4,7 @@ use dreadstep_core::{
   Actor as CoreActor, ActorKind as CoreActorKind, RunOutcome as CoreRunOutcome, WorldState,
 };
 use schemars::JsonSchema;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
   ActionTime, ActorId, ActorKind, EnemyBehavior, GroundItemSnapshot, HitPoints, ItemId,
@@ -22,7 +22,7 @@ pub enum LifeState {
 }
 
 /// The canonical terminal outcome projected from core actor records.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, JsonSchema, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, JsonSchema, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RunOutcome {
   /// The run has not reached a terminal condition.

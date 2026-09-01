@@ -328,7 +328,10 @@ pub fn run_smoke(mut play: Play) -> ExitCode {
       "journal": play.journal_path().display().to_string(),
     }),
   );
-  if play.export_replay().is_err() {
+  if play
+    .export_replay_as(dreadstep_protocol::ReplayScenario::SmokeFixture)
+    .is_err()
+  {
     failed = true;
     play.fault("replay_export_failed");
   }

@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 use crate::frame::{TextFrame, render_frame};
 use crate::input::UiState;
-use crate::journal::{Journal, JournalError, export_replay};
+use crate::journal::{Journal, JournalError, export_replay, export_replay_with_scenario};
 use crate::kinds::{command_name, command_value, event_name, outcome_name};
 use crate::messages::format_event;
 use crate::session::{PLAYER, Scenario, Session};
@@ -303,6 +303,14 @@ impl Play {
     export_replay(&self.session, &self.journal)
   }
 
+  /// Writes the replay export with an explicit diagnostic scenario label.
+  pub fn export_replay_as(
+    &self,
+    scenario: dreadstep_protocol::ReplayScenario,
+  ) -> Result<std::path::PathBuf, String> {
+    export_replay_with_scenario(&self.session, &self.journal, scenario)
+  }
+
   /// Finalizes the journal with shutdown evidence.
   pub fn shutdown(&mut self, reason: &str) -> ExitCode {
     if matches!(self.status, Status::Faulted(_)) {
@@ -310,8 +318,50 @@ impl Play {
       return ExitCode::from(1);
     }
     self.status = Status::Shutdown(reason.to_string());
-    let _ = self.export_replay();
+    if let Err(error) = self.export_replay() {
+      let failure_reason = format!("replay export failed: {error}");
+      self.status = Status::Faulted(failure_reason.clone());
+      let _ = self.record("fault", json!({ "reason": failure_reason }));
+      let _ = self.record(
+        "shutdown",
+        json!({ "reason": reason, "failed": true, "error": error }),
+      );
+      return ExitCode::from(1);
+    }
     let _ = self.record("shutdown", json!({ "reason": reason }));
     ExitCode::SUCCESS
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::time::{SystemTime, UNIX_EPOCH};
+
+  use super::{Play, Status};
+  use crate::journal::Journal;
+  use crate::session::Session;
+
+  fn test_directory() -> std::path::PathBuf {
+    let timestamp = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .expect("system clock is after epoch")
+      .as_nanos();
+    std::env::temp_dir().join(format!("dreadstep-tui-shutdown-{timestamp}"))
+  }
+
+  #[test]
+  fn shutdown_faults_when_replay_export_cannot_be_written() {
+    let directory = test_directory();
+    let journal = Journal::open(&directory).expect("journal should open");
+    let mut play = Play::new(
+      Session::start_item_run(7).expect("item showcase should start"),
+      journal,
+    );
+    std::fs::remove_dir_all(&directory).expect("test directory should be removable");
+
+    assert_eq!(play.shutdown("test"), std::process::ExitCode::from(1));
+    assert!(
+      matches!(play.status, Status::Faulted(reason) if reason.starts_with("replay export failed:"))
+    );
   }
 }

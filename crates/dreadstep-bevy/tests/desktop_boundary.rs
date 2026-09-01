@@ -365,8 +365,9 @@ fn assert_replay_export(replay_path: &std::path::Path, records: &[Value], comple
     &std::fs::read_to_string(replay_path).expect("replay export reads"),
   )
   .expect("replay export parses");
-  assert_eq!(replay["schema_version"], 1);
+  assert_eq!(replay["schema_version"], 2);
   assert_eq!(replay["seed"], 7);
+  assert_eq!(replay["scenario"], "smoke_fixture");
   assert_eq!(replay["outcome"], "in_progress");
   assert!(
     !replay["commands"]
@@ -382,7 +383,7 @@ fn assert_replay_export(replay_path: &std::path::Path, records: &[Value], comple
     .iter()
     .find(|record| record["kind"] == "replay_exported")
     .expect("replay export journal record");
-  assert_eq!(exported["payload"]["schema_version"], 1);
+  assert_eq!(exported["payload"]["schema_version"], 2);
   assert_eq!(
     exported["payload"]["replay_digest"],
     replay["replay_digest"]

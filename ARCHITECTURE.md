@@ -19,9 +19,9 @@ showcase, and a feature-gated Bevy desktop client around the same `dreadstep-cor
 | Package | Owns | Must not own |
 | --- | --- | --- |
 | `dreadstep-core` | Domain state, commands, events, errors, deterministic rules | I/O, Bevy, MCP, authored-file formats |
-| `dreadstep-protocol` | Versioned external representations and conversions | Domain decisions or transports |
+| `dreadstep-protocol` | Versioned external representations and conversions, including typed replay-export metadata and evidence | Domain decisions or transports |
 | `dreadstep-content` | Validation of authored definitions into domain values | Hidden simulation rules |
-| `dreadstep-headless` | CLI, files, processes, telemetry, batch execution | Authoritative game behavior |
+| `dreadstep-headless` | CLI, files, processes, telemetry, batch execution, and core-backed replay verification | Authoritative game behavior |
 | `dreadstep-mcp` | Bounded player and tester operations | Arbitrary host access or game truth |
 | `dreadstep-tui` | Terminal input, glyphs, colors, FOV, frame layout, TTY/stdout I/O, JSONL frame journals | Authoritative state or rules |
 | `dreadstep-bevy` | Headless projection plus optional desktop input, window/render setup, HUD, assets, and journal | Authoritative state or rules |
@@ -55,7 +55,10 @@ semantic events -> adapter -> output, presentation, telemetry, or protocol respo
 Desktop timers, HUD text, asset handles, animation/audio, TUI glyphs/colors/FOV, and JSONL
 journals are disposable effects. Only `WorldState::legal_commands` and `WorldState::execute`
 determine simulation outcomes. Display-free TUI `--smoke` reuses those helpers without a TTY
-or a renderer.
+or a renderer, but its setup mutations are tagged as a diagnostic-only replay scenario. Normal
+TUI and Bevy exports carry typed scenario metadata and final digests; the headless verifier
+reconstructs the authored or seeded procedural content and executes the accepted protocol
+commands through core.
 
 State, configuration, seeded randomness, and time inputs should be explicit. Prefer pure
 transformations and returned outcomes; allow tightly scoped mutation when it is clearer or
@@ -67,9 +70,11 @@ materially more efficient in Rust.
   environmental tiles (including walkable, transparent procedural stairs), terrain-aware one-use kick-noise hearing, canonical `RunOutcome`, replay traces, and
   the stable state digest, including authored Kiter, Brute, Frostcaster, Blocker, Scavenger, and Zombie enemy intent preferences.
   The digest uses an explicit deterministic byte order, not a process-randomized hasher.
-- Protocol v37 projects those values, including typed procedural stairs terrain, OpenDoor/Close terrain commands, actor behavior/status snapshots, Brute/Frostcaster/Blocker/Scavenger/Zombie enemy behavior, throwable item
-  effects, typed equipment affixes, and typed throw/status events. MCP,
-  headless, TUI, and Bevy convert types and shape I/O;
+- Protocol v37 projects those values, including typed procedural stairs terrain, OpenDoor/Close
+  terrain commands, actor behavior/status snapshots, Brute/Frostcaster/Blocker/Scavenger/Zombie
+  enemy behavior, throwable item effects, typed equipment affixes, typed throw/status events, and
+  the versioned replay-export scenario/evidence contract. MCP, headless, TUI, and Bevy convert
+  types and shape I/O;
   they must not reimplement rules, legal-action policy, or terminal-outcome predicates.
 - TUI glyphs, colors, keybindings, FOV, overlays, and Bevy ECS mirrors, enemy-intent, HUD, and
   desktop session state are presentation-only. Missing optional resources are no-ops or recorded

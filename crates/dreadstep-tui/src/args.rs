@@ -73,7 +73,7 @@ Usage: dreadstep-tui [options]
   --smoke              display-free command/event coverage gate
   --print-frames       print plain frames to stdout (default when stdin is not a TTY)
   --no-delay           execute enemy turns immediately
-  --capture <dir>      write tui-starter.txt and tui-status.txt then exit
+  --capture <dir>      write item-showcase screenshots then exit (not with --procedural)
   --help               show this help
 ";
 

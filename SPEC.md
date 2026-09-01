@@ -155,6 +155,7 @@ Verified slices, newest last. Details remain in `CHANGELOG.md`.
 | 2026-08-17 | Milestone 6 slice: deterministic terminal inventory action guidance |
 | 2026-08-17 | Milestone 6 slice: deterministic procedural throwable ground loot |
 | 2026-09-01 | Milestone 5 preparation slice: deterministic procedural stairs marker |
+| 2026-08-30 | Milestone 7 preparation slice: playback-compatible diagnostic replay verification |
 
 ## Present
 
@@ -188,7 +189,11 @@ deferred until a later visual-enhancement stage.
 
 ### Protocol, MCP, and headless
 
-- Versioned snapshots, commands, events, errors, replay evidence, and scenario replacement.
+- Versioned snapshots, commands, events, errors, replay evidence, typed replay-export scenario
+  metadata, and scenario replacement. Normal authored/procedural exports include accepted
+  protocol commands, replay and final-state digests, and terminal outcome; the headless verifier
+  reconstructs those scenarios through core. Display-free smoke exports are tagged
+  `smoke_fixture` and remain diagnostic-only because setup mutations are not serialized.
 - MCP stdio tools: `start_run`, `observe`, `legal_actions`, `inspect`, `get_history`,
   `get_replay`, and typed `act`.
 - Headless CLI parses text into the same core commands.
@@ -251,6 +256,14 @@ magnitude-2 affix, and potency-2 consumable floors while shallow floors retain t
 pools, identification, broader ground-loot families, and broader inventory actions remain deferred.
 The terminal inventory overlay explains the selected item's legal action set while keeping
 command legality authoritative in core.
+
+Playback-compatible diagnostic replay verification is complete. TUI and Bevy exports carry typed
+scenario metadata, accepted protocol commands, the replay digest, final state digest, and terminal
+outcome. The headless verifier reconstructs authored item or seeded procedural floors, replays every
+command through core, and rejects malformed or mismatched evidence. Display-free smoke exports are
+explicitly tagged `smoke_fixture` and rejected as diagnostic-only because their setup mutations are
+not serialized. Save slots, resume UI, renderer playback, and tester-scenario serialization remain
+deferred.
 
 ## Future
 

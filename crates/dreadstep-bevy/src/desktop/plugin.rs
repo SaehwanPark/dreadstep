@@ -603,7 +603,17 @@ pub(crate) fn desktop_finalize(
     return;
   };
   let mut error = None;
-  if let Err(export_error) = export_replay(&runtime, &session.journal) {
+  if let Err(export_error) = export_replay(
+    &runtime,
+    &session.journal,
+    if session.procedural {
+      dreadstep_protocol::ReplayScenario::Procedural {
+        depth: session.depth,
+      }
+    } else {
+      dreadstep_protocol::ReplayScenario::ItemShowcase
+    },
+  ) {
     let _ = record_session(
       &mut session,
       "terminal_fault",

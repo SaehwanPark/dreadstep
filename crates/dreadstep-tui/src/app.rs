@@ -51,6 +51,12 @@ where
 }
 
 fn run_options(options: Options) -> ExitCode {
+  if options.procedural && options.capture_dir.is_some() {
+    eprintln!(
+      "error: --capture is supported only for the authored item showcase; omit --procedural"
+    );
+    return ExitCode::from(2);
+  }
   let session = if options.procedural {
     Session::start_procedural_run(options.seed, options.depth)
   } else {

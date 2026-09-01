@@ -95,14 +95,23 @@ hjkl/WASD move  . wait  o open  c close  , pickup  i inv  ? help  Esc quit
 ```
 
 These frames are generated from the renderer and committed under `screenshots/`. They are
-captures of the current client, not concept art.
+captures of the current client, not concept art. The `--capture` helper reproduces this authored
+item-showcase pair; use `--print-frames` to inspect a procedural floor.
 
-- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing, terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting, stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, authored melee-damage, ranged-damage, and damage-reduction equipment (including trap mitigation), deterministic inventory comparison and selected-item action guidance UX, named enemy intent, MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`, optional `--procedural` runs, and deterministic procedural `>` stairs markers. Details: [`SPEC.md`](SPEC.md) Present.
+- Verified: core rules, reclosable doors, authored Frost Flask Throw/Chilled status timing,
+  terrain-aware kick-noise investigation, authored Kiter retreat, Brute break, Frostcaster casting,
+  stationary Blocker behavior, Scavenger retreat, slow Zombie pursuer behavior, authored
+  melee-damage, ranged-damage, and damage-reduction equipment (including trap mitigation),
+  deterministic inventory comparison and selected-item action guidance UX, named enemy intent,
+  MCP/headless adapters, the terminal showcase, Bevy projections, TUI `--smoke`, optional
+  `--procedural` runs, deterministic procedural `>` stairs markers, and typed playback-compatible
+  verification of authored and procedural replay exports. Details: [`SPEC.md`](SPEC.md) Present.
 - How to play the showcase: [`docs/demo.md`](docs/demo.md).
 - Ownership and invariants: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - Still deferred: pixel-2D visual playtesting and production art, richer AI and item systems,
   affix pools and identification, broader ground-loot families, core-owned floor history,
-  persistence, and playback-compatible saves.
+  persistence, and playback-compatible saves. Display-free smoke exports are explicitly marked
+  diagnostic-only because their fixture mutations are not serialized.
 
 The long-term design and roadmap are in
 [`docs/dreadstep-proposal.md`](docs/dreadstep-proposal.md). Verified current and planned
